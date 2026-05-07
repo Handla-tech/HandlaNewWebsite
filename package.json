@@ -1,0 +1,34 @@
+{
+  "name": "handla",
+  "version": "1.0.0",
+  "description": "Handla — Full-Stack Software Services Marketing Platform",
+  "private": true,
+  "workspaces": [
+    "handla-frontend",
+    "handla-backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=handla-frontend",
+    "dev:backend": "npm run start:dev --workspace=handla-backend",
+    "build": "npm run build --workspace=handla-backend && npm run build --workspace=handla-frontend",
+    "build:frontend": "npm run build --workspace=handla-frontend",
+    "build:backend": "npm run build --workspace=handla-backend",
+    "test": "npm run test --workspace=handla-backend && npm run test --workspace=handla-frontend",
+    "test:backend": "npm run test --workspace=handla-backend",
+    "test:frontend": "npm run test --workspace=handla-frontend",
+    "lint": "npm run lint --workspace=handla-frontend && npm run lint --workspace=handla-backend",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "db:migrate": "npm run migration:run --workspace=handla-backend",
+    "db:seed": "npm run seed --workspace=handla-backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
