@@ -142,7 +142,8 @@ function ClientCard({
 
   return (
     <div
-      className="group relative flex items-center gap-4 px-5 py-3.5 border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors cursor-pointer"
+      className="group relative grid px-5 py-3.5 border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors cursor-pointer items-center"
+      style={{ gridTemplateColumns: '40px 1fr 130px 160px 32px', gap: '1rem' }}
       onClick={() => router.push(`/erp/clients/${client.id}`)}
     >
       {/* Avatar */}
@@ -154,7 +155,7 @@ function ClientCard({
       </div>
 
       {/* Name + company */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-white truncate">{name}</p>
           <ArrowUpRight className="h-3 w-3 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -165,23 +166,27 @@ function ClientCard({
       </div>
 
       {/* Status badge */}
-      <span className={cn(
-        'hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full border flex-shrink-0',
-        STATUS_BADGE[client.status as ClientStatus],
-      )}>
-        <StatusIcon className="w-3 h-3" />
-        {client.status}
-      </span>
+      <div className="hidden sm:flex items-center">
+        <span className={cn(
+          'inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full border',
+          STATUS_BADGE[client.status as ClientStatus],
+        )}>
+          <StatusIcon className="w-3 h-3" />
+          {client.status}
+        </span>
+      </div>
 
       {/* Owner */}
-      <span className="hidden md:block text-xs text-white/30 truncate max-w-[140px] flex-shrink-0">
-        {ownerName}
-      </span>
+      <div className="hidden md:flex items-center min-w-0">
+        <span className="text-xs text-white/30 truncate">
+          {ownerName}
+        </span>
+      </div>
 
       {/* Action menu — portal-rendered to escape overflow containers */}
       <div
         ref={menu.triggerRef}
-        className="relative flex-shrink-0"
+        className="relative flex justify-end"
         onClick={(e) => { e.stopPropagation(); menu.toggle(); }}
       >
         <button
@@ -414,12 +419,13 @@ export default function ClientsPage() {
       {/* ─── Table ──────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] overflow-hidden">
         {/* Table header */}
-        <div className="hidden sm:flex items-center gap-4 px-5 py-3 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="w-10 flex-shrink-0" />
-          <div className="flex-1 text-[10px] font-semibold uppercase tracking-widest text-white/25">Name / Company</div>
-          <div className="w-24 text-center text-[10px] font-semibold uppercase tracking-widest text-white/25">Status</div>
-          <div className="hidden md:block w-36 text-[10px] font-semibold uppercase tracking-widest text-white/25">Assigned To</div>
-          <div className="w-8" />
+        <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06] bg-white/[0.02]"
+          style={{ gridTemplateColumns: '40px 1fr 130px 160px 32px', gap: '1rem' }}>
+          <div />
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Name / Company</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Status</div>
+          <div className="hidden md:block text-[10px] font-semibold uppercase tracking-widest text-white/25">Assigned To</div>
+          <div />
         </div>
 
         {isLoading ? (
