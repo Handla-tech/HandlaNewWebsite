@@ -12,6 +12,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   FolderOpen,
   Search,
@@ -132,7 +133,7 @@ interface ProjectCardProps {
 }
 
 function ProjectCard({ project, isAdmin, onEdit, onDelete }: ProjectCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu       = useDropdown('right');
   const StatusIcon = STATUS_ICON[project.status as ProjectStatus] ?? Clock;
   const router     = useRouter();
 
@@ -175,39 +176,31 @@ function ProjectCard({ project, isAdmin, onEdit, onDelete }: ProjectCardProps) {
               {project.status.replace('_', ' ')}
             </span>
 
-            <div className="relative" onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }}>
+            <div ref={menu.triggerRef} className="relative" onClick={(e) => { e.stopPropagation(); menu.toggle(); }}>
               <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
                 <MoreVertical className="w-4 h-4" />
               </button>
-              <AnimatePresence>
-                {menuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/10 bg-[#161616] shadow-2xl z-[9999] overflow-hidden py-1.5"
-                    onClick={(e) => e.stopPropagation()}
+              <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close}>
+                <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl overflow-hidden py-1.5" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => { menu.close(); onEdit(project); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors min-h-[40px]"
                   >
-                    <button
-                      onClick={() => { setMenuOpen(false); onEdit(project); }}
-                      className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors min-h-[40px]"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Edit Project
-                    </button>
-                    {isAdmin && (
-                      <>
-                        <div className="my-1 border-t border-white/[0.06]" />
-                        <button
-                          onClick={() => { setMenuOpen(false); onDelete(project); }}
-                          className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors min-h-[40px]"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <Pencil className="w-3.5 h-3.5" /> Edit Project
+                  </button>
+                  {isAdmin && (
+                    <>
+                      <div className="my-1 border-t border-white/[0.06]" />
+                      <button
+                        onClick={() => { menu.close(); onDelete(project); }}
+                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors min-h-[40px]"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </DropdownPortal>
             </div>
           </div>
         </div>

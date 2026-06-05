@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   Briefcase,
   Search,
@@ -129,8 +130,8 @@ function ClientCard({
   onDelete:  (c: Client) => void;
   onAssign:  (c: Client) => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const router = useRouter();
+  const menu   = useDropdown('right');
+  const router  = useRouter();
 
   const StatusIcon = STATUS_ICON[client.status as ClientStatus] ?? AlertCircle;
   const name       = client.user?.name ?? 'Unknown';
@@ -177,10 +178,11 @@ function ClientCard({
         {ownerName}
       </span>
 
-      {/* Action menu */}
+      {/* Action menu — portal-rendered to escape overflow containers */}
       <div
+        ref={menu.triggerRef}
         className="relative flex-shrink-0"
-        onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+        onClick={(e) => { e.stopPropagation(); menu.toggle(); }}
       >
         <button
           className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-white/10 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
@@ -189,44 +191,35 @@ function ClientCard({
           <MoreVertical className="w-4 h-4" />
         </button>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -4 }}
-              transition={{ duration: 0.12 }}
-              className="absolute right-0 top-full mt-1 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-[9999] py-1.5 overflow-hidden"
-              onMouseLeave={() => setMenuOpen(false)}
+        <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close}>
+          <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5 overflow-hidden">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(client); menu.close(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors min-h-[40px]"
             >
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </button>
+            {canAssign && (
               <button
-                onClick={(e) => { e.stopPropagation(); onEdit(client); setMenuOpen(false); }}
+                onClick={(e) => { e.stopPropagation(); onAssign(client); menu.close(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors min-h-[40px]"
               >
-                <Pencil className="w-3.5 h-3.5" /> Edit
+                <UserCog className="w-3.5 h-3.5" /> Assign Owner
               </button>
-              {canAssign && (
+            )}
+            {canDelete && (
+              <>
+                <div className="my-1 border-t border-white/[0.06]" />
                 <button
-                  onClick={(e) => { e.stopPropagation(); onAssign(client); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors min-h-[40px]"
+                  onClick={(e) => { e.stopPropagation(); onDelete(client); menu.close(); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors min-h-[40px]"
                 >
-                  <UserCog className="w-3.5 h-3.5" /> Assign Owner
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
                 </button>
-              )}
-              {canDelete && (
-                <>
-                  <div className="my-1 border-t border-white/[0.06]" />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(client); setMenuOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors min-h-[40px]"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </button>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </>
+            )}
+          </div>
+        </DropdownPortal>
       </div>
     </div>
   );

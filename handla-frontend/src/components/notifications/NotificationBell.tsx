@@ -116,29 +116,32 @@ function BellInner() {
       </button>
 
       {/* ── Dropdown panel — rendered via portal at fixed viewport position ──
-           Using position:fixed + portal bypasses any stacking context created
-           by backdrop-blur on the header, ensuring the panel always renders
-           on top regardless of CSS transforms or filter effects on ancestors. */}
-      <AnimatePresence>
-        {open && typeof document !== 'undefined' && createPortal(
-          <motion.div
-            key="notification-center"
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            style={{
-              position: 'fixed',
-              top:      dropdownStyle.top,
-              right:    dropdownStyle.right,
-              zIndex:   9999,
-            }}
-          >
-            <NotificationCenter onClose={() => setOpen(false)} />
-          </motion.div>,
-          document.body,
-        )}
-      </AnimatePresence>
+           AnimatePresence lives INSIDE the portal so it can properly track
+           mount/unmount of the motion.div in the document.body subtree.
+           Using position:fixed bypasses backdrop-blur stacking context. */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="notification-center"
+              data-dropdown-portal
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              style={{
+                position: 'fixed',
+                top:      dropdownStyle.top,
+                right:    dropdownStyle.right,
+                zIndex:   9999,
+              }}
+            >
+              <NotificationCenter onClose={() => setOpen(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   CheckSquare,
   Search,
@@ -135,8 +136,8 @@ function StatCard({ label, value, status }: { label: string; value: number; stat
 function TaskRow({ task, role, onEdit, onDelete }: {
   task: Task; role: string; onEdit: (t: Task) => void; onDelete: (t: Task) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
+  const menu   = useDropdown('right');
+  const router  = useRouter();
   const StatusIcon = STATUS_ICON[task.status];
   const overdue = isOverdue(task.dueDate, task.status);
 
@@ -192,44 +193,36 @@ function TaskRow({ task, role, onEdit, onDelete }: {
         </div>
       )}
 
-      {/* Actions */}
-      <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      {/* Actions — portal-rendered to escape overflow containers */}
+      <div ref={menu.triggerRef} className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <button
-          onClick={() => setOpen(!open)}
+          onClick={menu.toggle}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
           aria-label="Task actions"
         >
           <MoreVertical className="h-4 w-4" />
         </button>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -4 }}
-              transition={{ duration: 0.1 }}
-              className="absolute right-0 top-8 z-[9999] min-w-[140px] rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5"
+        <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={152}>
+          <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
+            <button
+              onClick={() => { onEdit(task); menu.close(); }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
             >
-              <button
-                onClick={() => { onEdit(task); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </button>
-              {role === 'ADMIN' && (
-                <>
-                  <div className="my-1 border-t border-white/[0.06]" />
-                  <button
-                    onClick={() => { onDelete(task); setOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </button>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+            {role === 'ADMIN' && (
+              <>
+                <div className="my-1 border-t border-white/[0.06]" />
+                <button
+                  onClick={() => { onDelete(task); menu.close(); }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
+              </>
+            )}
+          </div>
+        </DropdownPortal>
       </div>
     </div>
   );

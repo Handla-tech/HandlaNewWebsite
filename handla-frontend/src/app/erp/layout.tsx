@@ -318,10 +318,10 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page content — NOTE: overflow-auto is on the inner div, NOT on main.
-            Keeping main free of overflow prevents it from becoming a scroll
-            container that would clip position:absolute dropdowns inside pages. */}
-        <main className="flex-1 min-h-0 overflow-hidden">
+        {/* Page content — min-h-0 lets flex shrink work; inner div scrolls.
+            Do NOT add overflow:hidden here — it would clip portal-rendered
+            dropdowns that use position:fixed + document.body portal. */}
+        <main className="flex-1 min-h-0">
           <div className="h-full overflow-auto p-4 sm:p-6">
             {children}
           </div>

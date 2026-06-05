@@ -111,13 +111,15 @@ export default function ProfileMenu() {
       </button>
 
       {/* ── Dropdown — rendered via portal at fixed viewport position ────────
-           Using position:fixed + portal bypasses any stacking context created
-           by backdrop-blur on the header, ensuring the menu always renders
-           on top regardless of CSS transforms or filter effects on ancestors. */}
-      <AnimatePresence>
-        {open && typeof document !== 'undefined' && createPortal(
+           AnimatePresence lives INSIDE the portal so it can properly track
+           mount/unmount of motion.div in the document.body subtree.
+           Using position:fixed bypasses backdrop-blur stacking context. */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {open && (
           <motion.div
             key="profile-menu"
+            data-dropdown-portal
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{   opacity: 0, y: -8, scale: 0.96 }}
@@ -214,10 +216,11 @@ export default function ProfileMenu() {
               </button>
 
             </div>
-          </motion.div>,
-          document.body,
-        )}
-      </AnimatePresence>
+          </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }

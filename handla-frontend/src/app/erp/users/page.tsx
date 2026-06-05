@@ -29,6 +29,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   Users,
   Search,
@@ -222,7 +223,7 @@ function UserRow({
   onEnable:          (u: User) => void;
   onUnarchive:       (u: User) => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useDropdown('right');
   const isSelf = user.id === currentUserId;
 
   return (
@@ -278,122 +279,110 @@ function UserRow({
         })}
       </p>
 
-      {/* Action menu */}
-      <div className="relative flex-shrink-0">
+      {/* Action menu — portal-rendered to escape overflow containers */}
+      <div ref={menu.triggerRef} className="relative flex-shrink-0">
         <button
           type="button"
-          onClick={() => setMenuOpen(v => !v)}
+          onClick={menu.toggle}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-[#444] transition-colors hover:bg-[#1a1a1a] hover:text-white"
         >
           <MoreVertical className="h-4 w-4" />
         </button>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <>
-              {/* click-away overlay */}
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                animate={{ opacity: 1, scale: 1,    y: 0  }}
-                exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                className="absolute right-0 top-8 z-[9999] min-w-[175px] rounded-xl border border-[#2a2a2a] bg-[#111] py-1 shadow-xl"
+        <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={190}>
+          <div className="rounded-xl border border-[#2a2a2a] bg-[#111] py-1 shadow-xl">
+            {/* Archive view: only show Restore */}
+            {isArchiveView ? (
+              <button
+                type="button"
+                onClick={() => { menu.close(); onUnarchive(user); }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-emerald-400 transition-colors hover:bg-emerald-400/5"
               >
-                {/* Archive view: only show Restore */}
-                {isArchiveView ? (
+                <ArchiveRestore className="h-3.5 w-3.5" /> Restore from Archive
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { menu.close(); onEdit(user); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <Edit2 className="h-3.5 w-3.5" /> Edit User
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { menu.close(); onResetPassword(user); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <KeyRound className="h-3.5 w-3.5" /> Reset Password
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { menu.close(); onChangeRole(user); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Change Role
+                </button>
+
+                {user.role === 'LEAD' && (
                   <button
                     type="button"
-                    onClick={() => { setMenuOpen(false); onUnarchive(user); }}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-emerald-400 transition-colors hover:bg-emerald-400/5"
+                    onClick={() => { menu.close(); onPromote(user); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-purple-400 transition-colors hover:bg-purple-400/5"
                   >
-                    <ArchiveRestore className="h-3.5 w-3.5" /> Restore from Archive
+                    <ArrowUpCircle className="h-3.5 w-3.5" /> Promote to Client
                   </button>
-                ) : (
+                )}
+
+                {user.role === 'EMPLOYEE' && (
+                  <button
+                    type="button"
+                    onClick={() => { menu.close(); onReassign(user); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-blue-400 transition-colors hover:bg-blue-400/5"
+                  >
+                    <Shuffle className="h-3.5 w-3.5" /> Reassign Ownership
+                  </button>
+                )}
+
+                {!isSelf && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => { setMenuOpen(false); onEdit(user); }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" /> Edit User
-                    </button>
+                    <div className="my-1 border-t border-[#1e1e1e]" />
 
-                    <button
-                      type="button"
-                      onClick={() => { setMenuOpen(false); onResetPassword(user); }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                    >
-                      <KeyRound className="h-3.5 w-3.5" /> Reset Password
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { setMenuOpen(false); onChangeRole(user); }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-[#aaa] transition-colors hover:bg-[#1a1a1a] hover:text-white"
-                    >
-                      <Pencil className="h-3.5 w-3.5" /> Change Role
-                    </button>
-
-                    {user.role === 'LEAD' && (
+                    {/* Disable / Enable toggle */}
+                    {user.isDisabled ? (
                       <button
                         type="button"
-                        onClick={() => { setMenuOpen(false); onPromote(user); }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-purple-400 transition-colors hover:bg-purple-400/5"
+                        onClick={() => { menu.close(); onEnable(user); }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-emerald-400 transition-colors hover:bg-emerald-400/5"
                       >
-                        <ArrowUpCircle className="h-3.5 w-3.5" /> Promote to Client
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Enable Account
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { menu.close(); onDisable(user); }}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-yellow-400 transition-colors hover:bg-yellow-400/5"
+                      >
+                        <Ban className="h-3.5 w-3.5" /> Disable Account
                       </button>
                     )}
 
-                    {user.role === 'EMPLOYEE' && (
-                      <button
-                        type="button"
-                        onClick={() => { setMenuOpen(false); onReassign(user); }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-blue-400 transition-colors hover:bg-blue-400/5"
-                      >
-                        <Shuffle className="h-3.5 w-3.5" /> Reassign Ownership
-                      </button>
-                    )}
-
-                    {!isSelf && (
-                      <>
-                        <div className="my-1 border-t border-[#1e1e1e]" />
-
-                        {/* Disable / Enable toggle */}
-                        {user.isDisabled ? (
-                          <button
-                            type="button"
-                            onClick={() => { setMenuOpen(false); onEnable(user); }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-emerald-400 transition-colors hover:bg-emerald-400/5"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Enable Account
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => { setMenuOpen(false); onDisable(user); }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-yellow-400 transition-colors hover:bg-yellow-400/5"
-                          >
-                            <Ban className="h-3.5 w-3.5" /> Disable Account
-                          </button>
-                        )}
-
-                        {/* Delete / Archive */}
-                        <button
-                          type="button"
-                          onClick={() => { setMenuOpen(false); onDeleteOrArchive(user); }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-400/5"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Delete / Archive
-                        </button>
-                      </>
-                    )}
+                    {/* Delete / Archive */}
+                    <button
+                      type="button"
+                      onClick={() => { menu.close(); onDeleteOrArchive(user); }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-400/5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete / Archive
+                    </button>
                   </>
                 )}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+              </>
+            )}
+          </div>
+        </DropdownPortal>
       </div>
     </div>
   );

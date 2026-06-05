@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   Receipt, Plus, ChevronLeft, ChevronRight, MoreVertical,
   Search, DollarSign, AlertCircle, CheckCircle, Clock,
@@ -63,7 +64,7 @@ function InvoiceRow({ invoice, isAdmin, isEmployee, onEdit, onMarkPaid, onDelete
   invoice: Invoice; isAdmin: boolean; isEmployee: boolean;
   onEdit: (inv: Invoice) => void; onMarkPaid: (inv: Invoice) => void; onDelete: (inv: Invoice) => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu        = useDropdown('right');
   const canMarkPaid = (isAdmin || isEmployee) && invoice.paymentStatus !== 'PAID';
   const canEdit     = (isAdmin || isEmployee) && invoice.paymentStatus === 'UNPAID';
   const canDelete   = isAdmin && invoice.paymentStatus === 'UNPAID';
@@ -110,21 +111,21 @@ function InvoiceRow({ invoice, isAdmin, isEmployee, onEdit, onMarkPaid, onDelete
         )}
 
         {(canMarkPaid || canEdit || canDelete) && (
-          <div className="relative">
-            <button onClick={() => setMenuOpen(!menuOpen)}
+          <div ref={menu.triggerRef} className="relative">
+            <button onClick={menu.toggle}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
               <MoreVertical className="w-4 h-4" />
             </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-9 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden py-1.5">
+            <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close}>
+              <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl overflow-hidden py-1.5">
                 {canMarkPaid && (
-                  <button onClick={() => { onMarkPaid(invoice); setMenuOpen(false); }}
+                  <button onClick={() => { onMarkPaid(invoice); menu.close(); }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-emerald-400 hover:bg-emerald-400/10 transition-colors min-h-[40px]">
                     <CreditCard className="w-3.5 h-3.5" /> Mark as Paid
                   </button>
                 )}
                 {canEdit && (
-                  <button onClick={() => { onEdit(invoice); setMenuOpen(false); }}
+                  <button onClick={() => { onEdit(invoice); menu.close(); }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors min-h-[40px]">
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </button>
@@ -132,14 +133,14 @@ function InvoiceRow({ invoice, isAdmin, isEmployee, onEdit, onMarkPaid, onDelete
                 {canDelete && (
                   <>
                     <div className="my-1 border-t border-white/[0.06]" />
-                    <button onClick={() => { onDelete(invoice); setMenuOpen(false); }}
+                    <button onClick={() => { onDelete(invoice); menu.close(); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors min-h-[40px]">
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
                   </>
                 )}
               </div>
-            )}
+            </DropdownPortal>
           </div>
         )}
       </div>

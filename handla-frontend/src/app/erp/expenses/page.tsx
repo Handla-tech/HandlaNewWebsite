@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle,
   Plus, Loader2, MoreVertical, Search, X, Edit2, Trash2,
@@ -107,7 +108,7 @@ function SummaryCards({ summary }: { summary: FinancialSummary }) {
 function ExpenseRow({ expense, isAdmin, onEdit, onDelete }: {
   expense: Expense; isAdmin: boolean; onEdit: (e: Expense) => void; onDelete: (e: Expense) => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu           = useDropdown('right');
   const isInvoiceLinked = expense.invoiceId !== null;
   const isIncome        = expense.type === 'INCOME';
 
@@ -151,31 +152,28 @@ function ExpenseRow({ expense, isAdmin, onEdit, onDelete }: {
           {isIncome ? '+' : '-'}{fmt(expense.amount, expense.currency)}
         </span>
         {!isInvoiceLinked && (
-          <div className="relative">
-            <button onClick={() => setMenuOpen(!menuOpen)}
+          <div ref={menu.triggerRef} className="relative">
+            <button onClick={menu.toggle}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
               <MoreVertical className="w-4 h-4" />
             </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-9 z-[9999] w-40 rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-                  <button onClick={() => { onEdit(expense); setMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
-                    <Edit2 className="w-3.5 h-3.5" /> Edit
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <div className="my-1 border-t border-white/[0.06]" />
-                      <button onClick={() => { onDelete(expense); setMenuOpen(false); }}
-                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </button>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
+            <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={160}>
+              <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
+                <button onClick={() => { onEdit(expense); menu.close(); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
+                  <Edit2 className="w-3.5 h-3.5" /> Edit
+                </button>
+                {isAdmin && (
+                  <>
+                    <div className="my-1 border-t border-white/[0.06]" />
+                    <button onClick={() => { onDelete(expense); menu.close(); }}
+                      className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </>
+                )}
+              </div>
+            </DropdownPortal>
           </div>
         )}
       </div>
