@@ -116,7 +116,7 @@ function InvoiceRow({ invoice, isAdmin, isEmployee, onEdit, onMarkPaid, onDelete
               <MoreVertical className="w-4 h-4" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-9 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden py-1.5">
+              <div className="absolute right-0 top-9 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden py-1.5">
                 {canMarkPaid && (
                   <button onClick={() => { onMarkPaid(invoice); setMenuOpen(false); }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-emerald-400 hover:bg-emerald-400/10 transition-colors min-h-[40px]">

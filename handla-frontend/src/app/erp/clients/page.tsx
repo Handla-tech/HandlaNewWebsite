@@ -196,7 +196,7 @@ function ClientCard({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ duration: 0.12 }}
-              className="absolute right-0 top-full mt-1 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-20 py-1.5 overflow-hidden"
+              className="absolute right-0 top-full mt-1 w-44 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-[9999] py-1.5 overflow-hidden"
               onMouseLeave={() => setMenuOpen(false)}
             >
               <button

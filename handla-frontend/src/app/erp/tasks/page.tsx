@@ -208,7 +208,7 @@ function TaskRow({ task, role, onEdit, onDelete }: {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
               transition={{ duration: 0.1 }}
-              className="absolute right-0 top-8 z-50 min-w-[140px] rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5"
+              className="absolute right-0 top-8 z-[9999] min-w-[140px] rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5"
             >
               <button
                 onClick={() => { onEdit(task); setOpen(false); }}

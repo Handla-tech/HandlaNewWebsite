@@ -318,9 +318,13 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          {children}
+        {/* Page content — NOTE: overflow-auto is on the inner div, NOT on main.
+            Keeping main free of overflow prevents it from becoming a scroll
+            container that would clip position:absolute dropdowns inside pages. */}
+        <main className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full overflow-auto p-4 sm:p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

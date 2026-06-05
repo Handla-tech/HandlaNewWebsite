@@ -185,7 +185,7 @@ function ProjectCard({ project, isAdmin, onEdit, onDelete }: ProjectCardProps) {
                     initial={{ opacity: 0, scale: 0.95, y: -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/10 bg-[#161616] shadow-2xl z-20 overflow-hidden py-1.5"
+                    className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/10 bg-[#161616] shadow-2xl z-[9999] overflow-hidden py-1.5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button

@@ -298,7 +298,7 @@ function UserRow({
                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
                 animate={{ opacity: 1, scale: 1,    y: 0  }}
                 exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                className="absolute right-0 top-8 z-20 min-w-[175px] rounded-xl border border-[#2a2a2a] bg-[#111] py-1 shadow-xl"
+                className="absolute right-0 top-8 z-[9999] min-w-[175px] rounded-xl border border-[#2a2a2a] bg-[#111] py-1 shadow-xl"
               >
                 {/* Archive view: only show Restore */}
                 {isArchiveView ? (

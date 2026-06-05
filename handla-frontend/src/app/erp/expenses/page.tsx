@@ -159,7 +159,7 @@ function ExpenseRow({ expense, isAdmin, onEdit, onDelete }: {
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-9 z-20 w-40 rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
+                <div className="absolute right-0 top-9 z-[9999] w-40 rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
                   <button onClick={() => { onEdit(expense); setMenuOpen(false); }}
                     className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
                     <Edit2 className="w-3.5 h-3.5" /> Edit

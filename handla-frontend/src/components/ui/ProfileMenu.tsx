@@ -15,6 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, MessageSquare, LayoutDashboard, Home, LogOut } from 'lucide-react';
 import Link from 'next/link';
@@ -24,10 +25,22 @@ import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 
 export default function ProfileMenu() {
   const [open, setOpen]  = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const wrapperRef       = useRef<HTMLDivElement>(null);
   const router           = useRouter();
   const pathname         = usePathname();
   const { user, isLoggedIn, logout } = useAuthStore();
+
+  // ── Compute fixed position from button's bounding rect ───────────────────
+  const updateDropdownPosition = useCallback(() => {
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        top:   rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, []);
 
   const isAdmin   = isLoggedIn && user?.role === 'ADMIN';
   // Hide the "Go to Chat / Admin Panel" item when we're already on that page
@@ -42,9 +55,18 @@ export default function ProfileMenu() {
         setOpen(false);
       }
     };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    if (open) {
+      updateDropdownPosition();
+      document.addEventListener('mousedown', handler);
+      window.addEventListener('resize', updateDropdownPosition);
+      window.addEventListener('scroll', updateDropdownPosition, true);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [open, updateDropdownPosition]);
 
   // ── Close on Escape ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -88,17 +110,24 @@ export default function ProfileMenu() {
         <User className="h-4 w-4" aria-hidden="true" />
       </button>
 
-      {/* ── Dropdown ──────────────────────────────────────────────────────── */}
+      {/* ── Dropdown — rendered via portal at fixed viewport position ────────
+           Using position:fixed + portal bypasses any stacking context created
+           by backdrop-blur on the header, ensuring the menu always renders
+           on top regardless of CSS transforms or filter effects on ancestors. */}
       <AnimatePresence>
-        {open && (
+        {open && typeof document !== 'undefined' && createPortal(
           <motion.div
             key="profile-menu"
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{   opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 z-50 w-56"
             style={{
+              position:     'fixed',
+              top:          dropdownStyle.top,
+              right:        dropdownStyle.right,
+              zIndex:       9999,
+              width:        '14rem',
               background:   '#141414',
               border:       '1px solid #2a2a2a',
               boxShadow:    '0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
@@ -185,7 +214,8 @@ export default function ProfileMenu() {
               </button>
 
             </div>
-          </motion.div>
+          </motion.div>,
+          document.body,
         )}
       </AnimatePresence>
     </div>

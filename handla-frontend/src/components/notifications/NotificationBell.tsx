@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
@@ -10,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 // ── Inner bell — only mounted once auth is hydrated + user is logged in ───────
 function BellInner() {
   const [open, setOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const wrapperRef      = useRef<HTMLDivElement>(null);
 
   // Read unreadCount directly from Zustand — the socket handler calls
@@ -17,6 +19,17 @@ function BellInner() {
   // badge updates the instant a notificationNew event arrives without
   // needing an active React Query observer for ['notifications-unread'].
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+
+  // ── Compute fixed position from button's bounding rect ───────────────────
+  const updateDropdownPosition = useCallback(() => {
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        top:   rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, []);
 
   // ── Close on outside click ────────────────────────────────────────────────
   const handleOutsideClick = useCallback((e: MouseEvent) => {
@@ -26,10 +39,22 @@ function BellInner() {
   }, []);
 
   useEffect(() => {
-    if (open) document.addEventListener('mousedown', handleOutsideClick);
-    else      document.removeEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [open, handleOutsideClick]);
+    if (open) {
+      updateDropdownPosition();
+      document.addEventListener('mousedown', handleOutsideClick);
+      window.addEventListener('resize', updateDropdownPosition);
+      window.addEventListener('scroll', updateDropdownPosition, true);
+    } else {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [open, handleOutsideClick, updateDropdownPosition]);
 
   // ── Close on Escape ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -90,19 +115,28 @@ function BellInner() {
         )}
       </button>
 
-      {/* ── Dropdown panel ───────────────────────────────────────────────── */}
+      {/* ── Dropdown panel — rendered via portal at fixed viewport position ──
+           Using position:fixed + portal bypasses any stacking context created
+           by backdrop-blur on the header, ensuring the panel always renders
+           on top regardless of CSS transforms or filter effects on ancestors. */}
       <AnimatePresence>
-        {open && (
+        {open && typeof document !== 'undefined' && createPortal(
           <motion.div
             key="notification-center"
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute right-0 top-full mt-2 z-50"
+            style={{
+              position: 'fixed',
+              top:      dropdownStyle.top,
+              right:    dropdownStyle.right,
+              zIndex:   9999,
+            }}
           >
             <NotificationCenter onClose={() => setOpen(false)} />
-          </motion.div>
+          </motion.div>,
+          document.body,
         )}
       </AnimatePresence>
     </div>
