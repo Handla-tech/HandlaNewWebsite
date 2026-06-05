@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle,
@@ -345,9 +346,10 @@ export default function ExpensesPage() {
   const isAdmin    = user?.role === 'ADMIN';
   const isEmployee = user?.role === 'EMPLOYEE';
 
-  const [activeTab,   setActiveTab]   = useState<ActiveTab>('all');
-  const [search,      setSearch]      = useState('');
-  const [dateFrom,    setDateFrom]    = useState('');
+  const [activeTab,    setActiveTab]    = useState<ActiveTab>('all');
+  const [searchInput,  setSearchInput]  = useState('');
+  const [dateFrom,     setDateFrom]     = useState('');
+  const search = useDebounce(searchInput, 300);
   const [dateTo,      setDateTo]      = useState('');
   const [page,        setPage]        = useState(1);
   const [showModal,   setShowModal]   = useState(false);
@@ -361,7 +363,7 @@ export default function ExpensesPage() {
   });
 
   const params = {
-    page, limit: 20,
+    page, limit: 10,
     ...(activeTab !== 'all' && { type: activeTab.toUpperCase() }),
     ...(search   && { category: search }),
     ...(dateFrom && { dateFrom }),
@@ -372,6 +374,7 @@ export default function ExpensesPage() {
     queryKey: ['erp-expenses', params],
     queryFn:  () => expensesApi.getExpenses(params).then(r => r.data.data as PaginatedExpenses),
     staleTime: 15_000, enabled: mounted,
+    placeholderData: (prev: any) => prev,
   });
 
   const expenses   = data?.expenses  ?? [];
@@ -443,7 +446,7 @@ export default function ExpensesPage() {
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
-          <input placeholder="Search category…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+          <input placeholder="Search category…" value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
             className="pl-8 pr-4 py-2 rounded-lg border border-white/10 bg-white/[0.04] text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/40 focus:bg-white/[0.06] w-52 transition-all" />
         </div>
       </div>
@@ -489,16 +492,32 @@ export default function ExpensesPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs text-white/30">Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-white/30">{data?.total ?? 0} entries · page {page} of {totalPages}</p>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const p = start + i;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-all',
+                    p === page
+                      ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24]'
+                      : 'border-white/10 text-white/40 hover:text-white hover:border-white/20',
+                  )}
+                >{p}</button>
+              );
+            })}
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

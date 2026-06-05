@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
@@ -518,9 +519,10 @@ export default function ContractsPage() {
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
 
-  const [search,       setSearch]       = useState('');
+  const [searchInput,  setSearchInput]  = useState('');
   const [statusFilter, setStatusFilter] = useState<ContractStatus | 'ALL'>('ALL');
   const [page,         setPage]         = useState(1);
+  const search = useDebounce(searchInput, 300);
   const [createOpen,     setCreateOpen]     = useState(false);
   const [editContract,   setEditContract]   = useState<Contract | null>(null);
   const [sendContract,   setSendContract]   = useState<Contract | null>(null);
@@ -535,7 +537,7 @@ export default function ContractsPage() {
   const isClient   = user?.role === 'CLIENT';
 
   const params = {
-    page, limit: 12,
+    page, limit: 10,
     ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
     ...(search ? { search } : {}),
   };
@@ -544,28 +546,31 @@ export default function ContractsPage() {
     queryKey: ['erp-contracts', params],
     queryFn:  () => contractsApi.getContracts(params).then(r => r.data.data as PaginatedContracts),
     staleTime: 30_000, retry: 1, refetchOnWindowFocus: false, enabled: !!user,
+    placeholderData: (prev) => prev,
   });
 
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
     queryKey: ['erp-clients-for-contracts'],
-    queryFn:  () => clientsApi.getClients({ limit: 100 }).then(r => r.data.data.clients as Client[]),
-    staleTime: 60_000, retry: 1, refetchOnWindowFocus: false, enabled: !!user,
+    queryFn:  () => clientsApi.getClients({ limit: 50 }).then(r => r.data.data.clients as Client[]),
+    staleTime: 120_000, retry: 1, refetchOnWindowFocus: false, enabled: !!user,
   });
   const clients = clientsData ?? [];
 
-  const { data: allData } = useQuery({
-    queryKey: ['erp-contracts-stats'],
-    queryFn:  () => contractsApi.getContracts({ limit: 200 }).then(r => r.data.data as PaginatedContracts),
-    staleTime: 60_000, retry: 1, refetchOnWindowFocus: false, enabled: !!user,
+  const makeStatQ = (status: ContractStatus) => ({
+    queryKey: ['erp-contracts-stat', status],
+    queryFn:  () => contractsApi.getContracts({ limit: 1, status }).then(r => (r.data.data as PaginatedContracts).total),
+    staleTime: 120_000, retry: 1, refetchOnWindowFocus: false, enabled: !!user,
   });
-
-  const allContracts = allData?.contracts ?? [];
+  const { data: draftCount    = 0 } = useQuery(makeStatQ('DRAFT'));
+  const { data: sentCount     = 0 } = useQuery(makeStatQ('SENT'));
+  const { data: signedCount   = 0 } = useQuery(makeStatQ('SIGNED'));
+  const { data: rejectedCount = 0 } = useQuery(makeStatQ('REJECTED'));
   const stats = {
-    total:    allData?.total ?? 0,
-    draft:    allContracts.filter(c => c.status === 'DRAFT').length,
-    sent:     allContracts.filter(c => c.status === 'SENT').length,
-    signed:   allContracts.filter(c => c.status === 'SIGNED').length,
-    rejected: allContracts.filter(c => c.status === 'REJECTED').length,
+    total:    data?.total ?? 0,
+    draft:    draftCount,
+    sent:     sentCount,
+    signed:   signedCount,
+    rejected: rejectedCount,
   };
 
   const contracts = data?.contracts ?? [];
@@ -617,8 +622,8 @@ export default function ContractsPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input type="text" placeholder="Search contracts…" value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          <input type="text" placeholder="Search contracts…" value={searchInput}
+            onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-white placeholder-white/20 outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.06] transition-all min-h-[44px]" />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -674,13 +679,26 @@ export default function ContractsPage() {
           </div>
           {pages > 1 && (
             <div className="flex items-center justify-between pt-2">
-              <p className="text-sm text-white/30">Showing {((page - 1) * 12) + 1}–{Math.min(page * 12, total)} of {total}</p>
-              <div className="flex gap-2">
+              <p className="text-sm text-white/30">{total} contracts · page {page} of {pages}</p>
+              <div className="flex items-center gap-1">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Previous page">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="flex items-center px-3 text-sm text-white/40">{page} / {pages}</span>
+                {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(page - 2, pages - 4));
+                  const p = start + i;
+                  return (
+                    <button key={p} onClick={() => setPage(p)}
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-lg border text-sm transition-all',
+                        p === page
+                          ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24] font-semibold'
+                          : 'border-white/10 text-white/40 hover:text-white hover:border-white/20',
+                      )}
+                    >{p}</button>
+                  );
+                })}
                 <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Next page">
                   <ChevronRight className="w-4 h-4" />

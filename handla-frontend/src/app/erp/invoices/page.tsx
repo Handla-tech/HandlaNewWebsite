@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
 import {
   Receipt, Plus, ChevronLeft, ChevronRight, MoreVertical,
@@ -367,40 +368,52 @@ export default function InvoicesPage() {
   const isEmployee = user?.role === 'EMPLOYEE';
 
   const [page,             setPage]             = useState(1);
-  const [search,           setSearch]           = useState('');
+  const [searchInput,      setSearchInput]      = useState('');
   const [statusFilter,     setStatusFilter]     = useState<InvoicePaymentStatus | ''>('');
+  const search = useDebounce(searchInput, 300);
   const [showCreate,       setShowCreate]       = useState(false);
   const [markPaidInvoice,  setMarkPaidInvoice]  = useState<Invoice | null>(null);
   const [deleteInvoice,    setDeleteInvoice]    = useState<Invoice | null>(null);
   const [editInvoice,      setEditInvoice]      = useState<Invoice | null>(null);
 
-  const params = { page, limit: 20, ...(search ? { search } : {}), ...(statusFilter ? { paymentStatus: statusFilter } : {}) };
+  const params = { page, limit: 10, ...(search ? { search } : {}), ...(statusFilter ? { paymentStatus: statusFilter } : {}) };
 
   const { data, isLoading } = useQuery({
     queryKey: ['erp-invoices', params],
     queryFn:  () => invoicesApi.getInvoices(params).then(r => r.data?.data ?? r.data),
     enabled: mounted, staleTime: 30_000, retry: 1, refetchOnWindowFocus: false,
+    placeholderData: (prev: any) => prev,
   });
 
   const { data: clientsData, isLoading: clientsLoading } = useQuery({
     queryKey: ['erp-clients-select'],
-    queryFn:  () => clientsApi.getClients({ limit: 100 }).then(r => {
+    queryFn:  () => clientsApi.getClients({ limit: 50 }).then(r => {
       const d = r.data?.data ?? r.data; return (d?.clients ?? d) as Client[];
     }),
-    enabled: mounted && !!user, staleTime: 60_000, retry: 1, refetchOnWindowFocus: false,
+    enabled: mounted && !!user, staleTime: 120_000, retry: 1, refetchOnWindowFocus: false,
   });
+
+  // Per-status lightweight stat queries
+  const makeStatQ = (status: InvoicePaymentStatus) => ({
+    queryKey: ['erp-invoices-stat', status],
+    queryFn:  () => invoicesApi.getInvoices({ limit: 1, paymentStatus: status }).then(r => (r.data?.data ?? r.data)?.total ?? 0),
+    enabled: mounted, staleTime: 120_000, retry: 1, refetchOnWindowFocus: false,
+  });
+  const { data: unpaidCount  = 0 } = useQuery(makeStatQ('UNPAID'));
+  const { data: paidCount    = 0 } = useQuery(makeStatQ('PAID'));
+  const { data: overdueCount = 0 } = useQuery(makeStatQ('OVERDUE'));
 
   const invoices: Invoice[] = data?.invoices ?? [];
   const total: number       = data?.total ?? 0;
   const pages: number       = data?.pages ?? 1;
   const clients: Client[]   = clientsData ?? [];
 
-  const unpaid  = invoices.filter(i => i.paymentStatus === 'UNPAID').length;
-  const paid    = invoices.filter(i => i.paymentStatus === 'PAID').length;
-  const overdue = invoices.filter(i => i.paymentStatus === 'OVERDUE').length;
+  const unpaid  = unpaidCount;
+  const paid    = paidCount;
+  const overdue = overdueCount;
   const totalRevenue = invoices.filter(i => i.paymentStatus === 'PAID').reduce((s, i) => s + Number(i.total), 0);
 
-  const invalidate = () => { qc.invalidateQueries({ queryKey: ['erp-invoices'] }); };
+  const invalidate = () => { qc.invalidateQueries({ queryKey: ['erp-invoices'] }); qc.invalidateQueries({ queryKey: ['erp-invoices-stat'] }); };
 
   if (!mounted) return null;
 
@@ -459,8 +472,8 @@ export default function InvoicesPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input type="text" placeholder="Search invoice number..." value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
+          <input type="text" placeholder="Search invoice number..." value={searchInput}
+            onChange={e => { setSearchInput(e.target.value); setPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.06] transition-all" />
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -503,13 +516,26 @@ export default function InvoicesPage() {
       {/* Pagination */}
       {pages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-white/30">{total} invoices total</p>
-          <div className="flex items-center gap-2">
+          <p className="text-sm text-white/30">{total} invoices · page {page} of {pages}</p>
+          <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm text-white/40 px-2">{page} / {pages}</span>
+            {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, pages - 4));
+              const p = start + i;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-all',
+                    p === page
+                      ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24]'
+                      : 'border-white/10 text-white/40 hover:text-white hover:border-white/20',
+                  )}
+                >{p}</button>
+              );
+            })}
             <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               <ChevronRight className="w-4 h-4" />

@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -238,8 +239,9 @@ export default function ClientsPage() {
   const isAdmin = user?.role === 'ADMIN';
 
   const [page,         setPage]         = useState(1);
-  const [search,       setSearch]       = useState('');
+  const [searchInput,  setSearchInput]  = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'ALL'>('ALL');
+  const search = useDebounce(searchInput, 300);
   const [showCreate,   setShowCreate]   = useState(false);
   const [editTarget,   setEditTarget]   = useState<Client | null>(null);
   const [assignTarget, setAssignTarget] = useState<Client | null>(null);
@@ -250,35 +252,38 @@ export default function ClientsPage() {
   const { data, isLoading, isError, refetch } = useQuery<PaginatedClients>({
     queryKey: ['erp-clients', page, search, statusFilter],
     queryFn:  () => clientsApi.getClients({
-      page, limit: 20,
+      page, limit: 10,
       ...(search                    && { search }),
       ...(statusFilter !== 'ALL'    && { status: statusFilter }),
     }).then(r => r.data.data as PaginatedClients),
     staleTime: 30_000, retry: 1, refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev,
   });
 
   const clients    = data?.clients   ?? [];
   const totalPages = data?.pages     ?? 1;
 
-  // Stats query
-  const { data: allData } = useQuery<PaginatedClients>({
-    queryKey: ['erp-clients-stats'],
-    queryFn:  () => clientsApi.getClients({ limit: 200 }).then(r => r.data.data as PaginatedClients),
-    staleTime: 60_000, retry: 1, refetchOnWindowFocus: false,
+  // Stats — use lightweight per-status queries (limit:1 just to get totals)
+  const makeStatQ = (status: ClientStatus) => ({
+    queryKey: ['erp-clients-stat', status],
+    queryFn:  () => clientsApi.getClients({ limit: 1, status }).then(r => (r.data.data as PaginatedClients).total),
+    staleTime: 120_000, retry: 1, refetchOnWindowFocus: false,
   });
-  const allClients = allData?.clients ?? [];
+  const { data: activeCount   = 0 } = useQuery(makeStatQ('ACTIVE'));
+  const { data: inactiveCount = 0 } = useQuery(makeStatQ('INACTIVE'));
+  const { data: churnedCount  = 0 } = useQuery(makeStatQ('CHURNED'));
   const stats = {
-    total:    allClients.length,
-    active:   allClients.filter(c => c.status === 'ACTIVE').length,
-    inactive: allClients.filter(c => c.status === 'INACTIVE').length,
-    churned:  allClients.filter(c => c.status === 'CHURNED').length,
+    total:    data?.total ?? 0,
+    active:   activeCount,
+    inactive: inactiveCount,
+    churned:  churnedCount,
   };
 
   // Employees for assign modal
   const { data: empData } = useQuery<{ users: User[] }>({
     queryKey: ['users-employee-role'],
-    queryFn:  () => usersApi.getUsers({ role: 'EMPLOYEE', limit: 200 }).then(r => r.data.data as { users: User[] }),
-    staleTime: 60_000, retry: 1, refetchOnWindowFocus: false, enabled: !!assignTarget,
+    queryFn:  () => usersApi.getUsers({ role: 'EMPLOYEE', limit: 50 }).then(r => r.data.data as { users: User[] }),
+    staleTime: 120_000, retry: 1, refetchOnWindowFocus: false, enabled: !!assignTarget,
   });
   const employees: User[] = empData?.users ?? [];
 
@@ -291,13 +296,16 @@ export default function ClientsPage() {
       });
       const newUserId: string = userRes.data?.data?.user?.id ?? userRes.data?.user?.id;
       if (!newUserId) throw new Error('User creation did not return an ID');
+      // Wait briefly for the backend to create the client record, then find by userId
       try {
-        let match: any = null;
-        for (let attempt = 0; attempt < 3 && !match; attempt++) {
-          if (attempt > 0) await new Promise(res => setTimeout(res, 500));
-          const listRes: any = await clientsApi.getClients({ limit: 200 });
-          const allClients: any[] = listRes.data?.data?.clients ?? [];
-          match = allClients.find((c: any) => c.userId === newUserId);
+        await new Promise(res => setTimeout(res, 400));
+        const listRes: any = await clientsApi.getClients({ limit: 10, page: 1 });
+        let match: any = (listRes.data?.data?.clients ?? []).find((c: any) => c.userId === newUserId);
+        if (!match) {
+          // One retry after a short delay
+          await new Promise(res => setTimeout(res, 600));
+          const retry: any = await clientsApi.getClients({ limit: 10, page: 1 });
+          match = (retry.data?.data?.clients ?? []).find((c: any) => c.userId === newUserId);
         }
         if (match && (formData.company || formData.status || formData.notes)) {
           await clientsApi.updateClient(match.id, {
@@ -308,7 +316,7 @@ export default function ClientsPage() {
         }
       } catch { /* best-effort */ }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); setShowCreate(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setShowCreate(false); },
     onError:   (e: any) => {
       const msg = e?.response?.data?.message;
       setServerError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Failed to create client'));
@@ -317,13 +325,13 @@ export default function ClientsPage() {
 
   const editMutation = useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: object }) => clientsApi.updateClient(id, dto),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); setEditTarget(null); },
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setEditTarget(null); },
     onError:    (e: any) => setServerError(e?.response?.data?.message ?? 'Failed to update client'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => clientsApi.deleteClient(id),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); setDeleteTarget(null); },
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setDeleteTarget(null); },
     onError:    (e: any) => setServerError(e?.response?.data?.message ?? 'Failed to delete client'),
   });
 
@@ -392,8 +400,8 @@ export default function ClientsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
           <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={searchInput}
+            onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             placeholder="Search name or company…"
             className={cn(inputCls, 'pl-10')}
           />
@@ -465,9 +473,9 @@ export default function ClientsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-white/30">
-            Page {page} of {totalPages} · {data?.total ?? 0} clients
+            {data?.total ?? 0} clients · Page {page} of {totalPages}
           </p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
             <button
               disabled={page <= 1}
               onClick={() => setPage(p => p - 1)}
@@ -475,6 +483,20 @@ export default function ClientsPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const p = start + i;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-all',
+                    p === page
+                      ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24]'
+                      : 'border-white/10 text-white/40 hover:text-white hover:border-white/20',
+                  )}
+                >{p}</button>
+              );
+            })}
             <button
               disabled={page >= totalPages}
               onClick={() => setPage(p => p + 1)}

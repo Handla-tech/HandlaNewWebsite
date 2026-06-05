@@ -479,7 +479,7 @@ export default function UsersPage() {
   // Axios silently omits boolean `false` query params; strings are always sent.
   const queryParams = {
     page,
-    limit: 20,
+    limit: 10,
     isArchived: isArchiveView ? 'true' : 'false',
     ...(roleFilter !== 'ALL' && { role: roleFilter }),
     ...(search && { search }),
@@ -821,9 +821,9 @@ export default function UsersPage() {
         <div className="flex-shrink-0 border-t border-white/[0.06] bg-[#0c0c0c] px-6 py-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-[#555]">
-              Page {page} of {pages} — {total} users
+              {total} users · page {page} of {pages}
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 disabled={page <= 1}
@@ -832,6 +832,23 @@ export default function UsersPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
+              {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                const start = Math.max(1, Math.min(page - 2, pages - 4));
+                const p = start + i;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg border text-xs transition-all',
+                      p === page
+                        ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24] font-semibold'
+                        : 'border-[#1e1e1e] bg-[#141414] text-[#666] hover:text-white',
+                    )}
+                  >{p}</button>
+                );
+              })}
               <button
                 type="button"
                 disabled={page >= pages}

@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -374,15 +375,16 @@ export default function TasksPage() {
   const [mounted, setMounted] = useState(false);
 
   const [page,         setPage]         = useState(1);
-  const [search,       setSearch]       = useState('');
+  const [searchInput,  setSearchInput]  = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'ALL'>('ALL');
+  const search = useDebounce(searchInput, 300);
   const [createOpen,   setCreateOpen]   = useState(false);
   const [editTask,     setEditTask]     = useState<Task | null>(null);
   const [deleteTask,   setDeleteTask]   = useState<Task | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const params: Record<string, unknown> = { page, limit: 20 };
+  const params: Record<string, unknown> = { page, limit: 10 };
   if (search)                 params.search = search;
   if (statusFilter !== 'ALL') params.status = statusFilter;
 
@@ -390,12 +392,13 @@ export default function TasksPage() {
     queryKey: ['erp-tasks', params],
     queryFn:  async () => { const res = await tasksApi.getTasks(params); return res.data.data as PaginatedTasks; },
     staleTime: 30_000, retry: 1, refetchOnWindowFocus: false,
+    placeholderData: (prev: any) => prev,
   });
 
   const { data: projectsData } = useQuery({
     queryKey: ['erp-projects-dropdown'],
-    queryFn:  async () => { const res = await projectsApi.getProjects({ limit: 100 }); return (res.data.data?.projects ?? []) as Project[]; },
-    staleTime: 60_000, retry: 1, refetchOnWindowFocus: false,
+    queryFn:  async () => { const res = await projectsApi.getProjects({ limit: 50 }); return (res.data.data?.projects ?? []) as Project[]; },
+    staleTime: 120_000, retry: 1, refetchOnWindowFocus: false,
   });
   const projects = projectsData ?? [];
 
@@ -471,7 +474,7 @@ export default function TasksPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25" />
           <input
-            value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={searchInput} onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             placeholder="Search tasks..."
             className="w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:border-[#fbbf24]/50 focus:outline-none focus:bg-white/[0.06] transition-all"
             aria-label="Search tasks"
@@ -521,13 +524,26 @@ export default function TasksPage() {
       {/* ── Pagination ─────────────────────────────────────────────────── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-white/30">{data?.total ?? 0} total task{(data?.total ?? 0) !== 1 ? 's' : ''}</p>
-          <div className="flex items-center gap-2">
+          <p className="text-xs text-white/30">{data?.total ?? 0} task{(data?.total ?? 0) !== 1 ? 's' : ''} · page {page} of {totalPages}</p>
+          <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Previous page">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-sm text-white/40">{page} / {totalPages}</span>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const p = start + i;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-all',
+                    p === page
+                      ? 'border-[#fbbf24]/40 bg-[#fbbf24]/10 text-[#fbbf24]'
+                      : 'border-white/10 text-white/40 hover:text-white hover:border-white/20',
+                  )}
+                >{p}</button>
+              );
+            })}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Next page">
               <ChevronRight className="h-4 w-4" />
