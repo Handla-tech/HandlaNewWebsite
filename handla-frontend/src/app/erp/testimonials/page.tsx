@@ -414,7 +414,7 @@ function TestimonialCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="group relative rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-4 transition-all hover:border-[#2a2a2a]"
+      className="group relative rounded-2xl border border-white/[0.06] bg-[#0f0f0f] p-4 transition-all hover:border-white/[0.12] hover:bg-[#131313]"
     >
       {/* Actions — revealed on hover */}
       <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -563,7 +563,7 @@ export default function TestimonialsPage() {
     <div className="flex h-full flex-col overflow-hidden">
 
       {/* ── Page header ──────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 border-b border-[#1a1a1a] bg-[#0a0a0a] px-6 py-5">
+      <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#0c0c0c] px-6 py-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -635,7 +635,7 @@ export default function TestimonialsPage() {
       </AnimatePresence>
 
       {/* ── Grid ──────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-5 bg-[#080808]">
 
         {isLoading && (
           <div className="flex items-center justify-center py-20">

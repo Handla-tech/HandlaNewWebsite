@@ -24,13 +24,14 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
-  XCircle,
   RefreshCw,
   PlusCircle,
   BarChart3,
   Wallet,
   Target,
   Activity,
+  ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useErpStats, useErpFinancialChart } from '@/hooks/useErpDashboard';
@@ -70,7 +71,7 @@ const stagger = {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-/** Glassmorphism KPI card */
+/** Premium KPI card */
 function KpiCard({
   icon: Icon,
   label,
@@ -78,6 +79,7 @@ function KpiCard({
   sub,
   accent = 'gold',
   trend,
+  href,
 }: {
   icon:    React.ComponentType<{ className?: string }>;
   label:   string;
@@ -85,55 +87,62 @@ function KpiCard({
   sub?:    string;
   accent?: 'gold' | 'green' | 'red' | 'blue' | 'amber' | 'purple';
   trend?:  'up' | 'down' | 'neutral';
+  href?:   string;
 }) {
-  const accents: Record<string, { bg: string; border: string; icon: string; text: string }> = {
-    gold:   { bg: 'bg-[#fbbf24]/8',   border: 'border-[#fbbf24]/20', icon: 'text-[#fbbf24]',   text: 'text-[#fbbf24]'   },
-    green:  { bg: 'bg-emerald-500/8', border: 'border-emerald-500/20', icon: 'text-emerald-400', text: 'text-emerald-400' },
-    red:    { bg: 'bg-red-500/8',     border: 'border-red-500/20',    icon: 'text-red-400',    text: 'text-red-400'    },
-    blue:   { bg: 'bg-blue-500/8',    border: 'border-blue-500/20',   icon: 'text-blue-400',   text: 'text-blue-400'   },
-    amber:  { bg: 'bg-amber-500/8',   border: 'border-amber-500/20',  icon: 'text-amber-400',  text: 'text-amber-400'  },
-    purple: { bg: 'bg-purple-500/8',  border: 'border-purple-500/20', icon: 'text-purple-400', text: 'text-purple-400' },
+  const accents: Record<string, { bg: string; border: string; icon: string; text: string; glow: string }> = {
+    gold:   { bg: 'bg-[#fbbf24]/10',   border: 'border-[#fbbf24]/20',   icon: 'text-[#fbbf24]',   text: 'text-[#fbbf24]',   glow: 'shadow-[#fbbf24]/10' },
+    green:  { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: 'text-emerald-400', text: 'text-emerald-400', glow: 'shadow-emerald-500/10' },
+    red:    { bg: 'bg-red-500/10',     border: 'border-red-500/20',     icon: 'text-red-400',     text: 'text-red-400',     glow: 'shadow-red-500/10' },
+    blue:   { bg: 'bg-blue-500/10',    border: 'border-blue-500/20',    icon: 'text-blue-400',    text: 'text-blue-400',    glow: 'shadow-blue-500/10' },
+    amber:  { bg: 'bg-amber-500/10',   border: 'border-amber-500/20',   icon: 'text-amber-400',   text: 'text-amber-400',   glow: 'shadow-amber-500/10' },
+    purple: { bg: 'bg-purple-500/10',  border: 'border-purple-500/20',  icon: 'text-purple-400',  text: 'text-purple-400',  glow: 'shadow-purple-500/10' },
   };
   const ac = accents[accent];
 
-  return (
+  const content = (
     <motion.div
       variants={fadeUp}
       className={cn(
-        'relative overflow-hidden rounded-2xl border p-4',
-        'bg-[#0d0d0d] backdrop-blur-sm',
+        'group relative overflow-hidden rounded-2xl border p-4 transition-all duration-200',
+        'bg-[#0f0f0f] hover:bg-[#131313]',
         ac.border,
+        href && 'cursor-pointer hover:shadow-lg',
+        href && ac.glow,
       )}
     >
-      {/* faint radial glow */}
-      <div className={cn('pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-20', ac.bg)} />
+      {/* Ambient glow */}
+      <div className={cn('pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-3xl opacity-30', ac.bg)} />
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-[#555]">{label}</p>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">{label}</p>
           <p className={cn('text-2xl font-bold tracking-tight', ac.text)}>{value}</p>
-          {sub && <p className="mt-1 truncate text-[11px] text-[#444]">{sub}</p>}
+          {sub && <p className="mt-1 truncate text-[11px] text-white/30">{sub}</p>}
         </div>
-        <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', ac.bg)}>
+        <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border', ac.bg, ac.border)}>
           <Icon className={cn('h-5 w-5', ac.icon)} />
         </div>
       </div>
 
       {trend && (
-        <div className="mt-2 flex items-center gap-1">
-          {trend === 'up'   && <TrendingUp   className="h-3 w-3 text-emerald-400" />}
-          {trend === 'down' && <TrendingDown  className="h-3 w-3 text-red-400"     />}
-          {trend === 'neutral' && <Activity  className="h-3 w-3 text-[#555]"      />}
+        <div className="mt-3 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
+          {trend === 'up'   && <><TrendingUp   className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-400">Trending up</span></>}
+          {trend === 'down' && <><TrendingDown  className="h-3 w-3 text-red-400"     /><span className="text-[10px] text-red-400">Trending down</span></>}
+          {trend === 'neutral' && <><Activity  className="h-3 w-3 text-white/30"    /><span className="text-[10px] text-white/30">Stable</span></>}
+          {href && <ArrowUpRight className="ml-auto h-3 w-3 text-white/20 group-hover:text-white/50 transition-colors" />}
         </div>
       )}
     </motion.div>
   );
+
+  if (href) return <Link href={href}>{content}</Link>;
+  return content;
 }
 
 /** Skeleton placeholder */
 function Skeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('animate-pulse rounded-xl bg-[#1a1a1a]', className)} />
+    <div className={cn('animate-pulse rounded-xl bg-white/[0.04]', className)} />
   );
 }
 
@@ -141,13 +150,15 @@ function Skeleton({ className }: { className?: string }) {
 function SectionHeader({ title, icon: Icon }: { title: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="mb-4 flex items-center gap-2">
-      <Icon className="h-4 w-4 text-[#fbbf24]" />
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-[#888]">{title}</h2>
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#fbbf24]/10">
+        <Icon className="h-3.5 w-3.5 text-[#fbbf24]" />
+      </div>
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-white/40">{title}</h2>
     </div>
   );
 }
 
-// ─── Financial Chart (pure CSS bars, no external chart lib) ─────────────────
+// ─── Financial Chart (pure CSS bars) ─────────────────────────────────────────
 
 function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
   const safeData = Array.isArray(data) ? data : [];
@@ -164,33 +175,33 @@ function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
 
   if (safeData.length === 0 || safeData.every(d => d.income === 0 && d.expenses === 0)) {
     return (
-      <div className="flex h-40 items-center justify-center text-sm text-[#444]">
+      <div className="flex h-40 items-center justify-center text-sm text-white/20">
         No financial data available for this period.
       </div>
     );
   }
 
   return (
-    <div className="flex h-48 items-end justify-between gap-2 px-2">
+    <div className="flex h-52 items-end justify-between gap-2 px-2">
       {safeData.map((d) => (
-        <div key={d.month} className="flex flex-1 flex-col items-center gap-1">
+        <div key={d.month} className="flex flex-1 flex-col items-center gap-1.5">
           {/* Bars */}
-          <div className="flex w-full items-end justify-center gap-0.5" style={{ height: '160px' }}>
+          <div className="flex w-full items-end justify-center gap-0.5" style={{ height: '168px' }}>
             {/* Income bar */}
             <div
-              className="w-1/2 rounded-t-sm bg-emerald-500/60 transition-all duration-700"
-              style={{ height: `${Math.max((d.income / maxVal) * 160, 2)}px` }}
+              className="w-1/2 rounded-t-md bg-gradient-to-t from-emerald-600/60 to-emerald-500/80 transition-all duration-700 hover:from-emerald-600/80 hover:to-emerald-400"
+              style={{ height: `${Math.max((d.income / maxVal) * 168, 3)}px` }}
               title={`Income: ${fmtCurrency(d.income)}`}
             />
             {/* Expenses bar */}
             <div
-              className="w-1/2 rounded-t-sm bg-red-500/60 transition-all duration-700"
-              style={{ height: `${Math.max((d.expenses / maxVal) * 160, 2)}px` }}
+              className="w-1/2 rounded-t-md bg-gradient-to-t from-red-600/60 to-red-500/80 transition-all duration-700 hover:from-red-600/80 hover:to-red-400"
+              style={{ height: `${Math.max((d.expenses / maxVal) * 168, 3)}px` }}
               title={`Expenses: ${fmtCurrency(d.expenses)}`}
             />
           </div>
           {/* Month label */}
-          <span className="text-[10px] font-medium text-[#555]">{monthLabel(d.month)}</span>
+          <span className="text-[10px] font-medium text-white/30">{monthLabel(d.month)}</span>
         </div>
       ))}
     </div>
@@ -208,25 +219,22 @@ function TaskGauge({
   completed: number;
   total:     number;
 }) {
-  // SVG arc gauge (180°)
   const R        = 60;
   const cx       = 70;
   const cy       = 70;
-  const strokeW  = 10;
-  const circumference = Math.PI * R; // half circle
+  const strokeW  = 8;
+  const circumference = Math.PI * R;
   const offset   = circumference - (rate / 100) * circumference;
-
-  // Colour: green ≥70, amber 40-69, red <40
   const trackColour = rate >= 70 ? '#10b981' : rate >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-3">
       <svg width="140" height="80" viewBox="0 0 140 80">
-        {/* Background arc */}
+        {/* Background track */}
         <path
           d={`M ${cx - R} ${cy} A ${R} ${R} 0 0 1 ${cx + R} ${cy}`}
           fill="none"
-          stroke="#1e1e1e"
+          stroke="rgba(255,255,255,0.06)"
           strokeWidth={strokeW}
           strokeLinecap="round"
         />
@@ -240,31 +248,19 @@ function TaskGauge({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className="transition-all duration-1000"
+          style={{ filter: `drop-shadow(0 0 6px ${trackColour}60)` }}
         />
         {/* Rate label */}
-        <text
-          x={cx}
-          y={cy - 6}
-          textAnchor="middle"
-          fontSize="20"
-          fontWeight="700"
-          fill={trackColour}
-        >
+        <text x={cx} y={cy - 8} textAnchor="middle" fontSize="22" fontWeight="800" fill={trackColour}>
           {rate}%
         </text>
-        <text
-          x={cx}
-          y={cy + 10}
-          textAnchor="middle"
-          fontSize="9"
-          fill="#555"
-        >
+        <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.3)">
           completion
         </text>
       </svg>
-      <div className="flex gap-4 text-[11px] text-[#666]">
+      <div className="flex gap-5 text-[11px] text-white/40">
         <span><span className="font-bold text-emerald-400">{completed}</span> done</span>
-        <span><span className="font-bold text-white">{total}</span> total</span>
+        <span><span className="font-bold text-white/70">{total}</span> total</span>
       </div>
     </div>
   );
@@ -274,23 +270,23 @@ function TaskGauge({
 
 function ProjectStatusBars({ stats }: { stats: DashboardStats }) {
   const items = [
-    { label: 'Active',    value: stats.projectsByStatus.active,    colour: 'bg-emerald-500' },
-    { label: 'Planning',  value: stats.projectsByStatus.planning,  colour: 'bg-blue-500'    },
-    { label: 'On Hold',   value: stats.projectsByStatus.onHold,    colour: 'bg-amber-500'   },
-    { label: 'Completed', value: stats.projectsByStatus.completed, colour: 'bg-purple-500'  },
-    { label: 'Cancelled', value: stats.projectsByStatus.cancelled, colour: 'bg-red-500'     },
+    { label: 'Active',    value: stats.projectsByStatus.active,    colour: 'bg-emerald-500', glow: 'shadow-emerald-500/30' },
+    { label: 'Planning',  value: stats.projectsByStatus.planning,  colour: 'bg-blue-500',    glow: 'shadow-blue-500/30' },
+    { label: 'On Hold',   value: stats.projectsByStatus.onHold,    colour: 'bg-amber-500',   glow: 'shadow-amber-500/30' },
+    { label: 'Completed', value: stats.projectsByStatus.completed, colour: 'bg-purple-500',  glow: 'shadow-purple-500/30' },
+    { label: 'Cancelled', value: stats.projectsByStatus.cancelled, colour: 'bg-red-500',     glow: 'shadow-red-500/30' },
   ];
   const total = items.reduce((s, i) => s + i.value, 0) || 1;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {items.map((item) => (
         <div key={item.label}>
-          <div className="mb-1 flex justify-between text-[11px]">
-            <span className="text-[#888]">{item.label}</span>
-            <span className="font-semibold text-white">{item.value}</span>
+          <div className="mb-1.5 flex justify-between text-[11px]">
+            <span className="font-medium text-white/50">{item.label}</span>
+            <span className="font-bold text-white">{item.value}</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1a1a1a]">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
             <div
               className={cn('h-full rounded-full transition-all duration-700', item.colour)}
               style={{ width: `${(item.value / total) * 100}%` }}
@@ -306,10 +302,10 @@ function ProjectStatusBars({ stats }: { stats: DashboardStats }) {
 
 function ContractPills({ stats }: { stats: DashboardStats }) {
   const pills = [
-    { label: 'Draft',    value: stats.contractsByStatus.draft,    cls: 'border-[#333] bg-[#1a1a1a] text-[#888]'    },
+    { label: 'Draft',    value: stats.contractsByStatus.draft,    cls: 'border-white/10 bg-white/5 text-white/50'          },
     { label: 'Sent',     value: stats.contractsByStatus.sent,     cls: 'border-blue-500/30 bg-blue-500/10 text-blue-400'   },
     { label: 'Signed',   value: stats.contractsByStatus.signed,   cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
-    { label: 'Rejected', value: stats.contractsByStatus.rejected, cls: 'border-red-500/30 bg-red-500/10 text-red-400' },
+    { label: 'Rejected', value: stats.contractsByStatus.rejected, cls: 'border-red-500/30 bg-red-500/10 text-red-400'      },
   ];
 
   return (
@@ -317,9 +313,10 @@ function ContractPills({ stats }: { stats: DashboardStats }) {
       {pills.map((p) => (
         <div
           key={p.label}
-          className={cn('rounded-full border px-3 py-1 text-[11px] font-semibold', p.cls)}
+          className={cn('rounded-full border px-3 py-1.5 text-[11px] font-semibold flex items-center gap-1.5', p.cls)}
         >
-          {p.label} <span className="ml-1 font-bold">{p.value}</span>
+          <span className="text-xs font-bold">{p.value}</span>
+          <span className="opacity-70">{p.label}</span>
         </div>
       ))}
     </div>
@@ -330,12 +327,12 @@ function ContractPills({ stats }: { stats: DashboardStats }) {
 
 function QuickActions() {
   const actions = [
-    { label: 'New Client',   href: '/erp/clients',   icon: Briefcase, accent: 'text-[#fbbf24]'   },
-    { label: 'New Project',  href: '/erp/projects',  icon: FolderOpen, accent: 'text-blue-400'   },
-    { label: 'New Task',     href: '/erp/tasks',     icon: CheckSquare, accent: 'text-emerald-400' },
-    { label: 'New Contract', href: '/erp/contracts', icon: FileText,   accent: 'text-purple-400'  },
-    { label: 'New Invoice',  href: '/erp/invoices',  icon: Receipt,    accent: 'text-amber-400'   },
-    { label: 'New Expense',  href: '/erp/expenses',  icon: DollarSign, accent: 'text-red-400'     },
+    { label: 'New Client',   href: '/erp/clients',   icon: Briefcase,   accent: 'from-[#fbbf24]/20 to-[#fbbf24]/5 border-[#fbbf24]/20 text-[#fbbf24]'   },
+    { label: 'New Project',  href: '/erp/projects',  icon: FolderOpen,  accent: 'from-blue-500/20 to-blue-500/5 border-blue-500/20 text-blue-400'        },
+    { label: 'New Task',     href: '/erp/tasks',     icon: CheckSquare, accent: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400' },
+    { label: 'New Contract', href: '/erp/contracts', icon: FileText,    accent: 'from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400'  },
+    { label: 'New Invoice',  href: '/erp/invoices',  icon: Receipt,     accent: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400'     },
+    { label: 'New Expense',  href: '/erp/expenses',  icon: DollarSign,  accent: 'from-red-500/20 to-red-500/5 border-red-500/20 text-red-400'             },
   ];
 
   return (
@@ -344,10 +341,13 @@ function QuickActions() {
         <Link
           key={href}
           href={href}
-          className="flex items-center gap-2 rounded-xl border border-[#1e1e1e] bg-[#0d0d0d] px-3 py-2.5 text-xs font-medium text-[#888] transition-all hover:border-[#2a2a2a] hover:bg-[#141414] hover:text-white"
+          className={cn(
+            'group flex items-center gap-2 rounded-xl border bg-gradient-to-br px-3 py-3 text-xs font-semibold transition-all duration-150 hover:scale-[1.02] hover:shadow-lg',
+            accent,
+          )}
         >
-          <PlusCircle className={cn('h-3.5 w-3.5', accent)} />
-          {label}
+          <PlusCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{label}</span>
         </Link>
       ))}
     </div>
@@ -358,7 +358,15 @@ function QuickActions() {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
       {/* KPI grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 10 }).map((_, i) => (
@@ -367,8 +375,8 @@ function DashboardSkeleton() {
       </div>
       {/* Chart row */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Skeleton className="h-48 rounded-2xl lg:col-span-2" />
-        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-56 rounded-2xl lg:col-span-2" />
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
       {/* Bottom row */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -383,18 +391,18 @@ function DashboardSkeleton() {
 
 function DashboardError({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-10">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/8">
+    <div className="flex h-full flex-col items-center justify-center gap-5 p-10">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
         <AlertTriangle className="h-7 w-7 text-red-400" />
       </div>
       <div className="text-center">
         <p className="font-semibold text-white">Failed to load dashboard</p>
-        <p className="mt-1 text-sm text-[#555]">Could not fetch dashboard data. Please try again.</p>
+        <p className="mt-1 text-sm text-white/30">Could not fetch dashboard data. Please try again.</p>
       </div>
       <button
         type="button"
         onClick={onRetry}
-        className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-sm font-semibold text-[#fbbf24] transition hover:bg-[#fbbf24]/20"
+        className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-5 py-2.5 text-sm font-semibold text-[#fbbf24] transition hover:bg-[#fbbf24]/20"
       >
         <RefreshCw className="h-3.5 w-3.5" />
         Retry
@@ -424,7 +432,7 @@ export default function ErpDashboardPage() {
   const isLoading = statsLoading || chartLoading;
   const hasError  = statsError;
 
-  const greeting  = isAdmin ? `Good ${timeOfDay()}, Admin!` : `Good ${timeOfDay()}!`;
+  const greeting  = isAdmin ? `Good ${timeOfDay()}, Admin` : `Good ${timeOfDay()}`;
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading || (!stats && !hasError)) return <DashboardSkeleton />;
@@ -440,7 +448,6 @@ export default function ErpDashboardPage() {
 
   const chartData: FinancialChartMonth[] = Array.isArray(chart) ? chart : [];
 
-  // ── Normalise nested objects so deeply-undefined API fields never crash ──
   const safeStats: DashboardStats = {
     ...stats,
     projectsByStatus: {
@@ -461,18 +468,21 @@ export default function ErpDashboardPage() {
   };
 
   return (
-    <div className="min-h-full overflow-auto bg-[#0a0a0a] p-4 sm:p-6">
+    <div className="min-h-full space-y-6">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">{greeting}</h1>
-          <p className="mt-0.5 text-sm text-[#555]">Here&apos;s your business overview.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-[#fbbf24]" />
+            <h1 className="text-xl font-bold tracking-tight text-white">{greeting}!</h1>
+          </div>
+          <p className="text-sm text-white/30">Here&apos;s your business overview for today.</p>
         </div>
         <button
           type="button"
           onClick={() => { void refetchStats(); void refetchChart(); }}
-          className="flex items-center gap-1.5 rounded-xl border border-[#1e1e1e] px-3 py-2 text-xs text-[#666] transition hover:border-[#2a2a2a] hover:text-white"
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/40 transition hover:border-white/20 hover:text-white"
         >
           <RefreshCw className="h-3 w-3" />
           Refresh
@@ -486,9 +496,8 @@ export default function ErpDashboardPage() {
         variants={stagger}
         initial="hidden"
         animate="show"
-        className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
       >
-        {/* ── Leads / Clients ── */}
         {isAdmin && (
           <KpiCard
             icon={Users}
@@ -496,6 +505,7 @@ export default function ErpDashboardPage() {
             value={safeStats.totalLeads}
             sub={`+${safeStats.newLeadsThisMonth} this month`}
             accent="gold"
+            href="/erp/clients"
           />
         )}
         <KpiCard
@@ -504,35 +514,37 @@ export default function ErpDashboardPage() {
           value={safeStats.totalClients}
           sub={`+${safeStats.newClientsThisMonth} this month`}
           accent="blue"
+          href="/erp/clients"
         />
-        {/* ── Projects ── */}
         <KpiCard
           icon={FolderOpen}
           label="Active Projects"
           value={safeStats.activeProjects}
           accent="purple"
+          href="/erp/projects"
         />
-        {/* ── Tasks ── */}
         <KpiCard
           icon={CheckSquare}
           label="Tasks Done"
           value={`${safeStats.completedTasks}/${safeStats.totalTasks}`}
           sub={`${safeStats.completionRate}% complete`}
           accent={safeStats.completionRate >= 70 ? 'green' : safeStats.completionRate >= 40 ? 'amber' : 'red'}
+          href="/erp/tasks"
         />
         <KpiCard
           icon={Clock}
           label="Delayed Tasks"
           value={safeStats.delayedTasks}
           accent={safeStats.delayedTasks > 0 ? 'red' : 'green'}
+          href="/erp/tasks"
         />
-        {/* ── Financial ── */}
         <KpiCard
           icon={TrendingUp}
           label="Income (Month)"
           value={fmtCurrency(safeStats.totalIncome)}
           accent="green"
           trend="up"
+          href="/erp/expenses"
         />
         <KpiCard
           icon={TrendingDown}
@@ -540,6 +552,7 @@ export default function ErpDashboardPage() {
           value={fmtCurrency(safeStats.totalExpenses)}
           accent="red"
           trend="down"
+          href="/erp/expenses"
         />
         <KpiCard
           icon={Wallet}
@@ -554,39 +567,41 @@ export default function ErpDashboardPage() {
           value={fmtCurrency(safeStats.outstandingInvoices)}
           sub={`${safeStats.overdueInvoicesCount} overdue`}
           accent={safeStats.overdueInvoicesCount > 0 ? 'amber' : 'gold'}
+          href="/erp/invoices"
         />
         <KpiCard
           icon={FileText}
           label="Contracts Signed"
           value={safeStats.contractsByStatus.signed}
-          sub={`${safeStats.contractsByStatus.sent} awaiting signature`}
+          sub={`${safeStats.contractsByStatus.sent} awaiting`}
           accent="gold"
+          href="/erp/contracts"
         />
       </motion.div>
 
       {/* ══════════════════════════════════════════════════════════════════
           MIDDLE ROW: Chart (2/3) + Task Gauge (1/3)
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
 
         {/* Financial Chart — 2 cols */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-5 lg:col-span-2"
+          className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5 lg:col-span-2"
         >
           <SectionHeader title="Income vs Expenses — Last 6 Months" icon={BarChart3} />
 
           {/* Legend */}
           <div className="mb-4 flex gap-4 text-[11px]">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="text-[#888]">Income</span>
+              <span className="inline-block h-2 w-3 rounded-sm bg-emerald-500/80" />
+              <span className="text-white/40">Income</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-              <span className="text-[#888]">Expenses</span>
+              <span className="inline-block h-2 w-3 rounded-sm bg-red-500/80" />
+              <span className="text-white/40">Expenses</span>
             </span>
           </div>
 
@@ -598,12 +613,12 @@ export default function ErpDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col items-center justify-center rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-5"
+          className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
           <SectionHeader title="Task Progress" icon={Target} />
           {safeStats.totalTasks === 0 ? (
-            <div className="flex flex-col items-center gap-2 text-[#444]">
-              <CheckCircle2 className="h-8 w-8" />
+            <div className="flex flex-col items-center gap-3 text-white/20">
+              <CheckCircle2 className="h-10 w-10" />
               <p className="text-sm">No tasks yet</p>
             </div>
           ) : (
@@ -615,13 +630,13 @@ export default function ErpDashboardPage() {
           )}
           {/* Delayed / Pending breakdown */}
           <div className="mt-4 grid w-full grid-cols-2 gap-2 text-center">
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 py-2">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 py-2.5">
               <p className="text-lg font-bold text-amber-400">{safeStats.delayedTasks}</p>
-              <p className="text-[10px] text-[#555]">Delayed</p>
+              <p className="text-[10px] text-white/30">Delayed</p>
             </div>
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/8 py-2">
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/8 py-2.5">
               <p className="text-lg font-bold text-blue-400">{safeStats.pendingTasks}</p>
-              <p className="text-[10px] text-[#555]">Pending</p>
+              <p className="text-[10px] text-white/30">Pending</p>
             </div>
           </div>
         </motion.div>
@@ -630,25 +645,25 @@ export default function ErpDashboardPage() {
       {/* ══════════════════════════════════════════════════════════════════
           BOTTOM ROW: Projects by Status + Contracts + Overdue alert
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
 
         {/* Projects by status */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-5"
+          className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
           <SectionHeader title="Projects by Status" icon={FolderOpen} />
           <ProjectStatusBars stats={safeStats} />
         </motion.div>
 
-        {/* Contracts + Overdue alert */}
+        {/* Contracts + Alerts */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="flex flex-col gap-4 rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-5"
+          className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
           <SectionHeader title="Contracts" icon={FileText} />
           <ContractPills stats={safeStats} />
@@ -656,14 +671,16 @@ export default function ErpDashboardPage() {
           {/* Overdue invoice alert */}
           {safeStats.overdueInvoicesCount > 0 && (
             <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+              <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/20">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+              </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-amber-400">
                   {safeStats.overdueInvoicesCount} overdue invoice{safeStats.overdueInvoicesCount !== 1 ? 's' : ''}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#666]">
+                <p className="mt-0.5 text-[11px] text-white/30">
                   {fmtCurrency(safeStats.outstandingInvoices)} total outstanding.{' '}
-                  <Link href="/erp/invoices" className="underline hover:text-amber-400">
+                  <Link href="/erp/invoices" className="underline hover:text-amber-400 transition-colors">
                     View invoices →
                   </Link>
                 </p>
@@ -674,13 +691,15 @@ export default function ErpDashboardPage() {
           {/* Unsigned contracts alert */}
           {safeStats.contractsByStatus.sent > 0 && (
             <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/8 p-3">
-              <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+              <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
+                <FileText className="h-3.5 w-3.5 text-blue-400" />
+              </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-blue-400">
                   {safeStats.contractsByStatus.sent} contract{safeStats.contractsByStatus.sent !== 1 ? 's' : ''} awaiting signature
                 </p>
-                <p className="mt-0.5 text-[11px] text-[#666]">
-                  <Link href="/erp/contracts" className="underline hover:text-blue-400">
+                <p className="mt-0.5 text-[11px] text-white/30">
+                  <Link href="/erp/contracts" className="underline hover:text-blue-400 transition-colors">
                     View contracts →
                   </Link>
                 </p>
@@ -697,7 +716,7 @@ export default function ErpDashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        className="rounded-2xl border border-[#1e1e1e] bg-[#0d0d0d] p-5"
+        className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
       >
         <SectionHeader title="Quick Actions" icon={Activity} />
         <QuickActions />

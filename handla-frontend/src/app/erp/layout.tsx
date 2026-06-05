@@ -20,6 +20,7 @@ import {
   X,
   ChevronRight,
   Home,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -29,8 +30,8 @@ import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 // ─── Role badge colours ────────────────────────────────────────────────────────
 
 const ROLE_COLOURS: Record<string, string> = {
-  ADMIN:    'border-gold-400/30 bg-gold-400/10 text-gold-400',
-  EMPLOYEE: 'border-blue-400/30 bg-blue-400/10 text-blue-400',
+  ADMIN:    'border-[#fbbf24]/40 bg-[#fbbf24]/15 text-[#fbbf24]',
+  EMPLOYEE: 'border-blue-400/40 bg-blue-400/15 text-blue-400',
 };
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
@@ -75,21 +76,23 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* ── Logo + ERP pill ────────────────────────────────────────────── */}
-      <div className="flex items-center border-b border-[#1e1e1e] px-5 py-5">
-        <span className="font-mono font-bold text-base tracking-tight">
-          <span className="text-white">&lt;Handla </span>
-          <span className="text-[#fbbf24]">/</span>
-          <span className="text-white">&gt;</span>
-        </span>
-        {/* Gold "ERP" badge */}
-        <span className="ml-2 rounded-md border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-[#fbbf24]">
-          ERP
-        </span>
+      <div className="flex items-center border-b border-white/[0.06] px-5 py-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#fbbf24] to-[#f59e0b] shadow-lg shadow-[#fbbf24]/20">
+            <Zap className="h-4 w-4 text-black" />
+          </div>
+          <div>
+            <span className="font-bold text-sm tracking-tight text-white">Handla</span>
+            <span className="ml-1.5 rounded-md border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-[#fbbf24]">
+              ERP
+            </span>
+          </div>
+        </div>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto text-[#555] transition-colors hover:text-white"
+            className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -97,41 +100,50 @@ function SidebarContent({
       </div>
 
       {/* ── Nav links ──────────────────────────────────────────────────── */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-        <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[#444]">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <p className="px-2 pb-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/20">
           Workspace
         </p>
-        {NAV_ITEMS.filter(item => isAdmin || !item.adminOnly).map(({ href, icon: Icon, label }) => {
-          const isActive = href === '/erp' ? pathname === '/erp' : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
-                isActive
-                  ? 'border border-[#fbbf24]/20 bg-[#fbbf24]/10 text-[#fbbf24]'
-                  : 'text-[#888] hover:bg-[#1a1a1a] hover:text-white',
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              {label}
-              {isActive && (
-                <ChevronRight className="ml-auto h-3.5 w-3.5 text-[#fbbf24]/60" />
-              )}
-            </Link>
-          );
-        })}
+        <div className="space-y-0.5">
+          {NAV_ITEMS.filter(item => isAdmin || !item.adminOnly).map(({ href, icon: Icon, label }) => {
+            const isActive = href === '/erp' ? pathname === '/erp' : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={onClose}
+                className={cn(
+                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
+                  isActive
+                    ? 'border border-[#fbbf24]/20 bg-gradient-to-r from-[#fbbf24]/15 to-[#fbbf24]/5 text-[#fbbf24] shadow-sm'
+                    : 'border border-transparent text-white/50 hover:border-white/[0.08] hover:bg-white/[0.06] hover:text-white',
+                )}
+              >
+                <span className={cn(
+                  'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-all',
+                  isActive
+                    ? 'bg-[#fbbf24]/20 text-[#fbbf24]'
+                    : 'text-white/40 group-hover:text-white',
+                )}>
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+                {label}
+                {isActive && (
+                  <ChevronRight className="ml-auto h-3 w-3 text-[#fbbf24]/60" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       {/* ── User card + logout ─────────────────────────────────────────── */}
-      <div className="space-y-1 border-t border-[#1e1e1e] p-3">
+      <div className="border-t border-white/[0.06] p-3 space-y-1">
         {user && (
-          <div className="flex items-center gap-3 rounded-xl border border-[#1e1e1e] bg-[#141414] px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 backdrop-blur-sm">
             <div
               className={cn(
-                'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white',
+                'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-black/20',
                 getAvatarColor(user.id),
               )}
             >
@@ -139,13 +151,12 @@ function SidebarContent({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-white">{user.name}</p>
-              <p className="truncate text-[10px] text-[#555]">{user.email}</p>
+              <p className="truncate text-[10px] text-white/30">{user.email}</p>
             </div>
-            {/* Role badge */}
             <span
               className={cn(
                 'rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
-                ROLE_COLOURS[role] ?? 'border-[#333] bg-[#1a1a1a] text-[#888]',
+                ROLE_COLOURS[role] ?? 'border-white/10 bg-white/5 text-white/40',
               )}
             >
               {role}
@@ -156,18 +167,22 @@ function SidebarContent({
         <button
           type="button"
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#666] transition-all hover:bg-red-400/5 hover:text-red-400"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/40 transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20"
         >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
+            <LogOut className="h-3.5 w-3.5" />
+          </span>
           Sign Out
         </button>
 
         <Link
           href="/"
           onClick={onClose}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#666] transition-all hover:bg-[#fbbf24]/5 hover:text-[#fbbf24]"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/40 transition-all hover:bg-[#fbbf24]/5 hover:text-[#fbbf24] border border-transparent hover:border-[#fbbf24]/10"
         >
-          <Home className="h-4 w-4 flex-shrink-0" />
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
+            <Home className="h-3.5 w-3.5" />
+          </span>
           Back to Website
         </Link>
       </div>
@@ -208,10 +223,13 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
   // Loading / auth flash guard
   if (!mounted || isLoading || !isLoggedIn) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a0a]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-[#fbbf24]" />
-          <p className="text-xs text-[#555]">Loading ERP…</p>
+      <div className="flex h-screen items-center justify-center bg-[#080808]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-10 w-10">
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-white/5 border-t-[#fbbf24]" />
+            <div className="absolute inset-2 rounded-full bg-[#fbbf24]/10" />
+          </div>
+          <p className="text-xs font-medium text-white/30">Loading ERP…</p>
         </div>
       </div>
     );
@@ -227,12 +245,12 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
+    <div className="flex h-screen overflow-hidden bg-[#080808]">
 
       {/* ══════════════════════════════════════════════════
           DESKTOP SIDEBAR — w-64
       ══════════════════════════════════════════════════ */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-[#1a1a1a] bg-[#0d0d0d] lg:flex">
+      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#0c0c0c] lg:flex">
         <SidebarContent {...sidebarProps} />
       </aside>
 
@@ -247,7 +265,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/70 lg:hidden"
+              className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
               onClick={() => setDrawerOpen(false)}
             />
             <motion.aside
@@ -256,7 +274,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 border-r border-[#1a1a1a] bg-[#0d0d0d] lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 w-64 border-r border-white/[0.06] bg-[#0c0c0c] lg:hidden"
             >
               <SidebarContent {...sidebarProps} onClose={() => setDrawerOpen(false)} />
             </motion.aside>
@@ -270,26 +288,27 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 
         {/* Header */}
-        <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#1a1a1a] bg-[#0d0d0d] px-4">
+        <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-white/[0.06] bg-[#0c0c0c]/80 px-4 backdrop-blur-md">
           {/* Hamburger — mobile only */}
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={drawerOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-[#666] transition-colors hover:bg-[#1a1a1a] hover:text-white lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
           >
             <Menu className="h-4 w-4" aria-hidden="true" />
           </button>
 
           {/* Desktop title */}
-          <div className="hidden items-center gap-2 lg:flex">
-            <span className="rounded-md border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-[#fbbf24]">
-              ERP
-            </span>
-            <span className="text-sm font-semibold text-white">
-              {role === 'ADMIN' ? 'Admin Portal' : 'Employee Portal'}
-            </span>
+          <div className="hidden items-center gap-3 lg:flex">
+            <div className="h-4 w-px bg-white/10" />
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-[#fbbf24] shadow-sm shadow-[#fbbf24]/50" />
+              <span className="text-sm font-semibold text-white/80">
+                {role === 'ADMIN' ? 'Admin Portal' : 'Employee Portal'}
+              </span>
+            </div>
           </div>
 
           {/* Right-side actions */}
@@ -300,7 +319,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           {children}
         </main>
       </div>

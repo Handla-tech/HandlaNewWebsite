@@ -655,11 +655,13 @@ export default function UsersPage() {
     <div className="flex h-full flex-col overflow-hidden">
 
       {/* ═══════ PAGE HEADER ═══════ */}
-      <div className="flex-shrink-0 border-b border-[#1a1a1a] bg-[#0a0a0a] px-6 py-5">
+      <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#0c0c0c] px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#fbbf24]" />
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
+                <Users className="h-4 w-4 text-[#fbbf24]" />
+              </span>
               <h1 className="text-base font-semibold text-white">Users</h1>
               <span className="rounded-full border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-2 py-0.5 text-[10px] text-[#fbbf24]">
                 {total} {isArchiveView ? 'archived' : 'active'}
@@ -691,7 +693,7 @@ export default function UsersPage() {
       </div>
 
       {/* ═══════ TAB BAR ═══════ */}
-      <div className="flex-shrink-0 border-b border-[#1a1a1a] bg-[#0a0a0a] px-6 pt-3">
+      <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#0c0c0c] px-6 pt-3">
         <div className="flex gap-4">
           <button
             type="button"
@@ -725,7 +727,7 @@ export default function UsersPage() {
       </div>
 
       {/* ═══════ FILTER BAR ═══════ */}
-      <div className="flex-shrink-0 border-b border-[#1a1a1a] bg-[#0a0a0a] px-6 py-3">
+      <div className="flex-shrink-0 border-b border-white/[0.06] bg-[#0c0c0c] px-6 py-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px]">
@@ -827,7 +829,7 @@ export default function UsersPage() {
 
       {/* ═══════ PAGINATION ═══════ */}
       {pages > 1 && (
-        <div className="flex-shrink-0 border-t border-[#1a1a1a] bg-[#0a0a0a] px-6 py-3">
+        <div className="flex-shrink-0 border-t border-white/[0.06] bg-[#0c0c0c] px-6 py-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-[#555]">
               Page {page} of {pages} — {total} users
