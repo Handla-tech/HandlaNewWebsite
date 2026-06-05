@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contract for Review — Handla</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0a0a0f; font-family: 'Segoe UI', Arial, sans-serif; color: #e2e8f0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: rgba(15,15,30,0.95); border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 40px; text-align: center; }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; }
+    .body { padding: 40px; }
+    .greeting { font-size: 16px; color: #94a3b8; margin-bottom: 24px; }
+    .detail-card { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 24px; margin-bottom: 28px; }
+    .label { font-size: 13px; font-weight: 600; color: #818cf8; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .value { font-size: 16px; color: #e2e8f0; font-weight: 600; }
+    .cta-wrapper { text-align: center; margin-bottom: 32px; }
+    .cta-btn { display: inline-block; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; }
+    .divider { border: none; border-top: 1px solid rgba(99,102,241,0.15); margin: 24px 0; }
+    .footer { text-align: center; color: #475569; font-size: 12px; padding: 0 40px 32px; line-height: 1.7; }
+    .footer a { color: #818cf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>📄 Contract Sent for Review</h1>
+    </div>
+    <div class="body">
+      <p class="greeting">Hi <strong>{{recipientName}}</strong>,</p>
+      <p style="color:#94a3b8;font-size:15px;margin-bottom:20px;">
+        A contract has been sent to you for review and signature. Please open the ERP portal to review the details and take action.
+      </p>
+      <div class="detail-card">
+        <div class="label">Contract</div>
+        <div class="value">{{contractTitle}}</div>
+      </div>
+      <div class="cta-wrapper">
+        <a href="{{erpUrl}}" class="cta-btn">Review Contract →</a>
+      </div>
+      <hr class="divider" />
+      <p style="color:#64748b;font-size:13px;text-align:center;margin:0;">
+        Contract ID: <strong>{{contractId}}</strong>
+      </p>
+    </div>
+    <div class="footer">
+      <p>You're receiving this because a contract was assigned to you on <a href="{{baseUrl}}">Handla</a>.</p>
+      <p>© {{year}} Handla. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

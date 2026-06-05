@@ -1,0 +1,1034 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "solutions": "Solutions",
+    "process": "Process",
+    "testimonials": "Testimonials",
+    "contact": "Contact",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "goToChat": "Go to Chat",
+    "adminPanel": "Admin Panel",
+    "dashboard": "Dashboard",
+    "signOut": "Sign Out",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "hero": {
+    "tagline": "Build the Future",
+    "badge": "Digital Solutions Partner",
+    "staticLine": "Where your Ideas",
+    "headline": "Software Solutions That Drive",
+    "headlineHighlight": "Real Results",
+    "subtitle": "We design, develop, and deploy modern software solutions that streamline operations and accelerate growth.",
+    "ctaPrimary": "Get Free Consultation",
+    "ctaSecondary": "View Solutions",
+    "floatingWeb": "Web Development",
+    "floatingErp": "ERP & CRM Systems",
+    "floatingMobile": "Mobile Applications",
+    "stats": {
+      "projects": "50+",
+      "projectsLabel": "Projects Delivered",
+      "clients": "30+",
+      "clientsLabel": "Happy Clients",
+      "years": "5+",
+      "yearsLabel": "Years Experience",
+      "uptime": "99.9%",
+      "uptimeLabel": "Uptime Guarantee"
+    }
+  },
+  "about": {
+    "title": "About Handla",
+    "label": "About Handla",
+    "headline": "Technology partner for ambitious businesses",
+    "subtitle": "We are a team of passionate engineers and designers dedicated to building software that makes a difference.",
+    "description": "Handla is a modern software company specializing in building scalable digital systems. From custom web platforms to enterprise resource planning tools, we help organizations streamline operations, serve customers better, and grow faster with technology built for the future.",
+    "mission": "Our Mission",
+    "missionText": "To make world-class software development accessible to businesses of all sizes.",
+    "stats": {
+      "projects": "150+",
+      "projectsLabel": "Projects Delivered",
+      "industries": "30+",
+      "industriesLabel": "Industries Served",
+      "support": "24/7",
+      "supportLabel": "Support Availability",
+      "uptime": "99.9%",
+      "uptimeLabel": "System Reliability"
+    },
+    "features": {
+      "innovation": "Innovation First",
+      "innovationDesc": "Cutting-edge tech stack and modern development practices.",
+      "results": "Results Driven",
+      "resultsDesc": "Every solution is designed to deliver measurable business impact.",
+      "client": "Client Focused",
+      "clientDesc": "We build lasting partnerships, not just software."
+    },
+    "values": {
+      "quality": "Quality First",
+      "qualityDesc": "We never ship code we're not proud of.",
+      "transparency": "Full Transparency",
+      "transparencyDesc": "Real-time progress updates and open communication.",
+      "partnership": "Long-term Partnership",
+      "partnershipDesc": "We're invested in your success beyond launch."
+    }
+  },
+  "services": {
+    "title": "What We Build",
+    "label": "What We Build",
+    "subtitle": "End-to-end software development services for modern businesses",
+    "headline": "Services tailored for scale",
+    "description": "End-to-end digital solutions designed for performance, scalability, and business growth.",
+    "web": {
+      "title": "Web Development",
+      "description": "Modern, responsive web applications built with cutting-edge frameworks. Fast, secure, and designed to convert."
+    },
+    "erp": {
+      "title": "ERP & CRM Systems",
+      "description": "Custom enterprise solutions that centralize operations, automate workflows, and deliver real-time insights."
+    },
+    "mobile": {
+      "title": "Mobile Applications",
+      "description": "Native and cross-platform mobile apps with seamless UX and robust backend integration."
+    },
+    "hosting": {
+      "title": "Cloud Infrastructure",
+      "description": "Scalable, reliable cloud architecture with CI/CD pipelines, monitoring, and enterprise-grade security."
+    },
+    "api": {
+      "title": "API & Integrations",
+      "description": "Connect your tools and automate workflows with robust API development and third-party integrations."
+    },
+    "consulting": {
+      "title": "Tech Consulting",
+      "description": "Strategic technology advice to help you make the right architectural and tooling decisions."
+    }
+  },
+  "solutions": {
+    "title": "Solutions For Every Scale",
+    "label": "Ready-Made Solutions",
+    "headline": "Products built to launch fast",
+    "subtitle": "Whether you're a startup or an enterprise, we have the right approach for you.",
+    "description": "Pre-built enterprise solutions that can be deployed and customized for your organization in weeks, not months.",
+    "startup": {
+      "label": "Startup",
+      "title": "Launch Fast, Scale Smart",
+      "description": "MVP development, rapid prototyping, and lean architecture designed for growth."
+    },
+    "enterprise": {
+      "label": "Enterprise",
+      "title": "Enterprise-Grade Reliability",
+      "description": "Robust, secure systems that handle millions of users and complex business logic."
+    },
+    "government": {
+      "label": "Government",
+      "title": "Public Sector Solutions",
+      "description": "Compliant, secure, and accessible digital services for government agencies."
+    },
+    "smb": {
+      "label": "SMB",
+      "title": "Grow Your Business",
+      "description": "Affordable, high-impact software solutions tailored for small and medium businesses."
+    },
+    "schoolErp": {
+      "title": "School ERP",
+      "description": "Complete school management system with student enrollment, attendance, grades, timetables, and parent portals — all in one platform.",
+      "learnMore": "Learn More"
+    },
+    "hrPayroll": {
+      "title": "HR & Payroll",
+      "description": "Streamlined human resources and payroll processing with leave management, attendance tracking, salary automation, and compliance tools.",
+      "learnMore": "Learn More"
+    }
+  },
+  "process": {
+    "title": "How We Work",
+    "label": "How We Work",
+    "headline": "From idea to launch in four steps",
+    "subtitle": "A proven process that delivers results on time, every time.",
+    "cta": "Start Your Project",
+    "steps": {
+      "discovery": {
+        "number": "01",
+        "title": "Discover",
+        "description": "We dive deep into your business needs, goals, and challenges to map the perfect solution."
+      },
+      "design": {
+        "number": "02",
+        "title": "Design",
+        "description": "User-centered design with wireframes, prototypes, and a clear product roadmap."
+      },
+      "build": {
+        "number": "03",
+        "title": "Build",
+        "description": "Agile development with regular demos, clean code, and rigorous testing at every stage."
+      },
+      "launch": {
+        "number": "04",
+        "title": "Launch",
+        "description": "Smooth deployment, training, and ongoing support to ensure long-term success."
+      }
+    }
+  },
+  "testimonials": {
+    "title": "What Our Clients Say",
+    "label": "Client Stories",
+    "subtitle": "Don't take our word for it — hear from the teams we've worked with."
+  },
+  "contact": {
+    "title": "Let's Build Something Together",
+    "label": "Get In Touch",
+    "subtitle": "Have a project in mind? Start a conversation with our team.",
+    "headlineGuest": "Let's build something amazing",
+    "headlineAuth": "Welcome back — let's keep building",
+    "subtitleGuest": "Ready to transform your business? Chat with us below — we typically respond within hours.",
+    "subtitleAuth": "You're signed in. Head to your dashboard to continue your conversation with our team.",
+    "signInPrompt": "Sign in to start chatting with our team directly",
+    "signInCta": "Sign In to Chat",
+    "chatTitle": "Chat with Us",
+    "email": "Email Us",
+    "response": "We typically respond within 2 hours during business hours.",
+    "followUs": "Follow Us",
+    "followSubtitle": "Stay connected across our platforms.",
+    "goToAdminPanel": "Go to Admin Panel",
+    "goToChat": "Go to Chat",
+    "adminSubtitle": "Manage conversations and respond to clients",
+    "clientSubtitle": "Your conversation with our team is ready",
+    "adminPanel": "Admin Panel",
+    "myChat": "My Chat",
+    "manageConversations": "Manage all conversations",
+    "continueConversation": "Continue your conversation",
+    "open": "Open",
+    "communityNote": "We engage with our community daily. Follow us to stay in the loop.",
+    "trustStrip": "Trusted Technologies"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "email": "Email address",
+    "password": "Password",
+    "name": "Full name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "welcomeBack": "Welcome back",
+    "joinHandla": "Join Handla",
+    "signInSubtitle": "Sign in to access your dashboard and chat with our team.",
+    "signUpSubtitle": "Create your account and start your software journey.",
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "emailTaken": "An account with this email already exists.",
+      "weakPassword": "Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "conversations": "Conversations",
+    "notifications": "Notifications",
+    "newConversation": "New Conversation",
+    "noConversations": "No conversations yet",
+    "startConversation": "Start your first conversation with our team",
+    "unreadMessages": "{{count}} unread message",
+    "unreadMessages_plural": "{{count}} unread messages"
+  },
+  "chat": {
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "attach": "Attach file",
+    "typing": "{{name}} is typing...",
+    "you": "You",
+    "noMessages": "No messages yet. Say hello!",
+    "fileTooBig": "File is too large. Maximum size is 5MB.",
+    "unsupportedType": "This file type is not supported.",
+    "uploading": "Uploading...",
+    "uploadFailed": "Upload failed. Please try again.",
+    "online": "Online",
+    "offline": "Offline",
+    "readBy": "Read",
+    "blurTitle": "Sign in to Chat",
+    "blurSubtitle": "Join for free and talk directly with the Handla team.",
+    "blurSignIn": "Sign In",
+    "blurCreateAccount": "Create Free Account",
+    "blurReady": "Your conversation is ready 🚀",
+    "blurReadySubtitle": "Head to the chat to talk live with our team.",
+    "blurGoToChat": "Go to Chat",
+    "blurInputGuest": "Sign in to send a message...",
+    "blurInputAuth": "Chat from your dashboard…",
+    "handlaSupport": "Handla Support",
+    "onlineNow": "Online now"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "noNotifications": "No notifications",
+    "markAllRead": "Mark all as read",
+    "clearAll": "Clear all read",
+    "newMessage": "New message from {{sender}}",
+    "system": "System notification",
+    "justNow": "Just now",
+    "unread": "Unread",
+    "types": {
+      "MESSAGE": "Message",
+      "SYSTEM": "System",
+      "CONTRACT_SENT": "Contract Sent",
+      "CONTRACT_SIGNED": "Contract Signed",
+      "CONTRACT_REJECTED": "Contract Rejected",
+      "INVOICE_CREATED": "Invoice Created",
+      "INVOICE_OVERDUE": "Invoice Overdue",
+      "LEAD_ASSIGNED": "Lead Assigned",
+      "LEAD_PROMOTED": "Lead Promoted",
+      "TASK_ASSIGNED": "Task Assigned",
+      "TASK_DELAYED": "Task Overdue"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "viewAll": "View all",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "theme": {
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "toggle": "Toggle theme"
+    },
+    "language": {
+      "en": "English",
+      "ar": "العربية",
+      "toggle": "Change language"
+    }
+  },
+  "erp": {
+    "nav": {
+      "dashboard": "ERP Dashboard",
+      "conversations": "Conversations",
+      "leads": "Leads",
+      "clients": "Clients",
+      "employees": "Employees",
+      "reports": "Reports",
+      "settings": "Settings",
+      "users": "Users",
+      "projects": "Projects",
+      "tasks": "Tasks",
+      "contracts": "Contracts",
+      "invoices": "Invoices",
+      "expenses": "Expenses",
+      "messages": "Messages"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "employee": "Employee",
+      "client": "Client",
+      "lead": "Lead",
+      "unknown": "Unknown Role"
+    },
+    "modules": {
+      "crm": "CRM",
+      "hr": "HR",
+      "finance": "Finance",
+      "inventory": "Inventory",
+      "projects": "Projects"
+    },
+    "lead": {
+      "title": "My Portal",
+      "subtitle": "Track your project and communicate with our team.",
+      "noAssignedEmployee": "No employee assigned yet — our team will be in touch soon.",
+      "status": "Lead Status",
+      "convertedToClient": "Promoted to Client"
+    },
+    "employee": {
+      "title": "Employee Portal",
+      "subtitle": "Manage your assigned conversations and leads.",
+      "assignedConversations": "Assigned Conversations",
+      "noAssignedConversations": "No conversations assigned to you yet."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Create, manage, and assign roles to system users.",
+      "total": "{{count}} total",
+      "newUser": "New User",
+      "searchPlaceholder": "Search name or email…",
+      "stats": {
+        "admins": "Admins",
+        "employees": "Employees",
+        "clients": "Clients",
+        "leads": "Leads"
+      },
+      "filters": {
+        "all": "All",
+        "admin": "Admin",
+        "employee": "Employee",
+        "client": "Client",
+        "lead": "Lead"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "joined": "Joined",
+        "actions": "Actions",
+        "you": "You"
+      },
+      "actions": {
+        "changeRole": "Change Role",
+        "promoteToClient": "Promote to Client",
+        "reassignOwnership": "Reassign Ownership",
+        "delete": "Delete User"
+      },
+      "modals": {
+        "createTitle": "Create New User",
+        "changeRoleTitle": "Change Role",
+        "promoteTitle": "Promote Lead to Client",
+        "reassignTitle": "Reassign Ownership",
+        "deleteTitle": "Delete User",
+        "createSubmit": "Create User",
+        "creating": "Creating…",
+        "changeRoleSubmit": "Update Role",
+        "saving": "Saving…",
+        "promoteSubmit": "Promote to Client",
+        "promoting": "Promoting…",
+        "reassignSubmit": "Reassign",
+        "reassigning": "Reassigning…",
+        "deleteSubmit": "Delete Permanently",
+        "deleting": "Deleting…",
+        "adminDemotionWarning": "ADMIN role cannot be changed via this endpoint. Only same-role re-affirmation is allowed.",
+        "promoteDescription": "This action will grant the user CLIENT-level access to the dashboard.",
+        "reassignDescription": "Bulk-reassign all ERP records currently owned by {{name}} to another employee.",
+        "reassignTargetLabel": "New Owner (Employee UUID)",
+        "reassignTargetHint": "Target user must have EMPLOYEE role.",
+        "deleteWarningTitle": "Permanent deletion",
+        "deleteWarningBody": "This will permanently delete {{name}} ({{email}}). This action cannot be undone."
+      },
+      "form": {
+        "email": "Email",
+        "name": "Full Name",
+        "password": "Temporary Password",
+        "passwordHint": "Min 8 chars, upper + lower + digit",
+        "role": "Role"
+      },
+      "empty": {
+        "title": "No users found",
+        "withFilters": "Try adjusting your filters.",
+        "noUsers": "Create your first user to get started."
+      },
+      "pagination": {
+        "pageOf": "Page {{page}} of {{pages}} — {{total}} users"
+      }
+    },
+    "clients": {
+      "title": "Clients",
+      "subtitle": "Manage your client accounts and relationships.",
+      "newClient": "New Client",
+      "searchPlaceholder": "Search name or company…",
+      "stats": {
+        "total": "Total Clients",
+        "active": "Active",
+        "inactive": "Inactive",
+        "churned": "Churned"
+      },
+      "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive",
+        "churned": "Churned"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive",
+        "CHURNED": "Churned"
+      },
+      "fields": {
+        "company": "Company",
+        "status": "Status",
+        "notes": "Notes",
+        "owner": "Assigned To",
+        "createdAt": "Created",
+        "noCompany": "No company"
+      },
+      "actions": {
+        "edit": "Edit Client",
+        "delete": "Delete Client",
+        "assignOwner": "Assign Owner",
+        "view": "View Details"
+      },
+      "modals": {
+        "createTitle": "Create Client",
+        "editTitle": "Edit Client",
+        "assignOwnerTitle": "Assign Owner",
+        "deleteTitle": "Delete Client",
+        "deleteMessage": "Are you sure you want to delete this client? This action cannot be undone.",
+        "selectUser": "Select a CLIENT user",
+        "selectEmployee": "Select an employee",
+        "confirmDelete": "Delete"
+      },
+      "empty": "No clients found.",
+      "emptyOwned": "No clients assigned to you yet.",
+      "tabs": {
+        "overview": "Overview",
+        "projects": "Projects",
+        "contracts": "Contracts",
+        "invoices": "Invoices"
+      },
+      "detail": {
+        "contact": "Contact Information",
+        "noNotes": "No notes for this client.",
+        "unassigned": "Unassigned"
+      }
+    },
+    "projects": {
+      "title": "Projects",
+      "subtitle": "Manage client projects and track progress.",
+      "newProject": "New Project",
+      "searchPlaceholder": "Search projects…",
+      "stats": {
+        "total": "Total Projects",
+        "planning": "Planning",
+        "active": "Active",
+        "onHold": "On Hold",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "filters": {
+        "all": "All",
+        "planning": "Planning",
+        "active": "Active",
+        "onHold": "On Hold",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "status": {
+        "PLANNING": "Planning",
+        "ACTIVE": "Active",
+        "ON_HOLD": "On Hold",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      },
+      "fields": {
+        "title": "Project Title",
+        "description": "Description",
+        "client": "Client",
+        "status": "Status",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "owner": "Assigned To",
+        "createdAt": "Created",
+        "noDescription": "No description provided"
+      },
+      "actions": {
+        "edit": "Edit Project",
+        "delete": "Delete Project",
+        "view": "View Project"
+      },
+      "modals": {
+        "create": {
+          "title": "New Project",
+          "subtitle": "Create a project for an existing client.",
+          "submit": "Create Project"
+        },
+        "edit": {
+          "title": "Edit Project",
+          "subtitle": "Update project details.",
+          "submit": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Project",
+          "message": "Are you sure you want to delete “{title}”? This will also delete all tasks associated with it.",
+          "confirm": "Delete Project"
+        }
+      },
+      "empty": "No projects found. Create your first project.",
+      "emptyOwned": "You have no projects yet. Create one to get started.",
+      "tabs": {
+        "overview": "Overview",
+        "tasks": "Tasks"
+      },
+      "detail": {
+        "overview": "Project Overview",
+        "metadata": "Project Details",
+        "tasksEmpty": "No tasks yet for this project.",
+        "clientLink": "Client",
+        "dates": "Dates"
+      }
+    },
+    "tasks": {
+      "title": "Tasks",
+      "subtitle": "Track and manage tasks across all projects.",
+      "newTask": "New Task",
+      "searchPlaceholder": "Search tasks…",
+      "stats": {
+        "total": "Total Tasks",
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "delayed": "Delayed"
+      },
+      "filters": {
+        "all": "All",
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "delayed": "Delayed"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "IN_PROGRESS": "In Progress",
+        "COMPLETED": "Completed",
+        "DELAYED": "Delayed"
+      },
+      "fields": {
+        "title": "Task Title",
+        "description": "Description",
+        "project": "Project",
+        "assignee": "Assignee",
+        "owner": "Owner",
+        "status": "Status",
+        "dueDate": "Due Date",
+        "createdAt": "Created",
+        "noDescription": "No description provided",
+        "noAssignee": "Unassigned",
+        "overdue": "Overdue"
+      },
+      "actions": {
+        "edit": "Edit Task",
+        "delete": "Delete Task",
+        "view": "View Task",
+        "recalculate": "Recalculate Delayed"
+      },
+      "modals": {
+        "createTitle": "New Task",
+        "editTitle": "Edit Task",
+        "deleteTitle": "Delete Task",
+        "deleteMessage": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+        "createSubmit": "Create Task",
+        "editSubmit": "Save Changes",
+        "creating": "Creating…",
+        "saving": "Saving…",
+        "deleting": "Deleting…"
+      },
+      "views": {
+        "table": "Table",
+        "kanban": "Kanban"
+      },
+      "quickAdd": {
+        "placeholder": "Add a task title…",
+        "dueDateLabel": "Due date (optional)",
+        "submit": "Add Task"
+      },
+      "empty": {
+        "title": "No tasks found",
+        "withFilters": "Try adjusting your search or filters.",
+        "noTasks": "Create your first task to get started.",
+        "projectNoTasks": "No tasks for this project yet."
+      },
+      "pagination": {
+        "pageOf": "Page {{page}} of {{pages}} — {{total}} tasks"
+      },
+      "detail": {
+        "metadata": "Task Details",
+        "clientLabel": "Client",
+        "projectLabel": "Project",
+        "overdueNote": "This task is overdue."
+      }
+    },
+    "contracts": {
+      "title": "Contracts",
+      "subtitle": "Manage client contracts and agreements.",
+      "subtitleClient": "View and sign your contracts.",
+      "newContract": "New Contract",
+      "searchPlaceholder": "Search contracts…",
+      "stats": {
+        "total": "Total",
+        "draft": "Draft",
+        "sent": "Sent",
+        "signed": "Signed",
+        "rejected": "Rejected"
+      },
+      "filters": {
+        "all": "All",
+        "draft": "Draft",
+        "sent": "Sent",
+        "signed": "Signed",
+        "rejected": "Rejected"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "SENT": "Sent",
+        "SIGNED": "Signed",
+        "REJECTED": "Rejected"
+      },
+      "fields": {
+        "title": "Contract Title",
+        "body": "Contract Body",
+        "client": "Client",
+        "owner": "Assigned To",
+        "sentAt": "Sent",
+        "signedAt": "Signed",
+        "createdAt": "Created",
+        "noBody": "No contract body provided"
+      },
+      "actions": {
+        "edit": "Edit Contract",
+        "delete": "Delete Contract",
+        "send": "Send to Client",
+        "accept": "Accept Contract",
+        "reject": "Reject Contract",
+        "download": "Download Signed Copy",
+        "viewClient": "View Client Profile"
+      },
+      "modals": {
+        "create": {
+          "title": "New Contract",
+          "subtitle": "Draft a contract for a client.",
+          "submit": "Create Draft"
+        },
+        "edit": {
+          "title": "Edit Contract",
+          "subtitle": "Update this draft contract.",
+          "submit": "Save Changes"
+        },
+        "send": {
+          "title": "Send Contract to Client",
+          "message": "Send “{{title}}” to the client for review? The client will receive a notification and can accept or reject the contract.",
+          "submit": "Send to Client"
+        },
+        "accept": {
+          "title": "Accept Contract",
+          "subtitle": "Digitally sign this agreement.",
+          "notice": "By accepting, you agree to all terms and conditions in “{{title}}”. A signed copy will be generated and stored securely.",
+          "submit": "Accept Contract"
+        },
+        "reject": {
+          "title": "Reject Contract",
+          "message": "Reject “{{title}}”? The account team will be notified and can send a revised version.",
+          "submit": "Reject Contract"
+        },
+        "delete": {
+          "title": "Delete Contract",
+          "message": "Permanently delete “{{title}}”? This action cannot be undone.",
+          "submit": "Delete Contract"
+        }
+      },
+      "empty": "No contracts found. Create your first contract.",
+      "emptyClient": "No contracts found for your account.",
+      "awaitingSignature": "Contract Awaiting Your Signature",
+      "awaitingSignatureHint": "Please review the contract terms below, then accept or reject.",
+      "signedBanner": "Contract Signed",
+      "signedOn": "Digitally signed on {{date}}",
+      "rejectedBanner": "Contract Rejected",
+      "rejectedHint": "The client has rejected this contract. Contact them to discuss revisions.",
+      "contractTerms": "Contract Terms",
+      "contractDetails": "Contract Details",
+      "signedDocumentLink": "Open signed document in new tab",
+      "pendingContracts": "{{count}} contract awaiting your signature",
+      "pendingContractsPlural": "{{count}} contracts awaiting your signature",
+      "awaitingSection": "Awaiting Signature",
+      "historySection": "History",
+      "viewAll": "View All Contracts"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "subtitle": "Manage client invoices and track payments.",
+      "subtitleClient": "View your invoices and payment history.",
+      "newInvoice": "New Invoice",
+      "searchPlaceholder": "Search invoices…",
+      "stats": {
+        "total": "Total",
+        "unpaid": "Unpaid",
+        "paid": "Paid",
+        "overdue": "Overdue"
+      },
+      "filters": {
+        "all": "All",
+        "unpaid": "Unpaid",
+        "paid": "Paid",
+        "overdue": "Overdue"
+      },
+      "status": {
+        "UNPAID": "Unpaid",
+        "PAID": "Paid",
+        "OVERDUE": "Overdue"
+      },
+      "fields": {
+        "invoiceNumber": "Invoice #",
+        "client": "Client",
+        "owner": "Owner",
+        "subtotal": "Subtotal",
+        "taxRate": "Tax Rate",
+        "taxAmount": "Tax",
+        "total": "Total",
+        "currency": "Currency",
+        "dueDate": "Due Date",
+        "paidAt": "Paid On",
+        "issuedAt": "Issued",
+        "notes": "Notes",
+        "lineItems": "Line Items",
+        "description": "Description",
+        "quantity": "Qty",
+        "unitPrice": "Unit Price",
+        "lineTotal": "Total",
+        "noNotes": "No notes for this invoice.",
+        "noLineItems": "No line items."
+      },
+      "actions": {
+        "markPaid": "Mark as Paid",
+        "edit": "Edit Invoice",
+        "delete": "Delete Invoice",
+        "recalculateOverdue": "Recalculate Overdue",
+        "viewDetail": "View Invoice"
+      },
+      "modals": {
+        "create": {
+          "title": "New Invoice",
+          "subtitle": "Create an invoice with line items.",
+          "submit": "Create Invoice",
+          "addLineItem": "Add Line Item",
+          "removeLineItem": "Remove",
+          "lineItemsSection": "Line Items",
+          "totalsSection": "Totals Preview"
+        },
+        "edit": {
+          "title": "Edit Invoice",
+          "subtitle": "Update this unpaid invoice.",
+          "submit": "Save Changes"
+        },
+        "markPaid": {
+          "title": "Mark Invoice as Paid",
+          "message": "Confirm payment received for {{invoiceNumber}} ({{currency}} {{total}})?",
+          "paidAtLabel": "Payment Date (optional)",
+          "submit": "Confirm Payment"
+        },
+        "delete": {
+          "title": "Delete Invoice",
+          "message": "Permanently delete {{invoiceNumber}}? This action cannot be undone.",
+          "submit": "Delete Invoice"
+        }
+      },
+      "banners": {
+        "paid": "Invoice Paid",
+        "paidOn": "Payment recorded on {{date}}",
+        "overdue": "Invoice Overdue",
+        "overdueHint": "This invoice is past its due date. Please arrange payment."
+      },
+      "summary": {
+        "amountDue": "Amount Due",
+        "paymentSummary": "Payment Summary"
+      },
+      "empty": "No invoices found.",
+      "emptyClient": "No invoices found for your account.",
+      "overdueAlert": "1 invoice is overdue",
+      "overdueAlertPlural": "{{count}} invoices are overdue",
+      "unpaidAlert": "1 invoice awaiting payment",
+      "unpaidAlertPlural": "{{count}} invoices awaiting payment",
+      "viewAll": "View All Invoices",
+      "dashboard": {
+        "tab": "Invoices",
+        "subtitle": "Your invoices — view payment status and history."
+      }
+    },
+    "expenses": {
+      "title": "Expenses & Income",
+      "subtitle": "Track all income and expenses.",
+      "subtitleEmployee": "Track your income and expenses.",
+      "newEntry": "New Entry",
+      "searchPlaceholder": "Search category…",
+      "periodLabel": "Period:",
+      "periodTo": "to",
+      "clearPeriod": "Clear period filter",
+      "summary": {
+        "totalIncome": "Total Income",
+        "totalExpenses": "Total Expenses",
+        "netBalance": "Net Balance",
+        "outstanding": "Outstanding",
+        "outstandingHint": "Unpaid + Overdue invoices",
+        "manualLabel": "Manual:"
+      },
+      "tabs": {
+        "all": "All Entries",
+        "income": "Income",
+        "expense": "Expenses"
+      },
+      "type": {
+        "INCOME": "Income",
+        "EXPENSE": "Expense"
+      },
+      "categories": {
+        "income": {
+          "invoicePayment": "Invoice Payment",
+          "consulting": "Consulting",
+          "sales": "Sales",
+          "grant": "Grant",
+          "other": "Other Income"
+        },
+        "expense": {
+          "software": "Software",
+          "payroll": "Payroll",
+          "marketing": "Marketing",
+          "travel": "Travel",
+          "utilities": "Utilities",
+          "rent": "Rent",
+          "hardware": "Hardware",
+          "other": "Other"
+        }
+      },
+      "row": {
+        "autoInvoice": "Auto-Invoice",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "modals": {
+        "create": {
+          "title": "New Entry",
+          "subtitle": "Add a manual income or expense record.",
+          "submit": "Add Entry"
+        },
+        "edit": {
+          "title": "Edit Entry",
+          "subtitle": "Update this manual entry.",
+          "submit": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Entry",
+          "message": "Permanently delete {{category}} ({{amount}})? This cannot be undone.",
+          "submit": "Delete"
+        }
+      },
+      "fields": {
+        "type": "Type",
+        "category": "Category",
+        "amount": "Amount (USD)",
+        "date": "Date",
+        "description": "Description (optional)",
+        "descriptionPlaceholder": "Brief note…",
+        "selectCategory": "Select category…"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "saving": "Saving…",
+        "deleting": "Deleting…",
+        "retry": "Retry"
+      },
+      "empty": "No entries found.",
+      "emptyAction": "Add first entry",
+      "errors": {
+        "loadFailed": "Failed to load entries.",
+        "saveFailed": "Failed to save entry",
+        "deleteFailed": "Failed to delete"
+      },
+      "pagination": {
+        "page": "Page {{page}} of {{total}}"
+      }
+    },
+    "dashboard": {
+      "title": "ERP Dashboard",
+      "subtitle": "Overview of your business performance.",
+      "welcomeAdmin": "Good {{timeOfDay}}, Admin!",
+      "welcomeEmployee": "Good {{timeOfDay}}!",
+      "loading": "Loading dashboard…",
+      "errorTitle": "Failed to load dashboard",
+      "errorMessage": "Could not fetch dashboard data. Please try again.",
+      "retry": "Retry",
+      "lastUpdated": "Last updated just now",
+      "kpi": {
+        "totalLeads": "Total Leads",
+        "totalClients": "Total Clients",
+        "newLeadsThisMonth": "New Leads",
+        "newClientsThisMonth": "New Clients",
+        "activeProjects": "Active Projects",
+        "totalTasks": "Total Tasks",
+        "completedTasks": "Completed",
+        "delayedTasks": "Delayed",
+        "pendingTasks": "Pending",
+        "completionRate": "Completion Rate",
+        "totalIncome": "Income (Month)",
+        "totalExpenses": "Expenses (Month)",
+        "netBalance": "Net Balance",
+        "outstandingInvoices": "Outstanding Invoices",
+        "overdueInvoicesCount": "Overdue Invoices"
+      },
+      "sections": {
+        "financials": "Financials — This Month",
+        "financialChart": "Income vs Expenses — Last 6 Months",
+        "taskProgress": "Task Progress",
+        "projectsByStatus": "Projects by Status",
+        "contractsByStatus": "Contracts",
+        "quickActions": "Quick Actions"
+      },
+      "chart": {
+        "income": "Income",
+        "expenses": "Expenses",
+        "noData": "No financial data available for this period."
+      },
+      "taskGauge": {
+        "completionRate": "{{rate}}% complete",
+        "noTasks": "No tasks yet"
+      },
+      "projectStatus": {
+        "planning": "Planning",
+        "active": "Active",
+        "onHold": "On Hold",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "contractStatus": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "signed": "Signed",
+        "rejected": "Rejected"
+      },
+      "quickActions": {
+        "newClient": "New Client",
+        "newProject": "New Project",
+        "newTask": "New Task",
+        "newContract": "New Contract",
+        "newInvoice": "New Invoice",
+        "newExpense": "New Expense"
+      },
+      "thisMonth": "This month",
+      "currency": "$"
+    }
+  },
+  "footer": {
+    "tagline": "Building the future, one line at a time.",
+    "links": {
+      "company": "Company",
+      "about": "About Us",
+      "careers": "Careers",
+      "blog": "Blog",
+      "services": "Services",
+      "web": "Web Development",
+      "mobile": "Mobile Apps",
+      "erp": "ERP & CRM",
+      "legal": "Legal",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "copyright": "© {{year}} Handla. All rights reserved.",
+    "social": {
+      "twitter": "Twitter",
+      "github": "GitHub",
+      "linkedin": "LinkedIn"
+    }
+  }
+}

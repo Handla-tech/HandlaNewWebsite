@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} — Handla Contract</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f7f7;
+      color: #1a1a1a;
+      padding: 48px 24px;
+    }
+
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    /* Header band */
+    .header {
+      background: #0d0d0d;
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      font-family: monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .brand-white  { color: #fff; }
+    .brand-gold   { color: #fbbf24; }
+
+    .header-badge {
+      border: 1px solid rgba(251,191,36,0.4);
+      background: rgba(251,191,36,0.1);
+      color: #fbbf24;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Content area */
+    .content { padding: 40px; }
+
+    .contract-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #0d0d0d;
+      margin-bottom: 8px;
+    }
+
+    .meta-grid {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 16px 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .meta-item strong { color: #1a1a1a; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 28px 0;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    .body-text {
+      white-space: pre-wrap;
+      line-height: 1.8;
+      font-size: 0.95rem;
+      color: #2a2a2a;
+    }
+
+    /* Signature block */
+    .signature-section {
+      margin-top: 40px;
+      border: 1px solid rgba(251,191,36,0.4);
+      background: rgba(251,191,36,0.04);
+      border-radius: 10px;
+      padding: 24px 28px;
+    }
+
+    .signature-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #fbbf24;
+      margin-bottom: 16px;
+    }
+
+    .sig-row {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .sig-field {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .sig-field label {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sig-field .value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #fbbf24;
+    }
+
+    .checkmark {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: #fbbf24;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 0.7rem;
+      text-align: center;
+      line-height: 18px;
+      margin-right: 6px;
+    }
+
+    .signed-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 16px;
+      padding: 6px 14px;
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #166534;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <span class="brand-white">&lt;Handla </span><span class="brand-gold">/</span><span class="brand-white">&gt;</span>
+      </div>
+      <span class="header-badge">Official Contract</span>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <h1 class="contract-title">{{title}}</h1>
+
+      <div class="meta-grid">
+        <div class="meta-item"><label>Contract ID</label><br/><strong>{{contractId}}</strong></div>
+        <div class="meta-item"><label>Client</label><br/><strong>{{clientName}}</strong></div>
+        <div class="meta-item"><label>Signed Date</label><br/><strong>{{signedDate}}</strong></div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="section-label">Contract Terms</div>
+      <div class="body-text">{{body}}</div>
+
+      <hr class="divider" />
+
+      <!-- Signature Block -->
+      <div class="signature-section">
+        <div class="signature-title">&#x2713; Digital Signature</div>
+        <div class="sig-row">
+          <div class="sig-field">
+            <label>Signed By (Client)</label>
+            <div class="value">{{clientName}}</div>
+          </div>
+          <div class="sig-field">
+            <label>Date of Signature</label>
+            <div class="value">{{signedDate}}</div>
+          </div>
+        </div>
+        <div class="signed-badge">
+          <span class="checkmark">&#x2713;</span>
+          Digitally Accepted &amp; Signed
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        This document was digitally signed via the Handla ERP platform.
+        Contract ID: {{contractId}}
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

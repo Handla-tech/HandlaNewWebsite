@@ -1,0 +1,47 @@
+# =============================================================================
+# Handla — Development Docker Compose override
+#
+# Merges on top of docker-compose.yml for local development:
+#   - API runs nest start --watch (hot-reload via ts-node)
+#   - Source code is bind-mounted so changes reflect instantly
+#   - MySQL port exposed to host for GUI clients (e.g. TablePlus, DBeaver)
+#   - Redis port exposed to host for redis-cli / RedisInsight
+#   - DATABASE_SYNCHRONIZE=true (auto-schema sync, no migrations needed locally)
+#   - DATABASE_LOGGING=true (verbose SQL logs)
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# =============================================================================
+
+services:
+
+  # ── MySQL (expose port to host for local GUI tools) ─────────────────────────
+  mysql:
+    ports:
+      - "3306:3306"
+
+  # ── Redis (expose port to host for redis-cli / RedisInsight) ────────────────
+  redis:
+    ports:
+      - "6379:6379"
+
+  # ── Handla API — development mode with hot-reload ───────────────────────────
+  api:
+    build:
+      # In dev we build from the builder stage (has devDeps + ts-node)
+      target: builder
+    # Override the production entrypoint with the NestJS watch command
+    entrypoint: []
+    command: npm run start:dev
+    environment:
+      NODE_ENV:              development
+      DATABASE_SYNCHRONIZE:  "true"
+      DATABASE_LOGGING:      "true"
+    volumes:
+      # Bind-mount source so edits are picked up by --watch without rebuilding
+      - ./handla-backend/src:/app/src:ro
+      # Preserve container's node_modules (don't override with host copy)
+      - /app/node_modules
+    # Disable health-check in dev (start:dev can be slow to boot)
+    healthcheck:
+      disable: true

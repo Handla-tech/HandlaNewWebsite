@@ -1,0 +1,1034 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "about": "من نحن",
+    "services": "خدماتنا",
+    "solutions": "الحلول",
+    "process": "طريقة عملنا",
+    "testimonials": "آراء العملاء",
+    "contact": "تواصل معنا",
+    "signIn": "تسجيل الدخول",
+    "getStarted": "ابدأ الآن",
+    "goToChat": "الذهاب إلى المحادثة",
+    "adminPanel": "لوحة الإدارة",
+    "dashboard": "لوحة التحكم",
+    "signOut": "تسجيل الخروج",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات"
+  },
+  "hero": {
+    "tagline": "ابنِ المستقبل",
+    "badge": "شريك الحلول الرقمية",
+    "staticLine": "أفكارك تصبح",
+    "headline": "حلول برمجية تحقق",
+    "headlineHighlight": "نتائج حقيقية",
+    "subtitle": "نصمم ونطور وننشر حلولاً برمجية حديثة تُبسّط العمليات وتُسرّع النمو.",
+    "ctaPrimary": "احصل على استشارة مجانية",
+    "ctaSecondary": "استعرض الحلول",
+    "floatingWeb": "تطوير الويب",
+    "floatingErp": "أنظمة ERP وCRM",
+    "floatingMobile": "تطبيقات الجوال",
+    "stats": {
+      "projects": "+50",
+      "projectsLabel": "مشروع مُنجز",
+      "clients": "+30",
+      "clientsLabel": "عميل سعيد",
+      "years": "+5",
+      "yearsLabel": "سنوات خبرة",
+      "uptime": "99.9%",
+      "uptimeLabel": "ضمان التشغيل"
+    }
+  },
+  "about": {
+    "title": "من نحن",
+    "label": "من نحن",
+    "headline": "شريكك التقني للشركات الطموحة",
+    "subtitle": "نحن فريق من المهندسين والمصممين الشغوفين المتخصصين في بناء برمجيات تُحدث فارقاً حقيقياً.",
+    "description": "Handla شركة برمجيات حديثة متخصصة في بناء أنظمة رقمية قابلة للتوسع. من منصات الويب المخصصة إلى أدوات تخطيط موارد المؤسسات، نساعد المنظمات على تبسيط عملياتها وخدمة عملائها بشكل أفضل والنمو بسرعة أكبر بتقنية مبنية للمستقبل.",
+    "mission": "مهمتنا",
+    "missionText": "جعل تطوير البرمجيات عالمي المستوى في متناول الشركات بجميع أحجامها.",
+    "stats": {
+      "projects": "+150",
+      "projectsLabel": "مشروع مُنجز",
+      "industries": "+30",
+      "industriesLabel": "قطاع تم خدمته",
+      "support": "24/7",
+      "supportLabel": "توفر الدعم",
+      "uptime": "99.9%",
+      "uptimeLabel": "موثوقية النظام"
+    },
+    "features": {
+      "innovation": "الابتكار أولاً",
+      "innovationDesc": "مجموعة تقنيات متطورة وممارسات تطوير حديثة.",
+      "results": "موجّهون بالنتائج",
+      "resultsDesc": "كل حل مصمم لتحقيق تأثير تجاري قابل للقياس.",
+      "client": "التركيز على العميل",
+      "clientDesc": "نبني شراكات دائمة، ليس مجرد برمجيات."
+    },
+    "values": {
+      "quality": "الجودة أولاً",
+      "qualityDesc": "لا نُطلق كوداً لا نفخر به.",
+      "transparency": "شفافية كاملة",
+      "transparencyDesc": "تحديثات مستمرة وتواصل مفتوح.",
+      "partnership": "شراكة طويلة الأمد",
+      "partnershipDesc": "نحن مستثمرون في نجاحك ما بعد الإطلاق."
+    }
+  },
+  "services": {
+    "title": "ماذا نبني",
+    "label": "ماذا نبني",
+    "subtitle": "خدمات تطوير برمجيات متكاملة للشركات الحديثة",
+    "headline": "خدمات مصممة للتوسع",
+    "description": "حلول رقمية متكاملة مصممة للأداء والقابلية للتوسع ونمو الأعمال.",
+    "web": {
+      "title": "تطوير الويب",
+      "description": "تطبيقات ويب حديثة ومتجاوبة مبنية بأحدث الأطر. سريعة وآمنة ومصممة للتحويل."
+    },
+    "erp": {
+      "title": "أنظمة ERP وCRM",
+      "description": "حلول مؤسسية مخصصة تمركز العمليات وتؤتمت سير العمل وتوفر رؤى في الوقت الفعلي."
+    },
+    "mobile": {
+      "title": "تطبيقات الجوال",
+      "description": "تطبيقات جوال أصلية ومتعددة المنصات بتجربة مستخدم سلسة وتكامل قوي مع الخوادم."
+    },
+    "hosting": {
+      "title": "البنية السحابية",
+      "description": "بنية سحابية قابلة للتوسع وموثوقة مع خطوط CI/CD ومراقبة وأمان على مستوى المؤسسات."
+    },
+    "api": {
+      "title": "APIs والتكامل",
+      "description": "ربط أدواتك وأتمتة سير العمل بتطوير API قوي وتكاملات مع الأطراف الثالثة."
+    },
+    "consulting": {
+      "title": "الاستشارات التقنية",
+      "description": "إرشادات تقنية استراتيجية لمساعدتك في اتخاذ القرارات الصحيحة في البنية المعمارية والأدوات."
+    }
+  },
+  "solutions": {
+    "title": "حلول لكل حجم",
+    "label": "حلول جاهزة",
+    "headline": "منتجات مبنية للإطلاق السريع",
+    "subtitle": "سواء كنت شركة ناشئة أو مؤسسة كبرى، لدينا النهج الصحيح لك.",
+    "description": "حلول مؤسسية جاهزة يمكن نشرها وتخصيصها لمنظمتك في أسابيع لا أشهر.",
+    "startup": {
+      "label": "شركة ناشئة",
+      "title": "انطلق بسرعة، توسع بذكاء",
+      "description": "تطوير MVP، نماذج أولية سريعة، وبنية معمارية رشيقة مصممة للنمو."
+    },
+    "enterprise": {
+      "label": "مؤسسة كبرى",
+      "title": "موثوقية على مستوى المؤسسات",
+      "description": "أنظمة متينة وآمنة قادرة على استيعاب الملايين من المستخدمين ومنطق الأعمال المعقد."
+    },
+    "government": {
+      "label": "حكومي",
+      "title": "حلول القطاع العام",
+      "description": "خدمات رقمية متوافقة وآمنة وسهلة الوصول للجهات الحكومية."
+    },
+    "smb": {
+      "label": "شركات صغيرة ومتوسطة",
+      "title": "نمِّ أعمالك",
+      "description": "حلول برمجية بأسعار معقولة وذات تأثير كبير مصممة للشركات الصغيرة والمتوسطة."
+    },
+    "schoolErp": {
+      "title": "نظام ERP المدرسي",
+      "description": "نظام متكامل لإدارة المدارس يشمل تسجيل الطلاب والحضور والدرجات والجداول الزمنية وبوابات أولياء الأمور — كل ذلك في منصة واحدة.",
+      "learnMore": "اعرف المزيد"
+    },
+    "hrPayroll": {
+      "title": "الموارد البشرية والرواتب",
+      "description": "معالجة مبسطة للموارد البشرية والرواتب مع إدارة الإجازات وتتبع الحضور وأتمتة الرواتب وأدوات الامتثال.",
+      "learnMore": "اعرف المزيد"
+    }
+  },
+  "process": {
+    "title": "طريقة عملنا",
+    "label": "طريقة عملنا",
+    "headline": "من الفكرة إلى الإطلاق في أربع خطوات",
+    "subtitle": "منهجية مجربة تُحقق نتائج في الوقت المحدد دائماً.",
+    "cta": "ابدأ مشروعك",
+    "steps": {
+      "discovery": {
+        "number": "01",
+        "title": "الاستكشاف",
+        "description": "نتعمق في احتياجات عملك وأهدافك وتحدياتك لرسم الحل الأمثل."
+      },
+      "design": {
+        "number": "02",
+        "title": "التصميم",
+        "description": "تصميم يمحوره المستخدم مع نماذج أولية ونماذج تجريبية وخارطة طريق واضحة للمنتج."
+      },
+      "build": {
+        "number": "03",
+        "title": "البناء",
+        "description": "تطوير رشيق مع عروض توضيحية منتظمة وكود نظيف واختبار صارم في كل مرحلة."
+      },
+      "launch": {
+        "number": "04",
+        "title": "الإطلاق",
+        "description": "نشر سلس وتدريب ودعم مستمر لضمان النجاح على المدى البعيد."
+      }
+    }
+  },
+  "testimonials": {
+    "title": "ماذا يقول عملاؤنا",
+    "label": "قصص العملاء",
+    "subtitle": "لا تأخذ كلامنا — استمع من الفرق التي عملنا معها."
+  },
+  "contact": {
+    "title": "لنبني شيئاً رائعاً معاً",
+    "label": "تواصل معنا",
+    "subtitle": "هل لديك مشروع في ذهنك؟ ابدأ محادثة مع فريقنا.",
+    "headlineGuest": "لنبني شيئاً رائعاً",
+    "headlineAuth": "مرحباً بعودتك — لنواصل البناء",
+    "subtitleGuest": "هل أنت مستعد لتحويل أعمالك؟ تحدث معنا أدناه — نرد عادةً خلال ساعات.",
+    "subtitleAuth": "أنت مسجّل الدخول. انتقل إلى لوحة التحكم لمواصلة محادثتك مع فريقنا.",
+    "signInPrompt": "سجّل دخولك لبدء محادثة مباشرة مع فريقنا",
+    "signInCta": "سجّل الدخول للمحادثة",
+    "chatTitle": "تحدث معنا",
+    "email": "راسلنا",
+    "response": "نرد عادةً خلال ساعتين أثناء ساعات العمل.",
+    "followUs": "تابعنا",
+    "followSubtitle": "ابقَ على تواصل عبر منصاتنا.",
+    "goToAdminPanel": "انتقل إلى لوحة الإدارة",
+    "goToChat": "انتقل إلى المحادثة",
+    "adminSubtitle": "إدارة المحادثات والرد على العملاء",
+    "clientSubtitle": "محادثتك مع فريقنا جاهزة",
+    "adminPanel": "لوحة الإدارة",
+    "myChat": "محادثتي",
+    "manageConversations": "إدارة جميع المحادثات",
+    "continueConversation": "متابعة محادثتك",
+    "open": "فتح",
+    "communityNote": "نتفاعل مع مجتمعنا يومياً. تابعنا لتبقى على اطلاع.",
+    "trustStrip": "التقنيات الموثوقة"
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم الكامل",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "signingIn": "جارٍ تسجيل الدخول...",
+    "creatingAccount": "جارٍ إنشاء الحساب...",
+    "welcomeBack": "مرحباً بعودتك",
+    "joinHandla": "انضم إلى Handla",
+    "signInSubtitle": "سجّل دخولك للوصول إلى لوحة التحكم والتواصل مع فريقنا.",
+    "signUpSubtitle": "أنشئ حسابك وابدأ رحلتك البرمجية.",
+    "errors": {
+      "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      "emailTaken": "يوجد حساب مسجّل بهذا البريد الإلكتروني.",
+      "weakPassword": "يجب أن تتضمن كلمة المرور 8 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام ورموز.",
+      "generic": "حدث خطأ ما. الرجاء المحاولة مرة أخرى."
+    }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحباً بعودتك، {{name}}",
+    "conversations": "المحادثات",
+    "notifications": "الإشعارات",
+    "newConversation": "محادثة جديدة",
+    "noConversations": "لا توجد محادثات بعد",
+    "startConversation": "ابدأ محادثتك الأولى مع فريقنا",
+    "unreadMessages": "{{count}} رسالة غير مقروءة",
+    "unreadMessages_plural": "{{count}} رسائل غير مقروءة"
+  },
+  "chat": {
+    "placeholder": "اكتب رسالة...",
+    "send": "إرسال",
+    "attach": "إرفاق ملف",
+    "typing": "{{name}} يكتب...",
+    "you": "أنت",
+    "noMessages": "لا توجد رسائل بعد. قُل مرحباً!",
+    "fileTooBig": "الملف كبير جداً. الحجم الأقصى هو 5 ميغابايت.",
+    "unsupportedType": "نوع الملف هذا غير مدعوم.",
+    "uploading": "جارٍ الرفع...",
+    "uploadFailed": "فشل الرفع. الرجاء المحاولة مرة أخرى.",
+    "online": "متصل",
+    "offline": "غير متصل",
+    "readBy": "مقروءة",
+    "blurTitle": "سجّل الدخول للمحادثة",
+    "blurSubtitle": "انضم مجاناً وتحدث مباشرةً مع فريق Handla.",
+    "blurSignIn": "تسجيل الدخول",
+    "blurCreateAccount": "إنشاء حساب مجاني",
+    "blurReady": "محادثتك جاهزة 🚀",
+    "blurReadySubtitle": "انتقل إلى المحادثة للتحدث مع فريقنا مباشرةً.",
+    "blurGoToChat": "انتقل إلى المحادثة",
+    "blurInputGuest": "سجّل الدخول لإرسال رسالة...",
+    "blurInputAuth": "تحدث من لوحة التحكم…",
+    "handlaSupport": "دعم Handla",
+    "onlineNow": "متصل الآن"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "noNotifications": "لا توجد إشعارات",
+    "markAllRead": "تعليم الكل كمقروء",
+    "clearAll": "مسح المقروءة",
+    "newMessage": "رسالة جديدة من {{sender}}",
+    "system": "إشعار النظام",
+    "justNow": "الآن",
+    "unread": "غير مقروء",
+    "types": {
+      "MESSAGE": "رسالة",
+      "SYSTEM": "النظام",
+      "CONTRACT_SENT": "عقد مُرسَل",
+      "CONTRACT_SIGNED": "عقد موقَّع",
+      "CONTRACT_REJECTED": "عقد مرفوض",
+      "INVOICE_CREATED": "فاتورة جديدة",
+      "INVOICE_OVERDUE": "فاتورة متأخرة",
+      "LEAD_ASSIGNED": "عميل محتمل مُعيَّن",
+      "LEAD_PROMOTED": "ترقية عميل محتمل",
+      "TASK_ASSIGNED": "مهمة مُعيَّنة",
+      "TASK_DELAYED": "مهمة متأخرة"
+    }
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ ما",
+    "retry": "حاول مجدداً",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "search": "بحث",
+    "filter": "تصفية",
+    "all": "الكل",
+    "none": "لا شيء",
+    "yes": "نعم",
+    "no": "لا",
+    "or": "أو",
+    "and": "و",
+    "viewAll": "عرض الكل",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "theme": {
+      "light": "الوضع الفاتح",
+      "dark": "الوضع الداكن",
+      "toggle": "تبديل السمة"
+    },
+    "language": {
+      "en": "English",
+      "ar": "العربية",
+      "toggle": "تغيير اللغة"
+    }
+  },
+  "erp": {
+    "nav": {
+      "dashboard": "لوحة تحكم ERP",
+      "conversations": "المحادثات",
+      "leads": "العملاء المحتملون",
+      "clients": "العملاء",
+      "employees": "الموظفون",
+      "reports": "التقارير",
+      "settings": "الإعدادات",
+      "users": "المستخدمون",
+      "projects": "المشاريع",
+      "tasks": "المهام",
+      "contracts": "العقود",
+      "invoices": "الفواتير",
+      "expenses": "المصروفات",
+      "messages": "الرسائل"
+    },
+    "roles": {
+      "admin": "مدير",
+      "employee": "موظف",
+      "client": "عميل",
+      "lead": "عميل محتمل",
+      "unknown": "دور غير معروف"
+    },
+    "modules": {
+      "crm": "إدارة علاقات العملاء",
+      "hr": "الموارد البشرية",
+      "finance": "المالية",
+      "inventory": "المخزون",
+      "projects": "المشاريع"
+    },
+    "lead": {
+      "title": "بوابتي",
+      "subtitle": "تابع مشروعك وتواصل مع فريقنا.",
+      "noAssignedEmployee": "لم يتم تعيين موظف بعد — سيتواصل معك فريقنا قريباً.",
+      "status": "حالة العميل المحتمل",
+      "convertedToClient": "تمت الترقية إلى عميل"
+    },
+    "employee": {
+      "title": "بوابة الموظف",
+      "subtitle": "أدر محادثاتك المعيّنة والعملاء المحتملين.",
+      "assignedConversations": "المحادثات المعيّنة",
+      "noAssignedConversations": "لا توجد محادثات معيّنة لك بعد."
+    },
+    "users": {
+      "title": "المستخدمون",
+      "subtitle": "إنشاء المستخدمين وإدارتهم وتعيين أدوارهم.",
+      "total": "{{count}} إجمالي",
+      "newUser": "مستخدم جديد",
+      "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني…",
+      "stats": {
+        "admins": "المدراء",
+        "employees": "الموظفون",
+        "clients": "العملاء",
+        "leads": "العملاء المحتملون"
+      },
+      "filters": {
+        "all": "الكل",
+        "admin": "مدير",
+        "employee": "موظف",
+        "client": "عميل",
+        "lead": "عميل محتمل"
+      },
+      "table": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "joined": "تاريخ الانضمام",
+        "actions": "إجراءات",
+        "you": "أنت"
+      },
+      "actions": {
+        "changeRole": "تغيير الدور",
+        "promoteToClient": "ترقية إلى عميل",
+        "reassignOwnership": "إعادة تعيين الملكية",
+        "delete": "حذف المستخدم"
+      },
+      "modals": {
+        "createTitle": "إنشاء مستخدم جديد",
+        "changeRoleTitle": "تغيير الدور",
+        "promoteTitle": "ترقية عميل محتمل إلى عميل",
+        "reassignTitle": "إعادة تعيين الملكية",
+        "deleteTitle": "حذف المستخدم",
+        "createSubmit": "إنشاء مستخدم",
+        "creating": "جارٍ الإنشاء…",
+        "changeRoleSubmit": "تحديث الدور",
+        "saving": "جارٍ الحفظ…",
+        "promoteSubmit": "ترقية إلى عميل",
+        "promoting": "جارٍ الترقية…",
+        "reassignSubmit": "إعادة التعيين",
+        "reassigning": "جارٍ إعادة التعيين…",
+        "deleteSubmit": "حذف نهائي",
+        "deleting": "جارٍ الحذف…",
+        "adminDemotionWarning": "لا يمكن تغيير دور المدير عبر هذه الواجهة. يُسمح فقط بإعادة تأكيد نفس الدور.",
+        "promoteDescription": "سيمنح هذا الإجراء المستخدم صلاحيات وصول العميل إلى لوحة التحكم.",
+        "reassignDescription": "إعادة تعيين جميع سجلات ERP المملوكة حالياً لـ {{name}} إلى موظف آخر.",
+        "reassignTargetLabel": "المالك الجديد (UUID الموظف)",
+        "reassignTargetHint": "يجب أن يكون المستخدم المستهدف بدور موظف.",
+        "deleteWarningTitle": "حذف نهائي",
+        "deleteWarningBody": "سيؤدي هذا إلى حذف {{name}} ({{email}}) نهائياً. لا يمكن التراجع عن هذا الإجراء."
+      },
+      "form": {
+        "email": "البريد الإلكتروني",
+        "name": "الاسم الكامل",
+        "password": "كلمة المرور المؤقتة",
+        "passwordHint": "8 أحرف على الأقل، أحرف كبيرة وصغيرة وأرقام",
+        "role": "الدور"
+      },
+      "empty": {
+        "title": "لا يوجد مستخدمون",
+        "withFilters": "جرّب تعديل الفلاتر.",
+        "noUsers": "أنشئ مستخدمك الأول للبدء."
+      },
+      "pagination": {
+        "pageOf": "الصفحة {{page}} من {{pages}} — {{total}} مستخدم"
+      }
+    },
+    "clients": {
+      "title": "العملاء",
+      "subtitle": "إدارة حسابات العملاء والعلاقات.",
+      "newClient": "عميل جديد",
+      "searchPlaceholder": "بحث بالاسم أو الشركة…",
+      "stats": {
+        "total": "إجمالي العملاء",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "churned": "مغادر"
+      },
+      "filters": {
+        "all": "الكل",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "churned": "مغادر"
+      },
+      "status": {
+        "ACTIVE": "نشط",
+        "INACTIVE": "غير نشط",
+        "CHURNED": "مغادر"
+      },
+      "fields": {
+        "company": "الشركة",
+        "status": "الحالة",
+        "notes": "ملاحظات",
+        "owner": "مسؤول عنه",
+        "createdAt": "تاريخ الإنشاء",
+        "noCompany": "لا توجد شركة"
+      },
+      "actions": {
+        "edit": "تعديل العميل",
+        "delete": "حذف العميل",
+        "assignOwner": "تعيين مسؤول",
+        "view": "عرض التفاصيل"
+      },
+      "modals": {
+        "createTitle": "إنشاء عميل",
+        "editTitle": "تعديل العميل",
+        "assignOwnerTitle": "تعيين مسؤول",
+        "deleteTitle": "حذف العميل",
+        "deleteMessage": "هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع عن هذه العملية.",
+        "selectUser": "اختر مستخدم CLIENT",
+        "selectEmployee": "اختر موظفاً",
+        "confirmDelete": "حذف"
+      },
+      "empty": "لا يوجد عملاء.",
+      "emptyOwned": "لا يوجد عملاء مسندون إليك بعد.",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "projects": "المشاريع",
+        "contracts": "العقود",
+        "invoices": "الفواتير"
+      },
+      "detail": {
+        "contact": "معلومات الاتصال",
+        "noNotes": "لا توجد ملاحظات لهذا العميل.",
+        "unassigned": "غير مسند"
+      }
+    },
+    "projects": {
+      "title": "المشاريع",
+      "subtitle": "إدارة مشاريع العملاء وتتبع التقدم.",
+      "newProject": "مشروع جديد",
+      "searchPlaceholder": "البحث في المشاريع…",
+      "stats": {
+        "total": "إجمالي المشاريع",
+        "planning": "قيد التخطيط",
+        "active": "نشط",
+        "onHold": "موقوف",
+        "completed": "مكتمل",
+        "cancelled": "ملغى"
+      },
+      "filters": {
+        "all": "الكل",
+        "planning": "قيد التخطيط",
+        "active": "نشط",
+        "onHold": "موقوف",
+        "completed": "مكتمل",
+        "cancelled": "ملغى"
+      },
+      "status": {
+        "PLANNING": "قيد التخطيط",
+        "ACTIVE": "نشط",
+        "ON_HOLD": "موقوف",
+        "COMPLETED": "مكتمل",
+        "CANCELLED": "ملغى"
+      },
+      "fields": {
+        "title": "عنوان المشروع",
+        "description": "الوصف",
+        "client": "العميل",
+        "status": "الحالة",
+        "startDate": "تاريخ البداية",
+        "endDate": "تاريخ الانتهاء",
+        "owner": "مسند إلى",
+        "createdAt": "تاريخ الإنشاء",
+        "noDescription": "لا يوجد وصف"
+      },
+      "actions": {
+        "edit": "تعديل المشروع",
+        "delete": "حذف المشروع",
+        "view": "عرض المشروع"
+      },
+      "modals": {
+        "create": {
+          "title": "مشروع جديد",
+          "subtitle": "أنشئ مشروعاً لعميل موجود.",
+          "submit": "إنشاء المشروع"
+        },
+        "edit": {
+          "title": "تعديل المشروع",
+          "subtitle": "تحديث تفاصيل المشروع.",
+          "submit": "حفظ التغييرات"
+        },
+        "delete": {
+          "title": "حذف المشروع",
+          "message": "هل أنت متأكد من حذف «{title}»؟ سيتم حذف جميع المهام المرتبطة به.",
+          "confirm": "حذف المشروع"
+        }
+      },
+      "empty": "لم يتم العثور على مشاريع. أنشئ مشروعك الأول.",
+      "emptyOwned": "ليس لديك مشاريع بعد. أنشئ واحداً للبدء.",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "tasks": "المهام"
+      },
+      "detail": {
+        "overview": "نظرة عامة على المشروع",
+        "metadata": "تفاصيل المشروع",
+        "tasksEmpty": "لا توجد مهام لهذا المشروع بعد.",
+        "clientLink": "العميل",
+        "dates": "التواريخ"
+      }
+    },
+    "tasks": {
+      "title": "المهام",
+      "subtitle": "تتبع المهام وإدارتها عبر جميع المشاريع.",
+      "newTask": "مهمة جديدة",
+      "searchPlaceholder": "بحث في المهام…",
+      "stats": {
+        "total": "إجمالي المهام",
+        "pending": "قيد الانتظار",
+        "inProgress": "قيد التنفيذ",
+        "completed": "مكتملة",
+        "delayed": "متأخرة"
+      },
+      "filters": {
+        "all": "الكل",
+        "pending": "قيد الانتظار",
+        "inProgress": "قيد التنفيذ",
+        "completed": "مكتملة",
+        "delayed": "متأخرة"
+      },
+      "status": {
+        "PENDING": "قيد الانتظار",
+        "IN_PROGRESS": "قيد التنفيذ",
+        "COMPLETED": "مكتملة",
+        "DELAYED": "متأخرة"
+      },
+      "fields": {
+        "title": "عنوان المهمة",
+        "description": "الوصف",
+        "project": "المشروع",
+        "assignee": "المكلَّف",
+        "owner": "المالك",
+        "status": "الحالة",
+        "dueDate": "تاريخ الاستحقاق",
+        "createdAt": "تاريخ الإنشاء",
+        "noDescription": "لا يوجد وصف",
+        "noAssignee": "غير مسند",
+        "overdue": "متأخرة"
+      },
+      "actions": {
+        "edit": "تعديل المهمة",
+        "delete": "حذف المهمة",
+        "view": "عرض المهمة",
+        "recalculate": "إعادة احتساب المتأخرة"
+      },
+      "modals": {
+        "createTitle": "مهمة جديدة",
+        "editTitle": "تعديل المهمة",
+        "deleteTitle": "حذف المهمة",
+        "deleteMessage": "هل أنت متأكد من حذف «{title}»؟ لا يمكن التراجع عن هذا الإجراء.",
+        "createSubmit": "إنشاء المهمة",
+        "editSubmit": "حفظ التغييرات",
+        "creating": "جارٍ الإنشاء…",
+        "saving": "جارٍ الحفظ…",
+        "deleting": "جارٍ الحذف…"
+      },
+      "views": {
+        "table": "جدول",
+        "kanban": "كانبان"
+      },
+      "quickAdd": {
+        "placeholder": "أضف عنوان المهمة…",
+        "dueDateLabel": "تاريخ الاستحقاق (اختياري)",
+        "submit": "إضافة المهمة"
+      },
+      "empty": {
+        "title": "لم يتم العثور على مهام",
+        "withFilters": "جرّب تعديل البحث أو الفلاتر.",
+        "noTasks": "أنشئ مهمتك الأولى للبدء.",
+        "projectNoTasks": "لا توجد مهام لهذا المشروع بعد."
+      },
+      "pagination": {
+        "pageOf": "الصفحة {{page}} من {{pages}} — {{total}} مهمة"
+      },
+      "detail": {
+        "metadata": "تفاصيل المهمة",
+        "clientLabel": "العميل",
+        "projectLabel": "المشروع",
+        "overdueNote": "هذه المهمة متأخرة."
+      }
+    },
+    "contracts": {
+      "title": "العقود",
+      "subtitle": "إدارة عقود العملاء والاتفاقيات.",
+      "subtitleClient": "عرض عقودك والتوقيع عليها.",
+      "newContract": "عقد جديد",
+      "searchPlaceholder": "البحث في العقود…",
+      "stats": {
+        "total": "الإجمالي",
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "signed": "موقّع",
+        "rejected": "مرفوض"
+      },
+      "filters": {
+        "all": "الكل",
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "signed": "موقّع",
+        "rejected": "مرفوض"
+      },
+      "status": {
+        "DRAFT": "مسودة",
+        "SENT": "مُرسل",
+        "SIGNED": "موقّع",
+        "REJECTED": "مرفوض"
+      },
+      "fields": {
+        "title": "عنوان العقد",
+        "body": "نص العقد",
+        "client": "العميل",
+        "owner": "المسؤول",
+        "sentAt": "تاريخ الإرسال",
+        "signedAt": "تاريخ التوقيع",
+        "createdAt": "تاريخ الإنشاء",
+        "noBody": "لم يتم إدخال نص العقد"
+      },
+      "actions": {
+        "edit": "تعديل العقد",
+        "delete": "حذف العقد",
+        "send": "إرسال للعميل",
+        "accept": "قبول العقد",
+        "reject": "رفض العقد",
+        "download": "تحميل النسخة الموقّعة",
+        "viewClient": "عرض ملف العميل"
+      },
+      "modals": {
+        "create": {
+          "title": "عقد جديد",
+          "subtitle": "إنشاء مسودة عقد لعميل.",
+          "submit": "إنشاء مسودة"
+        },
+        "edit": {
+          "title": "تعديل العقد",
+          "subtitle": "تحديث هذه المسودة.",
+          "submit": "حفظ التغييرات"
+        },
+        "send": {
+          "title": "إرسال العقد للعميل",
+          "message": "إرسال «{{title}}» للعميل للمراجعة؟ سيتلقى العميل إشعاراً ويمكنه قبول أو رفض العقد.",
+          "submit": "إرسال للعميل"
+        },
+        "accept": {
+          "title": "قبول العقد",
+          "subtitle": "التوقيع الرقمي على هذه الاتفاقية.",
+          "notice": "بالقبول، توافق على جميع الشروط والأحكام في «{{title}}». سيتم إنشاء نسخة موقّعة وحفظها بأمان.",
+          "submit": "قبول العقد"
+        },
+        "reject": {
+          "title": "رفض العقد",
+          "message": "رفض «{{title}}»؟ سيتم إخطار فريق الحساب وإمكانية إرسال نسخة معدّلة.",
+          "submit": "رفض العقد"
+        },
+        "delete": {
+          "title": "حذف العقد",
+          "message": "حذف «{{title}}» نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+          "submit": "حذف العقد"
+        }
+      },
+      "empty": "لا توجد عقود. أنشئ عقدك الأول.",
+      "emptyClient": "لا توجد عقود لحسابك.",
+      "awaitingSignature": "العقد في انتظار توقيعك",
+      "awaitingSignatureHint": "يرجى مراجعة شروط العقد أدناه، ثم القبول أو الرفض.",
+      "signedBanner": "تم التوقيع على العقد",
+      "signedOn": "تم التوقيع رقمياً في {{date}}",
+      "rejectedBanner": "تم رفض العقد",
+      "rejectedHint": "رفض العميل هذا العقد. تواصل معه لمناقشة التعديلات.",
+      "contractTerms": "شروط العقد",
+      "contractDetails": "تفاصيل العقد",
+      "signedDocumentLink": "فتح الوثيقة الموقّعة في تبويب جديد",
+      "pendingContracts": "عقد واحد في انتظار توقيعك",
+      "pendingContractsPlural": "{{count}} عقود في انتظار توقيعك",
+      "awaitingSection": "في انتظار التوقيع",
+      "historySection": "السجل",
+      "viewAll": "عرض جميع العقود"
+    },
+    "invoices": {
+      "title": "الفواتير",
+      "subtitle": "إدارة فواتير العملاء وتتبع المدفوعات.",
+      "subtitleClient": "عرض فواتيرك وسجل المدفوعات.",
+      "newInvoice": "فاتورة جديدة",
+      "searchPlaceholder": "بحث في الفواتير…",
+      "stats": {
+        "total": "الإجمالي",
+        "unpaid": "غير مدفوعة",
+        "paid": "مدفوعة",
+        "overdue": "متأخرة"
+      },
+      "filters": {
+        "all": "الكل",
+        "unpaid": "غير مدفوعة",
+        "paid": "مدفوعة",
+        "overdue": "متأخرة"
+      },
+      "status": {
+        "UNPAID": "غير مدفوعة",
+        "PAID": "مدفوعة",
+        "OVERDUE": "متأخرة"
+      },
+      "fields": {
+        "invoiceNumber": "رقم الفاتورة",
+        "client": "العميل",
+        "owner": "المسؤول",
+        "subtotal": "المجموع الفرعي",
+        "taxRate": "نسبة الضريبة",
+        "taxAmount": "الضريبة",
+        "total": "الإجمالي",
+        "currency": "العملة",
+        "dueDate": "تاريخ الاستحقاق",
+        "paidAt": "تاريخ الدفع",
+        "issuedAt": "تاريخ الإصدار",
+        "notes": "ملاحظات",
+        "lineItems": "بنود الفاتورة",
+        "description": "الوصف",
+        "quantity": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "lineTotal": "الإجمالي",
+        "noNotes": "لا توجد ملاحظات لهذه الفاتورة.",
+        "noLineItems": "لا توجد بنود."
+      },
+      "actions": {
+        "markPaid": "تسجيل الدفع",
+        "edit": "تعديل الفاتورة",
+        "delete": "حذف الفاتورة",
+        "recalculateOverdue": "إعادة حساب المتأخرات",
+        "viewDetail": "عرض الفاتورة"
+      },
+      "modals": {
+        "create": {
+          "title": "فاتورة جديدة",
+          "subtitle": "إنشاء فاتورة مع بنود تفصيلية.",
+          "submit": "إنشاء الفاتورة",
+          "addLineItem": "إضافة بند",
+          "removeLineItem": "حذف",
+          "lineItemsSection": "البنود",
+          "totalsSection": "معاينة الإجماليات"
+        },
+        "edit": {
+          "title": "تعديل الفاتورة",
+          "subtitle": "تحديث هذه الفاتورة غير المدفوعة.",
+          "submit": "حفظ التغييرات"
+        },
+        "markPaid": {
+          "title": "تسجيل دفع الفاتورة",
+          "message": "تأكيد استلام الدفع للفاتورة {{invoiceNumber}} ({{currency}} {{total}})?",
+          "paidAtLabel": "تاريخ الدفع (اختياري)",
+          "submit": "تأكيد الدفع"
+        },
+        "delete": {
+          "title": "حذف الفاتورة",
+          "message": "حذف الفاتورة {{invoiceNumber}} نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+          "submit": "حذف الفاتورة"
+        }
+      },
+      "banners": {
+        "paid": "الفاتورة مدفوعة",
+        "paidOn": "تم تسجيل الدفع في {{date}}",
+        "overdue": "الفاتورة متأخرة",
+        "overdueHint": "تجاوزت هذه الفاتورة تاريخ استحقاقها. يرجى ترتيب الدفع."
+      },
+      "summary": {
+        "amountDue": "المبلغ المستحق",
+        "paymentSummary": "ملخص الدفع"
+      },
+      "empty": "لا توجد فواتير.",
+      "emptyClient": "لا توجد فواتير لحسابك.",
+      "overdueAlert": "فاتورة واحدة متأخرة",
+      "overdueAlertPlural": "{{count}} فواتير متأخرة",
+      "unpaidAlert": "فاتورة واحدة في انتظار الدفع",
+      "unpaidAlertPlural": "{{count}} فواتير في انتظار الدفع",
+      "viewAll": "عرض جميع الفواتير",
+      "dashboard": {
+        "tab": "الفواتير",
+        "subtitle": "فواتيرك — عرض حالة الدفع والسجل."
+      }
+    },
+    "expenses": {
+      "title": "المصروفات والإيرادات",
+      "subtitle": "تتبع جميع الإيرادات والمصروفات.",
+      "subtitleEmployee": "تتبع إيراداتك ومصروفاتك.",
+      "newEntry": "إدخال جديد",
+      "searchPlaceholder": "البحث في الفئة…",
+      "periodLabel": "الفترة:",
+      "periodTo": "إلى",
+      "clearPeriod": "مسح فلتر الفترة",
+      "summary": {
+        "totalIncome": "إجمالي الإيرادات",
+        "totalExpenses": "إجمالي المصروفات",
+        "netBalance": "صافي الرصيد",
+        "outstanding": "المستحق",
+        "outstandingHint": "الفواتير غير المسددة والمتأخرة",
+        "manualLabel": "يدوي:"
+      },
+      "tabs": {
+        "all": "جميع الإدخالات",
+        "income": "الإيرادات",
+        "expense": "المصروفات"
+      },
+      "type": {
+        "INCOME": "إيراد",
+        "EXPENSE": "مصروف"
+      },
+      "categories": {
+        "income": {
+          "invoicePayment": "دفع الفاتورة",
+          "consulting": "استشارات",
+          "sales": "مبيعات",
+          "grant": "منحة",
+          "other": "إيرادات أخرى"
+        },
+        "expense": {
+          "software": "برمجيات",
+          "payroll": "رواتب",
+          "marketing": "تسويق",
+          "travel": "سفر",
+          "utilities": "مرافق",
+          "rent": "إيجار",
+          "hardware": "أجهزة",
+          "other": "أخرى"
+        }
+      },
+      "row": {
+        "autoInvoice": "فاتورة تلقائية",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "modals": {
+        "create": {
+          "title": "إدخال جديد",
+          "subtitle": "أضف سجل إيراد أو مصروف يدوي.",
+          "submit": "إضافة إدخال"
+        },
+        "edit": {
+          "title": "تعديل الإدخال",
+          "subtitle": "تحديث هذا الإدخال اليدوي.",
+          "submit": "حفظ التغييرات"
+        },
+        "delete": {
+          "title": "حذف الإدخال",
+          "message": "حذف {{category}} ({{amount}}) بشكل دائم؟ لا يمكن التراجع عن هذا الإجراء.",
+          "submit": "حذف"
+        }
+      },
+      "fields": {
+        "type": "النوع",
+        "category": "الفئة",
+        "amount": "المبلغ (USD)",
+        "date": "التاريخ",
+        "description": "الوصف (اختياري)",
+        "descriptionPlaceholder": "ملاحظة مختصرة…",
+        "selectCategory": "اختر الفئة…"
+      },
+      "actions": {
+        "cancel": "إلغاء",
+        "saving": "جاري الحفظ…",
+        "deleting": "جاري الحذف…",
+        "retry": "إعادة المحاولة"
+      },
+      "empty": "لم يتم العثور على إدخالات.",
+      "emptyAction": "أضف أول إدخال",
+      "errors": {
+        "loadFailed": "فشل تحميل الإدخالات.",
+        "saveFailed": "فشل حفظ الإدخال",
+        "deleteFailed": "فشل الحذف"
+      },
+      "pagination": {
+        "page": "الصفحة {{page}} من {{total}}"
+      }
+    },
+    "dashboard": {
+      "title": "لوحة تحكم ERP",
+      "subtitle": "نظرة عامة على أداء عملك.",
+      "welcomeAdmin": "{{timeOfDay}} يا مسؤول!",
+      "welcomeEmployee": "{{timeOfDay}}!",
+      "loading": "جاري تحميل لوحة التحكم…",
+      "errorTitle": "فشل تحميل لوحة التحكم",
+      "errorMessage": "تعذّر جلب بيانات لوحة التحكم. يرجى المحاولة مرة أخرى.",
+      "retry": "إعادة المحاولة",
+      "lastUpdated": "آخر تحديث الآن",
+      "kpi": {
+        "totalLeads": "إجمالي العملاء المحتملين",
+        "totalClients": "إجمالي العملاء",
+        "newLeadsThisMonth": "عملاء جدد محتملون",
+        "newClientsThisMonth": "عملاء جدد",
+        "activeProjects": "المشاريع النشطة",
+        "totalTasks": "إجمالي المهام",
+        "completedTasks": "مكتملة",
+        "delayedTasks": "متأخرة",
+        "pendingTasks": "معلّقة",
+        "completionRate": "معدل الإنجاز",
+        "totalIncome": "الإيرادات (الشهر)",
+        "totalExpenses": "المصروفات (الشهر)",
+        "netBalance": "صافي الرصيد",
+        "outstandingInvoices": "الفواتير المستحقة",
+        "overdueInvoicesCount": "فواتير متأخرة"
+      },
+      "sections": {
+        "financials": "الماليات — هذا الشهر",
+        "financialChart": "الإيرادات مقابل المصروفات — آخر 6 أشهر",
+        "taskProgress": "تقدّم المهام",
+        "projectsByStatus": "المشاريع حسب الحالة",
+        "contractsByStatus": "العقود",
+        "quickActions": "إجراءات سريعة"
+      },
+      "chart": {
+        "income": "الإيرادات",
+        "expenses": "المصروفات",
+        "noData": "لا توجد بيانات مالية لهذه الفترة."
+      },
+      "taskGauge": {
+        "completionRate": "{{rate}}% مكتمل",
+        "noTasks": "لا توجد مهام بعد"
+      },
+      "projectStatus": {
+        "planning": "تخطيط",
+        "active": "نشط",
+        "onHold": "موقوف",
+        "completed": "مكتمل",
+        "cancelled": "ملغي"
+      },
+      "contractStatus": {
+        "draft": "مسودة",
+        "sent": "مُرسَل",
+        "signed": "موقّع",
+        "rejected": "مرفوض"
+      },
+      "quickActions": {
+        "newClient": "عميل جديد",
+        "newProject": "مشروع جديد",
+        "newTask": "مهمة جديدة",
+        "newContract": "عقد جديد",
+        "newInvoice": "فاتورة جديدة",
+        "newExpense": "مصروف جديد"
+      },
+      "thisMonth": "هذا الشهر",
+      "currency": "$"
+    }
+  },
+  "footer": {
+    "tagline": "نبني المستقبل، سطراً تلو الآخر.",
+    "links": {
+      "company": "الشركة",
+      "about": "من نحن",
+      "careers": "وظائف",
+      "blog": "المدونة",
+      "services": "الخدمات",
+      "web": "تطوير الويب",
+      "mobile": "تطبيقات الجوال",
+      "erp": "ERP وCRM",
+      "legal": "قانوني",
+      "privacy": "سياسة الخصوصية",
+      "terms": "شروط الخدمة"
+    },
+    "copyright": "© {{year}} Handla. جميع الحقوق محفوظة.",
+    "social": {
+      "twitter": "تويتر",
+      "github": "GitHub",
+      "linkedin": "لينكد إن"
+    }
+  }
+}

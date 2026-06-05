@@ -1,0 +1,11 @@
+# Root-level .dockerignore
+# Applies when using docker compose build from the repo root.
+# The handla-backend/Dockerfile uses context: ./handla-backend,
+# so this file only matters if you ever build from the root context.
+
+node_modules/
+*/node_modules/
+.git/
+.github/
+*.md
+handla-frontend/

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Handla Account is Ready</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0a0a0f; font-family: 'Segoe UI', Arial, sans-serif; color: #e2e8f0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: rgba(15,15,30,0.95); border: 1px solid rgba(251,191,36,0.2); border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1a1a0a 0%, #2a1f00 50%, #1a1500 100%); border-bottom: 1px solid rgba(251,191,36,0.2); padding: 40px; text-align: center; }
+    .header-badge { display: inline-block; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fbbf24; margin-bottom: 16px; }
+    .header h1 { margin: 0 0 8px; font-size: 26px; font-weight: 800; color: #ffffff; }
+    .header p { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; }
+    .body { padding: 40px; }
+    .greeting { font-size: 15px; line-height: 1.7; color: #94a3b8; margin-bottom: 28px; }
+    .credentials-box { background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.2); border-radius: 12px; padding: 24px; margin-bottom: 28px; }
+    .credentials-box h3 { margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #fbbf24; }
+    .cred-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(251,191,36,0.08); font-size: 14px; }
+    .cred-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .cred-label { color: #64748b; min-width: 90px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .cred-value { color: #e2e8f0; font-family: 'Courier New', monospace; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 3px 8px; font-size: 13px; word-break: break-all; }
+    .warning-box { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: #fca5a5; line-height: 1.6; }
+    .warning-box strong { color: #f87171; }
+    .cta-wrapper { text-align: center; margin-bottom: 32px; }
+    .cta-btn { display: inline-block; background: linear-gradient(135deg, #d97706, #fbbf24); color: #0a0a0a; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 800; font-size: 15px; letter-spacing: 0.02em; }
+    .footer { text-align: center; color: #475569; font-size: 12px; padding: 0 40px 32px; line-height: 1.7; }
+    .footer a { color: #fbbf24; text-decoration: none; }
+    .divider { border: none; border-top: 1px solid rgba(251,191,36,0.1); margin: 0 0 28px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <div class="header">
+      <div class="header-badge">ERP · New Account</div>
+      <h1>Your Account is Ready 🎉</h1>
+      <p>Welcome to the Handla platform</p>
+    </div>
+
+    <div class="body">
+      <p class="greeting">
+        Hi <strong style="color:#e2e8f0;">{{userName}}</strong>, an administrator has created an account
+        for you on the Handla platform. Your login credentials are below.
+      </p>
+
+      <div class="credentials-box">
+        <h3>Login Credentials</h3>
+        <div class="cred-row">
+          <span class="cred-label">Platform</span>
+          <span class="cred-value"><a href="{{baseUrl}}" style="color:#fbbf24;text-decoration:none;">{{baseUrl}}</a></span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">Email</span>
+          <span class="cred-value">{{recipientEmail}}</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">Password</span>
+          <span class="cred-value">{{temporaryPassword}}</span>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>⚠ Security Notice:</strong> This email contains your temporary password.
+        Please sign in and change your password immediately from your profile settings.
+        Do not share this email with anyone.
+      </div>
+
+      <hr class="divider" />
+
+      <div class="cta-wrapper">
+        <a href="{{dashboardUrl}}" class="cta-btn">Sign In to Handla →</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>This email was sent by Handla on behalf of your organization's administrator.</p>
+      <p>Questions? Contact your admin or visit <a href="{{baseUrl}}">handla.com</a>.</p>
+      <p>© {{year}} Handla. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,10 +1,10 @@
-# Handla 🚀
+# Handla
 
-> **Software Services Marketing Platform** — A production-ready full-stack application with real-time chat, AWS S3 file uploads, bilingual support (EN/AR), and a stunning glassmorphism + glowing neon design.
+> **Software Services Marketing Platform** — Production-ready full-stack application with real-time chat, AWS S3 file uploads, bilingual support (EN/AR), and a dark glassmorphism design.
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
 ![NestJS](https://img.shields.io/badge/NestJS-10-red?style=flat-square&logo=nestjs)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=flat-square&logo=mysql)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Socket.io](https://img.shields.io/badge/Socket.io-4-black?style=flat-square&logo=socket.io)
 ![AWS S3](https://img.shields.io/badge/AWS-S3-orange?style=flat-square&logo=amazon-aws)
@@ -12,371 +12,206 @@
 
 ---
 
-## ✨ Features
+## Features
 
-- **Landing Page** — Modern glassmorphism + glowing neon design with Framer Motion animations
-- **Bilingual** — Full English (LTR) and Arabic (RTL) support via next-i18next
-- **Dark / Light Theme** — Smooth theme toggle with CSS variables
-- **Real-Time Chat** — WebSocket-powered instant messaging between clients and admin
-- **File Sharing** — Direct S3 uploads via presigned URLs in chat
-- **In-App Notifications** — Real-time notification center with unread badge
-- **Email Notifications** — Async email queue via Bull + Nodemailer/SES
-- **Admin Dashboard** — Conversation management, testimonial CRUD, notification history
-- **Client Dashboard** — View conversation, send messages, upload files
-- **JWT Auth** — Secure httpOnly cookie-based authentication with refresh tokens
-- **Role-Based Access** — CLIENT and ADMIN roles with route guards
+- **Landing page** — Animated ERP-focused marketing page (hero, KPIs, services, solutions, process, testimonials, contact)
+- **Bilingual** — Full English (LTR) and Arabic (RTL) with live locale toggle
+- **Real-time chat** — WebSocket-powered messaging between clients and the Handla team
+- **File sharing** — Direct-to-S3 uploads via presigned URLs inside chat
+- **In-app notifications** — Real-time notification centre with unread badge
+- **Email notifications** — Async email queue via Bull + Nodemailer
+- **Admin dashboard** — Conversation management and testimonial CRUD
+- **Client dashboard** — Personal chat view
+- **JWT auth** — Secure httpOnly cookie-based authentication with transparent refresh
+- **Offline banner** — Detects network loss and reconnection
+- **SEO** — Metadata, sitemap.xml, robots.txt, JSON-LD structured data
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 ### Frontend (`handla-frontend/`)
+
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 14 (App Router) |
-| UI Components | shadcn/ui |
-| Styling | Tailwind CSS v3 + custom glassmorphism utilities |
+| Styling | Tailwind CSS v3 + custom tokens |
 | Animations | Framer Motion v11 |
-| Real-Time | Socket.io-client |
+| Real-Time | Socket.io-client 4 |
 | State | Zustand + TanStack Query |
 | Forms | React Hook Form + Zod |
-| HTTP | Axios with JWT interceptors |
-| i18n | next-i18next (EN/AR) |
+| HTTP | Axios with 401→refresh interceptor |
+| i18n | Custom `useTranslation` hook + JSON locale files |
 | Icons | Lucide React |
 | Font | Space Grotesk (Google Fonts) |
 
 ### Backend (`handla-backend/`)
+
 | Layer | Technology |
 |-------|-----------|
 | Framework | NestJS 10 (TypeScript) |
 | Database | PostgreSQL 16 + TypeORM |
 | Real-Time | Socket.io via @nestjs/websockets |
 | Auth | JWT + httpOnly cookies + Passport |
-| File Storage | AWS S3 (presigned URLs) |
-| Email | Nodemailer / AWS SES + Bull queue |
+| File Storage | AWS S3 (presigned PUT URLs) |
+| Email | Nodemailer + Bull queue (Redis) |
 | Validation | class-validator + class-transformer |
-| Security | Helmet, CORS, rate limiting |
-| Logging | Winston |
-| Testing | Jest + supertest |
+| Security | Helmet, CORS, rate limiting (ThrottlerModule) |
+| Logging | Winston (nest-winston) |
+| Docs | Swagger UI at `/api/docs` (dev only) |
+| Testing | Jest — 83 unit tests |
 
 ---
 
-## 📁 Project Structure
-
-```
-handla/
-├── handla-frontend/          # Next.js 14 frontend
-│   ├── src/
-│   │   ├── app/              # App Router pages
-│   │   ├── components/       # UI components (landing, chat, notifications)
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── lib/              # Axios, Socket.io, S3 uploader, i18n
-│   │   ├── store/            # Zustand stores
-│   │   ├── types/            # TypeScript interfaces
-│   │   └── styles/           # Global CSS + glassmorphism utilities
-│   ├── public/
-│   │   └── locales/          # EN + AR translation files
-│   └── .env.local.example
-│
-├── handla-backend/           # NestJS 10 backend
-│   ├── src/
-│   │   ├── modules/
-│   │   │   ├── auth/         # JWT auth (signup, signin, refresh, logout)
-│   │   │   ├── chat/         # WebSocket gateway + REST endpoints
-│   │   │   ├── notifications/ # In-app notifications
-│   │   │   ├── testimonials/ # CRUD (admin only)
-│   │   │   ├── aws/          # S3 presigned URLs
-│   │   │   └── email/        # Nodemailer + Bull queue
-│   │   ├── common/           # Guards, interceptors, filters, decorators
-│   │   ├── config/           # DB, JWT, AWS, email, socket configs
-│   │   └── utils/            # Logger, custom exceptions
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── .env.example
-│
-├── package.json              # Root workspace config
-├── .gitignore
-├── MASTER_PROMPT.md          # Full project specification
-└── TODOS.md                  # Task tracker
-```
-
----
-
-## 🚀 Getting Started
+## Quick Start (Local Development)
 
 ### Prerequisites
-- **Node.js** >= 20.0.0
-- **npm** >= 10.0.0
-- **Docker** + **Docker Compose** (for PostgreSQL)
-- **AWS Account** (for S3 + optional SES)
 
----
+- Node.js 20 LTS
+- Docker & Docker Compose
+- AWS account (for S3 — optional for local chat testing without file uploads)
 
-### 1. Clone the Repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Handla-tech/HandlaNewWebsite.git
 cd HandlaNewWebsite
 ```
 
----
+### 2. Start infrastructure
 
-### 2. Backend Setup
+```bash
+docker compose -f docker-compose.dev.yml up -d mysql redis
+```
+
+### 3. Backend
 
 ```bash
 cd handla-backend
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your values (DB, JWT secret, AWS keys, mail config)
-nano .env
-
-# Start PostgreSQL via Docker
-docker-compose up -d postgres
-
-# Install dependencies
+cp .env.example .env        # fill in JWT secrets, DB password
 npm install
-
-# Run database migrations
-npm run migration:run
-
-# (Optional) Seed database with admin user + sample data
-npm run seed
-
-# Start development server
-npm run start:dev
-# Backend available at: http://localhost:3001
+npm run migration:run       # create tables
+npm run seed                # admin + sample client + 6 testimonials
+npm run start:dev           # http://localhost:3001
+                            # Swagger: http://localhost:3001/api/docs
 ```
 
----
+**Default seed credentials:**
 
-### 3. Frontend Setup
+| Email | Password | Role |
+|-------|---------|------|
+| `admin@handla.com` | `Admin@123456` | ADMIN |
+| `employee@handla.com` | `Employee@123456` | EMPLOYEE |
+| `client@example.com` | `Client@123456` | CLIENT |
+| `lead@example.com` | `Lead@123456` | LEAD |
+
+### 4. Frontend
 
 ```bash
 cd handla-frontend
-
-# Copy environment file
 cp .env.local.example .env.local
-
-# Edit .env.local if needed
-nano .env.local
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-# Frontend available at: http://localhost:3000
+npm run dev                 # http://localhost:3000
 ```
 
 ---
 
-### 4. Run Both Together (from root)
+## Environment Variables
+
+### Backend (`.env`)
+
+```dotenv
+NODE_ENV=development
+PORT=3001
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=handla
+DB_PASSWORD=secret
+DB_NAME=handla_db
+JWT_SECRET=<32+ char random>
+JWT_EXPIRY=15m
+JWT_REFRESH_SECRET=<different 32+ char random>
+JWT_REFRESH_EXPIRY=7d
+REDIS_HOST=localhost
+REDIS_PORT=6379
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_BUCKET_NAME=handla-uploads
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM=noreply@handla.tech
+SOCKET_CORS_ORIGIN=http://localhost:3000
+```
+
+### Frontend (`.env.local`)
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## Docker (Production)
 
 ```bash
-# Install root dev dependencies
-npm install
-
-# Start both frontend and backend concurrently
-npm run dev
+docker compose up --build -d
+docker compose logs -f api
+docker compose exec api npm run migration:run
 ```
 
 ---
 
-### 5. Full Docker Stack
+## API Reference
 
-```bash
-cd handla-backend
+See **`http://localhost:3001/api/docs`** (Swagger UI) in development.
 
-# Start all services (PostgreSQL + API)
-docker-compose up -d
+Quick reference:
 
-# Check logs
-docker-compose logs -f api
-```
-
----
-
-## 🔐 Environment Variables
-
-### Backend (`handla-backend/.env`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_HOST` | PostgreSQL host | `localhost` |
-| `DATABASE_PORT` | PostgreSQL port | `5432` |
-| `DATABASE_NAME` | Database name | `handla_db` |
-| `DATABASE_USER` | DB username | `handla` |
-| `DATABASE_PASSWORD` | DB password | `your_password` |
-| `JWT_SECRET` | JWT signing secret | `your_super_secret_key` |
-| `JWT_EXPIRATION` | Access token TTL (seconds) | `900` |
-| `JWT_REFRESH_EXPIRATION` | Refresh token TTL (seconds) | `604800` |
-| `AWS_REGION` | AWS region | `us-east-1` |
-| `AWS_ACCESS_KEY_ID` | AWS access key | `AKIA...` |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret | `your_secret` |
-| `AWS_S3_BUCKET` | S3 bucket name | `handla-uploads` |
-| `MAIL_HOST` | SMTP host | `smtp.gmail.com` |
-| `MAIL_PORT` | SMTP port | `587` |
-| `MAIL_USER` | SMTP username | `you@gmail.com` |
-| `MAIL_PASS` | SMTP password / app password | `your_app_password` |
-| `MAIL_FROM` | Sender email | `no-reply@handla.com` |
-| `SOCKET_CORS_ORIGIN` | Frontend URL for CORS | `http://localhost:3000` |
-| `NODE_ENV` | Environment | `development` |
-| `PORT` | API server port | `3001` |
-
-### Frontend (`handla-frontend/.env.local`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:3001` |
-| `NEXT_PUBLIC_SOCKET_URL` | Socket.io server URL | `http://localhost:3001` |
-| `NEXT_PUBLIC_AWS_REGION` | AWS region (for S3) | `us-east-1` |
+| Prefix | Endpoints |
+|--------|----------|
+| `/api/auth` | signup, signin, refresh, logout, me |
+| `/api/chat` | conversations CRUD, presigned-url, status, read |
+| `/api/notifications` | list, count, mark-read, delete |
+| `/api/testimonials` | public list/get + admin CRUD |
+| `/api/health` | health check (used by Docker) |
 
 ---
 
-## 📡 API Overview
+## Project Documentation
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Register new user |
-| POST | `/api/auth/signin` | Login, returns httpOnly cookie |
-| POST | `/api/auth/refresh` | Refresh access token |
-| POST | `/api/auth/logout` | Logout, clears cookie |
-| GET | `/api/auth/me` | Get current user |
-
-### Chat
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/chat/conversations` | List conversations |
-| GET | `/api/chat/conversations/:id` | Get conversation + messages |
-| POST | `/api/chat/presigned-url` | Get S3 upload URL |
-| PATCH | `/api/chat/messages/:id/read` | Mark message as read |
-
-### Notifications
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/notifications` | List notifications |
-| PATCH | `/api/notifications/:id/read` | Mark as read |
-| DELETE | `/api/notifications/:id` | Delete notification |
-
-### Testimonials
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/testimonials` | List all (public) |
-| GET | `/api/testimonials/:id` | Get single (public) |
-| POST | `/api/testimonials` | Create (admin only) |
-| PATCH | `/api/testimonials/:id` | Update (admin only) |
-| DELETE | `/api/testimonials/:id` | Delete (admin only) |
+| File | Purpose |
+|------|---------|
+| [`DEVELOPMENT.md`](./DEVELOPMENT.md) | Deep technical reference — architecture, auth flow, Socket events, state management, design system |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Git workflow, commit conventions, PR process, code standards |
+| [`TODOS.md`](./TODOS.md) | 20-phase task tracker (all phases ✅ complete) |
 
 ---
 
-## ⚡ Real-Time Events (Socket.io)
+## Development Progress
 
-### Client → Server
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `sendMessage` | `{ conversationId, content, fileUrl? }` | Send a message |
-| `markAsRead` | `{ messageId }` | Mark message read |
-| `typing` | `{ conversationId, isTyping }` | Typing indicator |
+All 20 phases complete ✅
 
-### Server → Client
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `messageReceived` | `{ message, conversationId }` | New message |
-| `notificationNew` | `{ notification }` | New notification |
-| `userTyping` | `{ userId, conversationId, isTyping }` | Typing status |
-| `conversationUpdated` | `{ conversation }` | Conversation changed |
+| Phase | Area | Status |
+|-------|------|--------|
+| 0 | Repo & Setup | ✅ |
+| 1–8 | Backend (foundation → Docker) | ✅ |
+| 9–18 | Frontend (foundation → responsive) | ✅ |
+| 19 | Integration Tests | ✅ |
+| 20 | Polish & Production Readiness | ✅ |
 
 ---
 
-## 🎨 Design System
+## Contributing
 
-The platform uses a **glassmorphism + glowing neon** design language:
-
-- **Font**: Space Grotesk (Google Fonts)
-- **Glass effect**: `backdrop-filter: blur(12px)` + semi-transparent backgrounds
-- **Glow**: Neon box-shadows with electric blue, violet, and cyan accents
-- **Grid background**: Subtle grid utility for depth
-- **Dark-first**: Rich dark mode with full light mode support
-- **Animations**: Framer Motion with spring/ease transitions
-- **Responsive**: Mobile-first, 375px → 1280px+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
 
 ---
 
-## 🧪 Testing
-
-```bash
-# Backend unit + integration tests
-npm run test:backend
-
-# Frontend component tests
-npm run test:frontend
-
-# All tests
-npm run test
-```
-
----
-
-## 🐳 Docker
-
-```bash
-# Start full stack
-cd handla-backend && docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes (wipes DB)
-docker-compose down -v
-```
-
----
-
-## 📋 Development Progress
-
-See [TODOS.md](./TODOS.md) for the full 20-phase task tracker.
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 0 | Repository & Project Setup | ✅ Done |
-| 1 | Backend NestJS Foundation | ⏳ Pending |
-| 2 | Database Entities & Migrations | ⏳ Pending |
-| 3 | Auth Module | ⏳ Pending |
-| 4 | Chat Module | ⏳ Pending |
-| 5 | Notification Module | ⏳ Pending |
-| 6 | Testimonial Module | ⏳ Pending |
-| 7 | AWS & Email Modules | ⏳ Pending |
-| 8 | Docker & Security | ⏳ Pending |
-| 9 | Frontend Foundation | ⏳ Pending |
-| 10 | Landing Page Components | ⏳ Pending |
-| 11 | Authentication Page | ⏳ Pending |
-| 12 | Chat Components | ⏳ Pending |
-| 13 | Notification Components | ⏳ Pending |
-| 14 | Client Dashboard | ⏳ Pending |
-| 15 | Admin Dashboard | ⏳ Pending |
-| 16 | Real-Time Integration | ⏳ Pending |
-| 17 | i18n & Accessibility | ⏳ Pending |
-| 18 | Responsive Design | ⏳ Pending |
-| 19 | Integration Testing | ⏳ Pending |
-| 20 | Polish & Production | ⏳ Pending |
-
----
-
-## 🤝 Contributing
-
-1. Create a feature branch from `main`
-2. Follow conventional commits: `feat:`, `fix:`, `docs:`, `chore:`
-3. All changes go through `genspark_ai_developer` → `main` PR
-4. Ensure tests pass before merging
-
----
-
-## 📄 License
+## License
 
 MIT © Handla Tech

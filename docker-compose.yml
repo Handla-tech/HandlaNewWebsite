@@ -1,0 +1,109 @@
+# =============================================================================
+# Handla — Production Docker Compose
+# Services: mysql · redis · api
+#
+# Usage:
+#   cp handla-backend/.env.example handla-backend/.env   # fill in secrets
+#   docker compose up -d
+#   docker compose logs -f api
+#
+# For local development with hot-reload, use:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# =============================================================================
+
+# ─── Named volumes ────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  handla_net:
+    driver: bridge
+
+# ─── Services ─────────────────────────────────────────────────────────────────
+services:
+
+  # ── MySQL ────────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: handla_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE:      ${DATABASE_NAME:-handla_db}
+      MYSQL_USER:          ${DATABASE_USER:-handla}
+      MYSQL_PASSWORD:      ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:?DATABASE_ROOT_PASSWORD is required}
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - handla_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DATABASE_USER:-handla}", "-p${DATABASE_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: handla_redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - handla_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Handla API ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./handla-backend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: handla_api
+    restart: unless-stopped
+    env_file:
+      - ./handla-backend/.env
+    environment:
+      NODE_ENV:          production
+      PORT:              ${PORT:-3001}
+      # Database — points to the mysql service above
+      DATABASE_HOST:     mysql
+      DATABASE_PORT:     3306
+      DATABASE_NAME:     ${DATABASE_NAME:-handla_db}
+      DATABASE_USER:     ${DATABASE_USER:-handla}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      # Redis — points to the redis service above
+      REDIS_HOST:        redis
+      REDIS_PORT:        6379
+      # Schema sync — reads from .env; safe to enable for local dev, never in real prod
+      DATABASE_SYNCHRONIZE: ${DATABASE_SYNCHRONIZE:-false}
+    ports:
+      - "${PORT:-3001}:${PORT:-3001}"
+    networks:
+      - handla_net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${PORT:-3001}/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

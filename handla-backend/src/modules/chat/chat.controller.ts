@@ -1,0 +1,153 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+  ParseIntPipe,
+  DefaultValuePipe,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
+
+import { ChatService } from './chat.service';
+import { ChatGateway } from './chat.gateway';
+import { PresignedUrlDto } from './dto/presigned-url.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt.guard';
+import { CurrentUser } from '../../common/decorators/user.decorator';
+import { User } from '../auth/entities/user.entity';
+import { AwsService } from '../aws/aws.service';
+import { ConversationStatus } from '../../common/enums';
+
+@ApiTags('chat')
+@ApiCookieAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('chat')
+export class ChatController {
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly chatGateway: ChatGateway,
+    private readonly awsService: AwsService,
+  ) {}
+
+  // ─── GET /api/chat/conversations ──────────────────────────────────────────────
+  @Get('conversations')
+  @ApiOperation({ summary: 'List conversations (admin: all, client: own)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Paginated conversations' })
+  async getConversations(
+    @CurrentUser() user: User,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    const result = await this.chatService.getConversations(user, { page, limit });
+    return { message: 'Conversations retrieved', data: result };
+  }
+
+  // ─── GET /api/chat/conversations/:id ─────────────────────────────────────────
+  @Get('conversations/:id')
+  @ApiOperation({ summary: 'Get a conversation with its full message history' })
+  @ApiResponse({ status: 200, description: 'Conversation and messages' })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async getConversationById(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    const result = await this.chatService.getConversationById(id, user);
+    return { message: 'Conversation retrieved', data: result };
+  }
+
+  // ─── POST /api/chat/conversations/:id/messages ───────────────────────────────
+  @Post('conversations/:id/messages')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Send a message to a conversation (REST fallback)' })
+  @ApiResponse({ status: 201, description: 'Message sent' })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async sendMessage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('content') content: string,
+    @Body('fileUrl') fileUrl: string | undefined,
+    @CurrentUser() user: User,
+  ) {
+    const message = await this.chatService.sendMessage(id, user, content, fileUrl);
+
+    // Broadcast to conversation room so all connected participants
+    // (including the sender's other tabs) receive the real-time push.
+    // This avoids the double-save bug that occurs when the frontend
+    // calls both REST and sendSocketMessage independently.
+    this.chatGateway.broadcastMessage(id, message);
+
+    return { message: 'Message sent', data: { message } };
+  }
+
+  // ─── GET /api/chat/conversations/:id/messages ─────────────────────────────────
+  @Get('conversations/:id/messages')
+  @ApiOperation({ summary: 'Get all messages for a conversation' })
+  @ApiResponse({ status: 200, description: 'Messages list' })
+  @ApiResponse({ status: 404, description: 'Conversation not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async getMessages(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    const messages = await this.chatService.getMessages(id, user);
+    return { message: 'Messages retrieved', data: messages };
+  }
+
+  // ─── POST /api/chat/conversations ─────────────────────────────────────────────
+  @Post('conversations')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create or return the existing conversation for the current client' })
+  @ApiResponse({ status: 201, description: 'Conversation created or returned' })
+  @ApiResponse({ status: 404, description: 'No admin account found' })
+  async createConversation(@CurrentUser() user: User) {
+    const admin = await this.chatService.findDefaultAdmin();
+    if (!admin) {
+      throw new NotFoundException(
+        'No admin account found. Please contact support to set up your workspace.',
+      );
+    }
+    const conversation = await this.chatService.createOrGetConversation(user.id, admin.id);
+    return { message: 'Conversation ready', data: { conversation } };
+  }
+
+  // ─── POST /api/chat/presigned-url ─────────────────────────────────────────────
+  @Post('presigned-url')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate an S3 presigned URL for direct file upload' })
+  @ApiResponse({ status: 200, description: 'Presigned URL returned' })
+  async getPresignedUrl(@Body() dto: PresignedUrlDto, @CurrentUser() user: User) {
+    const key = `chat/${user.id}/${Date.now()}-${dto.fileName.replace(/\s+/g, '_')}`;
+    const result = await this.awsService.generatePresignedUrl(key, dto.contentType);
+    return {
+      message: 'Presigned URL generated',
+      data: result,
+    };
+  }
+
+  // ─── PATCH /api/chat/messages/:id/read ───────────────────────────────────────
+  @Patch('messages/:id/read')
+  @ApiOperation({ summary: 'Mark a specific message as read' })
+  @ApiResponse({ status: 200, description: 'Message marked as read' })
+  @ApiResponse({ status: 404, description: 'Message not found' })
+  async markMessageRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    const message = await this.chatService.markMessageAsRead(id, user.id);
+    return { message: 'Message marked as read', data: { message } };
+  }
+
+  // ─── PATCH /api/chat/conversations/:id/status ─────────────────────────────────
+  @Patch('conversations/:id/status')
+  @ApiOperation({ summary: 'Update conversation status' })
+  @ApiResponse({ status: 200, description: 'Status updated' })
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: ConversationStatus,
+    @CurrentUser() user: User,
+  ) {
+    const conversation = await this.chatService.updateStatus(id, status, user);
+    return { message: 'Status updated', data: { conversation } };
+  }
+}

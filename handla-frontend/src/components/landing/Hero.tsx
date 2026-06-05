@@ -1,0 +1,705 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight, Code2,
+  LayoutDashboard, ShoppingCart, Package, Wallet,
+  Users, FolderKanban, BarChart2, Settings,
+  TrendingUp, TrendingDown,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useTranslation } from '@/hooks/useTranslation';
+
+// ── Bilingual rotating phrases with per-word highlight spec ───────────────────
+const PHRASES_EN = [
+  { phrase: 'Become Digital Experiences',        highlight: ['Digital', 'Experiences'] },
+  { phrase: 'Transform Into Managed Success',    highlight: ['Managed', 'Success']     },
+  { phrase: 'Shape the Future of Your Business', highlight: ['Future']                 },
+];
+
+const PHRASES_AR = [
+  { phrase: 'واقعاً رقمياً مبهراً',    highlight: ['رقمياً', 'مبهراً']  },
+  { phrase: 'نجاحاً مُداراً باحتراف',  highlight: ['مُداراً', 'باحتراف'] },
+  { phrase: 'مستقبلاً لأعمالك',        highlight: ['مستقبلاً']           },
+];
+
+// ── Renders a phrase with highlighted words in gold ───────────────────────────
+function HighlightedPhrase({
+  phrase,
+  highlight,
+}: {
+  phrase: string;
+  highlight: string[];
+}) {
+  const words = phrase.split(' ');
+  return (
+    <>
+      {words.map((word, i) => {
+        const isHighlighted = highlight.includes(word);
+        return (
+          <span key={i} style={{ color: isHighlighted ? '#fbbf24' : '#ffffff' }}>
+            {i > 0 ? ' ' : ''}{word}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+// ── Phrase indicator dots ─────────────────────────────────────────────────────
+function PhraseDots({ total, active }: { total: number; active: number }) {
+  return (
+    <div className="flex items-center gap-1.5 mt-4">
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-full transition-all duration-300"
+          style={{
+            width:  i === active ? '20px' : '6px',
+            height: '4px',
+            background: i === active ? '#fbbf24' : '#333',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Mini sparkline bar chart ──────────────────────────────────────────────────
+function Sparkline({ heights, color = '#fbbf24' }: { heights: number[]; color?: string }) {
+  return (
+    <div className="flex items-end gap-px" style={{ height: 24, width: 56 }}>
+      {heights.map((h, i) => (
+        <motion.div
+          key={i}
+          style={{
+            flex: 1,
+            height: `${h}%`,
+            background: i === heights.length - 1 ? color : `${color}50`,
+            borderRadius: '1px 1px 0 0',
+          }}
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 0.35, delay: 0.9 + i * 0.04 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── World map dots (static decorative) ───────────────────────────────────────
+function WorldMapDots() {
+  // Representative lat/lon → x/y percent positions on a simple equirectangular map
+  const dots = [
+    { x: 22, y: 38 }, // Americas
+    { x: 48, y: 35 }, // Europe
+    { x: 55, y: 48 }, // Africa
+    { x: 70, y: 30 }, // Asia
+    { x: 82, y: 55 }, // SE Asia
+    { x: 87, y: 70 }, // Australia
+  ];
+  return (
+    <div className="relative w-full" style={{ height: 52 }}>
+      {/* Simple landmass silhouette using SVG paths */}
+      <svg
+        viewBox="0 0 200 100"
+        className="absolute inset-0 w-full h-full"
+        style={{ opacity: 0.18 }}
+      >
+        {/* Americas */}
+        <path d="M18 20 Q22 15 28 20 Q32 28 30 40 Q26 55 22 65 Q18 70 16 60 Q12 45 14 30 Z" fill="#555" />
+        {/* Europe */}
+        <path d="M85 18 Q92 14 98 20 Q100 28 96 34 Q90 38 85 34 Q82 28 85 18 Z" fill="#555" />
+        {/* Africa */}
+        <path d="M90 40 Q98 36 104 42 Q108 52 106 65 Q102 75 96 72 Q90 65 88 55 Q87 46 90 40 Z" fill="#555" />
+        {/* Asia */}
+        <path d="M105 18 Q130 10 155 14 Q165 20 162 32 Q155 40 140 38 Q120 36 108 30 Q103 24 105 18 Z" fill="#555" />
+        {/* Australia */}
+        <path d="M148 65 Q158 60 165 66 Q168 74 162 80 Q154 82 148 76 Q144 70 148 65 Z" fill="#555" />
+      </svg>
+      {/* Pulsing gold dots */}
+      {dots.map((d, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: 5, height: 5,
+            background: '#fbbf24',
+            left: `${d.x}%`,
+            top: `${d.y}%`,
+            boxShadow: '0 0 6px #fbbf24',
+            transform: 'translate(-50%,-50%)',
+          }}
+          animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }}
+          transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Full ERP Dashboard illustration ──────────────────────────────────────────
+function ERPDashboard() {
+  const statCards = [
+    { label: 'Total Revenue',     value: '$4,250,000', trend: '+12.6%', up: true  },
+    { label: 'Total Receivables', value: '$1,850,000', trend: '-4.2%',  up: false },
+    { label: 'Top Profit',        value: '$2,400,000', trend: '+3.8%',  up: true  },
+    { label: 'Total Clients',     value: '1,390',      trend: '+4.0%',  up: true  },
+  ];
+
+  const sidebarItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', active: true  },
+    { icon: ShoppingCart,    label: 'Sales',     active: false },
+    { icon: Package,         label: 'Purchases', active: false },
+    { icon: Package,         label: 'Inventory', active: false },
+    { icon: Wallet,          label: 'Finance',   active: false },
+    { icon: Users,           label: 'CRM',       active: false },
+    { icon: FolderKanban,    label: 'Projects',  active: false },
+    { icon: BarChart2,       label: 'Reports',   active: false },
+    { icon: Settings,        label: 'Settings',  active: false },
+  ];
+
+  const orders = [
+    { id: 'A002-9930', customer: 'Alvina',       date: 'May 11, 2023', amount: '$120.00', status: 'Completed', color: '#22c55e' },
+    { id: 'A011-4889', customer: 'Zara Theil',   date: 'May 21, 2023', amount: '$280.00', status: 'Cancelled', color: '#ef4444' },
+    { id: 'A003-6540', customer: 'Lyford Fennel',date: 'May 25, 2023', amount: '$192.50', status: 'Pending',   color: '#fbbf24' },
+  ];
+
+
+  return (
+    <div
+      className="relative flex w-full overflow-hidden rounded-xl"
+      style={{
+        background: '#111111',
+        border: '1px solid #1e1e1e',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: 10,
+        height: 420,
+      }}
+    >
+      {/* ── Sidebar ─────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 flex flex-col"
+        style={{ width: 96, background: '#0d0d0d', borderRight: '1px solid #1e1e1e', padding: '12px 0' }}
+      >
+        {/* Logo — <Handla /> style */}
+        <div className="px-3 pb-3 mb-2" style={{ borderBottom: '1px solid #1e1e1e' }}>
+          <div className="flex items-center gap-0" style={{ fontWeight: 800, fontSize: 12, letterSpacing: '-0.02em' }}>
+            <span style={{ color: '#fff' }}>&lt;Handla&nbsp;</span>
+            <span style={{ color: '#fbbf24' }}>/</span>
+            <span style={{ color: '#fff' }}>&gt;</span>
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <div className="flex-1 overflow-hidden px-2" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {sidebarItems.map(({ icon: Icon, label, active }) => (
+            <div
+              key={label}
+              className="flex items-center rounded-lg"
+              style={{
+                gap: 6,
+                padding: '5px 8px',
+                background: active ? '#fbbf24' : 'transparent',
+                color: active ? '#0a0a0a' : '#555',
+              }}
+            >
+              <Icon style={{ width: 10, height: 10, flexShrink: 0 }} />
+              <span style={{ fontSize: 9, fontWeight: active ? 700 : 400 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* User */}
+        <div className="px-3 pt-2 mt-auto" style={{ borderTop: '1px solid #1e1e1e' }}>
+          <div className="flex items-center" style={{ gap: 7 }}>
+            <div
+              className="rounded-full flex items-center justify-center"
+              style={{ width: 22, height: 22, background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', fontSize: 9, fontWeight: 700, color: '#fbbf24', flexShrink: 0 }}
+            >
+              S
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: '#fff', fontSize: 8, fontWeight: 600, whiteSpace: 'nowrap' }}>Admin</div>
+              <div style={{ color: '#555', fontSize: 7 }}>Administrator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main area ───────────────────────────────────── */}
+      <div className="flex-1 overflow-hidden flex flex-col" style={{ padding: '12px 14px', gap: 9 }}>
+
+        {/* Page title */}
+        <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>Dashboard</div>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-4 gap-2">
+          {statCards.map((s, i) => (
+            <motion.div
+              key={s.label}
+              className="rounded-lg"
+              style={{ background: '#1a1a1a', border: '1px solid #242424', padding: '7px 8px' }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.5 + i * 0.07 }}
+            >
+              <div style={{ color: '#666', fontSize: 7.5, marginBottom: 3 }}>{s.label}</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 10, marginBottom: 2 }}>{s.value}</div>
+              <div className="flex items-center gap-0.5">
+                {s.up
+                  ? <TrendingUp style={{ width: 8, height: 8, color: '#22c55e' }} />
+                  : <TrendingDown style={{ width: 8, height: 8, color: '#ef4444' }} />
+                }
+                <span style={{ color: s.up ? '#22c55e' : '#ef4444', fontSize: 8 }}>{s.trend}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Middle row: Revenue chart + Donut */}
+        <div className="flex gap-1.5" style={{ flex: '1 1 0', minHeight: 0 }}>
+
+          {/* Revenue overview */}
+          <motion.div
+            className="flex-1 rounded-lg flex flex-col"
+            style={{ background: '#1a1a1a', border: '1px solid #242424', minWidth: 0, padding: '10px 10px 8px' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.7 }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Revenue Overview</span>
+              <span style={{ color: '#fbbf24', fontSize: 8 }}>New Year ▾</span>
+            </div>
+            {/* Area chart */}
+            <div className="flex-1 relative" style={{ minHeight: 0 }}>
+              <svg
+                viewBox="0 0 120 48"
+                className="w-full h-full"
+                preserveAspectRatio="none"
+              >
+                {/* Grid lines */}
+                {[0.25, 0.5, 0.75].map((y, i) => (
+                  <line
+                    key={i}
+                    x1="0" y1={y * 48} x2="120" y2={y * 48}
+                    stroke="#2a2a2a" strokeWidth="0.5"
+                  />
+                ))}
+                {/* Area fill */}
+                <defs>
+                  <linearGradient id="heroAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <motion.path
+                  d="M0,38 L10,32 L20,36 L30,24 L40,30 L50,18 L60,26 L70,20 L80,28 L90,14 L100,20 L110,12 L120,8 L120,48 L0,48 Z"
+                  fill="url(#heroAreaGrad)"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.85 }}
+                />
+                <motion.path
+                  d="M0,38 L10,32 L20,36 L30,24 L40,30 L50,18 L60,26 L70,20 L80,28 L90,14 L100,20 L110,12 L120,8"
+                  fill="none" stroke="#fbbf24" strokeWidth="1.2"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1, delay: 0.85, ease: 'easeOut' }}
+                />
+              </svg>
+            </div>
+            {/* X-axis months */}
+            <div className="flex justify-between mt-1">
+              {['Jan','Mar','May','Jul','Sep','Nov','Dec'].map((m) => (
+                <span key={m} style={{ color: '#444', fontSize: 7 }}>{m}</span>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Quick Stats panel — hidden on mobile, stacked on tablet, side column on desktop */}
+          <motion.div
+            className="rounded-lg"
+            style={{
+              background: '#1a1a1a',
+              border: '1px solid #242424',
+              width: 130,
+              flexShrink: 0,
+              padding: '10px 11px 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 9,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+          >
+            <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Performance</span>
+            {[
+              { label: 'On-time',  value: '98%',   color: '#22c55e', bar: 98 },
+              { label: 'Uptime',   value: '99.9%', color: '#fbbf24', bar: 99 },
+              { label: 'Clients',  value: '1,390', color: '#60a5fa', bar: 72 },
+            ].map((kpi) => (
+              <div key={kpi.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#777', fontSize: 8 }}>{kpi.label}</span>
+                  <span style={{ color: kpi.color, fontSize: 8.5, fontWeight: 700 }}>{kpi.value}</span>
+                </div>
+                <div style={{ height: 3, background: '#2a2a2a', borderRadius: 99 }}>
+                  <motion.div
+                    style={{ height: '100%', borderRadius: 99, background: kpi.color }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${kpi.bar}%` }}
+                    transition={{ duration: 0.8, delay: 1.0 }}
+                  />
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Bottom row: Recent orders + Sales by region */}
+        <div className="flex gap-1.5" style={{ flex: '0 0 auto' }}>
+
+          {/* Recent orders */}
+          <motion.div
+            className="flex-1 rounded-lg"
+            style={{ background: '#1a1a1a', border: '1px solid #242424', minWidth: 0, padding: '10px 10px 8px' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.9 }}
+          >
+            <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+              <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Recent Orders</span>
+              <span style={{ color: '#fbbf24', fontSize: 8 }}>Sale All →</span>
+            </div>
+            {/* Table header */}
+            <div className="grid" style={{ gridTemplateColumns: '1.8fr 1.4fr 1.8fr 1fr 1.1fr', gap: '0 8px', marginBottom: 5 }}>
+              {['Order ID','Customer','Date','Revenue','Status'].map((h) => (
+                <span key={h} style={{ color: '#555', fontSize: 7.5 }}>{h}</span>
+              ))}
+            </div>
+            {/* Rows */}
+            {orders.map((o) => (
+              <div
+                key={o.id}
+                className="grid"
+                style={{
+                  gridTemplateColumns: '1.8fr 1.4fr 1.8fr 1fr 1.1fr',
+                  gap: '0 8px',
+                  padding: '5px 0',
+                  borderTop: '1px solid #242424',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ color: '#888', fontSize: 8 }}>{o.id}</span>
+                <span style={{ color: '#ccc', fontSize: 8 }}>{o.customer}</span>
+                <span style={{ color: '#666', fontSize: 8 }}>{o.date}</span>
+                <span style={{ color: '#fff', fontSize: 8 }}>{o.amount}</span>
+                <span
+                  className="rounded-full inline-flex items-center justify-center"
+                  style={{
+                    background: `${o.color}18`,
+                    color: o.color,
+                    fontSize: 7,
+                    padding: '1px 5px',
+                    border: `1px solid ${o.color}30`,
+                  }}
+                >
+                  {o.status}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Sales by region */}
+          <motion.div
+            className="rounded-lg flex flex-col"
+            style={{ background: '#1a1a1a', border: '1px solid #242424', width: 110, padding: '10px 10px 8px' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.0 }}
+          >
+            <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600, marginBottom: 6, display: 'block' }}>Sales by Region</span>
+            <WorldMapDots />
+            {/* Regional mini-bars */}
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { region: 'Americas', pct: 68 },
+                { region: 'Europe',   pct: 82 },
+                { region: 'Asia',     pct: 55 },
+              ].map((r) => (
+                <div key={r.region}>
+                  <div className="flex justify-between" style={{ marginBottom: 3 }}>
+                    <span style={{ color: '#666', fontSize: 7.5 }}>{r.region}</span>
+                    <span style={{ color: '#fbbf24', fontSize: 7.5 }}>{r.pct}%</span>
+                  </div>
+                  <div style={{ height: 3, background: '#2a2a2a', borderRadius: 2 }}>
+                    <motion.div
+                      style={{ height: '100%', borderRadius: 2, background: '#fbbf24' }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${r.pct}%` }}
+                      transition={{ duration: 0.7, delay: 1.1 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+export default function Hero() {
+  const [phraseIdx, setPhraseIdx] = useState(0);
+  const { t, locale, isRTL } = useTranslation();
+  const PHRASES = isRTL ? PHRASES_AR : PHRASES_EN;
+
+  // Reset to first phrase on locale change
+  useEffect(() => {
+    setPhraseIdx(0);
+  }, [locale]);
+
+  // Rotate every 3 s
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPhraseIdx((i) => (i + 1) % PHRASES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [PHRASES.length]);
+
+  return (
+    <section
+      id="home"
+      className="relative min-h-screen flex items-center overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%)' }}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      {/* Gold ambient glow */}
+      <div
+        className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none`}
+        style={{
+          background: 'radial-gradient(circle, rgba(251,191,36,0.07) 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 pb-16 w-full">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center min-h-[calc(100vh-6rem)]">
+
+          {/* ── Left (start): Copy ─────────────────────────────────────── */}
+          <div className="flex flex-col justify-center">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase"
+                style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}
+              >
+                {t('hero.badge')}
+              </span>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mb-2"
+            >
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-white leading-[1.15] tracking-tight m-0 p-0">
+                <span className="block">{t('hero.staticLine')}</span>
+
+                {/* Animated slider — flush below, same font spec */}
+                <span
+                  className="block relative overflow-hidden"
+                  style={{ height: '2.3em' }}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={phraseIdx}
+                      initial={{ y: '100%', opacity: 0 }}
+                      animate={{ y: '0%', opacity: 1 }}
+                      exit={{ y: '-100%', opacity: 0 }}
+                      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-0 font-extrabold leading-[1.15] tracking-tight"
+                      dir={isRTL ? 'rtl' : 'ltr'}
+                    >
+                      <HighlightedPhrase
+                        phrase={PHRASES[phraseIdx].phrase}
+                        highlight={PHRASES[phraseIdx].highlight}
+                      />
+                    </motion.span>
+                  </AnimatePresence>
+                </span>
+              </h1>
+
+              {/* Phrase progress dots */}
+              <PhraseDots total={PHRASES.length} active={phraseIdx} />
+            </motion.div>
+
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-base sm:text-lg leading-relaxed mb-8 max-w-lg"
+              style={{ color: '#a0a0a0' }}
+            >
+              {t('hero.subtitle')}
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap gap-3"
+            >
+              <Link href="#contact" className="btn-primary flex items-center gap-2 text-sm">
+                {t('hero.ctaPrimary')}
+                <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+              </Link>
+              <a
+                href="#solutions"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#solutions')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="btn-secondary flex items-center gap-2 text-sm"
+              >
+                {t('hero.ctaSecondary')}
+              </a>
+            </motion.div>
+          </div>
+
+          {/* ── Right (end): ERP Dashboard — hidden on phones, visible md+ ── */}
+          <motion.div
+            initial={{ opacity: 0, x: isRTL ? -50 : 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="relative hidden lg:flex flex-col items-center justify-center"
+          >
+            {/* Tablet frame */}
+            <div
+              className="relative w-full"
+              style={{
+                maxWidth: 520,
+                borderRadius: 20,
+                padding: 10,
+                background: '#1a1a1a',
+                border: '1.5px solid #2a2a2a',
+                boxShadow:
+                  '0 0 0 1px #111, 0 0 80px rgba(251,191,36,0.12), 0 40px 100px rgba(0,0,0,0.7)',
+              }}
+            >
+              {/* Tablet top notch bar */}
+              <div
+                className="flex items-center justify-between mb-2 px-1"
+                style={{ height: 14 }}
+              >
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: '#2a2a2a' }} />
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#2a2a2a', flexShrink: 0 }} />
+                <div className="flex gap-1.5 items-center">
+                  {[0,1,2].map((i) => (
+                    <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#333' }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Dashboard screen */}
+              <ERPDashboard />
+
+              {/* Tablet bottom bar */}
+              <div className="flex justify-center pt-2">
+                <div style={{ width: 52, height: 4, borderRadius: 2, background: '#2a2a2a' }} />
+              </div>
+            </div>
+
+            {/* Code badge top-left */}
+            <motion.div
+              className={`absolute -top-4 ${isRTL ? '-right-4' : '-left-4'} hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-mono`}
+              style={{
+                background: '#1a1a1a',
+                border: '1px solid #2a2a2a',
+                color: '#fbbf24',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 1.2 }}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              <span>ERP · Mobile App · Website</span>
+            </motion.div>
+
+            {/* Floating stat badge bottom-right */}
+            <motion.div
+              className={`absolute -bottom-4 ${isRTL ? '-left-2' : '-right-2'} hidden lg:flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl`}
+              style={{
+                background: '#1a1a1a',
+                border: '1px solid #2a2a2a',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 1.3 }}
+            >
+              <div
+                className="flex items-center justify-center rounded-lg"
+                style={{ width: 28, height: 28, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.2)' }}
+              >
+                <TrendingUp style={{ width: 14, height: 14, color: '#22c55e' }} />
+              </div>
+              <div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>+18%</div>
+                <div style={{ color: '#666', fontSize: 10 }}>Revenue Growth</div>
+              </div>
+            </motion.div>
+
+            {/* Floating live badge top-right */}
+            <motion.div
+              className={`absolute top-8 ${isRTL ? '-left-6' : '-right-6'} hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold`}
+              style={{
+                background: '#1a1a1a',
+                border: '1px solid #2a2a2a',
+                color: '#fff',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              }}
+              initial={{ opacity: 0, x: isRTL ? -16 : 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 1.4 }}
+            >
+              <motion.div
+                className="rounded-full"
+                style={{ width: 7, height: 7, background: '#22c55e', flexShrink: 0 }}
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+              />
+              Live · 1,390 clients
+            </motion.div>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
+  );
+}

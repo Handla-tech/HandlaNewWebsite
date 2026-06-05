@@ -1,0 +1,315 @@
+/* ─── Google Fonts ────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+/* ─── Tailwind directives ────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS Custom Properties
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  :root {
+    /* Handla brand: always dark + gold */
+    --page-bg:       #0a0a0a;
+    --card-bg:       #141414;
+    --card-bg-hover: #1a1a1a;
+    --border-color:  #2a2a2a;
+    --border-hover:  #3a3a3a;
+    --gold:          #fbbf24;
+    --gold-dim:      rgba(251,191,36,0.15);
+    --gold-glow:     0 0 24px rgba(251,191,36,0.25);
+    --text-primary:  #ffffff;
+    --text-secondary:#a0a0a0;
+    --text-muted:    #666666;
+
+    /* shadcn/ui tokens (dark everywhere) */
+    --background:        0 0% 4%;
+    --foreground:        0 0% 98%;
+    --card:              0 0% 8%;
+    --card-foreground:   0 0% 98%;
+    --popover:           0 0% 8%;
+    --popover-foreground:0 0% 98%;
+    --primary:           45 96% 55%;
+    --primary-foreground:0 0% 5%;
+    --secondary:         0 0% 12%;
+    --secondary-foreground:0 0% 98%;
+    --muted:             0 0% 12%;
+    --muted-foreground:  0 0% 60%;
+    --accent:            0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+    --destructive:       0 62.8% 50%;
+    --destructive-foreground:0 0% 98%;
+    --border:            0 0% 16%;
+    --input:             0 0% 16%;
+    --ring:              45 96% 55%;
+    --radius:            0.75rem;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    @apply scroll-smooth antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  body {
+    @apply font-sans;
+    background-color: var(--page-bg);
+    color: var(--text-primary);
+  }
+
+  /* ─── RTL support ──────────────────────────────────────────────────────── */
+  [dir='rtl'] {
+    font-family: 'Space Grotesk', 'Segoe UI', 'Arial', sans-serif;
+    /* Ensure text-align follows reading direction */
+    text-align: start;
+  }
+
+  /* ── Gold text selection ─────────────────────────────────────────────── */
+  ::selection {
+    background-color: rgba(251, 191, 36, 0.35);
+    color: #ffffff;
+  }
+  ::-moz-selection {
+    background-color: rgba(251, 191, 36, 0.35);
+    color: #ffffff;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Handla component utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Card ─────────────────────────────────────────────────────────────── */
+  .h-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .h-card:hover {
+    border-color: var(--border-hover);
+  }
+  .h-card-gold:hover {
+    border-color: rgba(251,191,36,0.4);
+    box-shadow: var(--gold-glow);
+  }
+
+  /* ── Section label (eyebrow) ─────────────────────────────────────────── */
+  .h-label {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ── Gradient text ────────────────────────────────────────────────────── */
+  .gold-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  }
+
+  /* ── Primary button (gold fill) ──────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200;
+    background-color: var(--gold);
+    color: #000;
+  }
+  .btn-primary:hover {
+    background-color: #f59e0b;
+    box-shadow: var(--gold-glow);
+    transform: translateY(-1px);
+  }
+
+  /* ── Secondary button (outline) ─────────────────────────────────────── */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background-color: transparent;
+  }
+  .btn-secondary:hover {
+    border-color: var(--border-hover);
+    color: #fff;
+  }
+
+  /* ── Grid background ─────────────────────────────────────────────────── */
+  .bg-site-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* ── Gold icon badge ─────────────────────────────────────────────────── */
+  .icon-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    background-color: rgba(251,191,36,0.1);
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  /* Legacy glassmorphism — kept for Testimonials/Navbar blur backdrop */
+  .glass {
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+  }
+  .glass-dark {
+    background: rgba(10, 10, 10, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Legacy gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  }
+
+  /* Legacy btn-gradient — map to gold */
+  .btn-gradient {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-black transition-all duration-200;
+    background-color: var(--gold);
+  }
+  .btn-gradient:hover {
+    background-color: #f59e0b;
+    box-shadow: var(--gold-glow);
+    transform: translateY(-1px);
+  }
+
+  /* Legacy btn-ghost-glow */
+  .btn-ghost-glow {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background: transparent;
+  }
+  .btn-ghost-glow:hover {
+    border-color: var(--border-hover);
+    color: #fff;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar { display: none; }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a2a transparent;
+  }
+
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+
+  /* ── Skip-to-content link ────────────────────────────────────────────── */
+  .skip-to-content {
+    position: absolute;
+    top: -100%;
+    left: 0.5rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: #fbbf24;
+    color: #000;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    transition: top 0.15s ease;
+    text-decoration: none;
+  }
+  .skip-to-content:focus {
+    top: 0;
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+  }
+
+  /* ── RTL layout utilities ────────────────────────────────────────────── */
+
+  /* Reverse horizontal flex direction in RTL */
+  [dir='rtl'] .rtl-flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+
+  /* Chat bubble — own messages: LTR = right-aligned, RTL = left-aligned */
+  [dir='rtl'] .rtl-own-bubble {
+    align-self: flex-start;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+  }
+  [dir='rtl'] .rtl-other-bubble {
+    align-self: flex-end;
+    border-radius: 1rem 1rem 1rem 0.25rem;
+  }
+
+  /* Sidebar — flip from left to right in RTL */
+  [dir='rtl'] .rtl-sidebar-left {
+    left: auto;
+    right: 0;
+    border-left: none;
+    border-right: 1px solid #1e1e1e;
+  }
+
+  /* Inline-start / inline-end logical properties fallbacks */
+  [dir='rtl'] .rtl-text-right { text-align: right; }
+  [dir='rtl'] .rtl-text-left  { text-align: left;  }
+
+  /* Toast container — flip from right to left in RTL */
+  [dir='rtl'] .rtl-toast-container {
+    right: auto;
+    left: 1rem;
+  }
+
+  /* Notification dropdown — flip anchor */
+  [dir='rtl'] .rtl-dropdown-right {
+    right: auto;
+    left: 0;
+  }
+
+  /* Flip chevron/arrow icons in RTL */
+  [dir='rtl'] .rtl-flip {
+    transform: scaleX(-1);
+  }
+
+  /* Padding / margin directional overrides */
+  [dir='rtl'] .rtl-pr-4 { padding-left: 1rem;    padding-right: 0; }
+  [dir='rtl'] .rtl-pl-4 { padding-right: 1rem;   padding-left:  0; }
+  [dir='rtl'] .rtl-mr-2 { margin-left:  0.5rem;  margin-right:  0; }
+  [dir='rtl'] .rtl-ml-2 { margin-right: 0.5rem;  margin-left:   0; }
+
+  /* Touch-target minimum size (Phase 18) */
+  .touch-target {
+    min-height: 44px;
+    min-width:  44px;
+  }
+
+  /* Mobile safe area padding */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

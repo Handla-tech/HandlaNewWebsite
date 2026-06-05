@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Task Assigned — Handla</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0a0a0f; font-family: 'Segoe UI', Arial, sans-serif; color: #e2e8f0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: rgba(15,15,30,0.95); border: 1px solid rgba(59,130,246,0.3); border-radius: 16px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); padding: 32px 40px; text-align: center; }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; }
+    .body { padding: 40px; }
+    .greeting { font-size: 16px; color: #94a3b8; margin-bottom: 24px; }
+    .detail-card { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 12px; padding: 24px; margin-bottom: 28px; }
+    .row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .row:last-child { margin-bottom: 0; }
+    .label { font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.8px; }
+    .val { font-size: 15px; color: #e2e8f0; font-weight: 500; text-align: right; max-width: 60%; }
+    .title-val { font-size: 17px; font-weight: 700; color: #e2e8f0; }
+    .cta-wrapper { text-align: center; margin-bottom: 32px; }
+    .cta-btn { display: inline-block; background: linear-gradient(135deg, #2563eb, #4f46e5); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; }
+    .divider { border: none; border-top: 1px solid rgba(59,130,246,0.15); margin: 24px 0; }
+    .footer { text-align: center; color: #475569; font-size: 12px; padding: 0 40px 32px; line-height: 1.7; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>📋 New Task Assigned</h1>
+    </div>
+    <div class="body">
+      <p class="greeting">Hi <strong>{{recipientName}}</strong>,</p>
+      <p style="color:#94a3b8;font-size:15px;margin-bottom:20px;">
+        A new task has been assigned to you. Please review it and begin work at your earliest convenience.
+      </p>
+      <div class="detail-card">
+        <div class="row">
+          <span class="label">Task</span>
+          <span class="val title-val">{{taskTitle}}</span>
+        </div>
+        <div class="row">
+          <span class="label">Due Date</span>
+          <span class="val">{{dueDate}}</span>
+        </div>
+      </div>
+      <div class="cta-wrapper">
+        <a href="{{erpUrl}}" class="cta-btn">View Task →</a>
+      </div>
+      <hr class="divider" />
+      <p style="color:#64748b;font-size:13px;text-align:center;margin:0;">
+        Task ID: <strong>{{taskId}}</strong>
+      </p>
+    </div>
+    <div class="footer">
+      <p>You're receiving this because a task was assigned to you on <a href="{{baseUrl}}">Handla</a>.</p>
+      <p>© {{year}} Handla. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
