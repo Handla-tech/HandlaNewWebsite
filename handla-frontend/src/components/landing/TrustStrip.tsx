@@ -24,17 +24,42 @@ const ITEMS = [...TECH_STACK, ...TECH_STACK];
 export default function TrustStrip() {
   const { t } = useTranslation();
   return (
-    <section className="relative py-10 overflow-hidden border-y border-white/5">
-      {/* Fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#0a0a12] to-transparent pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-[#0a0a12] to-transparent pointer-events-none" />
+    <section
+      className="relative py-10 overflow-hidden"
+      style={{
+        background: '#080808',
+        borderTop:    '1px solid rgba(255,255,255,0.04)',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
+      }}
+    >
+      {/* Subtle gold top highlight */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-px pointer-events-none"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.2), transparent)' }}
+      />
 
-      <div className="flex items-center gap-4 mb-4 justify-center">
-        <div className="h-px flex-1 max-w-16 bg-gradient-to-r from-transparent to-white/20" />
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+      {/* Fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to right, #080808, transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to left, #080808, transparent)' }} />
+
+      {/* Label */}
+      <div className="flex items-center gap-4 mb-5 justify-center">
+        <div
+          className="h-px flex-1 max-w-16"
+          style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08))' }}
+        />
+        <p
+          className="text-xs font-semibold uppercase tracking-widest"
+          style={{ color: '#444' }}
+        >
           {t('contact.trustStrip')}
         </p>
-        <div className="h-px flex-1 max-w-16 bg-gradient-to-l from-transparent to-white/20" />
+        <div
+          className="h-px flex-1 max-w-16"
+          style={{ background: 'linear-gradient(to left, transparent, rgba(255,255,255,0.08))' }}
+        />
       </div>
 
       {/* Marquee track */}
@@ -42,21 +67,41 @@ export default function TrustStrip() {
         <motion.div
           animate={{ x: [0, '-50%'] }}
           transition={{
-            duration: 28,
+            duration: 30,
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="flex gap-4 w-max"
+          className="flex gap-3 w-max"
         >
           {ITEMS.map(({ name, icon }, idx) => (
             <div
               key={`${name}-${idx}`}
-              className="flex items-center gap-3 px-5 py-3 glass rounded-xl border border-white/5 hover:border-electric-500/30 hover:bg-electric-500/5 transition-all duration-300 group cursor-default select-none shrink-0"
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl cursor-default select-none shrink-0 group transition-all duration-300"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.05)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(251,191,36,0.2)';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(251,191,36,0.08)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)';
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
             >
-              <span className="text-lg leading-none group-hover:scale-110 transition-transform duration-300" aria-hidden>
+              <span
+                className="text-base leading-none transition-transform duration-300 group-hover:scale-110"
+                aria-hidden
+              >
                 {icon}
               </span>
-              <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors duration-300">
+              <span
+                className="text-sm font-medium transition-colors duration-300"
+                style={{ color: '#555' }}
+              >
                 {name}
               </span>
             </div>

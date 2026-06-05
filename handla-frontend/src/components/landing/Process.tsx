@@ -5,14 +5,12 @@ import { motion, useInView } from 'framer-motion';
 import { Search, Pencil, Code2, Rocket, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const containerVariants = {
-  hidden:  {},
-  visible: { transition: { staggerChildren: 0.1 } },
-};
-
 const stepVariants = {
   hidden:  { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.55, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+  }),
 };
 
 export default function Process() {
@@ -21,22 +19,30 @@ export default function Process() {
   const { t, isRTL } = useTranslation();
 
   const STEPS = [
-    { icon: Search, num: t('process.steps.discovery.number'), title: t('process.steps.discovery.title'), desc: t('process.steps.discovery.description') },
-    { icon: Pencil, num: t('process.steps.design.number'),    title: t('process.steps.design.title'),    desc: t('process.steps.design.description')    },
-    { icon: Code2,  num: t('process.steps.build.number'),     title: t('process.steps.build.title'),     desc: t('process.steps.build.description')     },
-    { icon: Rocket, num: t('process.steps.launch.number'),    title: t('process.steps.launch.title'),    desc: t('process.steps.launch.description')    },
+    { icon: Search, num: t('process.steps.discovery.number'), title: t('process.steps.discovery.title'), desc: t('process.steps.discovery.description'), color: '#60a5fa' },
+    { icon: Pencil, num: t('process.steps.design.number'),    title: t('process.steps.design.title'),    desc: t('process.steps.design.description'),    color: '#fbbf24' },
+    { icon: Code2,  num: t('process.steps.build.number'),     title: t('process.steps.build.title'),     desc: t('process.steps.build.description'),     color: '#34d399' },
+    { icon: Rocket, num: t('process.steps.launch.number'),    title: t('process.steps.launch.title'),    desc: t('process.steps.launch.description'),    color: '#a78bfa' },
   ];
 
-  const ConnectorArrow = isRTL
-    ? <ArrowLeft  className="w-5 h-5" style={{ color: '#2a2a2a' }} />
-    : <ArrowRight className="w-5 h-5" style={{ color: '#2a2a2a' }} />;
-
   return (
-    <section id="process" ref={ref} className="relative py-24 sm:py-32" dir={isRTL ? 'rtl' : 'ltr'}>
+    <section
+      id="process"
+      ref={ref}
+      className="relative py-24 sm:py-32 overflow-hidden"
+      style={{ background: '#080808' }}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, #1e1e1e 30%, #1e1e1e 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+      />
+
+      {/* Ambient glow */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.04) 0%, transparent 70%)' }}
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -46,75 +52,117 @@ export default function Process() {
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="text-center mb-14"
+          className="text-center mb-16"
         >
           <p className="h-label mb-3">{t('process.label')}</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             {t('process.headline')}
           </h2>
+          <p className="text-sm max-w-lg mx-auto" style={{ color: '#666' }}>
+            From idea to launch — a structured, proven process that delivers on time.
+          </p>
         </motion.div>
 
-        {/* ── Steps ───────────────────────────────────────────────────── */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={inView ? 'visible' : 'hidden'}
-          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          {STEPS.map(({ num, icon: Icon, title, desc }, i) => (
+        {/* ── Steps ─────────────────────────────────────────────────── */}
+        <div className="relative grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+
+          {/* Animated connector line (desktop only) */}
+          <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-px z-0">
+            <div
+              className="absolute inset-0"
+              style={{ background: 'rgba(255,255,255,0.05)' }}
+            />
+            <motion.div
+              className="absolute inset-y-0 left-0"
+              style={{ background: 'linear-gradient(90deg, #fbbf24, rgba(251,191,36,0.3))' }}
+              initial={{ width: '0%' }}
+              animate={inView ? { width: '100%' } : {}}
+              transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
+            />
+          </div>
+
+          {STEPS.map(({ num, icon: Icon, title, desc, color }, i) => (
             <motion.div
               key={num}
+              custom={i}
               variants={stepVariants}
-              className="relative group rounded-2xl p-6 transition-all duration-300 h-card h-card-gold"
+              initial="hidden"
+              animate={inView ? 'visible' : 'hidden'}
+              className="relative group rounded-2xl p-6 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                zIndex: 1,
+              }}
+              whileHover={{
+                borderColor: `${color}20`,
+                boxShadow: `0 0 30px ${color}08`,
+                y: -2,
+              }}
             >
-              {/*
-                Step number decorative bg:
-                — LTR: top-right corner
-                — RTL: top-left corner
-              */}
+              {/* Hover inner glow */}
+              <div
+                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+                style={{ background: `radial-gradient(ellipse at top, ${color}05 0%, transparent 60%)` }}
+              />
+
+              {/* Step number watermark */}
               <div
                 className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-5xl font-black leading-none select-none pointer-events-none`}
-                style={{ color: 'rgba(251,191,36,0.06)' }}
+                style={{ color: `${color}06` }}
               >
                 {num}
               </div>
 
-              {/* Icon badge */}
-              <div className="icon-badge mb-5">
-                <Icon className="w-4 h-4" />
-              </div>
-
-              {/* Step number pill */}
+              {/* Icon circle */}
               <div
-                className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-3"
-                style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24' }}
+                className="relative w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110"
+                style={{
+                  background: `${color}10`,
+                  border: `1px solid ${color}18`,
+                  color: color,
+                }}
               >
-                {num}
+                <Icon className="w-5 h-5" />
+
+                {/* Step number badge */}
+                <div
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                  style={{ background: color, color: '#000' }}
+                >
+                  {i + 1}
+                </div>
               </div>
 
               <h3 className="text-base font-bold text-white mb-2">{title}</h3>
               <p className="text-sm leading-relaxed" style={{ color: '#666' }}>{desc}</p>
 
-              {/* Connector arrow — flips side and direction in RTL */}
+              {/* Connector arrow (desktop) */}
               {i < STEPS.length - 1 && (
                 <div
-                  className={`hidden lg:block absolute top-1/2 -translate-y-1/2 z-10 ${
-                    isRTL ? '-left-3' : '-right-3'
-                  }`}
+                  className={`hidden lg:flex absolute top-[3.5rem] ${isRTL ? '-left-5' : '-right-5'} w-10 h-10 items-center justify-center z-20`}
                 >
-                  {ConnectorArrow}
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    {isRTL
+                      ? <ArrowLeft  className="w-3 h-3" style={{ color: '#444' }} />
+                      : <ArrowRight className="w-3 h-3" style={{ color: '#444' }} />
+                    }
+                  </div>
                 </div>
               )}
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* ── CTA ─────────────────────────────────────────────────────── */}
+        {/* ── CTA ────────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-center mt-12"
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="text-center"
         >
           <a
             href="#contact"
@@ -122,12 +170,12 @@ export default function Process() {
               e.preventDefault();
               document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="btn-primary inline-flex items-center gap-2"
+            className="btn-primary inline-flex items-center gap-2 group"
           >
             {t('process.cta')}
             {isRTL
-              ? <ArrowLeft  className="w-4 h-4" />
-              : <ArrowRight className="w-4 h-4" />
+              ? <ArrowLeft  className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              : <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             }
           </a>
         </motion.div>
