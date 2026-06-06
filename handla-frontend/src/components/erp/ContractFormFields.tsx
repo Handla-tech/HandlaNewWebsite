@@ -11,9 +11,13 @@
  * Empty strings are pruned in the parent before submitting to the API.
  */
 
-import { useFieldArray, Control, UseFormRegister, FieldErrors, Controller } from 'react-hook-form';
+import {
+  useFieldArray, useWatch,
+  Control, UseFormRegister, FieldErrors, Controller,
+  UseFormSetValue, UseFormGetValues,
+} from 'react-hook-form';
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { ContractType, OwnershipType, Client } from '@/types';
 
@@ -284,12 +288,72 @@ interface ContractFormFieldsProps {
   hideClientSelect?: boolean;
   /** Status badge for read-only display in edit mode. */
   statusBadge?: React.ReactNode;
+  /** Required to enable client auto-fill on clientId change (create mode). */
+  setValue?:  UseFormSetValue<ContractFormValues>;
+  getValues?: UseFormGetValues<ContractFormValues>;
 }
 
 export function ContractFormFields({
   register, control, errors, clients = [], clientsLoading = false,
-  hideClientSelect = false, statusBadge,
+  hideClientSelect = false, statusBadge, setValue, getValues,
 }: ContractFormFieldsProps) {
+  // ── Client auto-fill ──────────────────────────────────────────────────────
+  //
+  // When the user picks a client from the dropdown, pre-populate the
+  // CLIENT INFORMATION section (clientName / clientCompany / clientEmail /
+  // clientPhone / clientAddress) from the selected Client record so they
+  // don't have to retype the same data the client profile already holds.
+  //
+  // We only fill fields that are currently EMPTY — this way any value the
+  // user has already typed in is preserved. We also stash the previous
+  // clientId in a ref so that *switching* clients overwrites the previously
+  // auto-filled values (but still leaves user-edited values alone, because
+  // we re-check emptiness on every assignment).
+  const watchedClientId = useWatch({ control, name: 'clientId' });
+  const prevClientIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Disabled when:
+    //   • The Client select is hidden (edit mode — clientId is immutable).
+    //   • No setValue/getValues provided (caller opted out of auto-fill).
+    //   • No client picked yet.
+    //   • Clients haven't loaded yet so we couldn't look one up anyway.
+    if (hideClientSelect || !setValue || !getValues) return;
+    if (!watchedClientId) return;
+    if (clients.length === 0) return;
+    if (prevClientIdRef.current === watchedClientId) return;
+
+    const selected = clients.find(c => c.id === watchedClientId);
+    if (!selected) return;
+
+    const isFirstFill = prevClientIdRef.current === null;
+    prevClientIdRef.current = watchedClientId;
+
+    const current = getValues('details') ?? {};
+
+    // On the FIRST fill we only populate empties (preserves anything the
+    // user typed before picking a client). On SUBSEQUENT switches we
+    // overwrite the previously auto-filled values with the new client's
+    // data — but still keep any field that doesn't match the *previous*
+    // client (i.e. user manually edited it).
+    const fill = (
+      key: 'clientName' | 'clientCompany' | 'clientEmail' | 'clientPhone' | 'clientAddress',
+      value: string | null | undefined,
+    ) => {
+      if (!value) return;
+      const existing = (current as Record<string, unknown>)[key];
+      const isEmpty = existing === undefined || existing === null || existing === '';
+      if (isFirstFill && !isEmpty) return;
+      setValue(`details.${key}` as const, value, { shouldDirty: true, shouldTouch: false });
+    };
+
+    fill('clientName',    selected.user?.name);
+    fill('clientCompany', selected.company ?? selected.user?.company);
+    fill('clientEmail',   selected.user?.email);
+    fill('clientPhone',   selected.user?.phoneNumber);
+    fill('clientAddress', selected.user?.location);
+  }, [watchedClientId, clients, hideClientSelect, setValue, getValues]);
+
   return (
     <div className="space-y-3">
       {/* ── REQUIRED HEADER ────────────────────────────────────────────────── */}

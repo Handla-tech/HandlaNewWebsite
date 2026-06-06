@@ -63,10 +63,31 @@ const HEADER_H  = 44;
 const FOOTER_H  = 14;
 const PAGE_BOTTOM = PAGE.height - FOOTER_H; // hard limit for any content
 
+// Page border — drawn 6 mm in from the physical page edge on all four sides.
+// Sits OUTSIDE the content margin so it never collides with text.
+const BORDER_INSET = 6;
+const BORDER_W = 0.4;
+
 // ─── Drawing primitives ──────────────────────────────────────────────────────
 
 function setText(doc: jsPDF, c: [number, number, number]) { doc.setTextColor(c[0], c[1], c[2]); }
 function setDraw(doc: jsPDF, c: [number, number, number]) { doc.setDrawColor(c[0], c[1], c[2]); }
+
+/**
+ * Single thin black border around the page. Drawn once per page (call
+ * from the page-creation hook). Sits 6 mm in from each physical edge,
+ * which is OUTSIDE the content margin (18 mm) so it never overlaps text.
+ */
+function drawPageBorder(doc: jsPDF) {
+  setDraw(doc, BLACK);
+  doc.setLineWidth(BORDER_W);
+  doc.rect(
+    BORDER_INSET,
+    BORDER_INSET,
+    PAGE.width  - BORDER_INSET * 2,
+    PAGE.height - BORDER_INSET * 2,
+  );
+}
 
 // ─── Formatting helpers ──────────────────────────────────────────────────────
 
@@ -107,15 +128,105 @@ function yn(v: boolean | undefined | null): string | null {
   return v ? 'Yes' : 'No';
 }
 
-/** Strip mojibake / box-drawing characters that legacy bodies may contain. */
+/**
+ * Does this ContractDetails carry any data worth rendering? If every meaningful
+ * field is missing / empty, the structured renderer would emit a contract
+ * with only the PARTIES block — so we'd rather fall through to the legacy
+ * body parser which at least has narrative content.
+ */
+function hasAnyDetailsContent(d: ContractDetails): boolean {
+  const stringFields: (keyof ContractDetails)[] = [
+    'contractNumber', 'projectName',
+    'projectDescription', 'scopeOfWork',
+    'startDate', 'endDate', 'estimatedDuration',
+    'currency', 'warrantyPeriod', 'supportPeriod',
+    'latePaymentPenalty', 'terminationTerms', 'termsAndConditions',
+  ];
+  for (const k of stringFields) {
+    const v = d[k];
+    if (typeof v === 'string' && v.trim() !== '') return true;
+  }
+  if (d.contractType || d.ownershipType) return true;
+  if (typeof d.totalValue === 'number') return true;
+  if (typeof d.freeRevisions === 'number') return true;
+  if (typeof d.acceptancePeriodDays === 'number') return true;
+  if (d.deliverables       && d.deliverables.length       > 0) return true;
+  if (d.excludedServices   && d.excludedServices.length   > 0) return true;
+  if (d.paymentMilestones  && d.paymentMilestones.length  > 0) return true;
+  return false;
+}
+
+/**
+ * Sanitize a legacy plain-text contract body.
+ *
+ * 1) Replace box-drawing / em-dash characters that jsPDF's WinAnsi-encoded
+ *    Helvetica can't render (would otherwise show as `%P%P%P…` mojibake).
+ * 2) **Strip** dashed divider rows entirely (any line that's purely "-" and
+ *    whitespace, 4+ chars) — these were intended as visual separators in
+ *    the plain-text view, but in the PDF we paint proper typographic rules
+ *    via drawSectionHeader, so the literal dashes become noise.
+ * 3) Strip zero-width / BOM control chars.
+ * 4) Collapse 3+ consecutive blank lines into a single blank line.
+ */
 function sanitizeBody(body: string): string {
   return body
-    // Box-drawing horizontal lines (single & double) and other non-WinAnsi runs
     .replace(/[\u2500-\u257F\u2014\u2013]/g, '-')
-    // Collapse runs of 4+ dashes (any of "-", "—", "–") into a stable separator
-    .replace(/-{4,}/g, '------------------------------------------------------------')
-    // Remove zero-width / BOM
-    .replace(/[\u200B-\u200F\uFEFF]/g, '');
+    .replace(/[\u200B-\u200F\uFEFF]/g, '')
+    .split('\n')
+    .filter((line) => !/^\s*-{4,}\s*$/.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Parse a sanitised legacy body into named sections. The legacy renderer
+ * emitted sections as:
+ *
+ *     SECTION TITLE
+ *     <content lines…>
+ *
+ * (with dashed dividers we've already stripped). A "section title" line is
+ * detected as a line that is ALL UPPERCASE (with optional &/and/+), shorter
+ * than 50 chars, and followed by at least one non-empty content line.
+ *
+ * Returns the document as an ordered list of (title, body) pairs. If no
+ * sections can be detected, returns a single anonymous section with the
+ * whole body as content.
+ */
+function parseLegacyBodySections(body: string): Array<{ title: string; content: string }> {
+  const lines = body.split('\n');
+  const isSectionTitle = (line: string): boolean => {
+    const t = line.trim();
+    if (t.length === 0 || t.length > 50) return false;
+    // All caps + spaces + & + a few connectors. No lowercase.
+    return /^[A-Z0-9 &/+\-,.()]+$/.test(t) && /[A-Z]/.test(t) && t === t.toUpperCase();
+  };
+
+  const sections: Array<{ title: string; content: string[] }> = [];
+  let current: { title: string; content: string[] } | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const next = lines[i + 1] ?? '';
+    if (isSectionTitle(line) && next.trim().length > 0) {
+      if (current) sections.push(current);
+      current = { title: line.trim(), content: [] };
+      continue;
+    }
+    if (current) current.content.push(line);
+    else if (line.trim().length > 0) {
+      current = { title: '', content: [line] };
+    }
+  }
+  if (current) sections.push(current);
+
+  if (sections.length === 0) {
+    return [{ title: '', content: body.trim() }];
+  }
+  return sections.map((s) => ({
+    title: s.title,
+    content: s.content.join('\n').replace(/^\n+|\n+$/g, ''),
+  }));
 }
 
 // ─── Section primitives ──────────────────────────────────────────────────────
@@ -163,6 +274,10 @@ function drawFooter(ctx: DrawContext) {
 /** Lightweight header on continuation pages — returns the body start Y. */
 function drawContinuationHeader(ctx: DrawContext): number {
   const { doc } = ctx;
+
+  // Page border first so it sits behind everything else.
+  drawPageBorder(doc);
+
   setText(doc, BLACK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
@@ -260,11 +375,16 @@ function drawProseBlock(ctx: DrawContext, label: string, text: string) {
   const { doc } = ctx;
   ensureSpace(ctx, 10);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  setText(doc, [90, 90, 90]);
-  doc.text(label.toUpperCase(), PAGE.margin, ctx.cursor);
-  ctx.cursor += 4;
+  // Only draw the grey label row if one was actually supplied. Calling sites
+  // pass '' when the surrounding section header already conveys the label,
+  // and printing an empty bolded line still consumes vertical space.
+  if (label.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setText(doc, [90, 90, 90]);
+    doc.text(label.toUpperCase(), PAGE.margin, ctx.cursor);
+    ctx.cursor += 4;
+  }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
@@ -288,11 +408,13 @@ function drawBulletList(ctx: DrawContext, label: string, items: string[]) {
   const { doc } = ctx;
   ensureSpace(ctx, 10);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  setText(doc, [90, 90, 90]);
-  doc.text(label.toUpperCase(), PAGE.margin, ctx.cursor);
-  ctx.cursor += 4;
+  if (label.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setText(doc, [90, 90, 90]);
+    doc.text(label.toUpperCase(), PAGE.margin, ctx.cursor);
+    ctx.cursor += 4;
+  }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
@@ -332,6 +454,10 @@ export async function downloadContractPdf(
   options: ContractPdfOptions = {},
 ): Promise<string> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  // Frame the first page. Subsequent pages get framed in drawContinuationHeader
+  // and in the autoTable didDrawPage hook.
+  drawPageBorder(doc);
 
   // ── Resolve QR target ────────────────────────────────────────────────────
   const baseUrl =
@@ -531,12 +657,23 @@ export async function downloadContractPdf(
   ctx.cursor = Math.max(issuedEnd, contractEnd) + 4;
 
   // ── 4) Structured details OR fallback to body prose ──────────────────────
-  if (details) {
-    renderStructuredDetails(ctx, details);
+  //
+  // We prefer the structured `details` payload (renders as typographic
+  // sections, no dashed dividers). Empty/sparse details fall through to
+  // the legacy body parser so we still surface content for old contracts.
+  const hasUsefulDetails = !!details && hasAnyDetailsContent(details);
+  if (hasUsefulDetails) {
+    renderStructuredDetails(ctx, details!);
   } else {
-    // Legacy plain-text body
-    drawSectionHeader(ctx, 'Terms & Conditions');
-    drawProseBlock(ctx, '', sanitizeBody(contract.body || ''));
+    // Legacy plain-text body — parse it into typographic sections so it
+    // renders with the same look-and-feel as a structured contract instead
+    // of dumping raw "DASHED DIVIDER\nSECTION\nDASHED DIVIDER" runs.
+    const sanitized = sanitizeBody(contract.body || '');
+    const sections = parseLegacyBodySections(sanitized);
+    sections.forEach((s) => {
+      if (s.title) drawSectionHeader(ctx, s.title);
+      if (s.content.trim()) drawProseBlock(ctx, '', s.content);
+    });
   }
 
   // ── 5) Signatures ────────────────────────────────────────────────────────

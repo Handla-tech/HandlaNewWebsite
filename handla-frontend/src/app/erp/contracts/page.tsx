@@ -278,7 +278,7 @@ function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
 
 function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isOpen: boolean; onClose: () => void; clients: Client[]; clientsLoading: boolean }) {
   const qc = useQueryClient();
-  const { register, handleSubmit, control, reset, formState: { errors } } =
+  const { register, handleSubmit, control, reset, setValue, getValues, formState: { errors } } =
     useForm<ContractFormValues>({
       resolver: zodResolver(createSchema),
       defaultValues: {
@@ -314,6 +314,8 @@ function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isO
           errors={errors}
           clients={clients}
           clientsLoading={clientsLoading}
+          setValue={setValue}
+          getValues={getValues}
         />
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">

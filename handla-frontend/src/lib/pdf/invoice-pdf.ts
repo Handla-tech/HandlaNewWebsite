@@ -51,10 +51,26 @@ const COL_W     = (CONTENT_W - COL_GAP) / 2;
 const HEADER_H = 44;
 const FOOTER_H = 14;
 
+// Page border — drawn 6 mm in from the physical page edge, outside content.
+const BORDER_INSET = 6;
+const BORDER_W = 0.4;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function setText(doc: jsPDF, c: [number, number, number]) { doc.setTextColor(c[0], c[1], c[2]); }
 function setDraw(doc: jsPDF, c: [number, number, number]) { doc.setDrawColor(c[0], c[1], c[2]); }
+
+/** Thin black border around the page (drawn outside the content margin). */
+function drawPageBorder(doc: jsPDF) {
+  setDraw(doc, BLACK);
+  doc.setLineWidth(BORDER_W);
+  doc.rect(
+    BORDER_INSET,
+    BORDER_INSET,
+    PAGE.width  - BORDER_INSET * 2,
+    PAGE.height - BORDER_INSET * 2,
+  );
+}
 
 function formatCurrency(n: number, ccy: string): string {
   const symbol = ccy === 'USD' ? '$' : '';
@@ -108,6 +124,11 @@ export async function downloadInvoicePdf(
   options: InvoicePdfOptions = {},
 ): Promise<string> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  // Frame page 1 immediately. If the invoice ever paginates (it currently
+  // doesn't — autoTable handles overflow in-page), the table's didDrawPage
+  // hook below repaints the border on continuation pages too.
+  drawPageBorder(doc);
 
   // ── Resolve QR target ────────────────────────────────────────────────────
   const baseUrl =
@@ -301,6 +322,12 @@ export async function downloadInvoicePdf(
       1: { cellWidth: 16, halign: 'center'                     },
       2: { cellWidth: 32, halign: 'right'                      },
       3: { cellWidth: 32, halign: 'right', fontStyle: 'bold'   },
+    },
+    didDrawPage: (data) => {
+      // Repaint the page border on any continuation page autoTable spawns.
+      // (Currently invoices fit on one page, but if a future invoice has
+      // enough line-items to overflow, continuation pages still get framed.)
+      if (data.pageNumber > 1) drawPageBorder(doc);
     },
   });
 
