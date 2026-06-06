@@ -148,6 +148,65 @@ export class ContractsService {
     return contract;
   }
 
+  // ─── findOnePublic ───────────────────────────────────────────────────────
+  /**
+   * Public read-only contract lookup used by the QR-code scanning flow.
+   *
+   * Security considerations:
+   *  - Returns a sanitized projection: title, status, dates, the rendered
+   *    body, plus minimal client / issuer display strings.
+   *  - Never exposes the raw S3 key, structured `details` payload, or
+   *    user entities. Email is included so the recipient knows who the
+   *    contract was issued to.
+   *  - The endpoint is rate-limited by the global ThrottlerModule and the
+   *    contract `id` is a UUID v4 — non-enumerable in practice.
+   */
+  async findOnePublic(id: string): Promise<{
+    id:        string;
+    title:     string;
+    body:      string;
+    status:    ContractStatus;
+    createdAt: Date;
+    sentAt:    Date | null;
+    signedAt:  Date | null;
+    client: {
+      name:    string | null;
+      company: string | null;
+      email:   string | null;
+    } | null;
+    issuer: {
+      name: string | null;
+    } | null;
+  }> {
+    const contract = await this.contractRepo.findOne({
+      where: { id },
+      relations: ['client', 'client.user', 'owner'],
+    });
+    if (!contract) {
+      throw new ResourceNotFoundException('Contract', id);
+    }
+
+    return {
+      id:        contract.id,
+      title:     contract.title,
+      body:      contract.body,
+      status:    contract.status,
+      createdAt: contract.createdAt,
+      sentAt:    contract.sentAt,
+      signedAt:  contract.signedAt,
+      client: contract.client
+        ? {
+            name:    contract.client.user?.name ?? null,
+            company: contract.client.company ?? null,
+            email:   contract.client.user?.email ?? null,
+          }
+        : null,
+      issuer: contract.owner
+        ? { name: contract.owner.name ?? null }
+        : { name: 'Handla' },
+    };
+  }
+
   // ─── create ───────────────────────────────────────────────────────────────
   /**
    * Create a DRAFT contract under a client.

@@ -585,10 +585,14 @@ export default function ContractDetailPage() {
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
-  // PDF url state
+  // PDF url state (legacy S3-stored signed copy)
   const [pdfUrl,     setPdfUrl]     = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError,   setPdfError]   = useState<string | null>(null);
+
+  // Client-side PDF export state (jspdf + QR code)
+  const [pdfDlLoading, setPdfDlLoading] = useState(false);
+  const [pdfDlError,   setPdfDlError]   = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -644,6 +648,27 @@ export default function ContractDetailPage() {
   const canAccept  = isClient && contract.status === 'SENT';
   const canReject  = isClient && contract.status === 'SENT';
   const canDownload= contract.status === 'SIGNED' && !!contract.s3Key;
+  // Client-side PDF is available to anyone who can already view the contract,
+  // regardless of status — admin, employee owner, or assigned client.
+  const canDownloadPdf = isAdmin || isEmployee || isClient;
+
+  // Generate a print-friendly black-and-white PDF on the client. The PDF
+  // library is loaded on first click to keep the page bundle light.
+  const handleDownloadPdf = async () => {
+    if (!contract) return;
+    setPdfDlLoading(true);
+    setPdfDlError(null);
+    try {
+      const { downloadContractPdf } = await import('@/lib/pdf/contract-pdf');
+      await downloadContractPdf(contract);
+    } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.error('Contract PDF generation failed', e);
+      setPdfDlError(e?.message ?? 'Failed to generate PDF');
+    } finally {
+      setPdfDlLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -696,6 +721,20 @@ export default function ContractDetailPage() {
                 <Send className="w-4 h-4" /> Send to Client
               </button>
             )}
+            {canDownloadPdf && (
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfDlLoading}
+                title="Download print-friendly contract PDF (with QR code)"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#fbbf24]/15 border border-[#fbbf24]/30 text-[#fbbf24] hover:bg-[#fbbf24]/25 transition-colors text-sm disabled:opacity-60 disabled:cursor-wait min-h-[40px]"
+              >
+                {pdfDlLoading ? (
+                  <><span className="w-4 h-4 border-2 border-[#fbbf24]/30 border-t-[#fbbf24] rounded-full animate-spin" /> Generating…</>
+                ) : (
+                  <><Download className="w-4 h-4" /> Download PDF</>
+                )}
+              </button>
+            )}
             {canDownload && (
               <button onClick={fetchPdfUrl} disabled={pdfLoading}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm disabled:opacity-50 min-h-[40px]">
@@ -736,10 +775,16 @@ export default function ContractDetailPage() {
           )}
         </div>
 
-        {/* PDF error */}
+        {/* PDF error (S3 signed copy) */}
         {pdfError && (
           <p className="mt-3 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
             {pdfError}
+          </p>
+        )}
+        {/* PDF error (client-side generator) */}
+        {pdfDlError && (
+          <p className="mt-3 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+            PDF generation failed: {pdfDlError}
           </p>
         )}
         {pdfUrl && (

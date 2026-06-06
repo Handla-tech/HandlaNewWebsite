@@ -28,7 +28,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { OwnedResource } from '../../common/decorators/owned-resource.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { JwtAuthGuard } from '../../common/guards/jwt.guard';
+import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { OwnershipGuard } from '../../common/guards/ownership.guard';
 import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
@@ -39,6 +39,24 @@ import { User } from '../auth/entities/user.entity';
 @Controller('erp/contracts')
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
+
+  // ── GET /erp/contracts/public/:id ──────────────────────────────────────
+  // Public read-only contract projection used by the QR-code flow on the
+  // contract PDF. Declared BEFORE `:id` so the two-segment path matches
+  // first (Nest evaluates handlers in declaration order).
+  @Get('public/:id')
+  @Public()
+  @ApiOperation({
+    summary:
+      'Public read-only contract view (no auth). Used by the printed QR code on the PDF.',
+  })
+  @ApiResponse({ status: 200, description: 'Sanitized contract payload' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async findOnePublic(@Param('id', ParseUUIDPipe) id: string) {
+    const contract = await this.contractsService.findOnePublic(id);
+    return { message: 'Public contract retrieved', data: { contract } };
+  }
 
   // ── GET /erp/contracts ──────────────────────────────────────────────────
   @Get()

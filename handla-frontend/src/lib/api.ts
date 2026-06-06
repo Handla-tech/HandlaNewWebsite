@@ -294,6 +294,8 @@ export const contractsApi = {
   rejectContract:       (id: string)                          => api.post(`/erp/contracts/${id}/reject`),
   /** GET /erp/contracts/:id/pdf-url — presigned download URL */
   getPdfUrl:            (id: string)                          => api.get(`/erp/contracts/${id}/pdf-url`),
+  /** GET /erp/contracts/public/:id — public sanitized contract (no auth, QR code target) */
+  getPublicContract:    (id: string)                          => api.get(`/erp/contracts/public/${id}`),
   /** GET /erp/clients/:clientId/contracts */
   getContractsByClient: (clientId: string)                    => api.get(`/erp/clients/${clientId}/contracts`),
 };
