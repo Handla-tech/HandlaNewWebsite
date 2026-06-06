@@ -185,6 +185,91 @@ export class InvoicesService {
     return invoice;
   }
 
+  // ─── findOnePublic ───────────────────────────────────────────────────────
+  /**
+   * Public read-only invoice lookup used by the QR-code scanning flow.
+   *
+   * Security considerations:
+   *  - Only exposes a sanitized projection (no internal notes, no owner email
+   *    metadata beyond a display name, no raw user objects).
+   *  - The endpoint is rate-limited via the global ThrottlerModule and the
+   *    invoice `id` is a UUID v4 — non-enumerable in practice.
+   *  - Never returns the soft-deleted columns, raw user passwords, etc.
+   */
+  async findOnePublic(id: string): Promise<{
+    id: string;
+    invoiceNumber: string;
+    subtotal: number;
+    taxRate: number;
+    taxAmount: number;
+    total: number;
+    currency: string;
+    paymentStatus: InvoicePaymentStatus;
+    dueDate: string | null;
+    paidAt: Date | null;
+    createdAt: Date;
+    notes: string | null;
+    lineItems: Array<{
+      id: string;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    }>;
+    client: {
+      name: string | null;
+      company: string | null;
+      email: string | null;
+    } | null;
+    issuer: {
+      name: string | null;
+    } | null;
+  }> {
+    const invoice = await this.invoiceRepo.findOne({
+      where: { id },
+      relations: ['client', 'client.user', 'owner', 'lineItems'],
+    });
+    if (!invoice) throw new ResourceNotFoundException('Invoice', id);
+
+    return {
+      id:             invoice.id,
+      invoiceNumber:  invoice.invoiceNumber,
+      subtotal:       Number(invoice.subtotal),
+      taxRate:        Number(invoice.taxRate),
+      taxAmount:      Number(invoice.taxAmount),
+      total:          Number(invoice.total),
+      currency:       invoice.currency,
+      paymentStatus:  invoice.paymentStatus,
+      dueDate:        invoice.dueDate,
+      paidAt:         invoice.paidAt,
+      createdAt:      invoice.createdAt,
+      // Strip internal payment-proof annotations from public view
+      notes:          invoice.notes && !invoice.notes.includes('[Payment proof submitted]')
+        ? invoice.notes
+        : null,
+      lineItems: (invoice.lineItems ?? [])
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((li) => ({
+          id:          li.id,
+          description: li.description,
+          quantity:    Number(li.quantity),
+          unitPrice:   Number(li.unitPrice),
+          lineTotal:   Number(li.lineTotal),
+        })),
+      client: invoice.client
+        ? {
+            name:    invoice.client.user?.name ?? null,
+            company: invoice.client.company ?? null,
+            email:   invoice.client.user?.email ?? null,
+          }
+        : null,
+      issuer: invoice.owner
+        ? { name: invoice.owner.name ?? null }
+        : { name: 'Handla' },
+    };
+  }
+
   // ─── create ───────────────────────────────────────────────────────────────
   async create(dto: CreateInvoiceDto, actingUser: User): Promise<Invoice> {
     // Verify client exists

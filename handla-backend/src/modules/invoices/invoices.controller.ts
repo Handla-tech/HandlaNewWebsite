@@ -29,7 +29,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { OwnedResource } from '../../common/decorators/owned-resource.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { JwtAuthGuard } from '../../common/guards/jwt.guard';
+import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { OwnershipGuard } from '../../common/guards/ownership.guard';
 import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
@@ -40,6 +40,22 @@ import { User } from '../auth/entities/user.entity';
 @Controller('erp/invoices')
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
+
+  // ── GET /erp/invoices/public/:id ──────────────────────────────────────
+  // Public read-only invoice projection used by the QR-code flow.
+  // Declared BEFORE `:id` so the two-segment path is matched first.
+  @Get('public/:id')
+  @Public()
+  @ApiOperation({
+    summary:
+      'Public read-only invoice view (no auth). Used by the printed QR code on the PDF.',
+  })
+  @ApiResponse({ status: 200, description: 'Sanitized invoice payload' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async findOnePublic(@Param('id', ParseUUIDPipe) id: string) {
+    return this.invoicesService.findOnePublic(id);
+  }
 
   // ── GET /erp/invoices ──────────────────────────────────────────────────
   @Get()

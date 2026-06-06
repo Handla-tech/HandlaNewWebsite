@@ -6,12 +6,15 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   Receipt, ArrowLeft, CreditCard, Trash2, Edit2, Loader2,
   X, Calendar, User, Building, CheckCircle, Clock, AlertCircle,
-  DollarSign, FileText,
+  DollarSign, FileText, Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { invoicesApi } from '@/lib/api';
 import { Invoice, InvoicePaymentStatus } from '@/types';
+// NOTE: jspdf + jspdf-autotable + qrcode together are ~150 kB. We load them
+// lazily so they don't impact the first paint of the invoice detail page.
+// The bundle is fetched the first time the user clicks "Download PDF".
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -134,6 +137,8 @@ export default function InvoiceDetailPage() {
 
   const [showMarkPaid, setShowMarkPaid] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError]     = useState<string>('');
 
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['erp-invoice', id],
@@ -170,6 +175,26 @@ export default function InvoiceDetailPage() {
   const canDelete   = isAdmin && invoice.paymentStatus === 'UNPAID';
   const StatusIcon  = STATUS_ICON[invoice.paymentStatus];
   const isOverdue   = invoice.paymentStatus === 'OVERDUE';
+
+  // PDF download — runs entirely client-side. The PDF library bundle is loaded
+  // lazily on first click so the invoice page itself stays light. The browser
+  // will block the download if the user navigates away mid-generation, which
+  // is acceptable here.
+  const handleDownloadPdf = async () => {
+    if (!invoice) return;
+    setPdfLoading(true);
+    setPdfError('');
+    try {
+      const { downloadInvoicePdf } = await import('@/lib/pdf/invoice-pdf');
+      await downloadInvoicePdf(invoice);
+    } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.error('PDF generation failed', e);
+      setPdfError(e?.message ?? 'Failed to generate PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['erp-invoice', id] });
@@ -237,6 +262,17 @@ export default function InvoiceDetailPage() {
               <StatusIcon className="w-4 h-4" />
               {STATUS_LABEL[invoice.paymentStatus]}
             </span>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={pdfLoading}
+              title="Download invoice as PDF (includes QR code)"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fbbf24]/15 border border-[#fbbf24]/30 text-[#fbbf24] text-sm hover:bg-[#fbbf24]/25 disabled:opacity-60 disabled:cursor-wait transition-colors"
+            >
+              {pdfLoading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Download className="w-4 h-4" />}
+              {pdfLoading ? 'Generating…' : 'Download PDF'}
+            </button>
             {canMarkPaid && invoice.paymentStatus !== 'OVERDUE' && (
               <button onClick={() => setShowMarkPaid(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm hover:bg-emerald-500/30 transition-colors">
@@ -378,6 +414,20 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* PDF error toast */}
+      {pdfError && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm shadow-2xl backdrop-blur flex items-start gap-3">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">PDF generation failed</p>
+            <p className="text-xs text-red-400/80 mt-0.5">{pdfError}</p>
+          </div>
+          <button onClick={() => setPdfError('')} className="text-red-400/60 hover:text-red-300">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Modals */}
       {showMarkPaid && invoice && (

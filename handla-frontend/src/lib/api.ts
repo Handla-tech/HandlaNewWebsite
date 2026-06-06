@@ -317,6 +317,8 @@ export const invoicesApi = {
   recalculateOverdue:   ()                                    => api.post('/erp/invoices/recalculate-overdue'),
   /** POST /erp/invoices/:id/submit-payment — CLIENT submits payment proof */
   submitPaymentProof:   (id: string, data: object)            => api.post(`/erp/invoices/${id}/submit-payment`, data),
+  /** GET /erp/invoices/public/:id — public sanitized invoice (no auth, QR code target) */
+  getPublicInvoice:     (id: string)                          => api.get(`/erp/invoices/public/${id}`),
 };
 
 // ─── Expenses API (ERP-8) ─────────────────────────────────────────────────────
