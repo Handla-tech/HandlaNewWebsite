@@ -240,7 +240,8 @@ describe('ContractsService', () => {
 
       await service.findAll(admin, { search: 'Service' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('c.title ILIKE :search', { search: '%Service%' });
+      // MySQL uses LIKE (case-insensitive on utf8mb4_unicode_ci), not Postgres ILIKE.
+      expect(qb.andWhere).toHaveBeenCalledWith('c.title LIKE :search', { search: '%Service%' });
     });
   });
 
@@ -431,10 +432,18 @@ describe('ContractsService', () => {
       const result = await service.sendToClient('contract-1', employee);
 
       expect(result.status).toBe(ContractStatus.SENT);
+      // The chat message is emitted in the structured __SYSTEM__:JSON format
+      // so the frontend MessageList can render it as a styled event card
+      // (see SystemEventCard) instead of a plain text bubble.
       expect(mockChatService.saveMessage).toHaveBeenCalledWith(
         'conv-1',
         employee.id,
-        expect.stringContaining('Contract Sent'),
+        expect.stringContaining('__SYSTEM__:'),
+      );
+      expect(mockChatService.saveMessage).toHaveBeenCalledWith(
+        'conv-1',
+        employee.id,
+        expect.stringContaining('"type":"CONTRACT_SENT"'),
       );
       expect(mockNotificationService.createErpNotification).toHaveBeenCalledTimes(2);
     });

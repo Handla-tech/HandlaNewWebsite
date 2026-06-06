@@ -123,13 +123,14 @@ describe('UsersService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('u.role = :role', { role: UserRole.ADMIN });
     });
 
-    it('applies ILIKE search on name and email', async () => {
+    it('applies LIKE search on name and email', async () => {
       const qb = makeQB([], 0);
       mockUserRepo.createQueryBuilder.mockReturnValue(qb);
 
       await service.findAll({ page: 1, limit: 20, search: 'alice' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('(u.name ILIKE :search OR u.email ILIKE :search)', {
+      // MySQL uses LIKE (case-insensitive on utf8mb4_unicode_ci), not Postgres ILIKE.
+      expect(qb.andWhere).toHaveBeenCalledWith('(u.name LIKE :search OR u.email LIKE :search)', {
         search: '%alice%',
       });
     });

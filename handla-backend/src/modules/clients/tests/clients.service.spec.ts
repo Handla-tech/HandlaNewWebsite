@@ -164,7 +164,8 @@ describe('ClientsService', () => {
       await service.findAll(admin, { page: 1, limit: 20, search: 'Acme' });
 
       const andWhereCalls = (qb.andWhere as jest.Mock).mock.calls;
-      expect(andWhereCalls.some((c: any[]) => c[0].includes('ILIKE'))).toBe(true);
+      // MySQL uses LIKE (case-insensitive on utf8mb4_unicode_ci), not Postgres ILIKE.
+      expect(andWhereCalls.some((c: any[]) => c[0].includes('LIKE'))).toBe(true);
     });
 
     it('returns correct pagination math', async () => {

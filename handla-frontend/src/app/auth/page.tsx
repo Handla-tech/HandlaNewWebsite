@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -10,7 +10,31 @@ import { useAuthStore } from '@/store/authStore';
 
 type AuthMode = 'signin' | 'signup';
 
+// ── Page wrapper ───────────────────────────────────────────────────────────────
+//
+// Next.js 14 requires any client component that calls `useSearchParams()` to be
+// wrapped in <Suspense>, otherwise the prerender bails out and the build fails
+// with "useSearchParams() should be wrapped in a suspense boundary at page
+// '/auth'". We split the component so the search-params-reading body lives in
+// AuthPageInner and the exported page just renders it inside <Suspense>.
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageFallback />}>
+      <AuthPageInner />
+    </Suspense>
+  );
+}
+
+// ── Lightweight skeleton shown during the Suspense boundary ──────────────────
+function AuthPageFallback() {
+  return (
+    <main className="relative min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#2a2a2a] border-t-gold-400" />
+    </main>
+  );
+}
+
+function AuthPageInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   // Use the raw store — NOT useAuth() — so we never trigger getMe() here.

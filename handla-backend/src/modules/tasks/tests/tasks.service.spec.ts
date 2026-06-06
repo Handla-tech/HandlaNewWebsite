@@ -213,14 +213,15 @@ describe('TasksService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('t.status = :status', { status: TaskStatus.IN_PROGRESS });
     });
 
-    it('applies search filter on title ILIKE', async () => {
+    it('applies search filter on title LIKE', async () => {
       const admin = makeUser({ role: UserRole.ADMIN });
       const qb = makeQB([], 0);
       mockTaskRepo.createQueryBuilder.mockReturnValue(qb);
 
       await service.findAll(admin, { page: 1, limit: 20, search: 'homepage' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('t.title ILIKE :search', { search: '%homepage%' });
+      // MySQL uses LIKE (case-insensitive on utf8mb4_unicode_ci), not Postgres ILIKE.
+      expect(qb.andWhere).toHaveBeenCalledWith('t.title LIKE :search', { search: '%homepage%' });
     });
 
     it('returns correct pagination math', async () => {

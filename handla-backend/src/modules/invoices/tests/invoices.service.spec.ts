@@ -18,6 +18,8 @@ import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
 import { ExpensesService } from '../../expenses/expenses.service';
 import { LineItemDto } from '../dto/line-item.dto';
+import { Conversation } from '../../chat/entities/conversation.entity';
+import { ChatService } from '../../chat/chat.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -136,8 +138,10 @@ describe('InvoicesService', () => {
   let lineItemRepo: ReturnType<typeof makeMockRepo>;
   let clientRepo: ReturnType<typeof makeMockRepo>;
   let userRepo: ReturnType<typeof makeMockRepo>;
+  let conversationRepo: ReturnType<typeof makeMockRepo>;
   let notificationService: { createNotification: jest.Mock; createErpNotification: jest.Mock };
   let emailService: { queueInvoiceCreated: jest.Mock; queueInvoiceOverdue: jest.Mock };
+  let chatService: { saveMessage: jest.Mock };
   let expensesService: { createFromPaidInvoice: jest.Mock };
   let dataSource: { transaction: jest.Mock };
 
@@ -146,6 +150,10 @@ describe('InvoicesService', () => {
     lineItemRepo = makeMockRepo();
     clientRepo = makeMockRepo();
     userRepo = makeMockRepo();
+    // InvoicesService also takes ConversationRepository + ChatService because
+    // it posts a system-event chat message when an invoice is created.
+    conversationRepo = makeMockRepo();
+    conversationRepo.findOne.mockResolvedValue(null); // default: no conversation
     notificationService = {
       createNotification: jest.fn().mockResolvedValue({}),
       createErpNotification: jest.fn().mockResolvedValue({}),
@@ -154,6 +162,7 @@ describe('InvoicesService', () => {
       queueInvoiceCreated: jest.fn().mockResolvedValue(undefined),
       queueInvoiceOverdue: jest.fn().mockResolvedValue(undefined),
     };
+    chatService         = { saveMessage: jest.fn().mockResolvedValue({}) };
     expensesService     = { createFromPaidInvoice: jest.fn().mockResolvedValue(null) };
 
     // Simple transaction mock: calls the callback with a manager that mirrors invoiceRepo
@@ -172,14 +181,16 @@ describe('InvoicesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InvoicesService,
-        { provide: getRepositoryToken(Invoice), useValue: invoiceRepo },
-        { provide: getRepositoryToken(InvoiceLineItem), useValue: lineItemRepo },
-        { provide: getRepositoryToken(Client), useValue: clientRepo },
-        { provide: getRepositoryToken(User), useValue: userRepo },
-        { provide: NotificationService, useValue: notificationService },
-        { provide: EmailService,         useValue: emailService },
-        { provide: DataSource, useValue: dataSource },
-        { provide: ExpensesService, useValue: expensesService },
+        { provide: getRepositoryToken(Invoice),         useValue: invoiceRepo      },
+        { provide: getRepositoryToken(InvoiceLineItem), useValue: lineItemRepo     },
+        { provide: getRepositoryToken(Client),          useValue: clientRepo       },
+        { provide: getRepositoryToken(User),            useValue: userRepo         },
+        { provide: getRepositoryToken(Conversation),    useValue: conversationRepo },
+        { provide: NotificationService,                 useValue: notificationService },
+        { provide: EmailService,                        useValue: emailService     },
+        { provide: ChatService,                         useValue: chatService      },
+        { provide: DataSource,                          useValue: dataSource       },
+        { provide: ExpensesService,                     useValue: expensesService  },
       ],
     }).compile();
 

@@ -760,7 +760,7 @@ export default function UsersPage() {
             <div>
               <p className="text-xs font-semibold text-orange-300">Archive View</p>
               <p className="mt-0.5 text-[11px] text-[#666]">
-                Archived users cannot log in but all their records — invoices, projects, clients, conversations — are fully preserved. Use "Restore from Archive" to re-activate an account.
+                Archived users cannot log in but all their records — invoices, projects, clients, conversations — are fully preserved. Use &ldquo;Restore from Archive&rdquo; to re-activate an account.
               </p>
             </div>
           </div>

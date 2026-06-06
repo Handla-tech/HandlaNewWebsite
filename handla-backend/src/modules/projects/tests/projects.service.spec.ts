@@ -5,6 +5,8 @@ import { ProjectsService } from '../projects.service';
 import { Project } from '../entities/project.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { User } from '../../auth/entities/user.entity';
+import { Conversation } from '../../chat/entities/conversation.entity';
+import { ChatService } from '../../chat/chat.service';
 import { UserRole, ProjectStatus, ClientStatus } from '../../../common/enums';
 import {
   ResourceNotFoundException,
@@ -105,6 +107,19 @@ const mockUserRepo = {
   findOne: jest.fn(),
 };
 
+// ProjectsService also depends on ConversationRepository and ChatService
+// because it posts a system-event message into the client's chat thread
+// whenever a project is created. These mocks satisfy the DI container so
+// the test module can compile; tests that don't exercise chat-side-effects
+// simply ignore them.
+const mockConversationRepo = {
+  findOne: jest.fn().mockResolvedValue(null),
+};
+
+const mockChatService = {
+  saveMessage: jest.fn().mockResolvedValue({}),
+};
+
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('ProjectsService', () => {
@@ -116,9 +131,11 @@ describe('ProjectsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProjectsService,
-        { provide: getRepositoryToken(Project), useValue: mockProjectRepo },
-        { provide: getRepositoryToken(Client),  useValue: mockClientRepo  },
-        { provide: getRepositoryToken(User),    useValue: mockUserRepo    },
+        { provide: getRepositoryToken(Project),      useValue: mockProjectRepo      },
+        { provide: getRepositoryToken(Client),       useValue: mockClientRepo       },
+        { provide: getRepositoryToken(User),         useValue: mockUserRepo         },
+        { provide: getRepositoryToken(Conversation), useValue: mockConversationRepo },
+        { provide: ChatService,                      useValue: mockChatService      },
       ],
     }).compile();
 
@@ -174,14 +191,16 @@ describe('ProjectsService', () => {
       expect(qb.andWhere).toHaveBeenCalledWith('p.status = :status', { status: ProjectStatus.ACTIVE });
     });
 
-    it('applies search filter on title ILIKE', async () => {
+    it('applies search filter on title LIKE', async () => {
       const admin = makeUser({ role: UserRole.ADMIN });
       const qb = makeQB([], 0);
       mockProjectRepo.createQueryBuilder.mockReturnValue(qb);
 
       await service.findAll(admin, { page: 1, limit: 20, search: 'acme' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('p.title ILIKE :search', { search: '%acme%' });
+      // MySQL uses LIKE (case-insensitive on utf8mb4_unicode_ci collation),
+      // not Postgres ILIKE.
+      expect(qb.andWhere).toHaveBeenCalledWith('p.title LIKE :search', { search: '%acme%' });
     });
 
     it('returns correct pagination math', async () => {

@@ -448,22 +448,24 @@ export default function ErpDashboardPage() {
 
   const chartData: FinancialChartMonth[] = Array.isArray(chart) ? chart : [];
 
+  // Build status maps with per-key fallbacks so TypeScript doesn't flag
+  // duplicate keys (it does when the same property appears both as a literal
+  // and inside a spread of a known type — the spread-after-literal pattern
+  // is semantically correct but triggers TS 5+ "specified more than once").
   const safeStats: DashboardStats = {
     ...stats,
     projectsByStatus: {
-      planning:  0,
-      active:    0,
-      onHold:    0,
-      completed: 0,
-      cancelled: 0,
-      ...( stats.projectsByStatus ?? {}),
+      planning:  stats.projectsByStatus?.planning  ?? 0,
+      active:    stats.projectsByStatus?.active    ?? 0,
+      onHold:    stats.projectsByStatus?.onHold    ?? 0,
+      completed: stats.projectsByStatus?.completed ?? 0,
+      cancelled: stats.projectsByStatus?.cancelled ?? 0,
     },
     contractsByStatus: {
-      draft:    0,
-      sent:     0,
-      signed:   0,
-      rejected: 0,
-      ...(stats.contractsByStatus ?? {}),
+      draft:    stats.contractsByStatus?.draft    ?? 0,
+      sent:     stats.contractsByStatus?.sent     ?? 0,
+      signed:   stats.contractsByStatus?.signed   ?? 0,
+      rejected: stats.contractsByStatus?.rejected ?? 0,
     },
   };
 
