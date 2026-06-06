@@ -146,39 +146,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       conversationId: conversation.id,
     });
 
-    // Persist notification + emit real-time event to recipient
-    const recipientId =
-      user.id === conversation.adminId ? conversation.clientId : conversation.adminId;
-
-    const preview = dto.content ? dto.content.substring(0, 100) : '📎 File attachment';
-
-    const notification = await this.notificationService.createMessageNotification(
-      recipientId,
-      user.name,
-      preview,
-      message.id,
-    );
-
-    this.server.to(`user:${recipientId}`).emit('notificationNew', {
-      notification,
-      conversationId: conversation.id,
-      senderId: user.id,
+    // Persist notification + emit real-time event to recipient + queue email
+    await this.notifyMessageRecipient({
+      conversation,
+      senderUser: user,
+      messageId: message.id,
+      content: dto.content,
     });
-
-    // Queue email notification (fire-and-forget — errors logged by EmailProcessor)
-    const recipient = await this.userRepository.findOne({ where: { id: recipientId } });
-    if (recipient?.email) {
-      const dashboardUrl = `${this.configService.get<string>('BASE_URL') || 'https://handla.com'}/dashboard/conversations/${conversation.id}`;
-
-      await this.emailService.queueMessageNotification({
-        recipientEmail: recipient.email,
-        recipientName: recipient.name,
-        senderName: user.name,
-        messagePreview: preview,
-        conversationId: conversation.id,
-        dashboardUrl,
-      });
-    }
 
     this.logger.log(`Message from ${user.email} in conv ${conversation.id}`);
     return { success: true, message };
@@ -295,6 +269,109 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.server
       .to(`conversation:${conversationId}`)
       .emit('messageReceived', { message, conversationId });
+  }
+
+  // ─── Public helper: notify the conversation recipient about a new message ───
+  //
+  // Used by BOTH the WebSocket `sendMessage` handler AND the REST
+  // `POST /chat/conversations/:id/messages` endpoint so that the notification
+  // bell updates in real time and an email gets queued regardless of which
+  // transport the client used to send the message.
+  //
+  // Before this helper existed, only the WebSocket path created notifications,
+  // which meant text messages (sent via REST) NEVER triggered the bell, while
+  // file uploads (sent via socket) did — causing the "bell doesn't ring for
+  // messages" bug.
+  async notifyMessageRecipient(params: {
+    conversation: { id: string; adminId: string; clientId: string; assignedEmployeeId?: string | null };
+    senderUser: { id: string; name: string; email?: string };
+    messageId: string;
+    content?: string | null;
+  }): Promise<void> {
+    const { conversation, senderUser, messageId, content } = params;
+
+    // Determine the recipient.
+    //   - If sender is the client → recipient is the assigned employee if any,
+    //     otherwise the admin.
+    //   - If sender is the assigned employee → recipient is the client.
+    //   - If sender is the admin → recipient is the assigned employee if any,
+    //     otherwise the client.
+    // This keeps the existing 1:1 bell-notification semantics while gracefully
+    // routing to the EMPLOYEE who actually owns the conversation when present.
+    let recipientId: string;
+    if (senderUser.id === conversation.clientId) {
+      recipientId = conversation.assignedEmployeeId || conversation.adminId;
+    } else if (
+      conversation.assignedEmployeeId &&
+      senderUser.id === conversation.assignedEmployeeId
+    ) {
+      recipientId = conversation.clientId;
+    } else if (senderUser.id === conversation.adminId) {
+      recipientId = conversation.assignedEmployeeId || conversation.clientId;
+    } else {
+      // Sender is not a known participant — nothing sensible to notify.
+      this.logger.warn(
+        `notifyMessageRecipient: sender ${senderUser.id} is not a participant of conv ${conversation.id}`,
+      );
+      return;
+    }
+
+    // Don't notify yourself (defensive — shouldn't happen but guards against
+    // future code paths that could feed back to the same user).
+    if (recipientId === senderUser.id) return;
+
+    const preview = content ? content.substring(0, 100) : '📎 File attachment';
+
+    // 1. Persist in-app notification record (this is what feeds the bell list
+    //    when the bell polls / re-fetches via React Query).
+    let notification;
+    try {
+      notification = await this.notificationService.createMessageNotification(
+        recipientId,
+        senderUser.name,
+        preview,
+        messageId,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to create message notification for user ${recipientId}: ${(err as Error).message}`,
+      );
+      return;
+    }
+
+    // 2. Real-time push to the recipient's personal socket room.
+    //    The frontend's `useSocket` listens for `notificationNew` and pushes
+    //    the new item into the Zustand store, which instantly updates the
+    //    bell badge + unread count — no polling latency.
+    this.server.to(`user:${recipientId}`).emit('notificationNew', {
+      notification,
+      conversationId: conversation.id,
+      senderId: senderUser.id,
+    });
+
+    // 3. Fire-and-forget email notification.
+    try {
+      const recipient = await this.userRepository.findOne({ where: { id: recipientId } });
+      if (recipient?.email) {
+        const dashboardUrl = `${
+          this.configService.get<string>('BASE_URL') || 'https://handla.com'
+        }/dashboard/conversations/${conversation.id}`;
+
+        await this.emailService.queueMessageNotification({
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          senderName: senderUser.name,
+          messagePreview: preview,
+          conversationId: conversation.id,
+          dashboardUrl,
+        });
+      }
+    } catch (err) {
+      // Non-fatal — log only. The in-app notification has already gone out.
+      this.logger.warn(
+        `Failed to queue message email for user ${recipientId}: ${(err as Error).message}`,
+      );
+    }
   }
 
   // ─── Auth helper ─────────────────────────────────────────────────────────────

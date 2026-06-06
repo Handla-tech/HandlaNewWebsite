@@ -75,13 +75,29 @@ export class ChatController {
     @Body('fileUrl') fileUrl: string | undefined,
     @CurrentUser() user: User,
   ) {
-    const message = await this.chatService.sendMessage(id, user, content, fileUrl);
+    const { message, conversation } = await this.chatService.sendMessage(
+      id,
+      user,
+      content,
+      fileUrl,
+    );
 
     // Broadcast to conversation room so all connected participants
     // (including the sender's other tabs) receive the real-time push.
     // This avoids the double-save bug that occurs when the frontend
     // calls both REST and sendSocketMessage independently.
     this.chatGateway.broadcastMessage(id, message);
+
+    // Persist + push the in-app notification to the recipient's bell, and
+    // queue the email. Without this call the bell only ever updated for
+    // WebSocket-sent messages (file uploads) — text messages, which are
+    // sent via this REST endpoint, never triggered the notification bell.
+    await this.chatGateway.notifyMessageRecipient({
+      conversation,
+      senderUser: user,
+      messageId: message.id,
+      content,
+    });
 
     return { message: 'Message sent', data: { message } };
   }

@@ -134,12 +134,16 @@ export class ChatService {
   }
 
   // ─── Send Message (REST fallback) ─────────────────────────────────────────────
+  //
+  // Returns BOTH the saved message AND the conversation row so the caller
+  // (ChatController) can broadcast + notify the recipient without re-querying
+  // the conversation a second time.
   async sendMessage(
     conversationId: string,
     user: User,
     content?: string,
     fileUrl?: string,
-  ): Promise<Message> {
+  ): Promise<{ message: Message; conversation: Conversation }> {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
       relations: ['admin', 'client'],
@@ -151,7 +155,8 @@ export class ChatService {
 
     this.assertAccess(conversation, user);
 
-    return this.saveMessage(conversationId, user.id, content, fileUrl);
+    const message = await this.saveMessage(conversationId, user.id, content, fileUrl);
+    return { message, conversation };
   }
 
   // ─── Create or Get Conversation ───────────────────────────────────────────────
