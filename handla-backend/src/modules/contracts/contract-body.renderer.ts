@@ -16,7 +16,11 @@ import {
   PaymentMilestoneDto,
 } from './dto/contract-details.dto';
 
-const DIVIDER = '═════════════════════════════════════════════';
+// Plain ASCII divider — Unicode box-drawing characters (e.g. U+2550 '═')
+// render as mojibake (`%P%P%P…`) in jsPDF's WinAnsi-encoded Helvetica.
+// Sticking to ASCII keeps the rendered output legible in every consumer
+// (HTML viewer, jsPDF, plain-text email previews).
+const DIVIDER = '---------------------------------------------';
 
 function section(title: string, lines: (string | null | undefined | false)[]): string {
   const body = lines.filter((l): l is string => !!l && l.trim().length > 0).join('\n');

@@ -1,30 +1,35 @@
 /**
  * Invoice PDF Generator — Handla
  *
- * Pure black-and-white, print-friendly A4 layout optimised for B&W copiers:
+ * Professional, print-friendly A4 layout. Matches the design language of
+ * the contract PDF (typographic section headers + key/value pairs + thin
+ * rules) so both documents read as one family when printed back to back.
  *
- *   ┌────────────────────────────────────────────────────────────────┐
- *   │  Handla details      [QR code]       INVOICE meta             │
- *   │   logo + contact     scan → opens    number / dates / status  │
- *   │                      public viewer                            │
- *   │ ═════════════════════════════════════════════════════════════  │
- *   │  Order details table (description / qty / unit / total)        │
- *   │  Subtotal / tax / TOTAL                                        │
- *   │ ─────────────────────────────────────────────────────────────  │
- *   │  FROM + signature                     BILLED TO                │
- *   └────────────────────────────────────────────────────────────────┘
+ *   ┌──────────────────────────────────────────────────────────────────┐
+ *   │   HANDLA               [QR]                  INVOICE             │
+ *   │   contact details      scan → viewer         number / dates pill │
+ *   │ ═════════════════════════════════════════════════════════════════ │
+ *   │ ──── ISSUED BY ─────────────  ──── BILLED TO ──────────────────   │
+ *   │   Handla …                    Client …                            │
+ *   │ ──── ORDER DETAILS ──────────────────────────────────────────────  │
+ *   │   line-items table                                                │
+ *   │                                          Subtotal     999.00      │
+ *   │                                          Tax (5%)      49.95      │
+ *   │                                          ═══════════════════════  │
+ *   │                                          TOTAL    1,048.95 USD    │
+ *   │ ──── NOTES ─────────────────────────────────────────────────────   │
+ *   │   …                                                               │
+ *   │ ──── SIGNATURE ─────────────────────────────────────────────────   │
+ *   │   Handla signature line · Authorized representative               │
+ *   └──────────────────────────────────────────────────────────────────┘
  *
  * Design rules for B&W printing:
- *   - No filled backgrounds, no colour accents, no light-grey shading.
- *   - All text rendered in 100 % black.
- *   - Dividers / borders are 100 % black thin strokes.
- *   - Status pill is an outlined rectangle (no fill) so it photocopies.
- *   - QR code is true black-on-white.
- *
- * Libraries used (all client-side, no backend rendering):
- *   - jspdf            → core PDF engine
- *   - jspdf-autotable  → order-details table
- *   - qrcode           → encodes the public viewer URL as a PNG data URL
+ *  - Pure black on white — no fills, no greys with low contrast.
+ *  - Section headers are typographic, not boxed: bold caps + thin rule.
+ *  - Labels are rendered in 50 %-tone grey only where contrast remains
+ *    readable on photocopies; values stay 100 % black.
+ *  - Status pill is an outlined box.
+ *  - QR code uses error-correction level 'H' so it scans on faxes.
  */
 
 import jsPDF from 'jspdf';
@@ -32,36 +37,31 @@ import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import type { Invoice } from '@/types';
 
-// ─── Colour tokens — single black tone, used everywhere ──────────────────────
+// ─── Layout tokens ───────────────────────────────────────────────────────────
 
 const BLACK: [number, number, number] = [0, 0, 0];
 const WHITE: [number, number, number] = [255, 255, 255];
+const GREY:  [number, number, number] = [90, 90, 90];
 
-// ─── Layout constants (mm — jsPDF default unit) ──────────────────────────────
+const PAGE = { width: 210, height: 297, margin: 18 };
+const CONTENT_W = PAGE.width - PAGE.margin * 2;
+const COL_GAP   = 8;
+const COL_W     = (CONTENT_W - COL_GAP) / 2;
 
-const PAGE = {
-  width:   210, // A4 portrait
-  height:  297,
-  margin:  16,
-};
+const HEADER_H = 44;
+const FOOTER_H = 14;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function setFill(doc: jsPDF, c: [number, number, number]) {
-  doc.setFillColor(c[0], c[1], c[2]);
-}
-function setText(doc: jsPDF, c: [number, number, number]) {
-  doc.setTextColor(c[0], c[1], c[2]);
-}
-function setDraw(doc: jsPDF, c: [number, number, number]) {
-  doc.setDrawColor(c[0], c[1], c[2]);
-}
+function setText(doc: jsPDF, c: [number, number, number]) { doc.setTextColor(c[0], c[1], c[2]); }
+function setDraw(doc: jsPDF, c: [number, number, number]) { doc.setDrawColor(c[0], c[1], c[2]); }
 
 function formatCurrency(n: number, ccy: string): string {
-  // Keep "$" prefix for USD, else just print the number. The currency code
-  // is shown next to the grand total so the prefix doesn't really matter.
   const symbol = ccy === 'USD' ? '$' : '';
-  return `${symbol}${Number(n).toFixed(2)}`;
+  return `${symbol}${Number(n).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function formatDate(d: string | Date | null | undefined): string {
@@ -71,28 +71,28 @@ function formatDate(d: string | Date | null | undefined): string {
   return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
-/**
- * Word-wraps a long string into multiple lines that fit `maxWidth`.
- */
 function fitText(doc: jsPDF, text: string, maxWidth: number): string[] {
   return doc.splitTextToSize(text, maxWidth) as string[];
+}
+
+// Typographic section header — same as the contract PDF for visual consistency
+function drawSectionHeader(doc: jsPDF, label: string, y: number): number {
+  setText(doc, BLACK);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text(label.toUpperCase(), PAGE.margin, y);
+  setDraw(doc, BLACK);
+  doc.setLineWidth(0.3);
+  doc.line(PAGE.margin, y + 1.6, PAGE.width - PAGE.margin, y + 1.6);
+  return y + 7;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export interface InvoicePdfOptions {
-  /**
-   * Base URL that the QR code should point at — usually the current origin.
-   * The final QR target becomes `${baseUrl}/invoice/public/${invoice.id}`.
-   *
-   * If omitted, falls back to `window.location.origin` (browser only).
-   */
+  /** Base URL the QR code should point at — usually window.location.origin. */
   baseUrl?: string;
 
-  /**
-   * If provided, used in the "From / Issued by" block. Defaults to the
-   * invoice's `owner.name` when populated.
-   */
   issuerName?:    string;
   issuerEmail?:   string;
   issuerPhone?:   string;
@@ -115,8 +115,6 @@ export async function downloadInvoicePdf(
     (typeof window !== 'undefined' ? window.location.origin : 'https://handla.com');
   const qrTarget = `${baseUrl.replace(/\/$/, '')}/invoice/public/${invoice.id}`;
 
-  // Pure black-on-white QR. High error correction tolerates scuff marks on
-  // photocopied invoices.
   const qrDataUrl = await QRCode.toDataURL(qrTarget, {
     errorCorrectionLevel: 'H',
     margin: 1,
@@ -124,122 +122,149 @@ export async function downloadInvoicePdf(
     color: { dark: '#000000', light: '#ffffff' },
   });
 
-  // ── 1) Top section: three columns (Handla | QR | Invoice meta) ──────────
-  //
-  // No background fill — just black text on the white page. A single thin
-  // black rule sits under the whole section to anchor the eye.
+  // ── 1) Top header — 3 columns ────────────────────────────────────────────
+  const topY = PAGE.margin;
 
-  const topY      = PAGE.margin;
-  const topH      = 42;
-  const contentW  = PAGE.width - PAGE.margin * 2;
-
-  // ── 1a) Left column: Handla details ──────────────────────────────────────
-  const leftX = PAGE.margin;
-  let leftY   = topY + 5;
-
+  // 1a) Left — Handla details
   setText(doc, BLACK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('HANDLA', leftX, leftY);
+  doc.text('HANDLA', PAGE.margin, topY + 5);
 
-  leftY += 5;
+  setText(doc, GREY);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('Software services platform', leftX, leftY);
+  doc.setFontSize(7.8);
+  doc.text('Software services platform', PAGE.margin, topY + 9.5);
 
-  leftY += 7;
-  doc.setFont('helvetica', 'normal');
+  setText(doc, BLACK);
   doc.setFontSize(8.5);
-  const handlaLines = [
-    'Handla Tech',
-    'hello@handla.com',
-    'www.handla.com',
-    'VAT / TRN: pending',
-  ];
-  handlaLines.forEach((line) => {
-    doc.text(line, leftX, leftY);
+  let leftY = topY + 16;
+  ['Handla Tech', 'hello@handla.com', 'www.handla.com', 'VAT / TRN: pending'].forEach((line) => {
+    doc.text(line, PAGE.margin, leftY);
     leftY += 3.8;
   });
 
-  // ── 1b) Middle column: QR code ───────────────────────────────────────────
-  const qrSize = 30;
-  const qrX    = PAGE.margin + (contentW - qrSize) / 2;
-  const qrY    = topY + 4;
-
+  // 1b) Middle — QR code
+  const qrSize = 28;
+  const qrX = PAGE.margin + (CONTENT_W - qrSize) / 2;
+  const qrY = topY + 3;
   doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-  // Thin border around the QR so it stays visually crisp after photocopying
   setDraw(doc, BLACK);
   doc.setLineWidth(0.2);
-  doc.rect(qrX - 0.6, qrY - 0.6, qrSize + 1.2, qrSize + 1.2);
-
-  setText(doc, BLACK);
+  doc.rect(qrX - 0.7, qrY - 0.7, qrSize + 1.4, qrSize + 1.4);
+  setText(doc, GREY);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.text('Scan to view invoice online', qrX + qrSize / 2, qrY + qrSize + 4.5, { align: 'center' });
+  doc.setFontSize(6.8);
+  doc.text('Scan to view invoice online', qrX + qrSize / 2, qrY + qrSize + 4, { align: 'center' });
 
-  // ── 1c) Right column: Invoice meta ───────────────────────────────────────
-  const rightX = PAGE.margin + contentW;
-  let rightY   = topY + 5;
-
+  // 1c) Right — Invoice meta
+  const rightX = PAGE.margin + CONTENT_W;
   setText(doc, BLACK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text('INVOICE', rightX, rightY, { align: 'right' });
-  rightY += 7;
+  doc.text('INVOICE', rightX, topY + 6, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text(invoice.invoiceNumber, rightX, rightY, { align: 'right' });
-  rightY += 6;
+  doc.text(invoice.invoiceNumber, rightX, topY + 13, { align: 'right' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-
-  // Label / value pairs aligned right
+  let metaY = topY + 19;
   const drawMeta = (label: string, value: string) => {
+    setText(doc, GREY);
     doc.setFont('helvetica', 'normal');
-    doc.text(label, rightX - 32, rightY, { align: 'left' });
+    doc.setFontSize(8.5);
+    doc.text(label, rightX - 32, metaY, { align: 'left' });
+    setText(doc, BLACK);
     doc.setFont('helvetica', 'bold');
-    doc.text(value, rightX, rightY, { align: 'right' });
-    rightY += 4.2;
+    doc.text(value, rightX, metaY, { align: 'right' });
+    metaY += 4.2;
   };
+  drawMeta('Issued', formatDate(invoice.createdAt));
+  if (invoice.dueDate) drawMeta('Due',  formatDate(invoice.dueDate));
+  if (invoice.paidAt)  drawMeta('Paid', formatDate(invoice.paidAt));
 
-  drawMeta('Issued',  formatDate(invoice.createdAt));
-  if (invoice.dueDate) drawMeta('Due',    formatDate(invoice.dueDate));
-  if (invoice.paidAt)  drawMeta('Paid',   formatDate(invoice.paidAt));
-
-  // Status — outlined box (no fill) so it photocopies clean
-  const pillLabel = invoice.paymentStatus; // "UNPAID" | "PAID" | "OVERDUE"
-  const pillW     = 28;
-  const pillH     = 6.5;
-  const pillX     = rightX - pillW;
-  const pillY     = rightY + 1;
-
+  // Status pill — outlined
+  const pillW = 28;
+  const pillH = 6.5;
+  const pillX = rightX - pillW;
+  const pillY = metaY + 1;
   setDraw(doc, BLACK);
   doc.setLineWidth(0.4);
   doc.rect(pillX, pillY, pillW, pillH);
+  setText(doc, BLACK);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.text(pillLabel, pillX + pillW / 2, pillY + 4.4, { align: 'center' });
+  doc.text(invoice.paymentStatus, pillX + pillW / 2, pillY + 4.4, { align: 'center' });
 
   // Thick black rule below the top section
   setDraw(doc, BLACK);
   doc.setLineWidth(0.6);
-  doc.line(PAGE.margin, topY + topH, PAGE.width - PAGE.margin, topY + topH);
+  doc.line(PAGE.margin, topY + HEADER_H, PAGE.width - PAGE.margin, topY + HEADER_H);
 
-  // ── 2) Order details table ───────────────────────────────────────────────
-  const tableStartY = topY + topH + 7;
+  let cursor = topY + HEADER_H + 8;
 
-  setText(doc, BLACK);
+  // ── 2) Parties row (ISSUED BY · BILLED TO) ───────────────────────────────
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('ORDER DETAILS', PAGE.margin, tableStartY);
+  doc.setFontSize(8);
+  setText(doc, GREY);
+  doc.text('ISSUED BY', PAGE.margin, cursor);
+  doc.text('BILLED TO', PAGE.margin + COL_W + COL_GAP, cursor);
+
+  // Issuer column
+  const issuerName  = options.issuerName  ?? invoice.owner?.name;
+  const issuerEmail = options.issuerEmail ?? invoice.owner?.email;
+
+  const issuerLines: string[] = [];
+  issuerLines.push('Handla');
+  if (issuerName)            issuerLines.push(`Representative: ${issuerName}`);
+  if (issuerEmail)           issuerLines.push(issuerEmail);
+  if (options.issuerPhone)   issuerLines.push(options.issuerPhone);
+  if (options.issuerAddress) issuerLines.push(options.issuerAddress);
+
+  // Customer column
+  const clientCompany = invoice.client?.company ?? invoice.client?.user?.name ?? 'Customer';
+  const clientName    = invoice.client?.user?.name ?? null;
+  const customerLines: string[] = [];
+  customerLines.push(clientCompany);
+  if (clientName && clientName !== clientCompany) customerLines.push(`Attn: ${clientName}`);
+  if (invoice.client?.user?.email)                customerLines.push(invoice.client.user.email);
+  if ((invoice.client?.user as any)?.phoneNumber) customerLines.push(String((invoice.client?.user as any).phoneNumber));
+  if ((invoice.client?.user as any)?.location)    customerLines.push(String((invoice.client?.user as any).location));
+  customerLines.push(`Client ID: ${invoice.clientId.slice(0, 8)}`);
+
+  const partyTopY = cursor + 4.5;
+  const drawPartyCol = (lines: string[], x: number) => {
+    let y = partyTopY;
+    lines.forEach((line, i) => {
+      const wrapped = fitText(doc, line, COL_W - 2);
+      wrapped.forEach((wl) => {
+        if (i === 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10.5);
+          setText(doc, BLACK);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.8);
+          setText(doc, BLACK);
+        }
+        doc.text(wl, x, y);
+        y += i === 0 ? 5 : 4.4;
+      });
+    });
+    return y;
+  };
+  const issuerEnd   = drawPartyCol(issuerLines,   PAGE.margin);
+  const customerEnd = drawPartyCol(customerLines, PAGE.margin + COL_W + COL_GAP);
+  cursor = Math.max(issuerEnd, customerEnd) + 4;
+
+  // ── 3) Order details — line items table ──────────────────────────────────
+  cursor = drawSectionHeader(doc, 'Order Details', cursor);
 
   const items = invoice.lineItems ?? [];
   const ccy   = invoice.currency || 'USD';
 
   autoTable(doc, {
-    startY: tableStartY + 2.5,
+    startY: cursor,
     head: [['Description', 'Qty', 'Unit price', 'Line total']],
     body: items.map((li) => [
       li.description,
@@ -258,43 +283,43 @@ export async function downloadInvoicePdf(
       lineWidth:   0.15,
     },
     headStyles: {
-      // Outlined header — no fill, just a bold black top + bottom rule
-      fillColor:  WHITE,
-      textColor:  BLACK,
-      fontStyle:  'bold',
-      fontSize:   9,
-      halign:     'left',
-      cellPadding: { top: 2.4, bottom: 2.4, left: 2.5, right: 2.5 },
-      lineWidth:  { top: 0.6, bottom: 0.6, left: 0, right: 0 },
-      lineColor:  BLACK,
+      fillColor:   WHITE,
+      textColor:   BLACK,
+      fontStyle:   'bold',
+      fontSize:    8.8,
+      halign:      'left',
+      cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
+      lineWidth:   { top: 0.5, bottom: 0.5, left: 0, right: 0 },
+      lineColor:   BLACK,
     },
     bodyStyles: {
       lineWidth: { top: 0, bottom: 0.15, left: 0, right: 0 },
       lineColor: BLACK,
     },
     columnStyles: {
-      0: { cellWidth: 'auto'                                       },
-      1: { cellWidth: 18, halign: 'center'                          },
-      2: { cellWidth: 32, halign: 'right'                           },
-      3: { cellWidth: 32, halign: 'right', fontStyle: 'bold'        },
+      0: { cellWidth: 'auto'                                  },
+      1: { cellWidth: 16, halign: 'center'                     },
+      2: { cellWidth: 32, halign: 'right'                      },
+      3: { cellWidth: 32, halign: 'right', fontStyle: 'bold'   },
     },
-    // No alternating row shading — keep it pure white
-    didDrawPage: () => { /* header static — handled above */ },
   });
 
-  // ── 3) Totals (right-aligned under the table) ────────────────────────────
-  const afterTableY = (doc as any).lastAutoTable?.finalY ?? tableStartY + 30;
-  const totalsX     = PAGE.width - PAGE.margin - 70;
-  const totalsW     = 70;
-  let   totalsY     = afterTableY + 5;
+  cursor = ((doc as any).lastAutoTable?.finalY ?? cursor + 30) + 5;
+
+  // ── 4) Totals block (right-aligned) ──────────────────────────────────────
+  const totalsX = PAGE.width - PAGE.margin - 72;
+  const totalsW = 72;
+  let totalsY   = cursor;
 
   const drawTotalLine = (label: string, value: string, bold = false) => {
-    setText(doc, BLACK);
+    setText(doc, bold ? BLACK : GREY);
     doc.setFont('helvetica', bold ? 'bold' : 'normal');
     doc.setFontSize(bold ? 11 : 9);
     doc.text(label, totalsX + 2, totalsY);
+    setText(doc, BLACK);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
     doc.text(value, totalsX + totalsW - 2, totalsY, { align: 'right' });
-    totalsY += bold ? 6.5 : 4.5;
+    totalsY += bold ? 6.5 : 4.6;
   };
 
   drawTotalLine('Subtotal', formatCurrency(Number(invoice.subtotal), ccy));
@@ -307,140 +332,75 @@ export async function downloadInvoicePdf(
   doc.setLineWidth(0.4);
   doc.line(totalsX + 2, totalsY - 1.8, totalsX + totalsW - 2, totalsY - 1.8);
   doc.line(totalsX + 2, totalsY - 0.6, totalsX + totalsW - 2, totalsY - 0.6);
-  totalsY += 1.8;
+  totalsY += 1.6;
 
   drawTotalLine('TOTAL', `${formatCurrency(Number(invoice.total), ccy)} ${ccy}`, true);
 
-  // ── 4) Notes (optional — sits between totals and footer) ─────────────────
-  let notesEndY = totalsY;
-  if (invoice.notes) {
-    const notesY = afterTableY + 5;
-    if (notesY + 18 < PAGE.height - 70) {
-      setText(doc, BLACK);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.text('NOTES', PAGE.margin, notesY);
+  cursor = totalsY + 6;
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      // Keep notes confined to the LEFT half so they don't collide with
-      // the totals block on the right.
-      const notesMaxW = totalsX - PAGE.margin - 6;
-      const noteLines = fitText(doc, invoice.notes, notesMaxW);
-      // Cap to 5 lines so the footer never collides with notes.
-      noteLines.slice(0, 5).forEach((l, i) => {
-        doc.text(l, PAGE.margin, notesY + 4 + i * 4);
-      });
-      notesEndY = Math.max(notesEndY, notesY + 4 + Math.min(5, noteLines.length) * 4);
-    }
+  // ── 5) Notes (optional) ──────────────────────────────────────────────────
+  if (invoice.notes && invoice.notes.trim()) {
+    // If the notes wouldn't fit alongside or below totals, advance cursor
+    cursor = drawSectionHeader(doc, 'Notes', cursor);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    setText(doc, BLACK);
+    const noteLines = fitText(doc, invoice.notes, CONTENT_W);
+    // Cap to ~8 lines so the signature block has room.
+    const visible = noteLines.slice(0, 8);
+    visible.forEach((l) => {
+      doc.text(l, PAGE.margin, cursor);
+      cursor += 4.4;
+    });
+    cursor += 2;
   }
 
-  // ── 5) Bottom section: FROM (left) + BILLED TO (right) ───────────────────
+  // ── 6) Signature ─────────────────────────────────────────────────────────
   //
-  // Anchored at a fixed Y so the layout looks consistent regardless of how
-  // many line items the table contained.
-  const footerY    = Math.max(notesEndY + 14, PAGE.height - 70);
-  const footerColW = (contentW - 10) / 2;
+  // Pin the signature block near the bottom so the document anchors visually
+  // regardless of how many line items the table contained.
+  const sigBlockH = 28;
+  const sigBlockY = Math.max(cursor + 6, PAGE.height - FOOTER_H - sigBlockH - 4);
 
-  // Thin black divider above the parties row
-  setDraw(doc, BLACK);
-  doc.setLineWidth(0.3);
-  doc.line(PAGE.margin, footerY - 6, PAGE.width - PAGE.margin, footerY - 6);
+  drawSectionHeader(doc, 'Signature', sigBlockY);
+  const sigLineY = sigBlockY + 18;
 
-  // 5a) FROM (left)
-  setText(doc, BLACK);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('FROM', PAGE.margin, footerY);
+  if (invoice.paymentStatus === 'PAID') {
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setFontSize(13);
+    setText(doc, BLACK);
+    doc.text('PAID', PAGE.margin + 2, sigLineY - 1.5);
+  }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Handla', PAGE.margin, footerY + 5.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-
-  const issuerLines: string[] = [];
-  const issuerName = options.issuerName ?? invoice.owner?.name;
-  if (issuerName) issuerLines.push(`Issued by ${issuerName}`);
-  if (options.issuerEmail)   issuerLines.push(options.issuerEmail);
-  else if (invoice.owner?.email) issuerLines.push(invoice.owner.email);
-  if (options.issuerPhone)   issuerLines.push(options.issuerPhone);
-  if (options.issuerAddress) issuerLines.push(options.issuerAddress);
-
-  let issuerCursor = footerY + 10.5;
-  issuerLines.forEach((line) => {
-    fitText(doc, line, footerColW - 4).forEach((l) => {
-      doc.text(l, PAGE.margin, issuerCursor);
-      issuerCursor += 3.8;
-    });
-  });
-
-  // Signature line
-  const sigY = footerY + 36;
   setDraw(doc, BLACK);
   doc.setLineWidth(0.4);
-  doc.line(PAGE.margin, sigY, PAGE.margin + 55, sigY);
+  doc.line(PAGE.margin, sigLineY, PAGE.margin + 75, sigLineY);
 
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7.5);
-  doc.text('Authorized signature', PAGE.margin, sigY + 4);
-
-  // When the invoice is already PAID we stamp a simple "PAID" marker above
-  // the signature line. Pure outlined text, photocopy-friendly.
-  if (invoice.paymentStatus === 'PAID') {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.text('PAID', PAGE.margin + 2, sigY - 2);
-  }
-
-  // 5b) BILLED TO (right)
-  const custX = PAGE.margin + footerColW + 10;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('BILLED TO', custX, footerY);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  const clientCompany = invoice.client?.company ?? invoice.client?.user?.name ?? 'Customer';
-  doc.text(clientCompany, custX, footerY + 5.5);
-
+  setText(doc, BLACK);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
+  doc.text(issuerName ?? 'Handla', PAGE.margin, sigLineY + 4);
 
-  const customerLines: string[] = [];
-  if (invoice.client?.company && invoice.client?.user?.name) {
-    customerLines.push(`Attn: ${invoice.client.user.name}`);
+  setText(doc, GREY);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.text('Authorized representative', PAGE.margin, sigLineY + 7.5);
+  if (invoice.paidAt && invoice.paymentStatus === 'PAID') {
+    doc.text(`Paid on: ${formatDate(invoice.paidAt)}`, PAGE.margin, sigLineY + 10.8);
   }
-  if (invoice.client?.user?.email) customerLines.push(invoice.client.user.email);
-  if ((invoice.client?.user as any)?.phoneNumber) {
-    customerLines.push(String((invoice.client?.user as any).phoneNumber));
-  }
-  if ((invoice.client?.user as any)?.location) {
-    customerLines.push(String((invoice.client?.user as any).location));
-  }
-  customerLines.push(`Client ID: ${invoice.clientId.slice(0, 8)}`);
 
-  let custCursor = footerY + 10.5;
-  customerLines.forEach((line) => {
-    fitText(doc, line, footerColW - 4).forEach((l) => {
-      doc.text(l, custX, custCursor);
-      custCursor += 3.8;
-    });
-  });
-
-  // ── 6) Page footer line ──────────────────────────────────────────────────
+  // ── 7) Page footer ───────────────────────────────────────────────────────
   setDraw(doc, BLACK);
   doc.setLineWidth(0.2);
-  doc.line(PAGE.margin, PAGE.height - 14, PAGE.width - PAGE.margin, PAGE.height - 14);
+  doc.line(PAGE.margin, PAGE.height - FOOTER_H, PAGE.width - PAGE.margin, PAGE.height - FOOTER_H);
 
   setText(doc, BLACK);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.text('Thank you for your business — Handla', PAGE.margin, PAGE.height - 9);
-  doc.text(qrTarget, PAGE.width - PAGE.margin, PAGE.height - 9, { align: 'right' });
+  doc.text('Thank you for your business — Handla', PAGE.margin, PAGE.height - 8);
+  doc.text(qrTarget, PAGE.width - PAGE.margin, PAGE.height - 8, { align: 'right' });
 
-  // ── 7) Trigger download ──────────────────────────────────────────────────
+  // ── 8) Download ──────────────────────────────────────────────────────────
   const safeNumber = invoice.invoiceNumber.replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename   = `${safeNumber}.pdf`;
   doc.save(filename);

@@ -154,12 +154,17 @@ export class ContractsService {
    *
    * Security considerations:
    *  - Returns a sanitized projection: title, status, dates, the rendered
-   *    body, plus minimal client / issuer display strings.
-   *  - Never exposes the raw S3 key, structured `details` payload, or
-   *    user entities. Email is included so the recipient knows who the
-   *    contract was issued to.
-   *  - The endpoint is rate-limited by the global ThrottlerModule and the
-   *    contract `id` is a UUID v4 — non-enumerable in practice.
+   *    body, the structured `details` payload (so public viewers and the
+   *    print-PDF generator can render proper sectioned typography instead
+   *    of falling back to flat text), plus minimal client / issuer
+   *    display strings.
+   *  - The `details` payload contains the same business data the
+   *    authenticated CLIENT already sees on /erp/contracts/:id, so
+   *    exposing it on the public viewer (which is gated by an
+   *    un-enumerable UUID-v4 and rate-limited by ThrottlerModule) does
+   *    not widen the data surface.
+   *  - Never exposes the raw S3 key or any internal user-entity fields.
+   *    Client/issuer projections are flattened to display strings.
    */
   async findOnePublic(id: string): Promise<{
     id:        string;
@@ -169,6 +174,7 @@ export class ContractsService {
     createdAt: Date;
     sentAt:    Date | null;
     signedAt:  Date | null;
+    details:   Contract['details'];
     client: {
       name:    string | null;
       company: string | null;
@@ -194,6 +200,7 @@ export class ContractsService {
       createdAt: contract.createdAt,
       sentAt:    contract.sentAt,
       signedAt:  contract.signedAt,
+      details:   contract.details ?? null,
       client: contract.client
         ? {
             name:    contract.client.user?.name ?? null,
