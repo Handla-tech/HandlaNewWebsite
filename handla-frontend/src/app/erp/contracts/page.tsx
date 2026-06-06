@@ -5,11 +5,11 @@
  * Enhanced premium UI
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { contractsApi, clientsApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 import type { Contract, PaginatedContracts, ContractStatus, Client } from '@/types';
+import {
+  ContractFormFields, buildContractPayload, detailsToFormValues,
+  type ContractFormValues,
+} from '@/components/erp/ContractFormFields';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -49,20 +53,23 @@ const STATUS_ICON: Record<ContractStatus, React.ComponentType<{ className?: stri
 };
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
+//
+// The comprehensive form keeps `details` un-validated at the schema level
+// (all 30+ fields are individually optional and the backend validates them
+// via class-validator). Only the top-level required fields are strict.
 
 const createSchema = z.object({
   title:    z.string().min(2, 'Title must be at least 2 characters').max(255),
-  body:     z.string().min(10, 'Contract body must be at least 10 characters'),
   clientId: z.string().uuid('Please select a valid client'),
+  // details is passed through verbatim; no Zod schema needed.
+  details:  z.any().optional(),
 });
 
 const editSchema = z.object({
-  title: z.string().min(2).max(255).optional(),
-  body:  z.string().min(10).optional(),
+  title:    z.string().min(2).max(255),
+  clientId: z.string().optional(),
+  details:  z.any().optional(),
 });
-
-type CreateFormValues = z.infer<typeof createSchema>;
-type EditFormValues   = z.infer<typeof editSchema>;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -75,13 +82,6 @@ function apiErrMsg(err: unknown, fallback: string): string {
   const e = err as { response?: { data?: { message?: string } } };
   return e?.response?.data?.message ?? fallback;
 }
-
-// ─── Shared styles ─────────────────────────────────────────────────────────────
-
-const inputCls = (hasError?: boolean) => cn(
-  'w-full rounded-xl border bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none transition-all focus:bg-white/[0.06] focus:border-[#fbbf24]/50 min-h-[44px]',
-  hasError ? 'border-red-400/50' : 'border-white/10',
-);
 
 // ─── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -234,8 +234,9 @@ function ContractCard({ contract, isAdmin, isEmployee, isClient, onEdit, onDelet
 
 // ─── Modal wrapper ───────────────────────────────────────────────────────────
 
-function Modal({ isOpen, onClose, title, subtitle, children }: {
-  isOpen: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode;
+function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
+  isOpen: boolean; onClose: () => void; title: string; subtitle?: string;
+  children: React.ReactNode; size?: 'sm' | 'xl';
 }) {
   return (
     <AnimatePresence>
@@ -248,7 +249,10 @@ function Modal({ isOpen, onClose, title, subtitle, children }: {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-            className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#111] shadow-2xl overflow-hidden"
+            className={cn(
+              'relative w-full rounded-2xl border border-white/10 bg-[#111] shadow-2xl overflow-hidden',
+              size === 'xl' ? 'max-w-3xl' : 'max-w-lg',
+            )}
             role="dialog" aria-modal="true"
           >
             <div className="p-5 border-b border-white/[0.06]">
@@ -262,21 +266,11 @@ function Modal({ isOpen, onClose, title, subtitle, children }: {
                 </button>
               </div>
             </div>
-            <div className="p-5 max-h-[70vh] overflow-y-auto">{children}</div>
+            <div className="p-5 max-h-[78vh] overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}
     </AnimatePresence>
-  );
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-white/50 mb-1.5">{label}</label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-400" role="alert">{error}</p>}
-    </div>
   );
 }
 
@@ -285,37 +279,48 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isOpen: boolean; onClose: () => void; clients: Client[]; clientsLoading: boolean }) {
   const qc = useQueryClient();
   const { register, handleSubmit, control, reset, formState: { errors } } =
-    useForm<CreateFormValues>({ resolver: zodResolver(createSchema) });
+    useForm<ContractFormValues>({
+      resolver: zodResolver(createSchema),
+      defaultValues: {
+        title: '',
+        clientId: '',
+        details: {
+          ndaIncluded: false,
+          hostingIncluded: false,
+          domainIncluded: false,
+          sslIncluded: false,
+          deploymentIncluded: false,
+          paymentMilestones: [],
+        },
+      },
+    });
 
   const mutation = useMutation({
-    mutationFn: (data: CreateFormValues) => contractsApi.createContract(data),
+    mutationFn: (values: ContractFormValues) => {
+      const payload = buildContractPayload(values);
+      return contractsApi.createContract(payload);
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-contracts'] }); reset(); onClose(); },
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Contract" subtitle="Draft a contract for a client.">
+    <Modal isOpen={isOpen} onClose={onClose} size="xl"
+      title="New Contract"
+      subtitle="Build a comprehensive contract by filling in the sections below.">
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-        <Field label="Contract Title *" error={errors.title?.message}>
-          <input {...register('title')} placeholder="e.g. Website Development Agreement" className={inputCls(!!errors.title)} />
-        </Field>
-        <Field label="Client *" error={errors.clientId?.message}>
-          <Controller name="clientId" control={control} render={({ field }) => (
-            <select {...field} disabled={clientsLoading} className={cn(inputCls(!!errors.clientId), 'bg-[#0f0f0f]', clientsLoading && 'opacity-60 cursor-wait')}>
-              <option value="">{clientsLoading ? 'Loading clients…' : clients.length === 0 ? 'No clients found' : 'Select a client…'}</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.user?.name ?? c.id}{c.company ? ` (${c.company})` : ''}</option>)}
-            </select>
-          )} />
-        </Field>
-        <Field label="Contract Body *" error={errors.body?.message}>
-          <textarea {...register('body')} rows={8} placeholder="Enter the full contract text, terms and conditions…"
-            className={cn(inputCls(!!errors.body), 'resize-y min-h-[160px] h-auto py-2')} />
-        </Field>
+        <ContractFormFields
+          register={register}
+          control={control}
+          errors={errors}
+          clients={clients}
+          clientsLoading={clientsLoading}
+        />
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to create contract')}
           </div>
         )}
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 sticky bottom-0 -mx-5 -mb-5 px-5 py-3 bg-[#111] border-t border-white/[0.06]">
           <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
           <button type="submit" disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">
@@ -331,32 +336,57 @@ function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isO
 
 function EditContractModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
   const qc = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } =
-    useForm<EditFormValues>({ resolver: zodResolver(editSchema) });
+  const { register, handleSubmit, control, reset, formState: { errors } } =
+    useForm<ContractFormValues>({
+      resolver: zodResolver(editSchema),
+      defaultValues: {
+        title: '',
+        clientId: '',
+        details: detailsToFormValues(null),
+      },
+    });
+
+  // Pre-fill form whenever a different contract is opened.
+  useEffect(() => {
+    if (isOpen && contract) {
+      reset({
+        title: contract.title,
+        clientId: contract.clientId,
+        details: detailsToFormValues(contract.details),
+      });
+    }
+  }, [isOpen, contract, reset]);
 
   const mutation = useMutation({
-    mutationFn: (data: EditFormValues) => contractsApi.updateContract(contract!.id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-contracts'] }); reset(); onClose(); },
+    mutationFn: (values: ContractFormValues) => {
+      const payload = buildContractPayload(values);
+      // Edit endpoint doesn't change clientId; strip it.
+      const { clientId: _omit, ...rest } = payload;
+      void _omit;
+      return contractsApi.updateContract(contract!.id, rest);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-contracts'] }); onClose(); },
   });
 
   if (!contract) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Contract" subtitle="Update this draft contract.">
+    <Modal isOpen={isOpen} onClose={onClose} size="xl"
+      title="Edit Contract"
+      subtitle="Update this draft contract.">
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-        <Field label="Contract Title" error={errors.title?.message}>
-          <input {...register('title')} defaultValue={contract.title} className={inputCls(!!errors.title)} />
-        </Field>
-        <Field label="Contract Body" error={errors.body?.message}>
-          <textarea {...register('body')} defaultValue={contract.body} rows={8}
-            className={cn(inputCls(!!errors.body), 'resize-y min-h-[160px] h-auto py-2')} />
-        </Field>
+        <ContractFormFields
+          register={register}
+          control={control}
+          errors={errors}
+          hideClientSelect
+        />
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to update contract')}
           </div>
         )}
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 sticky bottom-0 -mx-5 -mb-5 px-5 py-3 bg-[#111] border-t border-white/[0.06]">
           <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
           <button type="submit" disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">

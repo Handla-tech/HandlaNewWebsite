@@ -311,7 +311,7 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
       }
       onClose();
     },
-    [markAsRead, router, onClose],
+    [markAsRead, router, onClose, role],
   );
 
   const hasError = false; // errors surface via empty list; could extend

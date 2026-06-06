@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, ChevronRight, FilePenLine, Send, CheckCircle2, XCircle,
@@ -21,7 +22,11 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { contractsApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
-import type { Contract, ContractStatus } from '@/types';
+import type { Contract, ContractStatus, ContractDetails } from '@/types';
+import {
+  ContractFormFields, buildContractPayload, detailsToFormValues,
+  type ContractFormValues,
+} from '@/components/erp/ContractFormFields';
 
 // ─── Status config ───────────────────────────────────────────────────────────
 
@@ -76,9 +81,10 @@ function DetailSkeleton() {
 
 // ─── Modal wrapper ────────────────────────────────────────────────────────────
 
-function Modal({ isOpen, onClose, title, subtitle, children }: {
+function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
   isOpen: boolean; onClose: () => void;
   title: string; subtitle?: string; children: React.ReactNode;
+  size?: 'sm' | 'xl';
 }) {
   return (
     <AnimatePresence>
@@ -90,7 +96,10 @@ function Modal({ isOpen, onClose, title, subtitle, children }: {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0d0d0d] shadow-2xl overflow-hidden"
+            className={cn(
+              'relative w-full rounded-2xl border border-white/10 bg-[#0d0d0d] shadow-2xl overflow-hidden',
+              size === 'xl' ? 'max-w-3xl' : 'max-w-lg',
+            )}
             role="dialog" aria-modal="true"
           >
             <div className="p-6 border-b border-white/5">
@@ -104,7 +113,7 @@ function Modal({ isOpen, onClose, title, subtitle, children }: {
                 </button>
               </div>
             </div>
-            <div className="p-6 max-h-[70vh] overflow-y-auto">{children}</div>
+            <div className="p-6 max-h-[78vh] overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}
@@ -117,16 +126,35 @@ function Modal({ isOpen, onClose, title, subtitle, children }: {
 function EditContractModal({ isOpen, onClose, contract, onSuccess }: {
   isOpen: boolean; onClose: () => void; contract: Contract; onSuccess: () => void;
 }) {
-  const [title, setTitle] = useState(contract.title);
-  const [body,  setBody]  = useState(contract.body);
   const qc = useQueryClient();
+  const { register, handleSubmit, control, reset, formState: { errors } } =
+    useForm<ContractFormValues>({
+      defaultValues: {
+        title: contract.title,
+        clientId: contract.clientId,
+        details: detailsToFormValues(contract.details),
+      },
+    });
 
+  // Pre-fill form whenever modal opens or contract changes.
   useEffect(() => {
-    if (isOpen) { setTitle(contract.title); setBody(contract.body); }
-  }, [isOpen, contract]);
+    if (isOpen) {
+      reset({
+        title: contract.title,
+        clientId: contract.clientId,
+        details: detailsToFormValues(contract.details),
+      });
+    }
+  }, [isOpen, contract, reset]);
 
   const mutation = useMutation({
-    mutationFn: () => contractsApi.updateContract(contract.id, { title, body }),
+    mutationFn: (values: ContractFormValues) => {
+      const payload = buildContractPayload(values);
+      // Edit endpoint doesn't change clientId; strip it.
+      const { clientId: _omit, ...rest } = payload;
+      void _omit;
+      return contractsApi.updateContract(contract.id, rest);
+    },
     onSuccess:  () => {
       qc.invalidateQueries({ queryKey: ['erp-contract', contract.id] });
       qc.invalidateQueries({ queryKey: ['erp-contracts'] });
@@ -135,31 +163,29 @@ function EditContractModal({ isOpen, onClose, contract, onSuccess }: {
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Contract" subtitle="Update this draft contract.">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-1.5">Contract Title</label>
-          <input value={title} onChange={e => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#fbbf24]/50 min-h-[44px]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-1.5">Contract Body</label>
-          <textarea value={body} onChange={e => setBody(e.target.value)} rows={10}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#fbbf24]/50 resize-y min-h-[180px] h-auto" />
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose} size="xl"
+      title="Edit Contract"
+      subtitle="Update this draft contract.">
+      <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
+        <ContractFormFields
+          register={register}
+          control={control}
+          errors={errors}
+          hideClientSelect
+        />
         {mutation.isError && (
           <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
             {apiErrMsg(mutation.error, 'Failed to update contract')}
           </p>
         )}
-        <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-white/70 hover:bg-white/5 transition-colors text-sm min-h-[44px]">Cancel</button>
-          <button onClick={() => mutation.mutate()} disabled={mutation.isPending || !title.trim() || !body.trim()}
+        <div className="flex gap-3 pt-2 sticky bottom-0 -mx-6 -mb-6 px-6 py-3 bg-[#0d0d0d] border-t border-white/[0.06]">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-white/70 hover:bg-white/5 transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button type="submit" disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-lg bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">
             {mutation.isPending ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }
@@ -315,6 +341,233 @@ function RejectConfirmModal({ isOpen, onClose, contract, onSuccess }: {
         </div>
       </div>
     </Modal>
+  );
+}
+
+// ─── Structured Details Panel ─────────────────────────────────────────────────
+
+const CONTRACT_TYPE_LABEL: Record<string, string> = {
+  FIXED_PRICE:   'Fixed Price',
+  HOURLY:        'Hourly',
+  RETAINER:      'Retainer',
+  MILESTONE:     'Milestone',
+  MAINTENANCE:   'Maintenance',
+  CONSULTATION:  'Consultation',
+};
+
+const OWNERSHIP_LABEL: Record<string, string> = {
+  CLIENT_OWNS_EVERYTHING:            'Client Owns Everything',
+  OWNERSHIP_TRANSFERS_AFTER_PAYMENT: 'Ownership Transfers After Final Payment',
+  SHARED_OWNERSHIP:                  'Shared Ownership',
+};
+
+function formatMoney(amount: number | undefined, currency?: string) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) return '—';
+  const cur = (currency ?? 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(amount);
+  } catch {
+    return `${cur} ${amount.toFixed(2)}`;
+  }
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-start gap-3 py-1.5">
+      <dt className="text-xs text-white/40 flex-shrink-0">{label}</dt>
+      <dd className="text-xs text-white/85 text-right break-words">{value}</dd>
+    </div>
+  );
+}
+
+function DetailsSection({
+  title, children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#fbbf24] mb-2.5">
+        {title}
+      </h3>
+      <dl className="divide-y divide-white/[0.04]">{children}</dl>
+    </div>
+  );
+}
+
+function StructuredDetails({ details }: { details: ContractDetails }) {
+  const hasAny = (...vals: unknown[]) => vals.some(v => {
+    if (v == null || v === '') return false;
+    if (Array.isArray(v)) return v.length > 0;
+    return true;
+  });
+
+  const yn = (b: boolean | undefined) =>
+    b === true ? 'Yes' : b === false ? 'No' : null;
+
+  const sections: React.ReactNode[] = [];
+
+  // Contract Information
+  if (hasAny(details.contractNumber, details.contractType, details.projectName)) {
+    sections.push(
+      <DetailsSection key="contract-info" title="Contract Information">
+        {details.contractNumber && <DetailRow label="Contract #" value={details.contractNumber} />}
+        {details.contractType && (
+          <DetailRow label="Type" value={CONTRACT_TYPE_LABEL[details.contractType] ?? details.contractType} />
+        )}
+        {details.projectName && <DetailRow label="Project" value={details.projectName} />}
+      </DetailsSection>
+    );
+  }
+
+  // Client Information
+  if (hasAny(details.clientName, details.clientCompany, details.clientEmail, details.clientPhone, details.clientAddress)) {
+    sections.push(
+      <DetailsSection key="client-info" title="Client Information">
+        {details.clientName    && <DetailRow label="Name"    value={details.clientName} />}
+        {details.clientCompany && <DetailRow label="Company" value={details.clientCompany} />}
+        {details.clientEmail   && <DetailRow label="Email"   value={details.clientEmail} />}
+        {details.clientPhone   && <DetailRow label="Phone"   value={details.clientPhone} />}
+        {details.clientAddress && <DetailRow label="Address" value={details.clientAddress} />}
+      </DetailsSection>
+    );
+  }
+
+  // Project Details
+  if (hasAny(details.projectDescription, details.scopeOfWork, details.deliverables, details.excludedServices)) {
+    sections.push(
+      <DetailsSection key="project" title="Project Details">
+        {details.projectDescription && <DetailRow label="Description" value={<span className="whitespace-pre-wrap">{details.projectDescription}</span>} />}
+        {details.scopeOfWork        && <DetailRow label="Scope"       value={<span className="whitespace-pre-wrap">{details.scopeOfWork}</span>} />}
+        {details.deliverables && details.deliverables.length > 0 && (
+          <DetailRow label="Deliverables" value={
+            <ul className="text-right list-disc list-inside space-y-0.5">
+              {details.deliverables.map((d, i) => <li key={i}>{d}</li>)}
+            </ul>
+          } />
+        )}
+        {details.excludedServices && details.excludedServices.length > 0 && (
+          <DetailRow label="Excluded" value={
+            <ul className="text-right list-disc list-inside space-y-0.5">
+              {details.excludedServices.map((d, i) => <li key={i}>{d}</li>)}
+            </ul>
+          } />
+        )}
+      </DetailsSection>
+    );
+  }
+
+  // Timeline
+  if (hasAny(details.startDate, details.endDate, details.estimatedDuration)) {
+    sections.push(
+      <DetailsSection key="timeline" title="Timeline">
+        {details.startDate         && <DetailRow label="Start Date" value={formatDate(details.startDate)} />}
+        {details.endDate           && <DetailRow label="End Date"   value={formatDate(details.endDate)} />}
+        {details.estimatedDuration && <DetailRow label="Duration"   value={details.estimatedDuration} />}
+      </DetailsSection>
+    );
+  }
+
+  // Financial
+  if (hasAny(details.currency, details.totalValue, details.paymentMilestones)) {
+    sections.push(
+      <DetailsSection key="financial" title="Financial Details">
+        {details.currency && <DetailRow label="Currency" value={details.currency.toUpperCase()} />}
+        {typeof details.totalValue === 'number' && (
+          <DetailRow label="Total Value" value={formatMoney(details.totalValue, details.currency)} />
+        )}
+        {details.paymentMilestones && details.paymentMilestones.length > 0 && (
+          <DetailRow label="Milestones" value={
+            <ul className="text-right space-y-1">
+              {details.paymentMilestones.map((m, i) => (
+                <li key={i} className="text-xs">
+                  <span className="text-white/85">{m.name}</span>
+                  {typeof m.percentage === 'number' && <span className="text-white/50"> · {m.percentage}%</span>}
+                  {typeof m.amount === 'number' && <span className="text-white/50"> · {formatMoney(m.amount, details.currency)}</span>}
+                  {m.dueDate && <span className="text-white/40"> · {formatDate(m.dueDate)}</span>}
+                </li>
+              ))}
+            </ul>
+          } />
+        )}
+      </DetailsSection>
+    );
+  }
+
+  // Revisions / Warranty
+  if (hasAny(details.freeRevisions, details.additionalRevisionCost, details.warrantyPeriod, details.supportPeriod)) {
+    sections.push(
+      <DetailsSection key="rev-warr" title="Revisions, Warranty & Support">
+        {typeof details.freeRevisions === 'number' && <DetailRow label="Free Revisions" value={details.freeRevisions} />}
+        {typeof details.additionalRevisionCost === 'number' && (
+          <DetailRow label="Additional Revision Cost" value={formatMoney(details.additionalRevisionCost, details.currency)} />
+        )}
+        {details.warrantyPeriod && <DetailRow label="Warranty Period" value={details.warrantyPeriod} />}
+        {details.supportPeriod  && <DetailRow label="Support Period"  value={details.supportPeriod} />}
+      </DetailsSection>
+    );
+  }
+
+  // IP / NDA
+  if (hasAny(details.ownershipType, details.ndaIncluded)) {
+    sections.push(
+      <DetailsSection key="ip-nda" title="Intellectual Property & Confidentiality">
+        {details.ownershipType && (
+          <DetailRow label="Ownership" value={OWNERSHIP_LABEL[details.ownershipType] ?? details.ownershipType} />
+        )}
+        {typeof details.ndaIncluded === 'boolean' && (
+          <DetailRow label="NDA" value={yn(details.ndaIncluded)} />
+        )}
+      </DetailsSection>
+    );
+  }
+
+  // Hosting
+  if (hasAny(details.hostingIncluded, details.domainIncluded, details.sslIncluded, details.deploymentIncluded)) {
+    sections.push(
+      <DetailsSection key="hosting" title="Hosting & Deployment">
+        {typeof details.hostingIncluded    === 'boolean' && <DetailRow label="Hosting"    value={yn(details.hostingIncluded)} />}
+        {typeof details.domainIncluded     === 'boolean' && <DetailRow label="Domain"     value={yn(details.domainIncluded)} />}
+        {typeof details.sslIncluded        === 'boolean' && <DetailRow label="SSL"        value={yn(details.sslIncluded)} />}
+        {typeof details.deploymentIncluded === 'boolean' && <DetailRow label="Deployment" value={yn(details.deploymentIncluded)} />}
+      </DetailsSection>
+    );
+  }
+
+  // Late payment / termination / acceptance
+  if (hasAny(details.latePaymentPenalty, details.terminationTerms, details.acceptancePeriodDays)) {
+    sections.push(
+      <DetailsSection key="terms-misc" title="Late Payment, Termination & Acceptance">
+        {details.latePaymentPenalty && <DetailRow label="Late Payment" value={details.latePaymentPenalty} />}
+        {details.terminationTerms && (
+          <DetailRow label="Termination" value={<span className="whitespace-pre-wrap">{details.terminationTerms}</span>} />
+        )}
+        {typeof details.acceptancePeriodDays === 'number' && (
+          <DetailRow label="Acceptance Period" value={`${details.acceptancePeriodDays} day${details.acceptancePeriodDays === 1 ? '' : 's'}`} />
+        )}
+      </DetailsSection>
+    );
+  }
+
+  // Terms & Conditions
+  if (details.termsAndConditions) {
+    sections.push(
+      <DetailsSection key="tnc" title="Terms & Conditions">
+        <DetailRow label="" value={<span className="whitespace-pre-wrap">{details.termsAndConditions}</span>} />
+      </DetailsSection>
+    );
+  }
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/3 p-5">
+      <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-4">
+        Structured Details
+      </h2>
+      <div className="grid grid-cols-1 gap-3">{sections}</div>
+    </div>
   );
 }
 
@@ -556,11 +809,20 @@ export default function ContractDetailPage() {
 
       {/* Body + Metadata */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Contract Body */}
-        <div className="lg:col-span-2 rounded-xl border border-white/5 bg-white/3 p-5">
-          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-4">Contract Terms</h2>
-          <div className="prose prose-invert prose-sm max-w-none">
-            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{contract.body}</p>
+        {/* Contract Body / Structured Details */}
+        <div className="lg:col-span-2 space-y-5">
+          {contract.details && Object.keys(contract.details).length > 0 && (
+            <StructuredDetails details={contract.details} />
+          )}
+          <div className="rounded-xl border border-white/5 bg-white/3 p-5">
+            <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-4">
+              {contract.details && Object.keys(contract.details).length > 0
+                ? 'Full Contract Text'
+                : 'Contract Terms'}
+            </h2>
+            <div className="prose prose-invert prose-sm max-w-none">
+              <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{contract.body}</p>
+            </div>
           </div>
         </div>
 
