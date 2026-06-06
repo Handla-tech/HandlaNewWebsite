@@ -1,6 +1,6 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
@@ -10,6 +10,20 @@ import {
   ResourceNotFoundException,
   ConversationAccessDeniedException,
 } from '../../utils/exceptions';
+
+/**
+ * Returns true if the given error is a MySQL/MariaDB unique-constraint
+ * violation (errno 1062 / code 'ER_DUP_ENTRY'). Used by createOrGetConversation
+ * to recover from concurrent INSERTs racing for the same (clientId, adminId).
+ */
+function isDuplicateKeyError(err: unknown): boolean {
+  if (!err) return false;
+  const e = err as { code?: string; errno?: number; driverError?: { code?: string; errno?: number } };
+  // TypeORM wraps the native driver error in QueryFailedError; check both layers
+  const code  = e.code  ?? e.driverError?.code;
+  const errno = e.errno ?? e.driverError?.errno;
+  return code === 'ER_DUP_ENTRY' || errno === 1062;
+}
 
 export interface PaginationQuery {
   page?: number;
@@ -161,11 +175,31 @@ export class ChatService {
 
   // ─── Create or Get Conversation ───────────────────────────────────────────────
   //
-  // Guards against duplicate rows by using a DB-level transaction with an
-  // INSERT … ON CONFLICT DO NOTHING pattern (via QueryBuilder) so that even
-  // if two requests race in at the same moment only one row is written.
+  // Race-safe upsert for the (clientId, adminId) pair guarded by the unique
+  // index `uq_conversations_client_admin`.
+  //
+  // Why the previous "findOne + transaction + re-check" pattern was NOT enough:
+  //   MySQL's default isolation level is REPEATABLE READ. A SELECT inside a
+  //   transaction reads from the snapshot taken when the transaction began
+  //   and therefore CANNOT see rows that another concurrent transaction has
+  //   inserted (committed or not). If two requests race — which happens on
+  //   first signup when the dashboard mounts twice in React strict-mode, or
+  //   when two tabs are opened back-to-back — both transactions see "no row
+  //   exists", both try to INSERT, and the second one explodes with
+  //   ER_DUP_ENTRY for `uq_conversations_client_admin`.
+  //
+  // The fix below has THREE layers of defence:
+  //   1. Fast path:    a plain findOne outside any tx returns the row in
+  //                    99% of calls (the common case after first signup).
+  //   2. Try-INSERT:   we attempt the INSERT directly. If it succeeds we win
+  //                    the race. If it fails with ER_DUP_ENTRY we know
+  //                    SOMEONE ELSE just committed the row.
+  //   3. Recover:      after a duplicate-key failure we re-read the row that
+  //                    the other transaction committed and return it as if
+  //                    we had created it ourselves. This makes the endpoint
+  //                    idempotent — callers never see a 500.
   async createOrGetConversation(clientId: string, adminId: string): Promise<Conversation> {
-    // 1. Fast path — existing row
+    // 1. Fast path — existing row.
     const existing = await this.conversationRepo.findOne({
       where: { clientId, adminId },
     });
@@ -176,31 +210,44 @@ export class ChatService {
       return existing;
     }
 
-    // 2. Slow path — create inside a transaction so concurrent calls
-    //    from the same client (e.g. dashboard page + strict-mode double-mount)
-    //    don't produce two rows.
-    return this.conversationRepo.manager.transaction(async (em) => {
-      // Re-check inside the transaction (prevents TOCTOU race)
-      const check = await em.findOne(Conversation, { where: { clientId, adminId } });
-      if (check) {
-        this.logger.log(
-          `Conversation found inside tx: client=${clientId}, admin=${adminId}, id=${check.id}`,
-        );
-        return check;
-      }
+    // 2. Try to INSERT. If two callers race in here at the same time, ONE
+    //    of them will succeed and the other will hit the unique constraint.
+    const conversation = this.conversationRepo.create({
+      clientId,
+      adminId,
+      status: ConversationStatus.ACTIVE,
+    });
 
-      const conversation = em.create(Conversation, {
-        clientId,
-        adminId,
-        status: ConversationStatus.ACTIVE,
-      });
-
-      await em.save(Conversation, conversation);
+    try {
+      await this.conversationRepo.save(conversation);
       this.logger.log(
         `Conversation created: client=${clientId}, admin=${adminId}, id=${conversation.id}`,
       );
       return conversation;
-    });
+    } catch (err) {
+      // 3. Recover from race: another request just won the INSERT — re-read.
+      if (err instanceof QueryFailedError && isDuplicateKeyError(err)) {
+        const winner = await this.conversationRepo.findOne({
+          where: { clientId, adminId },
+        });
+        if (winner) {
+          this.logger.log(
+            `Conversation race resolved (recovered from ER_DUP_ENTRY): ` +
+            `client=${clientId}, admin=${adminId}, id=${winner.id}`,
+          );
+          return winner;
+        }
+        // Extremely unlikely: duplicate-key error but row not found on re-read.
+        // Fall through to rethrow with extra context.
+        this.logger.error(
+          `ER_DUP_ENTRY raised for client=${clientId}, admin=${adminId} but ` +
+          `no matching row was found on re-read. This indicates a corrupted ` +
+          `unique index or a non-conversation table conflict.`,
+        );
+      }
+      // Not a duplicate-key error (or recovery failed): propagate.
+      throw err;
+    }
   }
 
   // ─── Save Message ─────────────────────────────────────────────────────────────

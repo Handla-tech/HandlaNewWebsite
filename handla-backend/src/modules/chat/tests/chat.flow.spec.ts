@@ -186,19 +186,16 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
     });
 
     it('should create a new conversation between client and admin', async () => {
-      // Outer fast-path check: no existing conversation
+      // Fast-path check: no existing conversation
       mockConvRepo.findOne.mockResolvedValue(null);
-      // Inside the transaction: re-check also returns null
-      mockFlowEntityManager.findOne.mockResolvedValue(null);
-      // em.create + em.save return the new conversation
-      mockFlowEntityManager.create.mockReturnValue(newConversation);
-      mockFlowEntityManager.save.mockResolvedValue(newConversation);
+      // Direct repo.create + repo.save (no transaction in the happy path now —
+      // race recovery is via catching ER_DUP_ENTRY, see chat.service.spec.ts)
+      mockConvRepo.create.mockReturnValue(newConversation);
+      mockConvRepo.save.mockResolvedValue(newConversation);
 
       const result = await service.createOrGetConversation(clientUser.id, adminUser.id);
 
-      // The service uses em.create / em.save inside manager.transaction
-      expect(mockFlowEntityManager.create).toHaveBeenCalledWith(
-        expect.any(Function), // Conversation class
+      expect(mockConvRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           clientId: clientUser.id,
           adminId:  adminUser.id,

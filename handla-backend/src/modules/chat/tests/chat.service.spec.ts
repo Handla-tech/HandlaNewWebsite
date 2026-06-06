@@ -152,27 +152,108 @@ describe('ChatService', () => {
     });
 
     it('should create and return a new conversation when none exists', async () => {
-      // Outer findOne (fast-path check) returns null
+      // Fast-path findOne returns null (no existing row)
       mockConversationRepository.findOne.mockResolvedValue(null);
-      // Inside the transaction: re-check also returns null (no race)
-      mockEntityManager.findOne.mockResolvedValue(null);
-      // em.create + em.save
-      mockEntityManager.create.mockReturnValue(mockConversation);
-      mockEntityManager.save.mockResolvedValue(mockConversation);
+      // Try-INSERT path: create returns a draft, save persists it
+      mockConversationRepository.create.mockReturnValue(mockConversation);
+      mockConversationRepository.save.mockResolvedValue(mockConversation);
 
       const result = await service.createOrGetConversation(clientUser.id, adminUser.id);
 
-      // The service now uses em.create / em.save inside manager.transaction
-      expect(mockEntityManager.create).toHaveBeenCalledWith(
-        expect.any(Function), // Conversation class
+      expect(mockConversationRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           clientId: clientUser.id,
           adminId:  adminUser.id,
           status:   ConversationStatus.ACTIVE,
         }),
       );
-      expect(mockEntityManager.save).toHaveBeenCalledTimes(1);
+      expect(mockConversationRepository.save).toHaveBeenCalledTimes(1);
       expect(result.clientId).toBe(clientUser.id);
+    });
+
+    // ── Race-condition recovery (the original "ER_DUP_ENTRY on first signup" bug)
+    it('recovers gracefully when a concurrent INSERT wins the race (ER_DUP_ENTRY)', async () => {
+      // First findOne (fast path) returns null — we think no row exists.
+      // Second findOne (after the duplicate-key error) returns the row that
+      // the OTHER concurrent transaction has now committed.
+      const winningRow = { ...mockConversation, id: 'winner-id' };
+      mockConversationRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(winningRow);
+
+      mockConversationRepository.create.mockReturnValue(mockConversation);
+
+      // Simulate MySQL's ER_DUP_ENTRY (errno 1062) wrapped in QueryFailedError.
+      // QueryFailedError is TypeORM's wrapper for driver-level SQL errors.
+      const { QueryFailedError } = jest.requireActual('typeorm');
+      const dupErr = new QueryFailedError(
+        'INSERT INTO conversations …',
+        [],
+        Object.assign(new Error("Duplicate entry 'cli-admin' for key 'uq_conversations_client_admin'"), {
+          code: 'ER_DUP_ENTRY',
+          errno: 1062,
+        }),
+      );
+      // TypeORM sets driverError separately; mimic that
+      (dupErr as any).code = 'ER_DUP_ENTRY';
+      (dupErr as any).errno = 1062;
+      mockConversationRepository.save.mockRejectedValue(dupErr);
+
+      const result = await service.createOrGetConversation(clientUser.id, adminUser.id);
+
+      // Should NOT throw — should return the winning row from the re-read
+      expect(result).toEqual(winningRow);
+      // findOne called twice: fast-path + recovery re-read
+      expect(mockConversationRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(mockConversationRepository.findOne).toHaveBeenLastCalledWith({
+        where: { clientId: clientUser.id, adminId: adminUser.id },
+      });
+    });
+
+    it('also recognizes duplicate-key errors using only driverError.errno=1062', async () => {
+      const winningRow = { ...mockConversation, id: 'winner-id-2' };
+      mockConversationRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(winningRow);
+      mockConversationRepository.create.mockReturnValue(mockConversation);
+
+      const { QueryFailedError } = jest.requireActual('typeorm');
+      const innerErr = new Error('Duplicate entry') as Error & { code?: string; errno?: number };
+      innerErr.errno = 1062;  // numeric errno only — no code field
+      const dupErr = new QueryFailedError('INSERT', [], innerErr);
+      // QueryFailedError exposes the inner error as .driverError
+      (dupErr as any).driverError = innerErr;
+      mockConversationRepository.save.mockRejectedValue(dupErr);
+
+      const result = await service.createOrGetConversation(clientUser.id, adminUser.id);
+      expect(result).toEqual(winningRow);
+    });
+
+    it('re-throws non-duplicate-key DB errors (does not swallow real bugs)', async () => {
+      mockConversationRepository.findOne.mockResolvedValue(null);
+      mockConversationRepository.create.mockReturnValue(mockConversation);
+
+      const { QueryFailedError } = jest.requireActual('typeorm');
+      const innerErr = new Error('Connection lost') as Error & { code?: string };
+      innerErr.code = 'PROTOCOL_CONNECTION_LOST';
+      const otherErr = new QueryFailedError('INSERT', [], innerErr);
+      (otherErr as any).code = 'PROTOCOL_CONNECTION_LOST';
+      mockConversationRepository.save.mockRejectedValue(otherErr);
+
+      await expect(
+        service.createOrGetConversation(clientUser.id, adminUser.id),
+      ).rejects.toBe(otherErr);
+    });
+
+    it('re-throws plain (non-QueryFailedError) errors unchanged', async () => {
+      mockConversationRepository.findOne.mockResolvedValue(null);
+      mockConversationRepository.create.mockReturnValue(mockConversation);
+      const oops = new Error('boom');
+      mockConversationRepository.save.mockRejectedValue(oops);
+
+      await expect(
+        service.createOrGetConversation(clientUser.id, adminUser.id),
+      ).rejects.toBe(oops);
     });
   });
 
