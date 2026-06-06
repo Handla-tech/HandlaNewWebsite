@@ -164,6 +164,7 @@ describe('Chat → Notification bell integration', () => {
       'Admin Alice',
       'Hello from REST',
       'msg-99',
+      CONV_ID,
     );
 
     // 2. WS push: server.to('user:client-1').emit('notificationNew', { notification })
@@ -202,7 +203,7 @@ describe('Chat → Notification bell integration', () => {
 
     // Recipient is the employee, NOT the client
     expect(notificationService.createMessageNotification).toHaveBeenCalledWith(
-      'emp-1', 'A', 'For employee', 'msg-100',
+      'emp-1', 'A', 'For employee', 'msg-100', CONV_ID,
     );
     const notifEmits = emittedNotifications.filter((e) => e.event === 'notificationNew');
     expect(notifEmits).toHaveLength(1);
@@ -227,7 +228,7 @@ describe('Chat → Notification bell integration', () => {
     await controller.sendMessage(CONV_ID, 'Need help', undefined, client);
 
     expect(notificationService.createMessageNotification).toHaveBeenCalledWith(
-      'admin-1', 'C', 'Need help', 'msg-101',
+      'admin-1', 'C', 'Need help', 'msg-101', CONV_ID,
     );
     expect(emittedNotifications.find((e) => e.event === 'notificationNew')?.room)
       .toBe('user:admin-1');
@@ -251,7 +252,7 @@ describe('Chat → Notification bell integration', () => {
     await controller.sendMessage(CONV_ID, 'hi', undefined, client);
 
     expect(notificationService.createMessageNotification).toHaveBeenCalledWith(
-      'emp-1', 'C', 'hi', 'msg-102',
+      'emp-1', 'C', 'hi', 'msg-102', CONV_ID,
     );
   });
 
@@ -273,7 +274,7 @@ describe('Chat → Notification bell integration', () => {
     await controller.sendMessage(CONV_ID, 'on it', undefined, employee);
 
     expect(notificationService.createMessageNotification).toHaveBeenCalledWith(
-      'client-1', 'E', 'on it', 'msg-103',
+      'client-1', 'E', 'on it', 'msg-103', CONV_ID,
     );
   });
 

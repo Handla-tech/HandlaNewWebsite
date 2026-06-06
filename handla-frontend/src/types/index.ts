@@ -192,10 +192,67 @@ export interface PaginatedTasks {
 
 export type ContractStatus = 'DRAFT' | 'SENT' | 'SIGNED' | 'REJECTED';
 
+export type ContractType =
+  | 'FIXED_PRICE'
+  | 'HOURLY'
+  | 'RETAINER'
+  | 'MILESTONE'
+  | 'MAINTENANCE'
+  | 'CONSULTATION';
+
+export type OwnershipType =
+  | 'CLIENT_OWNS_EVERYTHING'
+  | 'OWNERSHIP_TRANSFERS_AFTER_PAYMENT'
+  | 'SHARED_OWNERSHIP';
+
+export interface PaymentMilestone {
+  name: string;
+  percentage?: number;
+  amount?: number;
+  dueDate?: string;
+}
+
+/** Structured contract data — all optional, mirrors backend ContractDetailsDto. */
+export interface ContractDetails {
+  contractNumber?:        string;
+  contractType?:          ContractType;
+  projectName?:           string;
+  clientName?:            string;
+  clientCompany?:         string;
+  clientEmail?:           string;
+  clientPhone?:           string;
+  clientAddress?:         string;
+  projectDescription?:    string;
+  scopeOfWork?:           string;
+  deliverables?:          string[];
+  excludedServices?:      string[];
+  startDate?:             string;
+  endDate?:               string;
+  estimatedDuration?:     string;
+  currency?:              string;
+  totalValue?:            number;
+  paymentMilestones?:     PaymentMilestone[];
+  freeRevisions?:         number;
+  additionalRevisionCost?: number;
+  warrantyPeriod?:        string;
+  supportPeriod?:         string;
+  ownershipType?:         OwnershipType;
+  ndaIncluded?:           boolean;
+  hostingIncluded?:       boolean;
+  domainIncluded?:        boolean;
+  sslIncluded?:           boolean;
+  deploymentIncluded?:    boolean;
+  latePaymentPenalty?:    string;
+  terminationTerms?:      string;
+  acceptancePeriodDays?:  number;
+  termsAndConditions?:    string;
+}
+
 export interface Contract {
   id: string;
   title: string;
   body: string;
+  details?: ContractDetails | null;
   clientId: string;
   ownerId: string | null;
   status: ContractStatus;

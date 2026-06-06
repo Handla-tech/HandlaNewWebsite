@@ -50,6 +50,13 @@ export class NotificationService {
     senderName: string,
     preview: string,
     relatedMessageId?: string,
+    /**
+     * Conversation the message belongs to. Stored on `relatedEntityId` so the
+     * frontend can deep-link the notification click straight to that chat
+     * (otherwise we'd lose the conversation context and could only ever
+     * navigate to /dashboard).
+     */
+    conversationId?: string,
   ): Promise<Notification> {
     return this.createNotification({
       userId: recipientId,
@@ -57,6 +64,7 @@ export class NotificationService {
       title: `New message from ${senderName}`,
       message: preview.length > 200 ? `${preview.substring(0, 197)}…` : preview,
       relatedMessageId,
+      relatedEntityId: conversationId,
     });
   }
 

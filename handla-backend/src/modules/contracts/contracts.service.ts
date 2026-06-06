@@ -12,6 +12,7 @@ import { UserRole, ContractStatus, NotificationType } from '../../common/enums';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { ContractsQueryDto } from './dto/contracts-query.dto';
+import { renderContractBody } from './contract-body.renderer';
 import {
   ResourceNotFoundException,
   OwnershipViolationException,
@@ -166,9 +167,31 @@ export class ContractsService {
 
     const ownerId = actingUser.role === UserRole.EMPLOYEE ? actingUser.id : null;
 
+    // Body resolution order:
+    //   1. Explicit `body` if caller provided one (legacy / manual contracts).
+    //   2. Auto-rendered from `details` when the comprehensive form is used.
+    //   3. Empty fallback — Contract.body is NOT NULL so we always need a value.
+    // The empty fallback should never trigger in practice — DTO validation
+    // requires at least one of body/details to carry content — but guards
+    // against silent failures.
+    const resolvedBody =
+      dto.body && dto.body.length > 0
+        ? dto.body
+        : dto.details
+          ? renderContractBody(dto.details)
+          : '';
+
+    if (!resolvedBody || resolvedBody.length < 10) {
+      throw new AppException(
+        'Contract body is required (provide either `body` or `details`).',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const contract = this.contractRepo.create({
       title: dto.title,
-      body: dto.body,
+      body: resolvedBody,
+      details: dto.details ?? null,
       clientId: dto.clientId,
       ownerId,
       status: ContractStatus.DRAFT,
@@ -200,7 +223,16 @@ export class ContractsService {
     }
 
     if (dto.title !== undefined) contract.title = dto.title;
-    if (dto.body  !== undefined) contract.body  = dto.body;
+
+    // Body update precedence:
+    //   • If `details` is supplied → store it AND re-render body from it.
+    //   • Else if `body` is supplied → store it verbatim, leave `details` alone.
+    if (dto.details !== undefined) {
+      contract.details = dto.details ?? null;
+      contract.body    = dto.details ? renderContractBody(dto.details) : (dto.body ?? contract.body);
+    } else if (dto.body !== undefined) {
+      contract.body = dto.body;
+    }
 
     const updated = await this.contractRepo.save(contract);
     this.logger.log(`Contract updated: id=${id} by=${user.id}`);

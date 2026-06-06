@@ -331,6 +331,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         senderUser.name,
         preview,
         messageId,
+        conversation.id, // stored on relatedEntityId for deep-link navigation
       );
     } catch (err) {
       this.logger.error(

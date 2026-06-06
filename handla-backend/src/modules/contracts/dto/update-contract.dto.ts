@@ -1,11 +1,13 @@
-import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ContractDetailsDto } from './contract-details.dto';
 
 /**
  * Update DTO for contracts.
  *
- * Only `title` and `body` are updatable directly.
- * Status transitions are handled by dedicated endpoints:
+ * Updatable: title, body, details (only while contract is DRAFT).
+ * Status transitions go through dedicated endpoints:
  *   POST /contracts/:id/send     — DRAFT → SENT
  *   POST /contracts/:id/accept   — SENT  → SIGNED  (CLIENT)
  *   POST /contracts/:id/reject   — SENT  → REJECTED (CLIENT)
@@ -23,4 +25,10 @@ export class UpdateContractDto {
   @IsString()
   @MinLength(10)
   body?: string;
+
+  @ApiPropertyOptional({ type: ContractDetailsDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ContractDetailsDto)
+  details?: ContractDetailsDto;
 }

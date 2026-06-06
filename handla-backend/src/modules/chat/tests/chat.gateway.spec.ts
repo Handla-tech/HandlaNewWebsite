@@ -243,6 +243,7 @@ describe('ChatGateway', () => {
         'A',
         'hello',
         'msg-1',
+        'conv-1',
       );
       expect((gateway.server as any).to).toHaveBeenCalledWith('user:client-1');
       expect((gateway.server as any)._emitter.emit).toHaveBeenCalledWith(
@@ -257,7 +258,7 @@ describe('ChatGateway', () => {
       await gateway.notifyMessageRecipient({
         conversation: conv, senderUser: admin, messageId: 'm', content: 'hi',
       });
-      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('emp-9', expect.any(String), 'hi', 'm');
+      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('emp-9', expect.any(String), 'hi', 'm', expect.any(String));
     });
 
     it('routes client → assignedEmployee when one exists (not admin)', async () => {
@@ -266,7 +267,7 @@ describe('ChatGateway', () => {
       await gateway.notifyMessageRecipient({
         conversation: conv, senderUser: client, messageId: 'm', content: 'hi',
       });
-      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('emp-9', expect.any(String), 'hi', 'm');
+      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('emp-9', expect.any(String), 'hi', 'm', expect.any(String));
     });
 
     it('routes client → admin when no assignedEmployee', async () => {
@@ -275,7 +276,7 @@ describe('ChatGateway', () => {
       await gateway.notifyMessageRecipient({
         conversation: conv, senderUser: client, messageId: 'm', content: 'hi',
       });
-      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('admin-1', expect.any(String), 'hi', 'm');
+      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('admin-1', expect.any(String), 'hi', 'm', expect.any(String));
     });
 
     it('routes assignedEmployee → client', async () => {
@@ -284,7 +285,7 @@ describe('ChatGateway', () => {
       await gateway.notifyMessageRecipient({
         conversation: conv, senderUser: emp, messageId: 'm', content: 'hi',
       });
-      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('client-1', expect.any(String), 'hi', 'm');
+      expect(notificationService.createMessageNotification).toHaveBeenCalledWith('client-1', expect.any(String), 'hi', 'm', expect.any(String));
     });
 
     it('uses file-attachment placeholder preview when content is empty', async () => {
@@ -298,6 +299,7 @@ describe('ChatGateway', () => {
         expect.any(String),
         '📎 File attachment',
         'm',
+        expect.any(String),
       );
     });
 
@@ -455,7 +457,7 @@ describe('ChatGateway', () => {
       expect(toCalls).toContain(`conversation:${CONV_ID}`);
       // Notification emitted to recipient (client-1)
       expect(notificationService.createMessageNotification).toHaveBeenCalledWith(
-        'client-1', user.name, 'hello', 'msg-7',
+        'client-1', user.name, 'hello', 'msg-7', CONV_ID,
       );
       expect(res).toEqual({ success: true, message: { id: 'msg-7', content: 'hello' } });
     });

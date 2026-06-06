@@ -21,9 +21,9 @@ import {
   Circle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { projectsApi } from '@/lib/api';
+import { projectsApi, tasksApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import type { Project, ProjectStatus } from '@/types';
+import type { Project, ProjectStatus, Task } from '@/types';
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -85,8 +85,20 @@ export default function ClientProjectDetailPage() {
     retry: 1,
   });
 
-  // Tasks from the project relation
-  const tasks = (project as any)?.tasks ?? [];
+  // Tasks are NOT eagerly loaded on the project endpoint — fetch them
+  // separately via the project-scoped task endpoint, which the backend
+  // permits for CLIENT users (provided the project belongs to their
+  // linked client record).
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: ['dashboard-project-tasks', id],
+    queryFn: () => tasksApi.getTasksByProject(id).then(r => {
+      const d = r.data?.data ?? r.data;
+      return (d?.tasks ?? d ?? []) as Task[];
+    }),
+    enabled: !!id && !!user,
+    staleTime: 30_000,
+    retry: 1,
+  });
 
   return (
     <div className="flex h-full flex-col bg-[#0a0a0a]">
@@ -177,12 +189,12 @@ export default function ClientProjectDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {tasks.map((task: any) => (
+                  {tasks.map((task: Task) => (
                     <div
                       key={task.id}
                       className="flex items-start gap-3 rounded-xl border border-[#1e1e1e] bg-[#0d0d0d] px-4 py-3"
                     >
-                      {task.status === 'DONE' ? (
+                      {task.status === 'COMPLETED' ? (
                         <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
                       ) : (
                         <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#444]" />
@@ -190,7 +202,7 @@ export default function ClientProjectDetailPage() {
                       <div className="min-w-0 flex-1">
                         <p className={cn(
                           'text-sm font-medium',
-                          task.status === 'DONE' ? 'text-[#666] line-through' : 'text-white',
+                          task.status === 'COMPLETED' ? 'text-[#666] line-through' : 'text-white',
                         )}>
                           {task.title}
                         </p>
@@ -205,7 +217,7 @@ export default function ClientProjectDetailPage() {
                       </div>
                       <span className={cn(
                         'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                        task.status === 'DONE'
+                        task.status === 'COMPLETED'
                           ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
                           : task.status === 'IN_PROGRESS'
                           ? 'border-blue-400/30 bg-blue-400/10 text-blue-400'

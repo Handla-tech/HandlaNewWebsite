@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuthStore } from '@/store/authStore';
 import { formatMessageTime, cn } from '@/lib/utils';
 import type { Notification, NotificationType } from '@/types';
 
@@ -254,6 +255,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 export default function NotificationCenter({ onClose }: NotificationCenterProps) {
   const router  = useRouter();
   const listRef = useRef<HTMLDivElement>(null);
+  const role    = useAuthStore((s) => s.user?.role);
 
   const {
     notifications,
@@ -274,9 +276,19 @@ export default function NotificationCenter({ onClose }: NotificationCenterProps)
       const id = notification.relatedEntityId;
 
       switch (notification.type) {
-        case 'MESSAGE':
-          router.push('/dashboard');
+        case 'MESSAGE': {
+          // The backend now stores the conversationId on relatedEntityId for
+          // MESSAGE notifications. Route admins/employees to the ERP messages
+          // list with the conversation pre-selected; clients land on their
+          // dashboard chat (they only ever have one conversation).
+          const convId = notification.relatedEntityId;
+          if (role === 'ADMIN' || role === 'EMPLOYEE') {
+            router.push(convId ? `/erp/messages?conversationId=${convId}` : '/erp/messages');
+          } else {
+            router.push(convId ? `/dashboard?tab=chat&conversationId=${convId}` : '/dashboard');
+          }
           break;
+        }
         case 'CONTRACT_SENT':
         case 'CONTRACT_SIGNED':
         case 'CONTRACT_REJECTED':

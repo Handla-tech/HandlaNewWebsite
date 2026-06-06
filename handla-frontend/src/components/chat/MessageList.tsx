@@ -329,7 +329,11 @@ export default function MessageList({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                  'flex items-end gap-2 px-1 mb-0.5',
+                  // Bigger gap between messages — was mb-0.5 which felt cramped.
+                  // First message in a group gets extra top margin so consecutive
+                  // messages from the same sender stay visually grouped.
+                  'flex items-end gap-2 px-1 mb-3',
+                  isFirst ? 'mt-2' : 'mt-0',
                   isOwn ? 'flex-row-reverse' : 'flex-row',
                 )}
               >

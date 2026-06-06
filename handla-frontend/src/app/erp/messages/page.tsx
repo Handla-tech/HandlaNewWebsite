@@ -10,7 +10,8 @@
  * Available to both ADMIN and EMPLOYEE roles (auth guard is in ErpLayout).
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { Suspense, useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare, Search, RefreshCw,
@@ -183,14 +184,25 @@ function SelectConversationPlaceholder() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ErpMessagesPage() {
-  const queryClient = useQueryClient();
+function ErpMessagesPageInner() {
+  const queryClient  = useQueryClient();
+  const searchParams = useSearchParams();
+  const initialConvId = searchParams.get('conversationId');
 
   const [statusFilter,    setStatusFilter]    = useState<ConversationStatus | 'ALL'>('ALL');
   const [search,          setSearch]          = useState('');
-  const [activeConvId,    setActiveConvId]    = useState<string | null>(null);
+  const [activeConvId,    setActiveConvId]    = useState<string | null>(initialConvId);
   /** Mobile: show chat panel instead of list */
-  const [mobileShowChat,  setMobileShowChat]  = useState(false);
+  const [mobileShowChat,  setMobileShowChat]  = useState(!!initialConvId);
+
+  // If the user clicks a chat notification while already on /erp/messages,
+  // the URL changes but the component stays mounted — sync the selection.
+  useEffect(() => {
+    if (initialConvId) {
+      setActiveConvId(initialConvId);
+      setMobileShowChat(true);
+    }
+  }, [initialConvId]);
 
   // ── Fetch conversations ─────────────────────────────────────────────────
   // Use the same query key as useChat ('conversations') so both share one
@@ -496,5 +508,15 @@ export default function ErpMessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Page wrapper (Suspense required for useSearchParams in App Router) ─────
+
+export default function ErpMessagesPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[#fbbf24]" /></div>}>
+      <ErpMessagesPageInner />
+    </Suspense>
   );
 }

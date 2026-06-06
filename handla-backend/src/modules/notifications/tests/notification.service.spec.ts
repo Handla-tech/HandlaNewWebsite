@@ -161,6 +161,21 @@ describe('NotificationService', () => {
       expect(createArg.message.length).toBeLessThanOrEqual(203); // 200 chars + '…' (3 bytes but 1 char)
       expect(createArg.message.endsWith('…')).toBe(true);
     });
+
+    it('stores the conversationId on relatedEntityId so the bell can deep-link', async () => {
+      mockNotificationRepository.create.mockReturnValue(mockNotification);
+      mockNotificationRepository.save.mockResolvedValue(mockNotification);
+
+      await service.createMessageNotification(USER_ID, 'Alice', 'hi', 'msg-1', 'conv-42');
+
+      expect(mockNotificationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: NotificationType.MESSAGE,
+          relatedMessageId: 'msg-1',
+          relatedEntityId:  'conv-42',
+        }),
+      );
+    });
   });
 
   // ─── createSystemNotification ─────────────────────────────────────────────────

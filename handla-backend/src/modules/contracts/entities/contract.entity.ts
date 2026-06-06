@@ -40,6 +40,15 @@ export class Contract {
   @Column({ type: 'text' })
   body: string;
 
+  // ─── Structured contract details (added 2026-06) ────────────────────────────
+  // Optional JSON blob holding the full structured form: client info, project
+  // scope, payment milestones, warranty, IP, NDA, hosting flags, termination
+  // terms, signatures, etc. When non-null, `body` is auto-generated from this
+  // payload by the service so the HTML template + PDF flow keep working.
+  // See ContractDetailsDto in dto/ for the shape.
+  @Column({ name: 'details', type: 'json', nullable: true, default: null })
+  details: Record<string, any> | null;
+
   // ─── FK: Client (CASCADE) ──────────────────────────────────────────────────
   @Column({ name: 'client_id', type: 'varchar', length: 36 })
   @Index('idx_contracts_client_id')
