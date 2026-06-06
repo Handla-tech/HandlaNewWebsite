@@ -9,10 +9,18 @@ const API_URL =
 
 // ─── Create the shared Axios instance ────────────────────────────────────────
 
+// 60s is generous enough to cover:
+//   • cold-start backends (first request hits DB connection pool warm-up)
+//   • aggregate dashboard queries that scan many tables
+//   • slow corporate networks or mobile data
+// Per-call timeouts can still be set via the axios config when needed
+// (e.g. uploads use a much longer timeout managed by the upload helper).
+const DEFAULT_TIMEOUT_MS = 60_000;
+
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true,      // send httpOnly cookies automatically
-  timeout: 15_000,
+  timeout: DEFAULT_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -59,7 +67,40 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      _timeoutRetry?: boolean;
     };
+
+    // ── Transparent retry on transient network timeouts (idempotent GETs only) ──
+    //
+    // Many "AxiosError: timeout of Xms exceeded" reports are transient hiccups
+    // (cold backend, network blip). Retry exactly ONCE for safe HTTP verbs so
+    // the user doesn't see a runtime error for a recoverable failure. We do
+    // NOT retry POST/PATCH/DELETE — re-issuing them could create duplicate
+    // resources (the very bug we just fixed in chat conversation create).
+    const isTimeoutOrNetwork =
+      error.code === 'ECONNABORTED' ||  // axios timeout
+      error.code === 'ETIMEDOUT'  ||
+      error.code === 'ERR_NETWORK' ||
+      (typeof error.message === 'string' && error.message.toLowerCase().includes('timeout'));
+    const method = (originalRequest?.method || 'get').toLowerCase();
+    const isIdempotent = method === 'get' || method === 'head' || method === 'options';
+
+    if (
+      originalRequest &&
+      isTimeoutOrNetwork &&
+      isIdempotent &&
+      !originalRequest._timeoutRetry
+    ) {
+      originalRequest._timeoutRetry = true;
+      // Brief backoff helps if the server is briefly overloaded
+      await new Promise((r) => setTimeout(r, 500));
+      try {
+        return await api(originalRequest);
+      } catch (retryErr) {
+        // Fall through to normal error handling below
+        error = retryErr as AxiosError;
+      }
+    }
 
     // Only attempt refresh on 401 that hasn't already been retried
     if (
@@ -293,6 +334,28 @@ export const expensesApi = {
   updateExpense:  (id: string, data: object)     => api.patch(`/erp/expenses/${id}`, data),
   /** DELETE /erp/expenses/:id — ADMIN, manual only */
   deleteExpense:  (id: string)                   => api.delete(`/erp/expenses/${id}`),
+};
+
+// ─── Profiles API (all authenticated users) ──────────────────────────────────
+//
+// Routes (backend ProfilesController):
+//   GET    /profiles/me                 — own profile
+//   PATCH  /profiles/me                 — update own profile
+//   POST   /profiles/me/avatar-upload   — presigned S3 URL for avatar upload
+//   GET    /profiles/:id                — owner OR ADMIN
+//   PATCH  /profiles/:id                — owner OR ADMIN
+
+export const profilesApi = {
+  /** GET /profiles/me — own profile */
+  getMe:                () => api.get('/profiles/me'),
+  /** PATCH /profiles/me — update own profile (partial) */
+  updateMe:             (data: object) => api.patch('/profiles/me', data),
+  /** POST /profiles/me/avatar-upload — { fileName, contentType } → presigned URL */
+  getAvatarUploadUrl:   (data: object) => api.post('/profiles/me/avatar-upload', data),
+  /** GET /profiles/:id — owner OR ADMIN */
+  getOne:               (id: string) => api.get(`/profiles/${id}`),
+  /** PATCH /profiles/:id — owner OR ADMIN */
+  update:               (id: string, data: object) => api.patch(`/profiles/${id}`, data),
 };
 
 // ─── ERP-10: Dashboard ────────────────────────────────────────────────────────

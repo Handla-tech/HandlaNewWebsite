@@ -40,6 +40,7 @@ import { ContractsModule } from './modules/contracts/contracts.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     InvoicesModule,
     ExpensesModule,
     DashboardModule,
+    ProfilesModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────

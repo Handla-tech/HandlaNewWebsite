@@ -12,7 +12,8 @@ import { useChat }   from '@/hooks/useChat';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
 import { markRead }  from '@/lib/socket';
-import { getInitials, getAvatarColor, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import Avatar from '@/components/ui/Avatar';
 import type { Conversation, User, ConversationStatus } from '@/types';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -49,24 +50,6 @@ function OnlineDot({ online }: { online: boolean }) {
     </span>
   ) : (
     <Circle className="h-2.5 w-2.5 text-[#555] fill-[#555]" />
-  );
-}
-
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-
-function Avatar({ user, size = 'sm' }: { user: User; size?: 'sm' | 'md' }) {
-  const dim = size === 'md' ? 'h-10 w-10 text-sm' : 'h-8 w-8 text-xs';
-  return (
-    <div
-      className={cn(
-        'flex flex-shrink-0 items-center justify-center rounded-full font-bold text-white',
-        dim,
-        getAvatarColor(user.id),
-      )}
-      title={user.name}
-    >
-      {getInitials(user.name)}
-    </div>
   );
 }
 
@@ -111,10 +94,15 @@ export default function ChatWindow({ conversation, onClose }: ChatWindowProps) {
   const partnerOnline = partner ? onlineUsers.has(partner.id) : false;
 
   // ── Build participants map (id → User) ────────────────────────────────────
+  // Includes assignedEmployee so EMPLOYEE messages render with the correct
+  // name + avatar instead of a "?" fallback. MessageList ALSO falls back to
+  // msg.sender if the senderId isn't in this map (covers historic messages
+  // from employees no longer assigned to the conversation).
   const participants = useMemo<Record<string, User>>(() => {
     const map: Record<string, User> = {};
-    if (conversation.admin)  map[conversation.admin.id]  = conversation.admin;
-    if (conversation.client) map[conversation.client.id] = conversation.client;
+    if (conversation.admin)             map[conversation.admin.id]             = conversation.admin;
+    if (conversation.client)            map[conversation.client.id]            = conversation.client;
+    if (conversation.assignedEmployee)  map[conversation.assignedEmployee.id]  = conversation.assignedEmployee;
     return map;
   }, [conversation]);
 

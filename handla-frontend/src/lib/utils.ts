@@ -182,14 +182,27 @@ export function getErrorMessage(error: unknown): string {
   if (error && typeof error === 'object') {
     // Axios error
     const axiosError = error as {
+      code?: string;
       response?: { data?: { message?: string | string[] } };
       message?: string;
     };
 
+    // Prefer server-supplied message if one was sent
     const msg = axiosError.response?.data?.message;
     if (Array.isArray(msg)) return msg[0];
     if (typeof msg === 'string') return msg;
-    if (axiosError.message) return axiosError.message;
+
+    // Friendly translations for common network failures
+    const code = axiosError.code;
+    const rawMsg = axiosError.message ?? '';
+    if (code === 'ECONNABORTED' || code === 'ETIMEDOUT' || rawMsg.toLowerCase().includes('timeout')) {
+      return 'The request is taking longer than expected. Please check your connection and try again.';
+    }
+    if (code === 'ERR_NETWORK') {
+      return 'Cannot reach the server. Please check your internet connection.';
+    }
+
+    if (rawMsg) return rawMsg;
   }
 
   return 'An unexpected error occurred.';

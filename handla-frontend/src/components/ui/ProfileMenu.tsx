@@ -182,6 +182,21 @@ export default function ProfileMenu() {
                 </Link>
               )}
 
+              {/* My Profile */}
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-xs font-medium text-[#b0b0b0] hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-lg flex-shrink-0"
+                  style={{ background: 'rgba(99,102,241,0.10)' }}
+                >
+                  <User className="w-3 h-3 text-indigo-300" />
+                </span>
+                My Profile
+              </Link>
+
               {/* Back to Website */}
               <Link
                 href="/"

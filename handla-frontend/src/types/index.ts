@@ -36,11 +36,31 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  // ─── Profile fields (added 2026-06 with Profiles module) ──────────────
+  // All optional / nullable — pre-existing users may have NULL.
+  avatarUrl?: string | null;
+  bio?: string | null;
+  phoneNumber?: string | null;
+  jobTitle?: string | null;
+  company?: string | null;
+  location?: string | null;
   isArchived: boolean;
   archivedAt: string | null;
   isDisabled: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Payload for PATCH /profiles/me and PATCH /profiles/:id — all fields optional. */
+export interface UpdateProfilePayload {
+  name?: string;
+  email?: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  phoneNumber?: string | null;
+  jobTitle?: string | null;
+  company?: string | null;
+  location?: string | null;
 }
 
 export interface Conversation {

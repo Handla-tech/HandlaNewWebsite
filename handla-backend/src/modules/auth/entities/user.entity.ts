@@ -37,6 +37,36 @@ export class User {
   })
   role: UserRole;
 
+  // ─── Profile fields (added 2026-06 via AddProfileFieldsToUsers migration) ──
+  //
+  // All optional — pre-existing users have NULL until they fill out their
+  // profile. avatarUrl points to an S3 object uploaded via the Profiles
+  // module presigned-URL flow.
+
+  /** Public profile picture URL (S3) — used for chat avatars, user lists, etc. */
+  @Column({ name: 'avatar_url', type: 'varchar', length: 2048, nullable: true, default: null })
+  avatarUrl: string | null;
+
+  /** Short bio shown on the user's profile page (max 500 chars). */
+  @Column({ name: 'bio', type: 'varchar', length: 500, nullable: true, default: null })
+  bio: string | null;
+
+  /** Contact phone number (free-form, not validated server-side for now). */
+  @Column({ name: 'phone_number', type: 'varchar', length: 32, nullable: true, default: null })
+  phoneNumber: string | null;
+
+  /** Job title — useful for EMPLOYEE / ADMIN profiles displayed in chat. */
+  @Column({ name: 'job_title', type: 'varchar', length: 120, nullable: true, default: null })
+  jobTitle: string | null;
+
+  /** Company / organisation name (shown on CLIENT profiles primarily). */
+  @Column({ name: 'company', type: 'varchar', length: 120, nullable: true, default: null })
+  company: string | null;
+
+  /** Free-form location string (city, country, etc.). */
+  @Column({ name: 'location', type: 'varchar', length: 120, nullable: true, default: null })
+  location: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 

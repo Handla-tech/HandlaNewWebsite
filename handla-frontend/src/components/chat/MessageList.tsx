@@ -8,8 +8,9 @@ import {
   File, FileText, FileSpreadsheet, FileArchive, FileImage,
   FileSignature, Receipt, FolderOpen,
 } from 'lucide-react';
-import { formatTime, getDateLabel, getInitials, getAvatarColor, cn } from '@/lib/utils';
+import { formatTime, getDateLabel, cn } from '@/lib/utils';
 import { isImageType, formatFileSize } from '@/lib/s3-uploader';
+import Avatar from '@/components/ui/Avatar';
 import type { Message, User } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -333,17 +334,19 @@ export default function MessageList({
                 )}
               >
                 {/* ── Avatar / spacer ──────────────────────────────── */}
+                {/*
+                  Fallback chain for the sender:
+                    1) participants map (admin / client / assignedEmployee on
+                       the conversation — keeps avatars consistent in the header)
+                    2) msg.sender (eagerly loaded on every Message — guarantees
+                       a real avatar for EMPLOYEEs that aren't in the
+                       participants map, e.g. a different employee chimed in
+                       on the same conversation)
+                  Without (2) the avatar fell back to "?" for every employee.
+                */}
                 {!isOwn ? (
                   showAvatar ? (
-                    <div
-                      className={cn(
-                        'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white',
-                        sender ? getAvatarColor(sender.id) : 'bg-[#2a2a2a]',
-                      )}
-                      title={sender?.name}
-                    >
-                      {sender ? getInitials(sender.name) : '?'}
-                    </div>
+                    <Avatar user={sender ?? msg.sender ?? null} size="sm" />
                   ) : (
                     <div className="w-7 flex-shrink-0" />
                   )
@@ -357,9 +360,9 @@ export default function MessageList({
                   )}
                 >
                   {/* Sender name (others only, first in group) */}
-                  {!isOwn && showAvatar && sender && (
+                  {!isOwn && showAvatar && (sender ?? msg.sender) && (
                     <p className="text-[10px] font-semibold text-[#888] px-1">
-                      {sender.name}
+                      {(sender ?? msg.sender)!.name}
                     </p>
                   )}
 
