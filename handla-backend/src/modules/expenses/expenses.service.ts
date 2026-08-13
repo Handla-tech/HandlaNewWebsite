@@ -5,7 +5,15 @@ import { Repository, IsNull, Not } from 'typeorm';
 import { Expense } from './entities/expense.entity';
 import { Invoice } from '../invoices/entities/invoice.entity';
 import { User } from '../auth/entities/user.entity';
-import { ExpenseType, InvoicePaymentStatus, UserRole } from '../../common/enums';
+import {
+  ExpenseType,
+  InvoicePaymentStatus,
+  UserRole,
+  LedgerDirection,
+  LedgerSourceType,
+} from '../../common/enums';
+import { AccountingService } from '../accounting/accounting.service';
+import { AccountingSeeder } from '../accounting/accounting.seeder';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ExpensesQueryDto } from './dto/expenses-query.dto';
@@ -48,7 +56,38 @@ export class ExpensesService {
     private readonly expenseRepo: Repository<Expense>,
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
+    private readonly accountingService: AccountingService,
   ) {}
+
+  /**
+   * Posts an expense/income row to the unified accounting ledger.
+   * Idempotent on (EXPENSE, expense.id). Fire-and-forget safe.
+   */
+  private async postToLedger(
+    expense: Expense,
+    opts: { clientId?: string | null } = {},
+  ): Promise<void> {
+    try {
+      const isIncome = expense.type === ExpenseType.INCOME;
+      const accountCode = isIncome
+        ? AccountingSeeder.CODE_SERVICES_INCOME
+        : AccountingSeeder.CODE_OTHER_EXPENSE;
+      await this.accountingService.record({
+        entryDate: expense.expenseDate,
+        accountCode,
+        clientId: opts.clientId ?? null,
+        direction: isIncome ? LedgerDirection.IN : LedgerDirection.OUT,
+        amount: Number(expense.amount),
+        currency: expense.currency ?? null,
+        sourceType: LedgerSourceType.EXPENSE,
+        sourceId: expense.id,
+        description: expense.description ?? expense.category,
+        ownerId: expense.ownerId,
+      });
+    } catch (err) {
+      this.logger.warn(`postToLedger failed for expense ${expense.id}: ${(err as Error).message}`);
+    }
+  }
 
   // ─── findAll ──────────────────────────────────────────────────────────────
 
@@ -129,6 +168,9 @@ export class ExpensesService {
       `Expense created: ${saved.id} type=${saved.type} amount=${saved.amount} by=${actingUser.id}`,
     );
 
+    // Post to the unified accounting ledger (manual entries have no client)
+    void this.postToLedger(saved, { clientId: null });
+
     return saved;
   }
 
@@ -168,6 +210,10 @@ export class ExpensesService {
     this.logger.log(
       `Auto-income created: ${saved.id} for invoice ${invoice.invoiceNumber} amount=${saved.amount}`,
     );
+
+    // Post income to the unified ledger, tagged with the invoice's client so it
+    // appears in that client's statement.
+    void this.postToLedger(saved, { clientId: invoice.clientId ?? null });
 
     return saved;
   }

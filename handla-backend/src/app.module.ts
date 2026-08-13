@@ -24,6 +24,8 @@ import { Contract } from './modules/contracts/entities/contract.entity';
 import { Invoice } from './modules/invoices/entities/invoice.entity';
 import { InvoiceLineItem } from './modules/invoices/entities/invoice-line-item.entity';
 import { Expense } from './modules/expenses/entities/expense.entity';
+import { Account } from './modules/accounting/entities/account.entity';
+import { LedgerEntry } from './modules/accounting/entities/ledger-entry.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -41,6 +43,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 
 @Module({
   imports: [
@@ -60,7 +63,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry],
       }),
     }),
 
@@ -79,6 +82,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     ExpensesModule,
     DashboardModule,
     ProfilesModule,
+    AccountingModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────

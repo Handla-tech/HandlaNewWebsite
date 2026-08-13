@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { SelectQueryBuilder } from 'typeorm';
 
 import { ExpensesService } from '../expenses.service';
+import { AccountingService } from '../../accounting/accounting.service';
 import { Expense } from '../entities/expense.entity';
 import { Invoice } from '../../invoices/entities/invoice.entity';
 import { User } from '../../auth/entities/user.entity';
@@ -126,6 +127,7 @@ describe('ExpensesService', () => {
         ExpensesService,
         { provide: getRepositoryToken(Expense), useFactory: mockExpenseRepo },
         { provide: getRepositoryToken(Invoice), useFactory: mockInvoiceRepo },
+        { provide: AccountingService, useValue: { record: jest.fn().mockResolvedValue(null) } },
       ],
     }).compile();
 

@@ -38,23 +38,20 @@
 ## PHASE 1 — Accounting Hub  🔴
 Central place where **all money movements** live, plus a **ledger per client**.
 
-### Backend
-- [ ] Enums: `AccountType` (ASSET, LIABILITY, INCOME, EXPENSE, EQUITY), `LedgerDirection` (DEBIT/CREDIT or simply IN/OUT), `LedgerSourceType` (INVOICE, EXPENSE, PURCHASE, MANUAL, QUOTATION).
-- [ ] Entity `Account` (Chart of Accounts): id, name, code, type, parentId (nullable, for sub-accounts), currency (optional), isActive.
-- [ ] Entity `LedgerEntry` (unified transaction ledger): id, date, accountId, clientId (nullable), direction (IN/OUT), amount, currency (optional), sourceType, sourceId (invoice/expense/purchase id), description, ownerId, createdAt.
-- [ ] Seed a default Chart of Accounts (Sales/Services Income, Software Subscriptions, Salaries, Hosting, Taxes Payable, Accounts Receivable, Accounts Payable, Cash/Bank…).
-- [ ] Service:
-  - `record()` — generic ledger writer (idempotent per sourceType+sourceId).
-  - Auto-hooks: paid **Invoice** → IN entry (Income); **Expense** created → OUT entry; paid **Purchase** → OUT entry (see Phase 2).
-  - `getClientLedger(clientId)` — chronological statement + running balance (what they owe / have paid).
-  - `getAccountBalance(accountId, {from,to,currency})`.
-  - `getGeneralLedger({from,to,accountId,clientId,sourceType})`.
-- [ ] Controller `/api/accounting`:
-  - `GET /accounts`, `POST /accounts`, `PATCH /accounts/:id`, `DELETE /accounts/:id`
-  - `GET /ledger` (filters), `POST /ledger` (manual entry), `DELETE /ledger/:id` (manual only)
-  - `GET /clients/:clientId/ledger` (statement + running balance + totals)
-- [ ] Backfill: on migration, generate ledger entries from existing paid invoices + expenses.
-- [ ] Tests.
+### Backend  ✅ DONE
+- [x] Enums: `AccountType` (ASSET, LIABILITY, INCOME, EXPENSE, EQUITY), `LedgerDirection` (IN/OUT), `LedgerSourceType` (INVOICE, EXPENSE, PURCHASE, QUOTATION, MANUAL).
+- [x] Entity `Account` (Chart of Accounts): code (unique), name, type, parentId, currency (optional), isSystem, isActive.
+- [x] Entity `LedgerEntry` (unified transaction ledger): entryDate, accountId, clientId (nullable), direction, amount, currency (optional), sourceType, sourceId, description, ownerId. UNIQUE(sourceType, sourceId) for idempotency.
+- [x] Seed default Chart of Accounts (AccountingSeeder, `isSystem` accounts, runs on init).
+- [x] Service:
+  - [x] `record()` — generic idempotent ledger writer (resolve account by code/id, dedupe on source).
+  - [x] Hook: **Expense** created → OUT entry; **paid Invoice** → IN entry tagged with client (via ExpensesService.postToLedger). Purchase hook wired in Phase 2.
+  - [x] `getClientLedger(clientId)` — chronological statement + running balance + totals by currency.
+  - [x] `getAccountBalance(accountId, {from,to})`.
+  - [x] `findLedger()` general ledger with filters + pagination; manual entry create/delete.
+- [x] Controller `/api/accounting`: accounts CRUD + balance, ledger query/manual, `clients/:id/ledger`.
+- [x] Tests (9 passing; full suite 692 green).
+- [ ] Backfill migration for pre-existing paid invoices/expenses (deferred — dev uses synchronize; will add with prod migration set).
 
 ### Frontend
 - [ ] `/erp/accounting` — Chart of Accounts manager + general ledger table (filters, export CSV).

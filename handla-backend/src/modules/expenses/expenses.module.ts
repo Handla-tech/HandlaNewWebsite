@@ -8,6 +8,7 @@ import { User } from '../auth/entities/user.entity';
 import { ExpensesService } from './expenses.service';
 import { ExpensesController } from './expenses.controller';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { AccountingModule } from '../accounting/accounting.module';
 
 /**
  * ERP-8 — ExpensesModule
@@ -24,6 +25,7 @@ import { InvoicesModule } from '../invoices/invoices.module';
   imports: [
     TypeOrmModule.forFeature([Expense, Invoice, User]),
     forwardRef(() => InvoicesModule),
+    AccountingModule,
   ],
   providers: [ExpensesService],
   controllers: [ExpensesController],
