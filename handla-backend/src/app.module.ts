@@ -29,6 +29,8 @@ import { LedgerEntry } from './modules/accounting/entities/ledger-entry.entity';
 import { Supplier } from './modules/suppliers/entities/supplier.entity';
 import { Purchase } from './modules/purchases/entities/purchase.entity';
 import { PurchaseLineItem } from './modules/purchases/entities/purchase-line-item.entity';
+import { Quotation } from './modules/quotations/entities/quotation.entity';
+import { QuotationLineItem } from './modules/quotations/entities/quotation-line-item.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -49,6 +51,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
+import { QuotationsModule } from './modules/quotations/quotations.module';
 
 @Module({
   imports: [
@@ -68,7 +71,7 @@ import { PurchasesModule } from './modules/purchases/purchases.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem],
       }),
     }),
 
@@ -90,6 +93,7 @@ import { PurchasesModule } from './modules/purchases/purchases.module';
     AccountingModule,
     SuppliersModule,
     PurchasesModule,
+    QuotationsModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────
