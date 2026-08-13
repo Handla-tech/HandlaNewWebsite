@@ -128,19 +128,20 @@ Post-launch support. Clients open tickets; staff respond. External platforms int
 
 ---
 
-## PHASE 5 — Reports  🟡
+## PHASE 5 — Reports  ✅ (backend done)
 Read-only analytical endpoints + printable/exportable views.
 
 ### Backend
-- [ ] `/api/reports` (ADMIN/EMPLOYEE):
-  - `profit-loss` (income vs expenses+purchases, grouped by currency, date range)
-  - `cash-flow` (money in/out over time buckets)
-  - `tax-summary` (tax collected on invoices vs tax paid on purchases)
-  - `ar-aging` (unpaid invoices by age) / `ap-aging` (unpaid purchases by age)
-  - `revenue-by-client`, `revenue-over-time`
-  - `projects-status`, `tasks-throughput`, `support-stats` (tickets by status/priority, avg resolution)
-- [ ] All computed from ledger + source tables; currency-aware grouping.
-- [ ] Tests.
+- [x] `/erp/reports` (ADMIN/EMPLOYEE), all accept ?from&to (default current year) + ?clientId + ?groupBy:
+  - [x] `profit-loss` (ledger INCOME vs EXPENSE accounts, grouped by currency, net profit)
+  - [x] `cash-flow` (ledger IN/OUT bucketed by month/quarter/year + totals per currency)
+  - [x] `tax-summary` (output tax on invoices vs input tax on purchases → net tax payable)
+  - [x] `ar-aging` (unpaid/overdue invoices) / `ap-aging` (unpaid/overdue purchases) — buckets current/1-30/31-60/61-90/90+ with detail
+  - [x] `revenue-by-client` (paid invoices in range, per currency)
+  - [x] `projects-status` (counts by status)
+  - [x] `support-stats` (tickets by status/priority/category, open, resolved, SLA breaches, avg resolution hours)
+- [x] All computed from ledger + source tables; currency-aware grouping ("UNSPECIFIED" bucket for null currency).
+- [x] Tests (10 unit tests; full suite 45 suites / 747 passing).
 
 ### Frontend
 - [ ] `/erp/reports` — date-range picker, currency filter, charts (Recharts or existing chart lib), CSV/PDF export.

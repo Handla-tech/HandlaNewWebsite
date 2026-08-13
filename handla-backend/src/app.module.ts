@@ -56,6 +56,7 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { SupportModule } from './modules/support/support.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { SupportModule } from './modules/support/support.module';
     PurchasesModule,
     QuotationsModule,
     SupportModule,
+    ReportsModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────
