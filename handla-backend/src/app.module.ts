@@ -31,6 +31,9 @@ import { Purchase } from './modules/purchases/entities/purchase.entity';
 import { PurchaseLineItem } from './modules/purchases/entities/purchase-line-item.entity';
 import { Quotation } from './modules/quotations/entities/quotation.entity';
 import { QuotationLineItem } from './modules/quotations/entities/quotation-line-item.entity';
+import { Ticket } from './modules/support/entities/ticket.entity';
+import { TicketReply } from './modules/support/entities/ticket-reply.entity';
+import { ClientApiKey } from './modules/support/entities/client-api-key.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -52,6 +55,7 @@ import { AccountingModule } from './modules/accounting/accounting.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
+import { SupportModule } from './modules/support/support.module';
 
 @Module({
   imports: [
@@ -71,7 +75,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey],
       }),
     }),
 
@@ -94,6 +98,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
     SuppliersModule,
     PurchasesModule,
     QuotationsModule,
+    SupportModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────

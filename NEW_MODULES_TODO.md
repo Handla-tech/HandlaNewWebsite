@@ -102,22 +102,24 @@ Quote → accept → auto draft Contract + Invoice. Public accept/reject.
 
 ---
 
-## PHASE 4 — Support / Ticketing  🔴
+## PHASE 4 — Support / Ticketing  ✅ (backend done)
 Post-launch support. Clients open tickets; staff respond. External platforms integrate via API key.
 
 ### Backend
-- [ ] Enums: `TicketStatus` (OPEN, IN_PROGRESS, WAITING_CUSTOMER, RESOLVED, CLOSED), `TicketPriority` (LOW, MEDIUM, HIGH, URGENT), `TicketCategory` (BUG, FEATURE, QUESTION, BILLING, OTHER).
-- [ ] Entity `Ticket`: id, ticketNumber (TCK-YYYY-NNNN), subject, description, status, priority, category, clientId, projectId (nullable), assigneeId (staff, nullable), createdById, source (WEB/API/EMAIL), lastReplyAt, closedAt.
-- [ ] Entity `TicketReply`: id, ticketId, authorId (nullable for API/system), body, attachments (json), isInternalNote (staff-only), createdAt.
-- [ ] Entity `ClientApiKey`: id, clientId, keyHash, label, lastUsedAt, isActive, createdAt. (Raw key shown once.)
-- [ ] Service: CRUD, assign, status transitions, reply (client + staff + internal note), attachments via S3 presigned. API-key auth path for programmatic ticket creation.
-- [ ] Controllers:
-  - `/api/support/tickets` (staff: all; client: own) + replies.
-  - `/api/support/api-keys` (staff issues/revokes per client).
-  - `/api/support/ingest` — **API-key authenticated** endpoint for external platforms to open/append tickets (guarded by `ApiKeyGuard`).
-- [ ] `ApiKeyGuard` (validates `X-Handla-Key` header → resolves client).
-- [ ] Notifications + email on new ticket / new reply.
-- [ ] Tests.
+- [x] Enums: `TicketStatus` (OPEN, IN_PROGRESS, WAITING_CUSTOMER, RESOLVED, CLOSED), `TicketPriority` (LOW, MEDIUM, HIGH, URGENT), `TicketCategory` (BUG, FEATURE, QUESTION, BILLING, OTHER), `TicketSource` (WEB, API, EMAIL).
+- [x] Entity `Ticket`: id, ticketNumber (TKT-YYYY-NNNN), subject, description, status, priority, category, clientId, projectId (nullable), assigneeId (nullable), reporterId, source, attachments (json), SLA fields (firstResponseDueAt, resolveDueAt, firstRespondedAt, resolvedAt, closedAt).
+- [x] Entity `TicketReply`: id, ticketId, authorId (nullable for API), authorName, body, attachments (json), isInternal (staff-only), createdAt.
+- [x] Entity `ClientApiKey`: id, clientId, label, keyHash (sha256), prefix, isActive, lastUsedAt, createdBy. (Raw key shown once at creation.)
+- [x] Service: role-scoped CRUD, assign, status transitions (+resolvedAt/closedAt stamps), threaded replies (client + staff + internal note; client-reply reopen; first-staff-reply stamps SLA), **priority-based SLA windows** (URGENT 1h/8h … LOW 24h/168h) with read-time `slaBreached`, per-client API-key issue/list/revoke, programmatic ingest (ticket + reply), stats.
+- [x] Controllers:
+  - `/erp/support` (staff: in-scope; client: own) — tickets, replies, update/assign/status, delete (ADMIN), stats.
+  - `/erp/support/api-keys` (staff issues/lists/revokes per client; plaintext returned once).
+  - `/api/support/tickets` + `/api/support/tickets/:id/replies` + `/api/support/ping` — **API-key authenticated** ingest for external platforms (guarded by `ApiKeyGuard`).
+- [x] `ApiKeyGuard` (validates `Authorization: Bearer` or `X-Api-Key` → resolves client, bumps lastUsedAt) + `@ApiKeyClient()` decorator.
+- [x] Notifications on new ticket / new reply / status change.
+- [x] Tests (18 unit tests; full suite 737 passing).
+- [ ] Email on new ticket / reply _(deferred — optional; notifications in place)_.
+- [ ] Attachments via S3 presigned _(currently accepts pre-uploaded URLs; presign deferred)_.
 
 ### Frontend
 - [ ] `/erp/support` — staff ticket queue (filters: status/priority/assignee/client), ticket detail with threaded replies + internal notes, assign, status change.
