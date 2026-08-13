@@ -62,6 +62,14 @@ export class Expense {
   @JoinColumn({ name: 'invoice_id' })
   invoice: Invoice | null;
 
+  // ─── FK: purchase (nullable — set for auto-expense entries from paid POs) ──
+  // No relation object to avoid a hard dependency cycle with PurchasesModule;
+  // the id is sufficient for idempotency + tracing.
+
+  @Column({ name: 'purchase_id', type: 'varchar', length: 36, nullable: true })
+  @Index('idx_expenses_purchase_id')
+  purchaseId: string | null;
+
   // ─── FK: owner (employee/admin who created the entry) ──────────────────────
 
   @Column({ name: 'owner_id', type: 'varchar', length: 36, nullable: true })

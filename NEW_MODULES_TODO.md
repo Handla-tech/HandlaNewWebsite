@@ -62,15 +62,17 @@ Central place where **all money movements** live, plus a **ledger per client**.
 ## PHASE 2 — Purchases  🔴
 Money going out: suppliers, purchase orders, bills. Mirror of invoices.
 
-### Backend
-- [ ] Enums: `PurchaseStatus` (DRAFT, ORDERED, RECEIVED, CANCELLED), `PurchasePaymentStatus` (UNPAID, PAID, OVERDUE).
-- [ ] Entity `Supplier`: id, name, company, email, phone, taxId, address, notes, isActive.
-- [ ] Entity `Purchase` (PO/Bill): id, purchaseNumber (PO-YYYY-NNNN), supplierId, status, paymentStatus, subtotal, taxRate, taxAmount, total, currency (optional), orderDate, dueDate, paidAt, notes, ownerId.
-- [ ] Entity `PurchaseLineItem`: description, qty, unitPrice, lineTotal.
-- [ ] Service: CRUD, thread-safe number generation, `markAsPaid()` → **auto-create Expense** (category from account) → which cascades to ledger OUT entry (Phase 1 hook). Overdue scheduler (daily) like invoices.
-- [ ] Controller `/api/purchases` + `/api/suppliers` (ADMIN/EMPLOYEE).
-- [ ] Purchase PDF (reuse invoice PDF infra).
-- [ ] Tests.
+### Backend  ✅ DONE
+- [x] Enums: `PurchaseStatus` (DRAFT, ORDERED, RECEIVED, CANCELLED), `PurchasePaymentStatus` (UNPAID, PAID, OVERDUE).
+- [x] Entity `Supplier`: name, company, email, phone, taxId, address, notes, isActive.
+- [x] Entity `Purchase` (PO/Bill): purchaseNumber (PO-YYYY-NNNN), supplierId, status, paymentStatus, subtotal, taxRate, taxAmount, total, currency (optional), accountCode (which expense account to book to), orderDate, dueDate, paidAt, notes, ownerId.
+- [x] Entity `PurchaseLineItem`: description, qty, unitPrice, lineTotal (immutable snapshot).
+- [x] SuppliersService + SuppliersController (CRUD, search, ADMIN/EMPLOYEE; delete ADMIN).
+- [x] PurchasesService: CRUD, thread-safe PO number generation, `markAsPaid()` → `ExpensesService.createFromPaidPurchase()` → EXPENSE (idempotent on purchaseId) → ledger OUT entry booked to the purchase's `accountCode`. Overdue scheduler at 2am.
+- [x] Controller `/api/purchases` (+ mark-paid) and `/api/suppliers`.
+- [x] Expense entity extended with `purchaseId`; auto-entries (invoice OR purchase) are read-only.
+- [x] Tests (13 new; full suite 705 green).
+- [ ] Purchase PDF — deferred to the frontend/PDF phase (reuse invoice PDF infra).
 
 ### Frontend
 - [ ] `/erp/suppliers` — supplier CRUD.

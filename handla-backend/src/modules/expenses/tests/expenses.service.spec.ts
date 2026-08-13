@@ -71,6 +71,7 @@ function makeExpense(overrides: Partial<Expense> = {}): Expense {
     expenseDate: '2026-06-01',
     invoiceId:   null,
     invoice:     null,
+    purchaseId:  null,
     ownerId:     'user-1',
     owner:       makeUser(),
     createdAt:   new Date('2026-06-01'),

@@ -65,13 +65,15 @@ export class ExpensesService {
    */
   private async postToLedger(
     expense: Expense,
-    opts: { clientId?: string | null } = {},
+    opts: { clientId?: string | null; accountCode?: string | null } = {},
   ): Promise<void> {
     try {
       const isIncome = expense.type === ExpenseType.INCOME;
-      const accountCode = isIncome
-        ? AccountingSeeder.CODE_SERVICES_INCOME
-        : AccountingSeeder.CODE_OTHER_EXPENSE;
+      const accountCode =
+        opts.accountCode ??
+        (isIncome
+          ? AccountingSeeder.CODE_SERVICES_INCOME
+          : AccountingSeeder.CODE_OTHER_EXPENSE);
       await this.accountingService.record({
         entryDate: expense.expenseDate,
         accountCode,
@@ -87,6 +89,62 @@ export class ExpensesService {
     } catch (err) {
       this.logger.warn(`postToLedger failed for expense ${expense.id}: ${(err as Error).message}`);
     }
+  }
+
+  // ─── createFromPaidPurchase ───────────────────────────────────────────────
+  /**
+   * Internal method — called by PurchasesService.markAsPaid().
+   * Creates an EXPENSE entry linked to the paid purchase and books it to the
+   * purchase's chosen expense account (accountCode) in the ledger.
+   * Idempotent on purchaseId. Typed structurally to avoid a module cycle.
+   */
+  async createFromPaidPurchase(
+    purchase: {
+      id: string;
+      purchaseNumber: string;
+      total: number;
+      currency: string | null;
+      accountCode: string | null;
+    },
+    ownerId: string,
+  ): Promise<Expense | null> {
+    const existing = await this.expenseRepo.findOne({
+      where: { purchaseId: purchase.id },
+    });
+    if (existing) {
+      this.logger.warn(
+        `createFromPaidPurchase: expense already exists for purchase ${purchase.purchaseNumber} — skipping`,
+      );
+      return null;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const expense = this.expenseRepo.create({
+      type:        ExpenseType.EXPENSE,
+      category:    'Purchase Payment',
+      amount:      Number(purchase.total),
+      currency:    purchase.currency ?? null,
+      description: `Auto-expense: ${purchase.purchaseNumber}`,
+      expenseDate: today,
+      invoiceId:   null,
+      purchaseId:  purchase.id,
+      ownerId,
+    });
+
+    const saved = await this.expenseRepo.save(expense);
+
+    this.logger.log(
+      `Auto-expense created: ${saved.id} for purchase ${purchase.purchaseNumber} amount=${saved.amount}`,
+    );
+
+    // Book to the purchase's expense account (falls back to Other Expense).
+    void this.postToLedger(saved, {
+      clientId: null,
+      accountCode: purchase.accountCode ?? null,
+    });
+
+    return saved;
   }
 
   // ─── findAll ──────────────────────────────────────────────────────────────
@@ -223,10 +281,10 @@ export class ExpensesService {
   async update(id: string, dto: UpdateExpenseDto, user: User): Promise<Expense> {
     const expense = await this.findOne(id, user);
 
-    // Invoice-linked entries are read-only
-    if (expense.invoiceId !== null) {
+    // Auto-generated (invoice/purchase-linked) entries are read-only
+    if (expense.invoiceId !== null || expense.purchaseId !== null) {
       throw new AppException(
-        'Cannot edit auto-generated income entries.',
+        'Cannot edit auto-generated income/expense entries.',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
@@ -257,9 +315,9 @@ export class ExpensesService {
       throw new ResourceNotFoundException('Expense', id);
     }
 
-    if (expense.invoiceId !== null) {
+    if (expense.invoiceId !== null || expense.purchaseId !== null) {
       throw new AppException(
-        'Cannot delete auto-generated income entries.',
+        'Cannot delete auto-generated income/expense entries.',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }

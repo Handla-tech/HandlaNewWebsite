@@ -26,6 +26,9 @@ import { InvoiceLineItem } from './modules/invoices/entities/invoice-line-item.e
 import { Expense } from './modules/expenses/entities/expense.entity';
 import { Account } from './modules/accounting/entities/account.entity';
 import { LedgerEntry } from './modules/accounting/entities/ledger-entry.entity';
+import { Supplier } from './modules/suppliers/entities/supplier.entity';
+import { Purchase } from './modules/purchases/entities/purchase.entity';
+import { PurchaseLineItem } from './modules/purchases/entities/purchase-line-item.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -44,6 +47,8 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
 
 @Module({
   imports: [
@@ -63,7 +68,7 @@ import { AccountingModule } from './modules/accounting/accounting.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem],
       }),
     }),
 
@@ -83,6 +88,8 @@ import { AccountingModule } from './modules/accounting/accounting.module';
     DashboardModule,
     ProfilesModule,
     AccountingModule,
+    SuppliersModule,
+    PurchasesModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────
