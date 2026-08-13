@@ -600,6 +600,238 @@ export interface UploadResult {
   size: number;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// NEW MODULES (Accounting, Suppliers, Purchases, Quotations, Support, Reports)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Accounting (Financial Hub) ───────────────────────────────────────────────
+
+export type AccountType = 'ASSET' | 'LIABILITY' | 'INCOME' | 'EXPENSE' | 'EQUITY';
+export type LedgerDirection = 'IN' | 'OUT';
+export type LedgerSourceType = 'INVOICE' | 'EXPENSE' | 'PURCHASE' | 'QUOTATION' | 'MANUAL';
+
+export interface Account {
+  id:          string;
+  code:        string;
+  name:        string;
+  type:        AccountType;
+  parentId:    string | null;
+  currency:    string | null;
+  description: string | null;
+  isSystem:    boolean;
+  isActive:    boolean;
+  createdAt:   string;
+  updatedAt:   string;
+}
+
+export interface LedgerEntry {
+  id:          string;
+  entryDate:   string;
+  accountId:   string;
+  account?:    Account | null;
+  clientId:    string | null;
+  client?:     Client | null;
+  direction:   LedgerDirection;
+  amount:      number;
+  currency:    string | null;
+  sourceType:  LedgerSourceType;
+  sourceId:    string;
+  description: string | null;
+  ownerId:     string | null;
+  createdAt:   string;
+}
+
+export interface PaginatedLedger {
+  entries: LedgerEntry[];
+  total:   number;
+  page:    number;
+  pages:   number;
+}
+
+// ─── Suppliers ────────────────────────────────────────────────────────────────
+
+export interface Supplier {
+  id:        string;
+  name:      string;
+  company:   string | null;
+  email:     string | null;
+  phone:     string | null;
+  taxId:     string | null;
+  address:   string | null;
+  notes:     string | null;
+  isActive:  boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedSuppliers {
+  suppliers: Supplier[];
+  total:     number;
+  page:      number;
+  pages:     number;
+}
+
+// ─── Purchases ────────────────────────────────────────────────────────────────
+
+export type PurchaseStatus        = 'DRAFT' | 'ORDERED' | 'RECEIVED' | 'CANCELLED';
+export type PurchasePaymentStatus = 'UNPAID' | 'PAID' | 'OVERDUE';
+
+export interface PurchaseLineItem {
+  id?:        string;
+  description:string;
+  quantity:   number;
+  unitPrice:  number;
+  lineTotal?: number;
+  sortOrder?: number;
+}
+
+export interface Purchase {
+  id:             string;
+  purchaseNumber: string;
+  supplierId:     string;
+  supplier?:      Supplier | null;
+  ownerId:        string | null;
+  owner?:         { id: string; name: string } | null;
+  status:         PurchaseStatus;
+  paymentStatus:  PurchasePaymentStatus;
+  subtotal:       number;
+  taxRate:        number;
+  taxAmount:      number;
+  total:          number;
+  currency:       string | null;
+  accountCode:    string | null;
+  orderDate:      string | null;
+  dueDate:        string | null;
+  paidAt:         string | null;
+  notes:          string | null;
+  lineItems?:     PurchaseLineItem[];
+  createdAt:      string;
+  updatedAt:      string;
+}
+
+export interface PaginatedPurchases {
+  purchases: Purchase[];
+  total:     number;
+  page:      number;
+  pages:     number;
+}
+
+// ─── Quotations ───────────────────────────────────────────────────────────────
+
+export type QuotationStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED';
+
+export interface QuotationLineItem {
+  id?:        string;
+  description:string;
+  quantity:   number;
+  unitPrice:  number;
+  lineTotal?: number;
+  sortOrder?: number;
+}
+
+export interface Quotation {
+  id:                  string;
+  quoteNumber:         string;
+  title:               string;
+  publicToken:         string;
+  clientId:            string;
+  client?:             Client | null;
+  ownerId:             string | null;
+  owner?:              { id: string; name: string } | null;
+  status:              QuotationStatus;
+  subtotal:            number;
+  taxRate:             number;
+  taxAmount:           number;
+  total:               number;
+  currency:            string | null;
+  validUntil:          string | null;
+  sentAt:              string | null;
+  acceptedAt:          string | null;
+  rejectedAt:          string | null;
+  notes:               string | null;
+  convertedContractId: string | null;
+  convertedInvoiceId:  string | null;
+  lineItems?:          QuotationLineItem[];
+  createdAt:           string;
+  updatedAt:           string;
+}
+
+export interface PaginatedQuotations {
+  quotations: Quotation[];
+  total:      number;
+  page:       number;
+  pages:      number;
+}
+
+// ─── Support / Ticketing ──────────────────────────────────────────────────────
+
+export type TicketStatus   = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketCategory = 'BUG' | 'FEATURE' | 'QUESTION' | 'BILLING' | 'OTHER';
+export type TicketSource   = 'WEB' | 'API' | 'EMAIL';
+
+export interface TicketAttachment {
+  url:   string;
+  name?: string;
+}
+
+export interface TicketReply {
+  id:          string;
+  ticketId:    string;
+  authorId:    string | null;
+  authorName:  string | null;
+  body:        string;
+  isInternal:  boolean;
+  attachments: TicketAttachment[] | null;
+  createdAt:   string;
+}
+
+export interface Ticket {
+  id:                 string;
+  ticketNumber:       string;
+  subject:            string;
+  description:        string;
+  clientId:           string;
+  client?:            Client | null;
+  projectId:          string | null;
+  project?:           Project | null;
+  assigneeId:         string | null;
+  assignee?:          { id: string; name: string } | null;
+  reporterId:         string | null;
+  status:             TicketStatus;
+  priority:           TicketPriority;
+  category:           TicketCategory;
+  source:             TicketSource;
+  attachments:        TicketAttachment[] | null;
+  firstResponseDueAt: string | null;
+  resolveDueAt:       string | null;
+  firstRespondedAt:   string | null;
+  resolvedAt:         string | null;
+  closedAt:           string | null;
+  slaBreached?:       boolean;
+  replies?:           TicketReply[];
+  createdAt:          string;
+  updatedAt:          string;
+}
+
+export interface PaginatedTickets {
+  tickets: Ticket[];
+  total:   number;
+  page:    number;
+  pages:   number;
+}
+
+export interface ClientApiKey {
+  id:         string;
+  clientId:   string;
+  label:      string;
+  prefix:     string;
+  isActive:   boolean;
+  lastUsedAt: string | null;
+  createdAt:  string;
+  plaintext?: string; // present only on creation
+}
+
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
 export type DeepPartial<T> = T extends object

@@ -371,4 +371,167 @@ export const dashboardApi = {
   getFinancialChart: () => api.get('/erp/dashboard/financial-chart'),
 };
 
+// ─── NEW-1: Accounting (Financial Hub) ────────────────────────────────────────
+// Backend: @Controller('accounting') → /api/accounting/*  (ADMIN/EMPLOYEE)
+
+export const accountingApi = {
+  /** GET /accounting/accounts — chart of accounts */
+  getAccounts:       (params?: object)          => api.get('/accounting/accounts', { params }),
+  /** GET /accounting/accounts/:id */
+  getAccount:        (id: string)               => api.get(`/accounting/accounts/${id}`),
+  /** GET /accounting/accounts/:id/balance */
+  getAccountBalance: (id: string, params?: object) => api.get(`/accounting/accounts/${id}/balance`, { params }),
+  /** POST /accounting/accounts */
+  createAccount:     (data: object)             => api.post('/accounting/accounts', data),
+  /** PATCH /accounting/accounts/:id */
+  updateAccount:     (id: string, data: object) => api.patch(`/accounting/accounts/${id}`, data),
+  /** DELETE /accounting/accounts/:id — ADMIN */
+  deleteAccount:     (id: string)               => api.delete(`/accounting/accounts/${id}`),
+  /** GET /accounting/ledger — unified transaction ledger */
+  getLedger:         (params?: object)          => api.get('/accounting/ledger', { params }),
+  /** POST /accounting/ledger — manual ledger entry */
+  createLedgerEntry: (data: object)             => api.post('/accounting/ledger', data),
+  /** DELETE /accounting/ledger/:id — ADMIN */
+  deleteLedgerEntry: (id: string)               => api.delete(`/accounting/ledger/${id}`),
+  /** GET /accounting/clients/:clientId/ledger — per-client ledger */
+  getClientLedger:   (clientId: string, params?: object) => api.get(`/accounting/clients/${clientId}/ledger`, { params }),
+};
+
+// ─── NEW-2: Suppliers ─────────────────────────────────────────────────────────
+// Backend: @Controller('suppliers') → /api/suppliers/*  (ADMIN/EMPLOYEE)
+
+export const suppliersApi = {
+  /** GET /suppliers — paginated */
+  getSuppliers:  (params?: object)          => api.get('/suppliers', { params }),
+  /** GET /suppliers/:id */
+  getSupplier:   (id: string)               => api.get(`/suppliers/${id}`),
+  /** POST /suppliers */
+  createSupplier:(data: object)             => api.post('/suppliers', data),
+  /** PATCH /suppliers/:id */
+  updateSupplier:(id: string, data: object) => api.patch(`/suppliers/${id}`, data),
+  /** DELETE /suppliers/:id — ADMIN */
+  deleteSupplier:(id: string)               => api.delete(`/suppliers/${id}`),
+};
+
+// ─── NEW-3: Purchases (PO → Bill → auto-Expense on paid) ──────────────────────
+// Backend: @Controller('purchases') → /api/purchases/*  (ADMIN/EMPLOYEE)
+
+export const purchasesApi = {
+  /** GET /purchases — paginated */
+  getPurchases:   (params?: object)          => api.get('/purchases', { params }),
+  /** GET /purchases/:id — with line items */
+  getPurchase:    (id: string)               => api.get(`/purchases/${id}`),
+  /** POST /purchases — create with line items */
+  createPurchase: (data: object)             => api.post('/purchases', data),
+  /** PATCH /purchases/:id — update UNPAID */
+  updatePurchase: (id: string, data: object) => api.patch(`/purchases/${id}`, data),
+  /** POST /purchases/:id/mark-paid — auto-creates an EXPENSE */
+  markPurchasePaid:(id: string, data?: object)=> api.post(`/purchases/${id}/mark-paid`, data ?? {}),
+  /** DELETE /purchases/:id — ADMIN */
+  deletePurchase: (id: string)               => api.delete(`/purchases/${id}`),
+};
+
+// ─── NEW-4: Quotations (accept → draft Contract + draft Invoice) ──────────────
+// Backend: @Controller('erp/quotations') → /api/erp/quotations/*
+
+export const quotationsApi = {
+  /** GET /erp/quotations — paginated, role-scoped */
+  getQuotations:     (params?: object)          => api.get('/erp/quotations', { params }),
+  /** GET /erp/quotations/:id — with line items */
+  getQuotation:      (id: string)               => api.get(`/erp/quotations/${id}`),
+  /** POST /erp/quotations — create DRAFT with line items */
+  createQuotation:   (data: object)             => api.post('/erp/quotations', data),
+  /** PATCH /erp/quotations/:id — update DRAFT */
+  updateQuotation:   (id: string, data: object) => api.patch(`/erp/quotations/${id}`, data),
+  /** DELETE /erp/quotations/:id — ADMIN, DRAFT only */
+  deleteQuotation:   (id: string)               => api.delete(`/erp/quotations/${id}`),
+  /** POST /erp/quotations/:id/send — DRAFT → SENT */
+  sendQuotation:     (id: string)               => api.post(`/erp/quotations/${id}/send`),
+  /** POST /erp/quotations/:id/accept — SENT → ACCEPTED */
+  acceptQuotation:   (id: string)               => api.post(`/erp/quotations/${id}/accept`),
+  /** POST /erp/quotations/:id/reject — SENT → REJECTED */
+  rejectQuotation:   (id: string)               => api.post(`/erp/quotations/${id}/reject`),
+  /** POST /erp/quotations/:id/convert — generate draft Contract + Invoice */
+  convertQuotation:  (id: string)               => api.post(`/erp/quotations/${id}/convert`),
+  /** POST /erp/quotations/recalculate-expired — ADMIN manual trigger */
+  recalculateExpired:()                         => api.post('/erp/quotations/recalculate-expired'),
+  /** GET /erp/quotations/public/:token — public view (no auth) */
+  getPublicQuotation:(token: string)            => api.get(`/erp/quotations/public/${token}`),
+  /** POST /erp/quotations/public/:token/accept — public accept (no auth) */
+  publicAccept:      (token: string)            => api.post(`/erp/quotations/public/${token}/accept`),
+  /** POST /erp/quotations/public/:token/reject — public reject (no auth) */
+  publicReject:      (token: string)            => api.post(`/erp/quotations/public/${token}/reject`),
+};
+
+// ─── NEW-5: Support / Ticketing ───────────────────────────────────────────────
+// Backend: @Controller('erp/support') → /api/erp/support/*  (ADMIN/EMPLOYEE/CLIENT)
+
+export const supportApi = {
+  /** GET /erp/support/stats — ADMIN/EMPLOYEE ticket stats */
+  getStats:      ()                             => api.get('/erp/support/stats'),
+  /** GET /erp/support — paginated, role-scoped */
+  getTickets:    (params?: object)              => api.get('/erp/support', { params }),
+  /** GET /erp/support/:id — with replies */
+  getTicket:     (id: string)                   => api.get(`/erp/support/${id}`),
+  /** POST /erp/support — create ticket */
+  createTicket:  (data: object)                 => api.post('/erp/support', data),
+  /** POST /erp/support/:id/replies — add threaded reply */
+  addReply:      (id: string, data: object)     => api.post(`/erp/support/${id}/replies`, data),
+  /** PATCH /erp/support/:id — staff update (status/priority/assignee) */
+  updateTicket:  (id: string, data: object)     => api.patch(`/erp/support/${id}`, data),
+  /** DELETE /erp/support/:id — ADMIN */
+  deleteTicket:  (id: string)                   => api.delete(`/erp/support/${id}`),
+  // ── Per-client API keys (external programmatic ticket creation) ──
+  /** POST /erp/support/api-keys — returns plaintext key once */
+  createApiKey:  (data: object)                 => api.post('/erp/support/api-keys', data),
+  /** GET /erp/support/api-keys — list (masked) */
+  listApiKeys:   (params?: object)              => api.get('/erp/support/api-keys', { params }),
+  /** DELETE /erp/support/api-keys/:id — revoke */
+  revokeApiKey:  (id: string)                   => api.delete(`/erp/support/api-keys/${id}`),
+};
+
+// ─── NEW-6: Reports (financial + operational) ─────────────────────────────────
+// Backend: @Controller('erp/reports') → /api/erp/reports/*  (ADMIN/EMPLOYEE)
+
+export const reportsApi = {
+  /** GET /erp/reports/profit-loss */
+  profitLoss:      (params?: object) => api.get('/erp/reports/profit-loss', { params }),
+  /** GET /erp/reports/cash-flow */
+  cashFlow:        (params?: object) => api.get('/erp/reports/cash-flow', { params }),
+  /** GET /erp/reports/tax-summary */
+  taxSummary:      (params?: object) => api.get('/erp/reports/tax-summary', { params }),
+  /** GET /erp/reports/ar-aging */
+  arAging:         (params?: object) => api.get('/erp/reports/ar-aging', { params }),
+  /** GET /erp/reports/ap-aging */
+  apAging:         (params?: object) => api.get('/erp/reports/ap-aging', { params }),
+  /** GET /erp/reports/revenue-by-client */
+  revenueByClient: (params?: object) => api.get('/erp/reports/revenue-by-client', { params }),
+  /** GET /erp/reports/projects-status */
+  projectsStatus:  (params?: object) => api.get('/erp/reports/projects-status', { params }),
+  /** GET /erp/reports/support-stats */
+  supportStats:    (params?: object) => api.get('/erp/reports/support-stats', { params }),
+};
+
+// ─── NEW-7: Analytics (self-hosted dashboard) ─────────────────────────────────
+// Backend: @Controller('erp/analytics') → /api/erp/analytics/*  (ADMIN/EMPLOYEE)
+
+export const analyticsApi = {
+  /** GET /erp/analytics/overview */
+  overview:         (params?: object) => api.get('/erp/analytics/overview', { params }),
+  /** GET /erp/analytics/timeseries */
+  timeseries:       (params?: object) => api.get('/erp/analytics/timeseries', { params }),
+  /** GET /erp/analytics/top-pages */
+  topPages:         (params?: object) => api.get('/erp/analytics/top-pages', { params }),
+  /** GET /erp/analytics/top-referrers */
+  topReferrers:     (params?: object) => api.get('/erp/analytics/top-referrers', { params }),
+  /** GET /erp/analytics/devices */
+  devices:          (params?: object) => api.get('/erp/analytics/devices', { params }),
+  /** GET /erp/analytics/browsers */
+  browsers:         (params?: object) => api.get('/erp/analytics/browsers', { params }),
+  /** GET /erp/analytics/countries */
+  countries:        (params?: object) => api.get('/erp/analytics/countries', { params }),
+  /** GET /erp/analytics/top-events */
+  topEvents:        (params?: object) => api.get('/erp/analytics/top-events', { params }),
+};
+
 export default api;
