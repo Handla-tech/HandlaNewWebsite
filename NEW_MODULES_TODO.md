@@ -148,15 +148,15 @@ Read-only analytical endpoints + printable/exportable views.
 
 ---
 
-## PHASE 6 — Analytics (self-hosted)  🟡
+## PHASE 6 — Analytics (self-hosted)  ✅ (backend done)
 GA-style tracking for the public marketing site.
 
-### Backend
-- [ ] Entity `AnalyticsEvent`: id, siteId (default), sessionId, visitorId (anon cookie), type (PAGEVIEW/EVENT), path, referrer, utm fields, eventName, eventData (json), device, os, browser, country (from IP, best-effort), createdAt.
-- [ ] Ingest endpoint `POST /api/analytics/collect` — **public, no auth**, rate-limited, CORS-open, tiny payload; parses UA server-side; no PII beyond anon id.
-- [ ] Aggregation service + endpoints (ADMIN/EMPLOYEE): totals, unique visitors, sessions, top pages, top referrers, device/browser breakdown, events, time-series — all with date range.
-- [ ] Data retention/rollup consideration (daily aggregate table optional later).
-- [ ] Tests.
+### Backend  ✅
+- [x] Entity `AnalyticsEvent`: id, site (default), sessionId, visitorId (anon rotating hash), type (PAGEVIEW/EVENT), path (normalized), referrer + referrerHost, eventName, meta (json), deviceType, os, browser, country (best-effort from Accept-Language, no GeoIP dep), language, title, createdAt. Indexed on (site,createdAt), (type,createdAt), site, path, visitor, created_at.
+- [x] Ingest endpoint `POST /api/analytics/collect` (+ `GET /api/analytics/collect` pixel fallback) — **public, no auth**, tiny payload, HTTP 204; parses UA + derives device/browser/os/country server-side; no PII beyond anon rotating id (`sha256(ip|ua|site|daySalt)` truncated; session hash rotates per 30-min window).
+- [x] Aggregation service + endpoints (ADMIN/EMPLOYEE) at `/api/erp/analytics`: overview (pageviews, events, unique visitors, sessions, bounce rate, views/session), time-series (hour/day/month), top pages, top referrers, device/browser/country breakdown, top events — all with date range.
+- [ ] Data retention/rollup consideration (daily aggregate table optional later). _(deferred — optional)_
+- [x] Tests (18 — parsing helpers, record, overview, topPages, timeseries).
 
 ### Frontend
 - [ ] `public/analytics.js` — tiny (<3kb) tracker: sets anon id cookie, sends pageviews on route change, exposes `handla('event', name, data)`.

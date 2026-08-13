@@ -34,6 +34,7 @@ import { QuotationLineItem } from './modules/quotations/entities/quotation-line-
 import { Ticket } from './modules/support/entities/ticket.entity';
 import { TicketReply } from './modules/support/entities/ticket-reply.entity';
 import { ClientApiKey } from './modules/support/entities/client-api-key.entity';
+import { AnalyticsEvent } from './modules/analytics/entities/analytics-event.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -57,6 +58,7 @@ import { PurchasesModule } from './modules/purchases/purchases.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { SupportModule } from './modules/support/support.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -76,7 +78,7 @@ import { ReportsModule } from './modules/reports/reports.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent],
       }),
     }),
 
@@ -101,6 +103,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     QuotationsModule,
     SupportModule,
     ReportsModule,
+    AnalyticsModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────
