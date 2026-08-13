@@ -80,20 +80,20 @@ Money going out: suppliers, purchase orders, bills. Mirror of invoices.
 
 ---
 
-## PHASE 3 — Quotations  🔴
+## PHASE 3 — Quotations  ✅ (backend done)
 Quote → accept → auto draft Contract + Invoice. Public accept/reject.
 
 ### Backend
-- [ ] Enum `QuotationStatus` (DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED).
-- [ ] Entity `Quotation`: id, quoteNumber (QUO-YYYY-NNNN), clientId (or leadId), status, subtotal, taxRate, taxAmount, total, currency (optional), validUntil, notes, publicToken (uuid), acceptedAt, rejectedAt, convertedInvoiceId, convertedContractId, ownerId.
-- [ ] Entity `QuotationLineItem`.
-- [ ] Service: CRUD, number generation, `send()`, `accept()`/`reject()` (public via token), **`convert()`** → creates DRAFT Contract + DRAFT Invoice from line items; sets status CONVERTED. Expiry scheduler.
-- [ ] Controllers:
-  - `/api/quotations` (ADMIN/EMPLOYEE CRUD + convert; CLIENT read own)
-  - `/api/quotations/public/:token` (GET view, POST accept, POST reject) — no auth.
-- [ ] Quotation PDF + QR (reuse invoice/contract infra).
-- [ ] Notifications on send/accept/reject.
-- [ ] Tests.
+- [x] Enum `QuotationStatus` (DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED).
+- [x] Entity `Quotation`: id, quoteNumber (QUO-YYYY-NNNN), clientId, status, subtotal, taxRate, taxAmount, total, currency (optional), validUntil, notes, publicToken (uuid), sentAt, acceptedAt, rejectedAt, convertedInvoiceId, convertedContractId, ownerId.
+- [x] Entity `QuotationLineItem`.
+- [x] Service: CRUD, QUO-YYYY-NNNN number generation, `send()`, `accept()`/`reject()` (public via token + staff), **`convert()`** → creates DRAFT Invoice + DRAFT Contract from line items; sets status CONVERTED + links. Expiry scheduler (3am).
+- [x] Controllers:
+  - `/erp/quotations` (ADMIN/EMPLOYEE CRUD + send/accept/reject/convert; CLIENT read own + accept/reject)
+  - `/erp/quotations/public/:token` (GET view, POST accept, POST reject) — no auth (`@Public()`), sanitized projection.
+- [ ] Quotation PDF + QR (reuse invoice/contract infra). _(deferred — optional)_
+- [x] Notifications on send/accept/reject.
+- [x] Tests (14 unit tests; full suite 719 passing).
 
 ### Frontend
 - [ ] `/erp/quotations` — list + builder (line items) + send + convert button.

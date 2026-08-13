@@ -7,11 +7,14 @@ import {
 import { QuotationsService } from './quotations.service';
 
 /**
- * QUO-1 — QuotationsScheduler
+ * QUO-2 — QuotationsScheduler
  *
- * Runs daily at 03:00 (invoices @01:00, purchases @02:00) to flip SENT
- * quotations whose validUntil date has passed to EXPIRED. Uses built-in
- * setTimeout/setInterval (no new scheduling libraries).
+ * Scheduled job: runs recalculateExpiredStatus() every day at 3:00am
+ * (SENT quotations whose validUntil date has passed become EXPIRED).
+ *
+ * Mirrors InvoicesScheduler / PurchasesScheduler: uses Node.js built-in
+ * setTimeout / setInterval (GROUND RULE: no @nestjs/schedule dependency).
+ * Errors are caught and logged so a single failure never stops future runs.
  */
 @Injectable()
 export class QuotationsScheduler
@@ -38,6 +41,7 @@ export class QuotationsScheduler
     this.logger.log(
       `QuotationsScheduler: first run in ${Math.round(msUntil3am / 1000 / 60)} min (at next 3am)`,
     );
+
     this.initialTimer = setTimeout(() => {
       void this.runJob();
       const msIn24h = 24 * 60 * 60 * 1000;
@@ -58,11 +62,14 @@ export class QuotationsScheduler
     }
   }
 
+  /** Returns milliseconds from now until next 03:00 local time. */
   private getMsUntil3am(): number {
     const now = new Date();
     const next = new Date(now);
     next.setHours(3, 0, 0, 0);
-    if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
+    if (next.getTime() <= now.getTime()) {
+      next.setDate(next.getDate() + 1);
+    }
     return next.getTime() - now.getTime();
   }
 }

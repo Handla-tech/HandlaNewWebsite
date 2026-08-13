@@ -14,12 +14,13 @@ import { InvoicesModule } from '../invoices/invoices.module';
 import { NotificationModule } from '../notifications/notification.module';
 
 /**
- * QUO-1 — QuotationsModule
+ * QUO — QuotationsModule
  *
- * Imports ContractsModule + InvoicesModule so an accepted quotation can be
- * converted into a draft Contract + draft Invoice (one-way dependency; neither
- * Contracts nor Invoices depend on Quotations). NotificationModule is used for
- * sent/accepted/rejected notifications.
+ * Sales estimates that convert into a draft Contract + draft Invoice on accept.
+ * Depends (one-way) on ContractsModule + InvoicesModule (both export their
+ * services) to generate the downstream documents, and NotificationModule for
+ * client/owner alerts. No circular dependency — quotations sit "upstream" of
+ * contracts/invoices.
  */
 @Module({
   imports: [
@@ -28,8 +29,8 @@ import { NotificationModule } from '../notifications/notification.module';
     InvoicesModule,
     NotificationModule,
   ],
-  providers: [QuotationsService, QuotationsScheduler],
   controllers: [QuotationsController],
+  providers: [QuotationsService, QuotationsScheduler],
   exports: [QuotationsService],
 })
 export class QuotationsModule {}

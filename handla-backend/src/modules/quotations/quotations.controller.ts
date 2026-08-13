@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  ParseUUIDPipe,
   Query,
   HttpCode,
   HttpStatus,
@@ -31,26 +32,21 @@ import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
 
-/**
- * QUO-1 — QuotationsController
- *
- * Back-office quotation management (ADMIN/EMPLOYEE) + CLIENT read of their own,
- * plus PUBLIC (no-auth) accept/reject via a non-guessable publicToken so a
- * lead/client can respond from an emailed link without logging in.
- */
 @ApiTags('erp-quotations')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('quotations')
+@Controller('erp/quotations')
 export class QuotationsController {
   constructor(private readonly quotationsService: QuotationsService) {}
 
-  // ─── PUBLIC token routes (declared first, no auth) ────────────────────────
+  // ── PUBLIC token routes (no auth) ─────────────────────────────────────
+  // Declared BEFORE `:id` so the two-segment path is matched first.
 
-  // GET /quotations/public/:token — sanitized view for the emailed link.
   @Get('public/:token')
   @Public()
-  @ApiOperation({ summary: 'Public read-only quotation view (no auth, by token)' })
+  @ApiOperation({
+    summary: 'Public read-only quotation view (no auth). Used by the accept/reject link.',
+  })
   @ApiResponse({ status: 200, description: 'Sanitized quotation payload' })
   @ApiResponse({ status: 404, description: 'Quotation not found' })
   @ApiParam({ name: 'token', type: String })
@@ -58,26 +54,24 @@ export class QuotationsController {
     return this.quotationsService.findByPublicToken(token);
   }
 
-  // POST /quotations/public/:token/accept — lead/client accepts via link.
   @Post('public/:token/accept')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Public accept a quotation via token (SENT → ACCEPTED)' })
+  @ApiOperation({ summary: 'Client accepts a quotation via public link (SENT → ACCEPTED)' })
   @ApiResponse({ status: 200, description: 'Quotation accepted' })
-  @ApiResponse({ status: 422, description: 'Quotation not in SENT state' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'token', type: String })
   async acceptByToken(@Param('token') token: string) {
     const q = await this.quotationsService.acceptByToken(token);
     return { id: q.id, quoteNumber: q.quoteNumber, status: q.status };
   }
 
-  // POST /quotations/public/:token/reject — lead/client rejects via link.
   @Post('public/:token/reject')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Public reject a quotation via token (SENT → REJECTED)' })
+  @ApiOperation({ summary: 'Client rejects a quotation via public link (SENT → REJECTED)' })
   @ApiResponse({ status: 200, description: 'Quotation rejected' })
-  @ApiResponse({ status: 422, description: 'Quotation not in SENT state' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'token', type: String })
   async rejectByToken(
     @Param('token') token: string,
@@ -87,9 +81,18 @@ export class QuotationsController {
     return { id: q.id, quoteNumber: q.quoteNumber, status: q.status };
   }
 
-  // ─── Authenticated CRUD ───────────────────────────────────────────────────
+  // ── POST /erp/quotations/recalculate-expired (ADMIN) ──────────────────
+  // Declared before `:id` routes to avoid path collision on the literal segment.
+  @Post('recalculate-expired')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Manually trigger expiry recalculation (ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Count of newly-expired quotations' })
+  async recalculateExpired() {
+    const count = await this.quotationsService.recalculateExpiredStatus();
+    return { updated: count };
+  }
 
-  // GET /quotations
+  // ── GET /erp/quotations ───────────────────────────────────────────────
   @Get()
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
   @ApiOperation({ summary: 'List quotations (role-scoped)' })
@@ -98,18 +101,18 @@ export class QuotationsController {
     return this.quotationsService.findAll(user, query);
   }
 
-  // GET /quotations/:id
+  // ── GET /erp/quotations/:id ───────────────────────────────────────────
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
   @ApiOperation({ summary: 'Get single quotation with line items' })
   @ApiResponse({ status: 200, description: 'Quotation detail' })
   @ApiResponse({ status: 404, description: 'Quotation not found' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
-  async findOne(@Param('id') id: string, @CurrentUser() user: User) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.quotationsService.findOne(id, user);
   }
 
-  // POST /quotations
+  // ── POST /erp/quotations ──────────────────────────────────────────────
   @Post()
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
   @ApiOperation({ summary: 'Create a new quotation with line items (DRAFT)' })
@@ -119,7 +122,7 @@ export class QuotationsController {
     return this.quotationsService.create(dto, user);
   }
 
-  // PATCH /quotations/:id
+  // ── PATCH /erp/quotations/:id ─────────────────────────────────────────
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
   @ApiOperation({ summary: 'Update quotation (DRAFT only, owner/admin)' })
@@ -127,87 +130,76 @@ export class QuotationsController {
   @ApiResponse({ status: 422, description: 'Cannot update non-DRAFT quotation' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateQuotationDto,
     @CurrentUser() user: User,
   ) {
     return this.quotationsService.update(id, dto, user);
   }
 
-  // DELETE /quotations/:id
+  // ── DELETE /erp/quotations/:id ────────────────────────────────────────
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete quotation (ADMIN, not CONVERTED)' })
+  @ApiOperation({ summary: 'Delete quotation (ADMIN, non-CONVERTED only)' })
   @ApiResponse({ status: 204, description: 'Quotation deleted' })
   @ApiResponse({ status: 422, description: 'Cannot delete a CONVERTED quotation' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
-  async remove(@Param('id') id: string, @CurrentUser() user: User) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.quotationsService.remove(id, user);
   }
 
-  // POST /quotations/:id/send
+  // ── POST /erp/quotations/:id/send ─────────────────────────────────────
   @Post(':id/send')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send quotation to client (DRAFT → SENT)' })
   @ApiResponse({ status: 200, description: 'Quotation sent' })
-  @ApiResponse({ status: 422, description: 'Quotation not in DRAFT state' })
+  @ApiResponse({ status: 422, description: 'Not in DRAFT state' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
-  async send(@Param('id') id: string, @CurrentUser() user: User) {
+  async send(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.quotationsService.send(id, user);
   }
 
-  // POST /quotations/:id/accept — staff-side accept
+  // ── POST /erp/quotations/:id/accept ───────────────────────────────────
   @Post(':id/accept')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Accept quotation (SENT → ACCEPTED)' })
   @ApiResponse({ status: 200, description: 'Quotation accepted' })
-  @ApiResponse({ status: 422, description: 'Quotation not in SENT state' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
-  async accept(@Param('id') id: string, @CurrentUser() user: User) {
+  async accept(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.quotationsService.accept(id, user);
   }
 
-  // POST /quotations/:id/reject — staff-side reject
+  // ── POST /erp/quotations/:id/reject ───────────────────────────────────
   @Post(':id/reject')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reject quotation (SENT → REJECTED)' })
   @ApiResponse({ status: 200, description: 'Quotation rejected' })
-  @ApiResponse({ status: 422, description: 'Quotation not in SENT state' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
   async reject(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RejectQuotationDto,
     @CurrentUser() user: User,
   ) {
     return this.quotationsService.reject(id, user, dto?.reason);
   }
 
-  // POST /quotations/:id/convert — ACCEPTED → CONVERTED (+ draft invoice/contract)
+  // ── POST /erp/quotations/:id/convert ──────────────────────────────────
   @Post(':id/convert')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Convert accepted quotation to a draft Contract + draft Invoice',
+    summary: 'Convert accepted quotation → draft Invoice + draft Contract (ACCEPTED → CONVERTED)',
   })
   @ApiResponse({ status: 200, description: 'Quotation converted' })
-  @ApiResponse({ status: 422, description: 'Quotation not in ACCEPTED state' })
+  @ApiResponse({ status: 422, description: 'Not in ACCEPTED state' })
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
-  async convert(@Param('id') id: string, @CurrentUser() user: User) {
+  async convert(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.quotationsService.convert(id, user);
-  }
-
-  // POST /quotations/recalculate-expired — manual scheduler trigger (ADMIN)
-  @Post('recalculate-expired')
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Manually trigger expiry recalculation (ADMIN)' })
-  @ApiResponse({ status: 200, description: 'Count of newly-expired quotations' })
-  async recalculateExpired() {
-    const count = await this.quotationsService.recalculateExpiredStatus();
-    return { updated: count };
   }
 }
