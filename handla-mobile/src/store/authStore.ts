@@ -53,7 +53,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ status: 'loading', error: null });
     try {
       const res = await authApi.signIn(email, password);
-      const { user, accessToken, refreshToken } = res.data.data;
+      const data = res.data.data as {
+        status?: string;
+        user?: User;
+        accessToken?: string;
+        refreshToken?: string;
+      };
+
+      // Verified accounts sign in directly. An account whose email was never
+      // verified comes back as { status: 'verification_required' } with no
+      // tokens — the mobile app has no OTP screen, so guide the user to the web.
+      if (data?.status === 'verification_required' || !data?.accessToken) {
+        const message =
+          'Please verify your email before signing in. Check your inbox for the verification code, or complete verification on the web app.';
+        set({ status: 'unauthenticated', error: message });
+        throw new Error(message);
+      }
+
+      const { user, accessToken, refreshToken } = data as {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      };
       await tokenStorage.save(accessToken, refreshToken);
       set({ user, status: 'authenticated' });
       connectSocket().catch(() => {/* best-effort */});

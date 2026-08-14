@@ -224,23 +224,28 @@ describe('Phase 19.2 — Auth Flow Tests (two-step OTP)', () => {
       ).rejects.toThrow(InvalidCredentialsException);
     });
 
-    it('should return verification_required when credentials are correct (no session yet)', async () => {
+    it('should sign a verified account in directly when credentials are correct (no OTP)', async () => {
       const hash = await bcrypt.hash('CorrectPass@123', 10);
-      mockUserRepository.findOne.mockResolvedValue({ ...BASE_USER, passwordHash: hash });
+      mockUserRepository.findOne.mockResolvedValue({
+        ...BASE_USER,
+        passwordHash: hash,
+        emailVerifiedAt: new Date(),
+      });
 
       const result = await service.signIn({
         email: BASE_USER.email,
         password: 'CorrectPass@123',
       });
 
-      expect(result).toEqual({
-        status: 'verification_required',
-        email: BASE_USER.email,
-        purpose: 'LOGIN',
-      });
-      expect(mockOtpService.issueAndSend).toHaveBeenCalledWith(
-        expect.objectContaining({ purpose: VerificationPurpose.LOGIN }),
+      expect(result).toEqual(
+        expect.objectContaining({
+          user: expect.objectContaining({ email: BASE_USER.email }),
+          accessToken: expect.any(String),
+          refreshToken: expect.any(String),
+        }),
       );
+      // A verified login must NOT issue an OTP.
+      expect(mockOtpService.issueAndSend).not.toHaveBeenCalled();
     });
   });
 

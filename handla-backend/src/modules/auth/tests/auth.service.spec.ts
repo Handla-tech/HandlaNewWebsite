@@ -133,21 +133,46 @@ describe('AuthService (two-step OTP flow)', () => {
     });
   });
 
-  // ─── signIn: step 1 validates credentials + issues OTP, no session ────────────
+  // ─── signIn: verified accounts log in directly; unverified need an OTP ────────
   describe('signIn()', () => {
-    it('returns verification_required when credentials are valid', async () => {
+    it('returns a session directly for a verified account (no OTP)', async () => {
       const hash = await bcrypt.hash('SecurePass@123', 10);
-      mockUserRepository.findOne.mockResolvedValue({ ...mockUser, passwordHash: hash });
+      mockUserRepository.findOne.mockResolvedValue({
+        ...mockUser,
+        passwordHash: hash,
+        emailVerifiedAt: new Date(),
+      });
+
+      const result = await service.signIn({ email: 'test@example.com', password: 'SecurePass@123' });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          user: expect.objectContaining({ email: mockUser.email }),
+          accessToken: expect.any(String),
+          refreshToken: expect.any(String),
+        }),
+      );
+      // A verified login must NOT issue any OTP.
+      expect(mockOtpService.issueAndSend).not.toHaveBeenCalled();
+    });
+
+    it('issues a verification OTP for an unverified account (no session yet)', async () => {
+      const hash = await bcrypt.hash('SecurePass@123', 10);
+      mockUserRepository.findOne.mockResolvedValue({
+        ...mockUser,
+        passwordHash: hash,
+        emailVerifiedAt: null,
+      });
 
       const result = await service.signIn({ email: 'test@example.com', password: 'SecurePass@123' });
 
       expect(result).toEqual({
         status: 'verification_required',
         email: 'test@example.com',
-        purpose: 'LOGIN',
+        purpose: 'SIGNUP',
       });
       expect(mockOtpService.issueAndSend).toHaveBeenCalledWith(
-        expect.objectContaining({ purpose: VerificationPurpose.LOGIN }),
+        expect.objectContaining({ purpose: VerificationPurpose.SIGNUP }),
       );
     });
 

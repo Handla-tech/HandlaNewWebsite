@@ -75,8 +75,12 @@ export class AuthService {
     return { status: 'verification_required', email, purpose: 'SIGNUP' };
   }
 
-  // ─── Sign In (step 1: validate credentials + issue OTP, NO session yet) ──────
-  async signIn(dto: SignInDto): Promise<PendingVerificationResponse> {
+  // ─── Sign In ─────────────────────────────────────────────────────────────────
+  // Existing, already email-verified accounts log in DIRECTLY (no OTP). An OTP
+  // is only issued when the account's email was never verified (e.g. a signup
+  // that was abandoned before the code step) — in that case the caller is routed
+  // to the verification screen instead of receiving a session.
+  async signIn(dto: SignInDto): Promise<AuthResponse | PendingVerificationResponse> {
     const email = dto.email.toLowerCase();
     const user = await this.userRepository.findOne({ where: { email } });
 
@@ -94,18 +98,25 @@ export class AuthService {
       throw new UnauthorizedException('Your account has been disabled. Please contact support.');
     }
 
-    // Credentials are valid — but issue an OTP as a mandatory second step
-    // BEFORE creating any session.
-    await this.otpService.issueAndSend({
-      email,
-      purpose: VerificationPurpose.LOGIN,
-      userId: user.id,
-      recipientName: user.name,
-      locale: dto.locale,
-    });
+    // Unverified account → must confirm email ownership once before first login.
+    // Issue a SIGNUP-purpose OTP so completeSignup() activates the account on
+    // verification, then send the user to the OTP screen (still no session).
+    if (!user.emailVerifiedAt) {
+      await this.otpService.issueAndSend({
+        email,
+        purpose: VerificationPurpose.SIGNUP,
+        userId: user.id,
+        recipientName: user.name,
+        locale: dto.locale,
+      });
+      this.logger.log(`Sign-in for unverified account → verification OTP issued: ${email} (${user.id})`);
+      return { status: 'verification_required', email, purpose: 'SIGNUP' };
+    }
 
-    this.logger.log(`Login OTP issued: ${email} (${user.id})`);
-    return { status: 'verification_required', email, purpose: 'LOGIN' };
+    // Verified account → issue a session immediately. No OTP on every login.
+    const tokens = this.generateTokens(user);
+    this.logger.log(`Direct sign-in (verified account): ${email} (${user.id})`);
+    return { user: this.sanitizeUser(user), ...tokens };
   }
 
   // ─── Verify OTP (step 2: complete the flow → session) ────────────────────────

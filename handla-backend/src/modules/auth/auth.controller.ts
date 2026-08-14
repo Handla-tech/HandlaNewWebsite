@@ -58,19 +58,33 @@ export class AuthController {
   }
 
   // ─── POST /api/auth/signin ─────────────────────────────────────────────────
-  // Step 1 of 2: validate credentials + email a 6-digit OTP. NO session yet.
+  // Verified accounts sign in directly (session cookies set here). Only accounts
+  // whose email was never verified are routed to the OTP screen.
   @Public()
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  @ApiOperation({ summary: 'Start sign in — validates credentials and sends an email OTP' })
-  @ApiResponse({ status: 200, description: 'Verification code sent' })
+  @ApiOperation({ summary: 'Sign in — direct session for verified accounts, OTP only for unverified' })
+  @ApiResponse({ status: 200, description: 'Signed in, or verification required' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async signIn(@Body() dto: SignInDto) {
+  async signIn(@Body() dto: SignInDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.signIn(dto);
+
+    // Unverified account → verification required (no session).
+    if ('status' in result && result.status === 'verification_required') {
+      return { message: 'Verification code sent to your email', data: result };
+    }
+
+    // Verified account → create the session (cookies + body).
+    const session = result as { user: unknown; accessToken: string; refreshToken: string };
+    this.setCookies(res, session.accessToken, session.refreshToken);
     return {
-      message: 'Verification code sent to your email',
-      data: result,
+      message: 'Signed in successfully',
+      data: {
+        user: session.user,
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      },
     };
   }
 

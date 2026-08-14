@@ -151,7 +151,7 @@ function AuthPageInner() {
                     <h1 className="text-2xl font-bold" style={{ color: 'var(--ink-1)' }}>{titles.signin.title}</h1>
                     <p className="mt-1 text-sm" style={{ color: 'var(--ink-4)' }}>{titles.signin.subtitle}</p>
                   </div>
-                  <SignInForm onSwitchMode={() => setView('signup')} onPending={startPending} onForgot={() => setView('forgot')} />
+                  <SignInForm onSwitchMode={() => setView('signup')} onPending={startPending} onLoggedIn={redirectAfterAuth} onForgot={() => setView('forgot')} />
                   <SocialDivider />
                   <SocialButtons error={googleError} />
                 </motion.div>

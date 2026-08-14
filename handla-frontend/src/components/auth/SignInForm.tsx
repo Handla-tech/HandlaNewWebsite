@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { PendingVerification } from '@/types';
+import type { PendingVerification, User } from '@/types';
 
 const signInSchema = z.object({
   email: z.string().min(1, 'emailRequired').email('emailInvalid'),
@@ -21,10 +21,11 @@ type SignInFormData = z.infer<typeof signInSchema>;
 interface SignInFormProps {
   onSwitchMode: () => void;
   onPending: (p: PendingVerification) => void;
+  onLoggedIn: (user: User) => void;
   onForgot: () => void;
 }
 
-export default function SignInForm({ onSwitchMode, onPending, onForgot }: SignInFormProps) {
+export default function SignInForm({ onSwitchMode, onPending, onLoggedIn, onForgot }: SignInFormProps) {
   const { login, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
@@ -41,8 +42,12 @@ export default function SignInForm({ onSwitchMode, onPending, onForgot }: SignIn
   const onSubmit = async (data: SignInFormData) => {
     clearError();
     try {
-      const pending = await login({ email: data.email, password: data.password });
-      onPending(pending);
+      const result = await login({ email: data.email, password: data.password });
+      if (result.loggedIn) {
+        onLoggedIn(result.user);
+      } else {
+        onPending({ email: result.email, purpose: result.purpose });
+      }
     } catch {
       /* error surfaced via store */
     }

@@ -523,11 +523,19 @@ export interface PendingVerification {
   purpose: OtpPurpose;
 }
 
+/**
+ * Result of login(): a verified account signs in directly (`loggedIn: true`),
+ * while an unverified account is routed to OTP (`loggedIn: false` + pending).
+ */
+export type LoginResult =
+  | { loggedIn: true; user: User }
+  | ({ loggedIn: false } & PendingVerification);
+
 export interface AuthState {
   user: User | null;
   isLoggedIn: boolean;
   isLoading: boolean;
-  login: (payload: SignInPayload) => Promise<PendingVerification>;
+  login: (payload: SignInPayload) => Promise<LoginResult>;
   signup: (payload: SignUpPayload) => Promise<PendingVerification>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;

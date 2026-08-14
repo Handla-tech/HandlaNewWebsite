@@ -56,8 +56,11 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       /**
-       * Start sign in (step 1 of 2). Validates credentials + emails an OTP.
-       * NO session yet — verifyOtp() completes it. Returns the pending email.
+       * Sign in. A verified account logs in directly — the backend sets the
+       * session cookies and returns the user, so we mark the store logged-in and
+       * return { loggedIn: true, user }. An unverified account returns
+       * { status: 'verification_required', … }; we surface it so the caller can
+       * show the OTP screen. No OTP is required on every login.
        */
       login: async (payload: SignInPayload) => {
         console.debug(`${LOG} login()  email=${payload.email}`);
@@ -65,8 +68,22 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const res = await authApi.signIn(payload);
           const data = res.data?.data ?? {};
-          console.debug(`${LOG} login() ✅ pending verification  email=${data.email}`);
-          return { email: data.email as string, purpose: 'LOGIN' as const };
+
+          // Unverified account → OTP step required (no session yet).
+          if (data?.status === 'verification_required') {
+            console.debug(`${LOG} login() ⚠️ verification required  email=${data.email}`);
+            return {
+              loggedIn: false as const,
+              email: data.email as string,
+              purpose: (data.purpose as 'SIGNUP' | 'LOGIN' | 'GOOGLE') ?? 'SIGNUP',
+            };
+          }
+
+          // Verified account → session cookies are set; adopt the user.
+          const user = data.user as User;
+          console.debug(`${LOG} login() ✅ signed in directly  userId=${user?.id}  role=${user?.role}`);
+          set({ user, isLoggedIn: true });
+          return { loggedIn: true as const, user };
         } catch (err) {
           const status = (err as { response?: { status?: number } })?.response?.status;
           console.error(`${LOG} login() ❌  status=${status}  email=${payload.email}`, err);
