@@ -2179,6 +2179,96 @@
         "countries": "الدول",
         "topEvents": "أهم الأحداث"
       }
+    },
+    "ai": {
+      "title": "المساعد الذكي",
+      "subtitle": "روبوت محادثة معتمد على قاعدة المعرفة وتأهيل العملاء المحتملين. يجيب المساعد فقط من قاعدة المعرفة.",
+      "unknown": "غير معروف",
+      "tabs": {
+        "knowledge": "قاعدة المعرفة",
+        "leads": "لوحة العملاء المحتملين"
+      },
+      "category": {
+        "COMPANY": "الشركة",
+        "PRODUCT": "المنتج",
+        "PRICING": "التسعير",
+        "PROCESS": "العملية",
+        "FAQ": "الأسئلة الشائعة",
+        "POLICY": "السياسة",
+        "OTHER": "أخرى"
+      },
+      "leadStatus": {
+        "NEW": "جديد",
+        "QUALIFYING": "قيد التأهيل",
+        "QUALIFIED": "مؤهل",
+        "DISQUALIFIED": "غير مؤهل",
+        "CONVERTED": "محوّل"
+      },
+      "kb": {
+        "searchPlaceholder": "بحث في العناوين والمحتوى والوسوم…",
+        "allCategories": "كل الفئات",
+        "activeInactive": "نشط + غير نشط",
+        "activeOnly": "النشط فقط",
+        "inactiveOnly": "غير النشط فقط",
+        "newEntry": "إدخال جديد",
+        "loadFailed": "فشل تحميل قاعدة المعرفة",
+        "emptyTitle": "لا توجد إدخالات في قاعدة المعرفة",
+        "emptyHintAdmin": "أنشئ أول إدخال — يجيب المساعد فقط من الإدخالات النشطة.",
+        "emptyHint": "لا توجد إدخالات بعد.",
+        "inactive": "غير نشط",
+        "updated": "حُدّث {{date}}",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "deleteConfirm": "حذف \"{{title}}\"؟ لا يمكن التراجع عن هذا الإجراء."
+      },
+      "modal": {
+        "editTitle": "تعديل إدخال المعرفة",
+        "newTitle": "إدخال معرفة جديد",
+        "title": "العنوان *",
+        "titlePlaceholder": "مثال: ما هو Handla Mudar؟",
+        "content": "المحتوى * (لا يتجاوز المساعد هذا المحتوى)",
+        "contentPlaceholder": "الإجابة المعتمدة…",
+        "category": "الفئة",
+        "product": "المنتج (اختياري)",
+        "productPlaceholder": "mudar / matjari / manara",
+        "tags": "الوسوم (مفصولة بفواصل، تحسّن الاسترجاع)",
+        "tagsPlaceholder": "التسعير، الإعداد، الاسترداد",
+        "priority": "الأولوية (الأعلى يفوز عند التعادل)",
+        "active": "نشط (مرئي للمساعد)",
+        "saveFailed": "فشل الحفظ",
+        "saveChanges": "حفظ التغييرات",
+        "createEntry": "إنشاء إدخال"
+      },
+      "leads": {
+        "conversations": "المحادثات",
+        "loadFailed": "فشل تحميل المحادثات",
+        "emptyTitle": "لا توجد محادثات",
+        "emptyHint": "يظهر العملاء المحتملون هنا أثناء محادثتهم مع المساعد.",
+        "noMessages": "لا توجد رسائل بعد",
+        "selectPrompt": "اختر محادثة لعرض حالة الذكاء الاصطناعي الخاصة بها.",
+        "stateFailed": "فشل تحميل حالة الذكاء الاصطناعي",
+        "conversationLabel": "المحادثة {{id}}…",
+        "humanRequested": "تم طلب موظف بشري.",
+        "flaggedDefault": "قام المساعد بتمييز هذه المحادثة لتدخل موظف بشري.",
+        "control": "التحكم:",
+        "human": "بشري",
+        "ai": "ذكاء اصطناعي",
+        "returnToAi": "إعادة إلى الذكاء الاصطناعي",
+        "takeOver": "تولّي المحادثة",
+        "takeoverNotePlaceholder": "ملاحظة تولّي اختيارية…",
+        "takenOver": "تم التولّي {{date}}",
+        "actionFailed": "فشل الإجراء",
+        "capturedLeadData": "بيانات العميل المحتمل الملتقطة",
+        "nothingCaptured": "لم يتم التقاط أي شيء بعد.",
+        "missingFields": "مطلوب قبل التأهيل",
+        "runningSummary": "الملخص الجاري",
+        "aiReplies": "ردود الذكاء الاصطناعي: {{count}}",
+        "updated": "حُدّث {{date}}"
+      },
+      "pager": {
+        "total": "{{total}} الإجمالي",
+        "pageInfo": "صفحة {{page}} / {{pages}}"
+      }
     }
   },
   "footer": {

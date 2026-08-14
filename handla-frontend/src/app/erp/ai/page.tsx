@@ -16,6 +16,9 @@ import type {
   ConversationAiState, Conversation,
 } from '@/types';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
+
+type TFn = (key: string, params?: Record<string, any>) => string;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -51,9 +54,9 @@ function fmtDate(d: string | null | undefined) {
 function errMsg(e: unknown, fallback: string) {
   return (e as any)?.response?.data?.message ?? fallback;
 }
-function personName(u?: { name?: string | null; email?: string } | null) {
-  if (!u) return 'Unknown';
-  return (u.name && u.name.trim()) || u.email || 'Unknown';
+function personName(u: { name?: string | null; email?: string } | null | undefined, t: TFn) {
+  if (!u) return t('erp.ai.unknown');
+  return (u.name && u.name.trim()) || u.email || t('erp.ai.unknown');
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -61,6 +64,7 @@ function personName(u?: { name?: string | null; email?: string } | null) {
 type Tab = 'knowledge' | 'leads';
 
 export default function AiPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -78,17 +82,17 @@ export default function AiPage() {
           <Bot className="w-5 h-5 text-[#fbbf24]" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-white">AI Assistant</h1>
+          <h1 className="text-xl font-semibold text-white">{t('erp.ai.title')}</h1>
           <p className="text-sm text-white/40">
-            KB-grounded chatbot &amp; lead qualification. The assistant answers only from the Knowledge Base.
+            {t('erp.ai.subtitle')}
           </p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-white/10">
-        <TabBtn active={tab === 'knowledge'} onClick={() => setTab('knowledge')} icon={BookOpen} label="Knowledge Base" />
-        <TabBtn active={tab === 'leads'} onClick={() => setTab('leads')} icon={MessageSquare} label="Lead Panel" />
+        <TabBtn active={tab === 'knowledge'} onClick={() => setTab('knowledge')} icon={BookOpen} label={t('erp.ai.tabs.knowledge')} />
+        <TabBtn active={tab === 'leads'} onClick={() => setTab('leads')} icon={MessageSquare} label={t('erp.ai.tabs.leads')} />
       </div>
 
       {tab === 'knowledge' ? <KnowledgeTab isAdmin={isAdmin} /> : <LeadsTab />}
@@ -114,6 +118,7 @@ function TabBtn({ active, onClick, icon: Icon, label }: { active: boolean; onCli
 
 function KnowledgeTab({ isAdmin }: { isAdmin: boolean }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<KnowledgeCategory | ''>('');
@@ -153,7 +158,7 @@ function KnowledgeTab({ isAdmin }: { isAdmin: boolean }) {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search titles, content, tags…"
+            placeholder={t('erp.ai.kb.searchPlaceholder')}
             className={cn(sharedInput, 'pl-9')}
           />
         </div>
@@ -162,24 +167,24 @@ function KnowledgeTab({ isAdmin }: { isAdmin: boolean }) {
           onChange={(e) => { setCategory(e.target.value as KnowledgeCategory | ''); setPage(1); }}
           className={cn(sharedInput, 'w-auto')}
         >
-          <option value="">All categories</option>
-          {KB_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">{t('erp.ai.kb.allCategories')}</option>
+          {KB_CATEGORIES.map((c) => <option key={c} value={c}>{t(`erp.ai.category.${c}`)}</option>)}
         </select>
         <select
           value={activeFilter}
           onChange={(e) => { setActiveFilter(e.target.value as any); setPage(1); }}
           className={cn(sharedInput, 'w-auto')}
         >
-          <option value="">Active + inactive</option>
-          <option value="true">Active only</option>
-          <option value="false">Inactive only</option>
+          <option value="">{t('erp.ai.kb.activeInactive')}</option>
+          <option value="true">{t('erp.ai.kb.activeOnly')}</option>
+          <option value="false">{t('erp.ai.kb.inactiveOnly')}</option>
         </select>
         {isAdmin && (
           <button
             onClick={() => setCreating(true)}
             className="flex items-center gap-2 rounded-xl bg-[#fbbf24] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#fbbf24]/90 transition-all"
           >
-            <Plus className="w-4 h-4" /> New Entry
+            <Plus className="w-4 h-4" /> {t('erp.ai.kb.newEntry')}
           </button>
         )}
       </div>
@@ -188,9 +193,9 @@ function KnowledgeTab({ isAdmin }: { isAdmin: boolean }) {
       {isLoading ? (
         <div className="grid place-items-center py-20"><Loader2 className="w-6 h-6 text-white/30 animate-spin" /></div>
       ) : isError ? (
-        <ErrorBox message={errMsg(error, 'Failed to load knowledge base')} />
+        <ErrorBox message={errMsg(error, t('erp.ai.kb.loadFailed'))} />
       ) : entries.length === 0 ? (
-        <EmptyBox icon={BookOpen} title="No knowledge entries" hint={isAdmin ? 'Create your first entry — the assistant answers only from active entries.' : 'No entries yet.'} />
+        <EmptyBox icon={BookOpen} title={t('erp.ai.kb.emptyTitle')} hint={isAdmin ? t('erp.ai.kb.emptyHintAdmin') : t('erp.ai.kb.emptyHint')} />
       ) : (
         <div className="space-y-2">
           {entries.map((e) => (
@@ -200,7 +205,7 @@ function KnowledgeTab({ isAdmin }: { isAdmin: boolean }) {
               isAdmin={isAdmin}
               onEdit={() => setEditing(e)}
               onDelete={() => {
-                if (confirm(`Delete "${e.title}"? This cannot be undone.`)) deleteMut.mutate(e.id);
+                if (confirm(t('erp.ai.kb.deleteConfirm', { title: e.title }))) deleteMut.mutate(e.id);
               }}
             />
           ))}
@@ -226,17 +231,18 @@ function KnowledgeRow({ entry, isAdmin, onEdit, onDelete }: {
   entry: KnowledgeEntry; isAdmin: boolean; onEdit: () => void; onDelete: () => void;
 }) {
   const menu = useDropdown('right');
+  const { t } = useTranslation();
   return (
     <div className="group rounded-2xl border border-white/10 bg-white/[0.02] p-4 hover:border-white/20 transition-all">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', CATEGORY_BADGE[entry.category])}>
-              {entry.category}
+              {t(`erp.ai.category.${entry.category}`)}
             </span>
             {!entry.isActive && (
               <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] font-semibold text-white/30">
-                INACTIVE
+                {t('erp.ai.kb.inactive')}
               </span>
             )}
             {entry.priority > 0 && (
@@ -252,7 +258,7 @@ function KnowledgeRow({ entry, isAdmin, onEdit, onDelete }: {
           </div>
           <h3 className="mt-1.5 text-sm font-medium text-white truncate">{entry.title}</h3>
           <p className="mt-1 text-xs text-white/40 line-clamp-2">{entry.content}</p>
-          <p className="mt-1.5 text-[10px] text-white/25">Updated {fmtDate(entry.updatedAt)}</p>
+          <p className="mt-1.5 text-[10px] text-white/25">{t('erp.ai.kb.updated', { date: fmtDate(entry.updatedAt) })}</p>
         </div>
 
         {isAdmin && (
@@ -263,11 +269,11 @@ function KnowledgeRow({ entry, isAdmin, onEdit, onDelete }: {
             <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={160}>
               <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
                 <button onClick={() => { onEdit(); menu.close(); }} className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
-                  <Edit2 className="w-3.5 h-3.5" /> Edit
+                  <Edit2 className="w-3.5 h-3.5" /> {t('erp.ai.kb.edit')}
                 </button>
                 <div className="my-1 border-t border-white/[0.06]" />
                 <button onClick={() => { onDelete(); menu.close(); }} className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                  <Trash2 className="w-3.5 h-3.5" /> {t('erp.ai.kb.delete')}
                 </button>
               </div>
             </DropdownPortal>
@@ -280,6 +286,7 @@ function KnowledgeRow({ entry, isAdmin, onEdit, onDelete }: {
 
 function KnowledgeModal({ entry, onClose }: { entry: KnowledgeEntry | null; onClose: () => void }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const isEdit = !!entry;
   const [title, setTitle] = useState(entry?.title ?? '');
   const [content, setContent] = useState(entry?.content ?? '');
@@ -311,29 +318,29 @@ function KnowledgeModal({ entry, onClose }: { entry: KnowledgeEntry | null; onCl
   const canSave = title.trim().length >= 2 && content.trim().length >= 2 && !mut.isPending;
 
   return (
-    <ModalShell title={isEdit ? 'Edit knowledge entry' : 'New knowledge entry'} onClose={onClose} wide>
+    <ModalShell title={isEdit ? t('erp.ai.modal.editTitle') : t('erp.ai.modal.newTitle')} onClose={onClose} wide>
       <div className="space-y-4">
-        <Field label="Title *">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. What is Handla Mudar?" className={sharedInput} />
+        <Field label={t('erp.ai.modal.title')}>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('erp.ai.modal.titlePlaceholder')} className={sharedInput} />
         </Field>
-        <Field label="Content * (the assistant may not go beyond this)">
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} placeholder="The authoritative answer…" className={cn(sharedInput, 'resize-y')} />
+        <Field label={t('erp.ai.modal.content')}>
+          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} placeholder={t('erp.ai.modal.contentPlaceholder')} className={cn(sharedInput, 'resize-y')} />
         </Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Category">
+          <Field label={t('erp.ai.modal.category')}>
             <select value={category} onChange={(e) => setCategory(e.target.value as KnowledgeCategory)} className={sharedInput}>
-              {KB_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {KB_CATEGORIES.map((c) => <option key={c} value={c}>{t(`erp.ai.category.${c}`)}</option>)}
             </select>
           </Field>
-          <Field label="Product (optional)">
-            <input value={product} onChange={(e) => setProduct(e.target.value)} placeholder="mudar / matjari / manara" className={sharedInput} />
+          <Field label={t('erp.ai.modal.product')}>
+            <input value={product} onChange={(e) => setProduct(e.target.value)} placeholder={t('erp.ai.modal.productPlaceholder')} className={sharedInput} />
           </Field>
         </div>
-        <Field label="Tags (comma-separated, boosts retrieval)">
-          <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="pricing, onboarding, refund" className={sharedInput} />
+        <Field label={t('erp.ai.modal.tags')}>
+          <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder={t('erp.ai.modal.tagsPlaceholder')} className={sharedInput} />
         </Field>
         <div className="grid grid-cols-2 gap-4 items-end">
-          <Field label="Priority (higher wins ties)">
+          <Field label={t('erp.ai.modal.priority')}>
             <input
               type="number" min={0} value={priority}
               onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
@@ -342,21 +349,21 @@ function KnowledgeModal({ entry, onClose }: { entry: KnowledgeEntry | null; onCl
           </Field>
           <label className="flex items-center gap-2.5 py-2.5 cursor-pointer select-none">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 accent-[#fbbf24]" />
-            <span className="text-sm text-white/70">Active (visible to the assistant)</span>
+            <span className="text-sm text-white/70">{t('erp.ai.modal.active')}</span>
           </label>
         </div>
 
-        {mut.isError && <ErrorBox message={errMsg(mut.error, 'Save failed')} />}
+        {mut.isError && <ErrorBox message={errMsg(mut.error, t('erp.ai.modal.saveFailed'))} />}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-all">Cancel</button>
+          <button onClick={onClose} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-all">{t('erp.common.cancel')}</button>
           <button
             onClick={() => mut.mutate()}
             disabled={!canSave}
             className="flex items-center gap-2 rounded-xl bg-[#fbbf24] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#fbbf24]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {mut.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isEdit ? 'Save changes' : 'Create entry'}
+            {isEdit ? t('erp.ai.modal.saveChanges') : t('erp.ai.modal.createEntry')}
           </button>
         </div>
       </div>
@@ -367,6 +374,7 @@ function KnowledgeModal({ entry, onClose }: { entry: KnowledgeEntry | null; onCl
 // ─── Lead Panel Tab ──────────────────────────────────────────────────────────────
 
 function LeadsTab() {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Conversation | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -386,13 +394,13 @@ function LeadsTab() {
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-4">
       {/* Conversation list */}
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-wide text-white/30 px-1">Conversations</p>
+        <p className="text-xs uppercase tracking-wide text-white/30 px-1">{t('erp.ai.leads.conversations')}</p>
         {isLoading ? (
           <div className="grid place-items-center py-16"><Loader2 className="w-6 h-6 text-white/30 animate-spin" /></div>
         ) : isError ? (
-          <ErrorBox message={errMsg(error, 'Failed to load conversations')} />
+          <ErrorBox message={errMsg(error, t('erp.ai.leads.loadFailed'))} />
         ) : conversations.length === 0 ? (
-          <EmptyBox icon={MessageSquare} title="No conversations" hint="Leads appear here as clients chat with the assistant." />
+          <EmptyBox icon={MessageSquare} title={t('erp.ai.leads.emptyTitle')} hint={t('erp.ai.leads.emptyHint')} />
         ) : (
           conversations.map((c) => (
             <button
@@ -404,10 +412,10 @@ function LeadsTab() {
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-white truncate">{personName(c.client)}</span>
+                <span className="text-sm font-medium text-white truncate">{personName(c.client, t)}</span>
                 <span className="text-[10px] text-white/30 shrink-0">{fmtDate(c.lastMessageAt)}</span>
               </div>
-              <p className="mt-1 text-xs text-white/40 truncate">{c.lastMessage?.content ?? 'No messages yet'}</p>
+              <p className="mt-1 text-xs text-white/40 truncate">{c.lastMessage?.content ?? t('erp.ai.leads.noMessages')}</p>
             </button>
           ))
         )}
@@ -421,7 +429,7 @@ function LeadsTab() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] grid place-items-center py-24">
             <div className="text-center space-y-2">
               <MessageSquare className="w-7 h-7 text-white/20 mx-auto" />
-              <p className="text-sm text-white/30">Select a conversation to see its AI state.</p>
+              <p className="text-sm text-white/30">{t('erp.ai.leads.selectPrompt')}</p>
             </div>
           </div>
         )}
@@ -432,6 +440,7 @@ function LeadsTab() {
 
 function LeadDetail({ conversation }: { conversation: Conversation }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [note, setNote] = useState('');
 
   const { data: state, isLoading, isError, error } = useQuery({
@@ -449,7 +458,7 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
   });
 
   if (isLoading) return <div className="rounded-2xl border border-white/10 bg-white/[0.02] grid place-items-center py-24"><Loader2 className="w-6 h-6 text-white/30 animate-spin" /></div>;
-  if (isError || !state) return <ErrorBox message={errMsg(error, 'Failed to load AI state')} />;
+  if (isError || !state) return <ErrorBox message={errMsg(error, t('erp.ai.leads.stateFailed'))} />;
 
   const isHuman = state.controlMode === 'HUMAN';
   const leadData = state.leadData ?? {};
@@ -460,11 +469,11 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-white">{personName(conversation.client)}</h3>
-          <p className="text-xs text-white/30">Conversation {conversation.id.slice(0, 8)}…</p>
+          <h3 className="text-base font-semibold text-white">{personName(conversation.client, t)}</h3>
+          <p className="text-xs text-white/30">{t('erp.ai.leads.conversationLabel', { id: conversation.id.slice(0, 8) })}</p>
         </div>
         <span className={cn('rounded-full border px-2.5 py-1 text-[11px] font-semibold', LEAD_BADGE[state.leadStatus])}>
-          {state.leadStatus}
+          {t(`erp.ai.leadStatus.${state.leadStatus}`)}
         </span>
       </div>
 
@@ -473,8 +482,8 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
         <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
           <ShieldAlert className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
           <div className="text-xs text-amber-200/80">
-            <span className="font-semibold text-amber-300">Human requested.</span>{' '}
-            {state.escalationReason || 'The assistant flagged this conversation for a human.'}
+            <span className="font-semibold text-amber-300">{t('erp.ai.leads.humanRequested')}</span>{' '}
+            {state.escalationReason || t('erp.ai.leads.flaggedDefault')}
           </div>
         </div>
       )}
@@ -485,7 +494,7 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
           <div className="flex items-center gap-2">
             <Power className={cn('w-4 h-4', isHuman ? 'text-amber-400' : 'text-emerald-400')} />
             <span className="text-sm text-white/80">
-              Control: <span className={cn('font-semibold', isHuman ? 'text-amber-400' : 'text-emerald-400')}>{isHuman ? 'HUMAN' : 'AI'}</span>
+              {t('erp.ai.leads.control')} <span className={cn('font-semibold', isHuman ? 'text-amber-400' : 'text-emerald-400')}>{isHuman ? t('erp.ai.leads.human') : t('erp.ai.leads.ai')}</span>
             </span>
           </div>
           {isHuman ? (
@@ -495,7 +504,7 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
               className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-all"
             >
               {returnMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-              Return to AI
+              {t('erp.ai.leads.returnToAi')}
             </button>
           ) : (
             <button
@@ -504,7 +513,7 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
               className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 transition-all"
             >
               {takeoverMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
-              Take over
+              {t('erp.ai.leads.takeOver')}
             </button>
           )}
         </div>
@@ -512,23 +521,23 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Optional takeover note…"
+            placeholder={t('erp.ai.leads.takeoverNotePlaceholder')}
             className={cn(sharedInput, 'text-xs py-2')}
           />
         )}
         {isHuman && state.takenOverAt && (
-          <p className="text-[11px] text-white/30">Taken over {fmtDate(state.takenOverAt)}</p>
+          <p className="text-[11px] text-white/30">{t('erp.ai.leads.takenOver', { date: fmtDate(state.takenOverAt) })}</p>
         )}
         {(takeoverMut.isError || returnMut.isError) && (
-          <ErrorBox message={errMsg(takeoverMut.error ?? returnMut.error, 'Action failed')} />
+          <ErrorBox message={errMsg(takeoverMut.error ?? returnMut.error, t('erp.ai.leads.actionFailed'))} />
         )}
       </div>
 
       {/* Lead data */}
       <div>
-        <p className="text-xs uppercase tracking-wide text-white/30 mb-2">Captured lead data</p>
+        <p className="text-xs uppercase tracking-wide text-white/30 mb-2">{t('erp.ai.leads.capturedLeadData')}</p>
         {leadKeys.length === 0 ? (
-          <p className="text-sm text-white/30">Nothing captured yet.</p>
+          <p className="text-sm text-white/30">{t('erp.ai.leads.nothingCaptured')}</p>
         ) : (
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             {leadKeys.map((k) => (
@@ -544,7 +553,7 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
       {/* Missing fields */}
       {state.missingFields && state.missingFields.length > 0 && (
         <div>
-          <p className="text-xs uppercase tracking-wide text-white/30 mb-2">Missing before qualified</p>
+          <p className="text-xs uppercase tracking-wide text-white/30 mb-2">{t('erp.ai.leads.missingFields')}</p>
           <div className="flex flex-wrap gap-1.5">
             {state.missingFields.map((f) => (
               <span key={f} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/50">{f}</span>
@@ -556,14 +565,14 @@ function LeadDetail({ conversation }: { conversation: Conversation }) {
       {/* Running summary */}
       {state.runningSummary && (
         <div>
-          <p className="text-xs uppercase tracking-wide text-white/30 mb-2">Running summary</p>
+          <p className="text-xs uppercase tracking-wide text-white/30 mb-2">{t('erp.ai.leads.runningSummary')}</p>
           <p className="text-sm text-white/60 leading-relaxed whitespace-pre-wrap">{state.runningSummary}</p>
         </div>
       )}
 
       <div className="flex items-center justify-between border-t border-white/10 pt-3 text-[11px] text-white/30">
-        <span>AI replies: {state.aiMessageCount}</span>
-        <span>Updated {fmtDate(state.updatedAt)}</span>
+        <span>{t('erp.ai.leads.aiReplies', { count: state.aiMessageCount })}</span>
+        <span>{t('erp.ai.leads.updated', { date: fmtDate(state.updatedAt) })}</span>
       </div>
     </div>
   );
@@ -621,9 +630,10 @@ function EmptyBox({ icon: Icon, title, hint }: { icon: any; title: string; hint:
 }
 
 function Pager({ page, pages, total, onPage }: { page: number; pages: number; total: number; onPage: (p: number) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-2">
-      <p className="text-xs text-white/30">{total} total</p>
+      <p className="text-xs text-white/30">{t('erp.ai.pager.total', { total })}</p>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onPage(Math.max(1, page - 1))}
@@ -632,7 +642,7 @@ function Pager({ page, pages, total, onPage }: { page: number; pages: number; to
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-xs text-white/50">Page {page} / {pages}</span>
+        <span className="text-xs text-white/50">{t('erp.ai.pager.pageInfo', { page, pages })}</span>
         <button
           onClick={() => onPage(Math.min(pages, page + 1))}
           disabled={page >= pages}
