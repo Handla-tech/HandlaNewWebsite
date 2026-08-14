@@ -2064,6 +2064,89 @@
         "unlabeled": "بدون تسمية",
         "lastUsed": "· آخر استخدام {{date}}"
       }
+    },
+    "reports": {
+      "title": "التقارير",
+      "subtitle": "رؤى مالية وتشغيلية",
+      "from": "من",
+      "to": "إلى",
+      "groupBy": "التجميع حسب",
+      "groupByMonth": "شهر",
+      "groupByQuarter": "ربع سنوي",
+      "groupByYear": "سنة",
+      "refresh": "تحديث",
+      "noData": "لا توجد بيانات لهذه الفترة.",
+      "tabs": {
+        "profit-loss": "الأرباح والخسائر",
+        "cash-flow": "التدفق النقدي",
+        "tax-summary": "ملخص الضرائب",
+        "ar-aging": "أعمار الذمم المدينة",
+        "ap-aging": "أعمار الذمم الدائنة",
+        "revenue": "الإيرادات",
+        "projects": "المشاريع",
+        "support": "الدعم"
+      },
+      "buckets": {
+        "current": "الحالية",
+        "d1_30": "1–30 يوماً",
+        "d31_60": "31–60 يوماً",
+        "d61_90": "61–90 يوماً",
+        "d90_plus": "أكثر من 90 يوماً"
+      },
+      "currencyLabel": "العملة: {{currency}}",
+      "pl": {
+        "income": "الدخل",
+        "expenses": "المصروفات",
+        "totalIncome": "إجمالي الدخل",
+        "totalExpense": "إجمالي المصروفات",
+        "netProfit": "صافي الربح"
+      },
+      "cashFlow": {
+        "inflow": "التدفق الداخل",
+        "outflow": "التدفق الخارج",
+        "net": "الصافي",
+        "byGroup": "حسب {{group}}",
+        "period": "الفترة",
+        "currency": "العملة"
+      },
+      "tax": {
+        "outputTax": "ضريبة المخرجات (على الفواتير)",
+        "inputTax": "ضريبة المدخلات (على المشتريات)",
+        "taxableBase": "الوعاء الضريبي",
+        "netTaxPayable": "صافي الضريبة المستحقة"
+      },
+      "aging": {
+        "noBalances": "لا توجد أرصدة مستحقة.",
+        "total": "الإجمالي",
+        "detail": "التفاصيل",
+        "number": "الرقم",
+        "party": "الطرف",
+        "dueDate": "تاريخ الاستحقاق",
+        "bucket": "الفئة العمرية",
+        "amount": "المبلغ"
+      },
+      "revenue": {
+        "noInvoices": "لا توجد فواتير مدفوعة في هذه الفترة.",
+        "cardTitle": "الإيرادات حسب العميل (الفواتير المدفوعة)",
+        "client": "العميل",
+        "currency": "العملة",
+        "invoices": "الفواتير",
+        "revenue": "الإيرادات"
+      },
+      "projects": {
+        "none": "لا توجد مشاريع.",
+        "totalProjects": "إجمالي المشاريع"
+      },
+      "supportView": {
+        "totalTickets": "إجمالي التذاكر",
+        "open": "مفتوحة",
+        "resolved": "محلولة",
+        "slaBreached": "تجاوز اتفاقية الخدمة",
+        "avgResolution": "متوسط وقت الحل",
+        "byStatus": "حسب الحالة",
+        "byPriority": "حسب الأولوية",
+        "byCategory": "حسب الفئة"
+      }
     }
   },
   "footer": {

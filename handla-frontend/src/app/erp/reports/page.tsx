@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { reportsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -42,24 +43,18 @@ type ReportTab =
   | 'profit-loss' | 'cash-flow' | 'tax-summary' | 'ar-aging' | 'ap-aging'
   | 'revenue' | 'projects' | 'support';
 
-const TABS: { id: ReportTab; label: string; icon: any; group: 'Financial' | 'Operational' }[] = [
-  { id: 'profit-loss', label: 'Profit & Loss', icon: TrendingUp,    group: 'Financial' },
-  { id: 'cash-flow',   label: 'Cash Flow',     icon: Wallet,        group: 'Financial' },
-  { id: 'tax-summary', label: 'Tax Summary',   icon: Receipt,       group: 'Financial' },
-  { id: 'ar-aging',    label: 'A/R Aging',     icon: Clock,         group: 'Financial' },
-  { id: 'ap-aging',    label: 'A/P Aging',     icon: Clock,         group: 'Financial' },
-  { id: 'revenue',     label: 'Revenue',       icon: DollarSign,    group: 'Operational' },
-  { id: 'projects',    label: 'Projects',      icon: FolderKanban,  group: 'Operational' },
-  { id: 'support',     label: 'Support',       icon: LifeBuoy,      group: 'Operational' },
+const TABS: { id: ReportTab; icon: any; group: 'Financial' | 'Operational' }[] = [
+  { id: 'profit-loss', icon: TrendingUp,    group: 'Financial' },
+  { id: 'cash-flow',   icon: Wallet,        group: 'Financial' },
+  { id: 'tax-summary', icon: Receipt,       group: 'Financial' },
+  { id: 'ar-aging',    icon: Clock,         group: 'Financial' },
+  { id: 'ap-aging',    icon: Clock,         group: 'Financial' },
+  { id: 'revenue',     icon: DollarSign,    group: 'Operational' },
+  { id: 'projects',    icon: FolderKanban,  group: 'Operational' },
+  { id: 'support',     icon: LifeBuoy,      group: 'Operational' },
 ];
 
-const BUCKET_LABELS: Record<string, string> = {
-  current: 'Current',
-  d1_30: '1–30 days',
-  d31_60: '31–60 days',
-  d61_90: '61–90 days',
-  d90_plus: '90+ days',
-};
+const BUCKET_KEYS = ['current', 'd1_30', 'd31_60', 'd61_90', 'd90_plus'] as const;
 
 // ─── Small presentational pieces ──────────────────────────────────────────────
 
@@ -105,11 +100,12 @@ function SectionCard({ title, children }: { title?: string; children: React.Reac
   );
 }
 
-function EmptyRow({ text = 'No data for this range.' }: { text?: string }) {
+function EmptyRow({ text }: { text?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <BarChart3 className="w-8 h-8 text-white/15 mb-3" />
-      <p className="text-sm text-white/40">{text}</p>
+      <p className="text-sm text-white/40">{text ?? t('erp.reports.noData')}</p>
     </div>
   );
 }
@@ -117,15 +113,16 @@ function EmptyRow({ text = 'No data for this range.' }: { text?: string }) {
 // ─── Report renderers ─────────────────────────────────────────────────────────
 
 function ProfitLossView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const currencies: any[] = data?.currencies ?? [];
   if (!currencies.length) return <EmptyRow />;
   return (
     <div className="space-y-4">
       {currencies.map((c) => (
-        <SectionCard key={c.currency} title={`Currency: ${c.currency}`}>
+        <SectionCard key={c.currency} title={t('erp.reports.currencyLabel', { currency: c.currency })}>
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/10">
             <div className="p-4">
-              <p className="text-[11px] font-semibold text-emerald-400 uppercase mb-2">Income</p>
+              <p className="text-[11px] font-semibold text-emerald-400 uppercase mb-2">{t('erp.reports.pl.income')}</p>
               {c.income.length === 0 && <p className="text-sm text-white/30">—</p>}
               {c.income.map((l: any) => (
                 <div key={l.code} className="flex justify-between py-1 text-sm">
@@ -135,7 +132,7 @@ function ProfitLossView({ data }: { data: any }) {
               ))}
             </div>
             <div className="p-4">
-              <p className="text-[11px] font-semibold text-red-400 uppercase mb-2">Expenses</p>
+              <p className="text-[11px] font-semibold text-red-400 uppercase mb-2">{t('erp.reports.pl.expenses')}</p>
               {c.expenses.length === 0 && <p className="text-sm text-white/30">—</p>}
               {c.expenses.map((l: any) => (
                 <div key={l.code} className="flex justify-between py-1 text-sm">
@@ -147,15 +144,15 @@ function ProfitLossView({ data }: { data: any }) {
           </div>
           <div className="grid grid-cols-3 border-t border-white/10 text-center divide-x divide-white/10">
             <div className="p-3">
-              <p className="text-[10px] text-white/30 uppercase">Total Income</p>
+              <p className="text-[10px] text-white/30 uppercase">{t('erp.reports.pl.totalIncome')}</p>
               <p className="text-emerald-400 font-bold">{fmt(c.totalIncome, c.currency)}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] text-white/30 uppercase">Total Expense</p>
+              <p className="text-[10px] text-white/30 uppercase">{t('erp.reports.pl.totalExpense')}</p>
               <p className="text-red-400 font-bold">{fmt(c.totalExpense, c.currency)}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] text-white/30 uppercase">Net Profit</p>
+              <p className="text-[10px] text-white/30 uppercase">{t('erp.reports.pl.netProfit')}</p>
               <p className={cn('font-bold', c.netProfit >= 0 ? 'text-emerald-400' : 'text-red-400')}>
                 {fmt(c.netProfit, c.currency)}
               </p>
@@ -168,28 +165,29 @@ function ProfitLossView({ data }: { data: any }) {
 }
 
 function CashFlowView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const totals: any[] = data?.totals ?? [];
   const series: any[] = data?.series ?? [];
   if (!totals.length) return <EmptyRow />;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {totals.map((t) => (
-          <SectionCard key={t.currency}>
+        {totals.map((tt) => (
+          <SectionCard key={tt.currency}>
             <div className="p-4">
-              <p className="text-[11px] font-semibold text-white/40 uppercase mb-2">{t.currency}</p>
+              <p className="text-[11px] font-semibold text-white/40 uppercase mb-2">{tt.currency}</p>
               <div className="flex justify-between text-sm py-0.5">
-                <span className="text-white/50">Inflow</span>
-                <span className="text-emerald-400">{fmt(t.inflow, t.currency)}</span>
+                <span className="text-white/50">{t('erp.reports.cashFlow.inflow')}</span>
+                <span className="text-emerald-400">{fmt(tt.inflow, tt.currency)}</span>
               </div>
               <div className="flex justify-between text-sm py-0.5">
-                <span className="text-white/50">Outflow</span>
-                <span className="text-red-400">{fmt(t.outflow, t.currency)}</span>
+                <span className="text-white/50">{t('erp.reports.cashFlow.outflow')}</span>
+                <span className="text-red-400">{fmt(tt.outflow, tt.currency)}</span>
               </div>
               <div className="flex justify-between text-sm py-0.5 border-t border-white/10 mt-1 pt-1">
-                <span className="text-white/70 font-medium">Net</span>
-                <span className={cn('font-bold', t.net >= 0 ? 'text-emerald-400' : 'text-red-400')}>
-                  {fmt(t.net, t.currency)}
+                <span className="text-white/70 font-medium">{t('erp.reports.cashFlow.net')}</span>
+                <span className={cn('font-bold', tt.net >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                  {fmt(tt.net, tt.currency)}
                 </span>
               </div>
             </div>
@@ -197,7 +195,7 @@ function CashFlowView({ data }: { data: any }) {
         ))}
       </div>
 
-      <SectionCard title={`By ${data?.groupBy ?? 'month'}`}>
+      <SectionCard title={t('erp.reports.cashFlow.byGroup', { group: data?.groupBy ?? 'month' })}>
         {series.length === 0 ? (
           <EmptyRow />
         ) : (
@@ -205,11 +203,11 @@ function CashFlowView({ data }: { data: any }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[10px] uppercase text-white/30 border-b border-white/10">
-                  <th className="px-4 py-2">Period</th>
-                  <th className="px-4 py-2">Currency</th>
-                  <th className="px-4 py-2 text-right">Inflow</th>
-                  <th className="px-4 py-2 text-right">Outflow</th>
-                  <th className="px-4 py-2 text-right">Net</th>
+                  <th className="px-4 py-2">{t('erp.reports.cashFlow.period')}</th>
+                  <th className="px-4 py-2">{t('erp.reports.cashFlow.currency')}</th>
+                  <th className="px-4 py-2 text-right">{t('erp.reports.cashFlow.inflow')}</th>
+                  <th className="px-4 py-2 text-right">{t('erp.reports.cashFlow.outflow')}</th>
+                  <th className="px-4 py-2 text-right">{t('erp.reports.cashFlow.net')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,29 +234,30 @@ function CashFlowView({ data }: { data: any }) {
 }
 
 function TaxSummaryView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const currencies: any[] = data?.currencies ?? [];
   if (!currencies.length) return <EmptyRow />;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {currencies.map((c) => (
-        <SectionCard key={c.currency} title={`Currency: ${c.currency}`}>
+        <SectionCard key={c.currency} title={t('erp.reports.currencyLabel', { currency: c.currency })}>
           <div className="p-4 space-y-1.5 text-sm">
             <div className="flex justify-between">
-              <span className="text-white/50">Output tax (on invoices)</span>
+              <span className="text-white/50">{t('erp.reports.tax.outputTax')}</span>
               <span className="text-white">{fmt(c.outputTax, c.currency)}</span>
             </div>
             <div className="flex justify-between text-white/30 text-xs">
-              <span>Taxable base</span><span>{fmt(c.outputTaxable, c.currency)}</span>
+              <span>{t('erp.reports.tax.taxableBase')}</span><span>{fmt(c.outputTaxable, c.currency)}</span>
             </div>
             <div className="flex justify-between pt-1">
-              <span className="text-white/50">Input tax (on purchases)</span>
+              <span className="text-white/50">{t('erp.reports.tax.inputTax')}</span>
               <span className="text-white">{fmt(c.inputTax, c.currency)}</span>
             </div>
             <div className="flex justify-between text-white/30 text-xs">
-              <span>Taxable base</span><span>{fmt(c.inputTaxable, c.currency)}</span>
+              <span>{t('erp.reports.tax.taxableBase')}</span><span>{fmt(c.inputTaxable, c.currency)}</span>
             </div>
             <div className="flex justify-between border-t border-white/10 mt-2 pt-2">
-              <span className="text-white/70 font-medium">Net tax payable</span>
+              <span className="text-white/70 font-medium">{t('erp.reports.tax.netTaxPayable')}</span>
               <span className={cn('font-bold', c.netTaxPayable >= 0 ? 'text-amber-400' : 'text-emerald-400')}>
                 {fmt(c.netTaxPayable, c.currency)}
               </span>
@@ -271,29 +270,30 @@ function TaxSummaryView({ data }: { data: any }) {
 }
 
 function AgingView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const currencies: any[] = data?.currencies ?? [];
   const detail: any[] = data?.detail ?? [];
-  if (!currencies.length) return <EmptyRow text="No outstanding balances." />;
+  if (!currencies.length) return <EmptyRow text={t('erp.reports.aging.noBalances')} />;
   return (
     <div className="space-y-4">
       {currencies.map((c) => (
-        <SectionCard key={c.currency} title={`Currency: ${c.currency}`}>
+        <SectionCard key={c.currency} title={t('erp.reports.currencyLabel', { currency: c.currency })}>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-white/10 text-center">
-            {['current', 'd1_30', 'd31_60', 'd61_90', 'd90_plus'].map((b) => (
+            {BUCKET_KEYS.map((b) => (
               <div key={b} className="p-3">
-                <p className="text-[10px] text-white/30 uppercase">{BUCKET_LABELS[b]}</p>
+                <p className="text-[10px] text-white/30 uppercase">{t(`erp.reports.buckets.${b}`)}</p>
                 <p className="text-white font-semibold text-sm">{fmt(c[b], c.currency)}</p>
               </div>
             ))}
             <div className="p-3 bg-amber-500/5">
-              <p className="text-[10px] text-amber-400/60 uppercase">Total</p>
+              <p className="text-[10px] text-amber-400/60 uppercase">{t('erp.reports.aging.total')}</p>
               <p className="text-amber-400 font-bold text-sm">{fmt(c.total, c.currency)}</p>
             </div>
           </div>
         </SectionCard>
       ))}
 
-      <SectionCard title="Detail">
+      <SectionCard title={t('erp.reports.aging.detail')}>
         {detail.length === 0 ? (
           <EmptyRow />
         ) : (
@@ -301,11 +301,11 @@ function AgingView({ data }: { data: any }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[10px] uppercase text-white/30 border-b border-white/10">
-                  <th className="px-4 py-2">Number</th>
-                  <th className="px-4 py-2">Party</th>
-                  <th className="px-4 py-2">Due date</th>
-                  <th className="px-4 py-2">Bucket</th>
-                  <th className="px-4 py-2 text-right">Amount</th>
+                  <th className="px-4 py-2">{t('erp.reports.aging.number')}</th>
+                  <th className="px-4 py-2">{t('erp.reports.aging.party')}</th>
+                  <th className="px-4 py-2">{t('erp.reports.aging.dueDate')}</th>
+                  <th className="px-4 py-2">{t('erp.reports.aging.bucket')}</th>
+                  <th className="px-4 py-2 text-right">{t('erp.reports.aging.amount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -321,7 +321,7 @@ function AgingView({ data }: { data: any }) {
                           ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                           : 'border-red-500/30 bg-red-500/10 text-red-400',
                       )}>
-                        {BUCKET_LABELS[d.bucket]}
+                        {t(`erp.reports.buckets.${d.bucket}`)}
                       </span>
                     </td>
                     <td className="px-4 py-2 text-right text-white">{fmt(d.amount, d.currency)}</td>
@@ -337,18 +337,19 @@ function AgingView({ data }: { data: any }) {
 }
 
 function RevenueView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const rows: any[] = data?.rows ?? [];
-  if (!rows.length) return <EmptyRow text="No paid invoices in this range." />;
+  if (!rows.length) return <EmptyRow text={t('erp.reports.revenue.noInvoices')} />;
   return (
-    <SectionCard title="Revenue by client (paid invoices)">
+    <SectionCard title={t('erp.reports.revenue.cardTitle')}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[10px] uppercase text-white/30 border-b border-white/10">
-              <th className="px-4 py-2">Client</th>
-              <th className="px-4 py-2">Currency</th>
-              <th className="px-4 py-2 text-right">Invoices</th>
-              <th className="px-4 py-2 text-right">Revenue</th>
+              <th className="px-4 py-2">{t('erp.reports.revenue.client')}</th>
+              <th className="px-4 py-2">{t('erp.reports.revenue.currency')}</th>
+              <th className="px-4 py-2 text-right">{t('erp.reports.revenue.invoices')}</th>
+              <th className="px-4 py-2 text-right">{t('erp.reports.revenue.revenue')}</th>
             </tr>
           </thead>
           <tbody>
@@ -368,16 +369,17 @@ function RevenueView({ data }: { data: any }) {
 }
 
 function ProjectsView({ data }: { data: any }) {
+  const { t } = useTranslation();
   const byStatus: Record<string, number> = data?.byStatus ?? {};
   const entries = Object.entries(byStatus);
-  if (!entries.length) return <EmptyRow text="No projects." />;
+  if (!entries.length) return <EmptyRow text={t('erp.reports.projects.none')} />;
   const total = data?.total ?? 0;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Projects" value={String(total)} icon={FolderKanban} />
+        <StatCard label={t('erp.reports.projects.totalProjects')} value={String(total)} icon={FolderKanban} />
         {entries.map(([status, count]) => (
-          <StatCard key={status} label={status.replace(/_/g, ' ')} value={String(count)} icon={FolderKanban} />
+          <StatCard key={status} label={t(`erp.statusLabel.${status}`)} value={String(count)} icon={FolderKanban} />
         ))}
       </div>
     </div>
@@ -385,6 +387,7 @@ function ProjectsView({ data }: { data: any }) {
 }
 
 function SupportView({ data }: { data: any }) {
+  const { t } = useTranslation();
   if (!data) return <EmptyRow />;
   const byStatus: Record<string, number> = data.byStatus ?? {};
   const byPriority: Record<string, number> = data.byPriority ?? {};
@@ -392,28 +395,28 @@ function SupportView({ data }: { data: any }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <StatCard label="Total Tickets" value={String(data.total ?? 0)} icon={LifeBuoy} />
-        <StatCard label="Open" value={String(data.open ?? 0)} icon={LifeBuoy} />
-        <StatCard label="Resolved" value={String(data.resolved ?? 0)} icon={LifeBuoy} tone="positive" />
-        <StatCard label="SLA Breached" value={String(data.slaBreached ?? 0)} icon={AlertCircle} tone={data.slaBreached ? 'negative' : 'default'} />
+        <StatCard label={t('erp.reports.supportView.totalTickets')} value={String(data.total ?? 0)} icon={LifeBuoy} />
+        <StatCard label={t('erp.reports.supportView.open')} value={String(data.open ?? 0)} icon={LifeBuoy} />
+        <StatCard label={t('erp.reports.supportView.resolved')} value={String(data.resolved ?? 0)} icon={LifeBuoy} tone="positive" />
+        <StatCard label={t('erp.reports.supportView.slaBreached')} value={String(data.slaBreached ?? 0)} icon={AlertCircle} tone={data.slaBreached ? 'negative' : 'default'} />
         <StatCard
-          label="Avg Resolution"
+          label={t('erp.reports.supportView.avgResolution')}
           value={data.avgResolutionHours != null ? `${data.avgResolutionHours}h` : '—'}
           icon={Clock}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
-          { title: 'By Status', map: byStatus },
-          { title: 'By Priority', map: byPriority },
-          { title: 'By Category', map: byCategory },
+          { title: t('erp.reports.supportView.byStatus'), map: byStatus, kind: 'status' as const },
+          { title: t('erp.reports.supportView.byPriority'), map: byPriority, kind: 'priority' as const },
+          { title: t('erp.reports.supportView.byCategory'), map: byCategory, kind: 'category' as const },
         ].map((b) => (
           <SectionCard key={b.title} title={b.title}>
             <div className="p-4 space-y-1.5">
               {Object.entries(b.map).length === 0 && <p className="text-sm text-white/30">—</p>}
               {Object.entries(b.map).map(([k, v]) => (
                 <div key={k} className="flex justify-between text-sm">
-                  <span className="text-white/60">{k.replace(/_/g, ' ')}</span>
+                  <span className="text-white/60">{t(`erp.support.${b.kind}.${k}`)}</span>
                   <span className="text-white font-medium">{v}</span>
                 </div>
               ))}
@@ -452,6 +455,7 @@ function useReportQuery(tab: ReportTab, params: Record<string, string>, enabled:
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -476,28 +480,28 @@ export default function ReportsPage() {
             <BarChart3 className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Reports</h1>
-            <p className="text-xs text-white/40">Financial &amp; operational insights</p>
+            <h1 className="text-lg font-bold text-white">{t('erp.reports.title')}</h1>
+            <p className="text-xs text-white/40">{t('erp.reports.subtitle')}</p>
           </div>
         </div>
 
         {/* Date range */}
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="block text-[10px] uppercase text-white/30 mb-1">From</label>
+            <label className="block text-[10px] uppercase text-white/30 mb-1">{t('erp.reports.from')}</label>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={cn(inputCls, 'w-auto')} />
           </div>
           <div>
-            <label className="block text-[10px] uppercase text-white/30 mb-1">To</label>
+            <label className="block text-[10px] uppercase text-white/30 mb-1">{t('erp.reports.to')}</label>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={cn(inputCls, 'w-auto')} />
           </div>
           {tab === 'cash-flow' && (
             <div>
-              <label className="block text-[10px] uppercase text-white/30 mb-1">Group by</label>
+              <label className="block text-[10px] uppercase text-white/30 mb-1">{t('erp.reports.groupBy')}</label>
               <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)} className={cn(inputCls, 'w-auto')}>
-                <option value="month">Month</option>
-                <option value="quarter">Quarter</option>
-                <option value="year">Year</option>
+                <option value="month">{t('erp.reports.groupByMonth')}</option>
+                <option value="quarter">{t('erp.reports.groupByQuarter')}</option>
+                <option value="year">{t('erp.reports.groupByYear')}</option>
               </select>
             </div>
           )}
@@ -506,27 +510,27 @@ export default function ReportsPage() {
             className="flex h-[42px] min-h-[42px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white/70 transition hover:bg-white/[0.06]"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', isFetching && 'animate-spin')} />
-            Refresh
+            {t('erp.reports.refresh')}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1.5 rounded-2xl border border-white/10 bg-white/[0.02] p-1.5">
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.id;
+        {TABS.map((tb) => {
+          const Icon = tb.icon;
+          const active = tab === tb.id;
           return (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              onClick={() => setTab(tb.id)}
               className={cn(
                 'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition min-h-[40px]',
                 active ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.04]',
               )}
             >
               <Icon className="w-3.5 h-3.5" />
-              {t.label}
+              {t(`erp.reports.tabs.${tb.id}`)}
             </button>
           );
         })}

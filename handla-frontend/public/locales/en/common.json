@@ -2064,6 +2064,89 @@
         "unlabeled": "Unlabeled",
         "lastUsed": "· last used {{date}}"
       }
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "Financial & operational insights",
+      "from": "From",
+      "to": "To",
+      "groupBy": "Group by",
+      "groupByMonth": "Month",
+      "groupByQuarter": "Quarter",
+      "groupByYear": "Year",
+      "refresh": "Refresh",
+      "noData": "No data for this range.",
+      "tabs": {
+        "profit-loss": "Profit & Loss",
+        "cash-flow": "Cash Flow",
+        "tax-summary": "Tax Summary",
+        "ar-aging": "A/R Aging",
+        "ap-aging": "A/P Aging",
+        "revenue": "Revenue",
+        "projects": "Projects",
+        "support": "Support"
+      },
+      "buckets": {
+        "current": "Current",
+        "d1_30": "1–30 days",
+        "d31_60": "31–60 days",
+        "d61_90": "61–90 days",
+        "d90_plus": "90+ days"
+      },
+      "currencyLabel": "Currency: {{currency}}",
+      "pl": {
+        "income": "Income",
+        "expenses": "Expenses",
+        "totalIncome": "Total Income",
+        "totalExpense": "Total Expense",
+        "netProfit": "Net Profit"
+      },
+      "cashFlow": {
+        "inflow": "Inflow",
+        "outflow": "Outflow",
+        "net": "Net",
+        "byGroup": "By {{group}}",
+        "period": "Period",
+        "currency": "Currency"
+      },
+      "tax": {
+        "outputTax": "Output tax (on invoices)",
+        "inputTax": "Input tax (on purchases)",
+        "taxableBase": "Taxable base",
+        "netTaxPayable": "Net tax payable"
+      },
+      "aging": {
+        "noBalances": "No outstanding balances.",
+        "total": "Total",
+        "detail": "Detail",
+        "number": "Number",
+        "party": "Party",
+        "dueDate": "Due date",
+        "bucket": "Bucket",
+        "amount": "Amount"
+      },
+      "revenue": {
+        "noInvoices": "No paid invoices in this range.",
+        "cardTitle": "Revenue by client (paid invoices)",
+        "client": "Client",
+        "currency": "Currency",
+        "invoices": "Invoices",
+        "revenue": "Revenue"
+      },
+      "projects": {
+        "none": "No projects.",
+        "totalProjects": "Total Projects"
+      },
+      "supportView": {
+        "totalTickets": "Total Tickets",
+        "open": "Open",
+        "resolved": "Resolved",
+        "slaBreached": "SLA Breached",
+        "avgResolution": "Avg Resolution",
+        "byStatus": "By Status",
+        "byPriority": "By Priority",
+        "byCategory": "By Category"
+      }
     }
   },
   "footer": {
