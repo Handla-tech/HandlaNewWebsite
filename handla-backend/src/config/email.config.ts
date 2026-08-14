@@ -9,7 +9,11 @@ import { registerAs } from '@nestjs/config';
  * avoid that footgun we DERIVE `secure` from the port unless it is explicitly
  * pinned via MAIL_SECURE. Gmail App Passwords are frequently pasted with the
  * grouping spaces Google shows (e.g. "abcd efgh ijkl mnop") — those spaces are
- * not part of the credential, so we strip whitespace from the password.
+ * not part of the credential. We ALWAYS trim the ends of the password, and we
+ * additionally strip *internal* spaces only when the value looks like a Gmail
+ * App Password (four groups of four alphanumerics). This avoids corrupting a
+ * normal mailbox password (e.g. a Hostinger inbox password) that may
+ * legitimately contain spaces.
  *
  * ── "From" / "Reply-To" address ──────────────────────────────────────────────
  * The SMTP relay authenticates as MAIL_USER, but the address recipients SEE is
@@ -40,13 +44,19 @@ export default registerAs('email', () => {
   const fromName = (process.env.MAIL_FROM_NAME || 'Handla').trim();
   const replyTo = (process.env.MAIL_REPLY_TO || '').trim();
 
+  // Trim the ends always; strip internal spaces ONLY for Gmail App Passwords
+  // (4 groups of 4 alphanumerics), so we never corrupt a normal mailbox
+  // password that may contain spaces.
+  const rawPass = (process.env.MAIL_PASS || '').trim();
+  const looksLikeGmailAppPassword = /^([a-z0-9]{4}\s){3}[a-z0-9]{4}$/i.test(rawPass);
+  const pass = looksLikeGmailAppPassword ? rawPass.replace(/\s+/g, '') : rawPass;
+
   return {
     host: (process.env.MAIL_HOST || 'smtp.gmail.com').trim(),
     port,
     secure,
     user: (process.env.MAIL_USER || '').trim(),
-    // App passwords are often copied with spaces — strip ALL whitespace.
-    pass: (process.env.MAIL_PASS || '').replace(/\s+/g, ''),
+    pass,
     // Bare envelope-from address (used for the SMTP envelope / return-path).
     from: fromAddress,
     // Optional human-friendly display name shown in mail clients.
