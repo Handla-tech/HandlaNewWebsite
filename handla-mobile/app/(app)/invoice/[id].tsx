@@ -7,10 +7,11 @@ import { invoicesApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
 import { INVOICE_STATUS_META, money, fmtDate } from '@/lib/salesMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Invoice, LineItem } from '@/types';
 
 export default function InvoiceDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const invoiceId = String(id);
   const router = useRouter();
@@ -127,7 +128,7 @@ export default function InvoiceDetailScreen() {
 }
 
 const sectionLabel = {
-  color: colors.textDim,
+  color: staticColors.textDim,
   fontSize: font.xs,
   fontWeight: '600' as const,
   textTransform: 'uppercase' as const,
@@ -136,8 +137,8 @@ const sectionLabel = {
 };
 
 const cardStyle = {
-  backgroundColor: colors.card,
-  borderColor: colors.border,
+  backgroundColor: staticColors.card,
+  borderColor: staticColors.border,
   borderWidth: 1,
   borderRadius: radius.md,
   padding: spacing.md,

@@ -9,7 +9,7 @@ import type { TicketsQuery } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Title, Loading, Badge, Chip } from '@/components/ui';
 import { STATUS_META, PRIORITY_META, STATUS_ORDER } from '@/lib/ticketMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedTickets, SupportStats, TicketStatus, Ticket } from '@/types';
 
 function timeAgo(iso?: string) {
@@ -26,6 +26,7 @@ function timeAgo(iso?: string) {
 }
 
 function StatTile({ label, value, tone }: { label: string; value: number; tone?: string }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -46,6 +47,7 @@ function StatTile({ label, value, tone }: { label: string; value: number; tone?:
 }
 
 export default function SupportListScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const isStaff = useAuthStore((s) => s.isStaff());
   const [status, setStatus] = useState<TicketStatus | null>(null);

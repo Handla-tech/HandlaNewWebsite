@@ -14,7 +14,7 @@ import {
   money,
   fmtDate,
 } from '@/lib/salesMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type {
   PaginatedQuotations,
   PaginatedContracts,
@@ -54,8 +54,8 @@ function DocCard({
       onPress={onPress}
       style={({ pressed }) => [
         {
-          backgroundColor: colors.card,
-          borderColor: colors.border,
+          backgroundColor: staticColors.card,
+          borderColor: staticColors.border,
           borderWidth: 1,
           borderRadius: radius.md,
           padding: spacing.md,
@@ -65,25 +65,25 @@ function DocCard({
       ]}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>{number}</Text>
+        <Text style={{ color: staticColors.accent, fontSize: font.xs, fontWeight: '700' }}>{number}</Text>
         <Badge label={badge.label} color={badge.color} soft={badge.soft} />
       </View>
       <Text
-        style={{ color: colors.text, fontSize: font.md, fontWeight: '700', marginTop: 4 }}
+        style={{ color: staticColors.text, fontSize: font.md, fontWeight: '700', marginTop: 4 }}
         numberOfLines={1}
       >
         {title}
       </Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
         {subtitle ? (
-          <Text style={{ color: colors.textFaint, fontSize: font.sm, flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: staticColors.textFaint, fontSize: font.sm, flex: 1 }} numberOfLines={1}>
             {subtitle}
           </Text>
         ) : (
           <View style={{ flex: 1 }} />
         )}
         {amount != null && (
-          <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800', marginLeft: 8 }}>
+          <Text style={{ color: staticColors.text, fontSize: font.md, fontWeight: '800', marginLeft: 8 }}>
             {money(amount, currency)}
           </Text>
         )}
@@ -93,6 +93,7 @@ function DocCard({
 }
 
 export default function SalesScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const isStaff = useAuthStore((s) => s.isStaff());
   const [segment, setSegment] = useState<Segment>('quotations');
@@ -236,6 +237,7 @@ export default function SalesScreen() {
 }
 
 function Empty({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) {
+  const { colors } = useTheme();
   return (
     <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
       <Ionicons name={icon} size={40} color={colors.textDim} />

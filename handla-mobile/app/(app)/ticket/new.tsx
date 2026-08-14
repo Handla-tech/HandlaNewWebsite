@@ -20,7 +20,7 @@ import {
   PRIORITY_ORDER,
   CATEGORY_ORDER,
 } from '@/lib/ticketMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { PaginatedClients, TicketPriority, TicketCategory, Client } from '@/types';
 
 function PillRow<T extends string>({
@@ -41,8 +41,8 @@ function PillRow<T extends string>({
       {options.map((o) => {
         const active = value === o;
         const c = colorFor?.(o);
-        const activeColor = c?.color ?? colors.accent;
-        const activeSoft = c?.soft ?? colors.accentSoft;
+        const activeColor = c?.color ?? staticColors.accent;
+        const activeSoft = c?.soft ?? staticColors.accentSoft;
         return (
           <Pressable
             key={o}
@@ -52,13 +52,13 @@ function PillRow<T extends string>({
               paddingHorizontal: spacing.md,
               paddingVertical: spacing.sm - 2,
               borderWidth: 1,
-              borderColor: active ? activeColor : colors.border,
-              backgroundColor: active ? activeSoft : colors.cardAlt,
+              borderColor: active ? activeColor : staticColors.border,
+              backgroundColor: active ? activeSoft : staticColors.cardAlt,
             }}
           >
             <Text
               style={{
-                color: active ? activeColor : colors.textMuted,
+                color: active ? activeColor : staticColors.textMuted,
                 fontSize: font.sm,
                 fontWeight: active ? '700' : '500',
               }}
@@ -73,6 +73,7 @@ function PillRow<T extends string>({
 }
 
 export default function NewTicketScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());

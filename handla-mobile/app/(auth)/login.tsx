@@ -3,10 +3,11 @@ import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { Screen, Title, Subtitle, Input, Button, Card } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useT } from '@/i18n';
-import { colors, spacing, font } from '@/theme';
+import { spacing, font, useTheme } from '@/theme';
 
 export default function LoginScreen() {
   const { t } = useT();
+  const { colors } = useTheme();
   const signIn = useAuthStore((s) => s.signIn);
   const storeError = useAuthStore((s) => s.error);
 

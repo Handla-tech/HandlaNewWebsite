@@ -13,9 +13,59 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, font } from '@/theme';
+import { radius, spacing, font, useTheme, type Palette } from '@/theme';
 
-// ─── Screen wrapper (safe area + dark bg) ──────────────────────────────────────
+
+
+// ─── Style factory ────────────────────────────────────────────────────────────
+// Styles depend on the active palette, so they are rebuilt per render from the
+// theme. StyleSheet.create is still used for RN's style-id optimisation.
+function makeStyles(colors: Palette) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.bg },
+    title: { color: colors.text, fontSize: font.xl, fontWeight: '700' },
+    subtitle: { color: colors.textFaint, fontSize: font.sm, marginTop: 2 },
+    label: {
+      color: colors.textDim,
+      fontSize: font.xs,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+    },
+    input: {
+      minHeight: 48,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.inputBg,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      fontSize: font.md,
+    },
+    errorText: { color: colors.danger, fontSize: font.xs, marginTop: spacing.xs },
+    btn: {
+      minHeight: 48,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+    btnPrimary: { backgroundColor: colors.accent },
+    btnGhost: { backgroundColor: colors.cardAlt, borderWidth: 1, borderColor: colors.border },
+    btnDanger: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: colors.danger },
+    btnText: { fontSize: font.md, fontWeight: '700' },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  });
+}
+
+// ─── Screen wrapper (safe area + themed bg) ─────────────────────────────────────
 export function Screen({
   children,
   scroll = false,
@@ -27,6 +77,8 @@ export function Screen({
   style?: ViewStyle;
   padded?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const inner = (
     <View style={[padded && { padding: spacing.lg }, { flex: scroll ? undefined : 1 }, style]}>
       {children}
@@ -51,18 +103,22 @@ export function Screen({
 
 // ─── Text helpers ───────────────────────────────────────────────────────────
 export function Title({ children, style }: { children: React.ReactNode; style?: TextStyle }) {
-  return <Text style={[styles.title, style]}>{children}</Text>;
+  const { colors } = useTheme();
+  return <Text style={[makeStyles(colors).title, style]}>{children}</Text>;
 }
 export function Subtitle({ children, style }: { children: React.ReactNode; style?: TextStyle }) {
-  return <Text style={[styles.subtitle, style]}>{children}</Text>;
+  const { colors } = useTheme();
+  return <Text style={[makeStyles(colors).subtitle, style]}>{children}</Text>;
 }
 export function Label({ children, style }: { children: React.ReactNode; style?: TextStyle }) {
-  return <Text style={[styles.label, style]}>{children}</Text>;
+  const { colors } = useTheme();
+  return <Text style={[makeStyles(colors).label, style]}>{children}</Text>;
 }
 
 // ─── Card ──────────────────────────────────────────────────────────────────
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const { colors } = useTheme();
+  return <View style={[makeStyles(colors).card, style]}>{children}</View>;
 }
 
 // ─── Input ────────────────────────────────────────────────────────────────
@@ -72,6 +128,8 @@ export function Input({
   style,
   ...props
 }: TextInputProps & { label?: string; error?: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={{ marginBottom: spacing.md }}>
       {label ? <Label style={{ marginBottom: spacing.xs }}>{label}</Label> : null}
@@ -101,6 +159,8 @@ export function Button({
   variant?: 'primary' | 'ghost' | 'danger';
   style?: ViewStyle;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const isDisabled = disabled || loading;
   const base =
     variant === 'primary'
@@ -173,6 +233,7 @@ export function Chip({
   active?: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -213,6 +274,7 @@ export function DetailHeader({
   onBack: () => void;
   right?: React.ReactNode;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -245,6 +307,7 @@ export function DetailHeader({
 
 // ─── Key/value row ──────────────────────────────────────────────────────────────
 export function Row({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -265,56 +328,15 @@ export function Row({ label, value }: { label: string; value: string }) {
 
 // ─── Empty / error states ─────────────────────────────────────────────────────
 export function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>;
+  const { colors } = useTheme();
+  return <View style={[makeStyles(colors).centered]}>{children}</View>;
 }
 
 export function Loading() {
+  const { colors } = useTheme();
   return (
     <Centered>
       <ActivityIndicator color={colors.accent} size="large" />
     </Centered>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  title: { color: colors.text, fontSize: font.xl, fontWeight: '700' },
-  subtitle: { color: colors.textFaint, fontSize: font.sm, marginTop: 2 },
-  label: {
-    color: colors.textDim,
-    fontSize: font.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-  input: {
-    minHeight: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    fontSize: font.md,
-  },
-  errorText: { color: colors.danger, fontSize: font.xs, marginTop: spacing.xs },
-  btn: {
-    minHeight: 48,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  btnPrimary: { backgroundColor: colors.accent },
-  btnGhost: { backgroundColor: colors.cardAlt, borderWidth: 1, borderColor: colors.border },
-  btnDanger: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: colors.danger },
-  btnText: { fontSize: font.md, fontWeight: '700' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-});

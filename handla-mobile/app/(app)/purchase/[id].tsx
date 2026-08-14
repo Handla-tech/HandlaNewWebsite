@@ -7,10 +7,11 @@ import { purchasesApi } from '@/lib/endpoints';
 import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
 import { money, fmtDate } from '@/lib/salesMeta';
 import { PURCHASE_STATUS_META, PURCHASE_PAYMENT_META } from '@/lib/financeMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Purchase, LineItem } from '@/types';
 
 export default function PurchaseDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const purchaseId = String(id);
   const router = useRouter();
@@ -127,7 +128,7 @@ export default function PurchaseDetailScreen() {
 }
 
 const sectionLabel = {
-  color: colors.textDim,
+  color: staticColors.textDim,
   fontSize: font.xs,
   fontWeight: '600' as const,
   textTransform: 'uppercase' as const,
@@ -136,8 +137,8 @@ const sectionLabel = {
 };
 
 const cardStyle = {
-  backgroundColor: colors.card,
-  borderColor: colors.border,
+  backgroundColor: staticColors.card,
+  borderColor: staticColors.border,
   borderWidth: 1,
   borderRadius: radius.md,
   padding: spacing.md,

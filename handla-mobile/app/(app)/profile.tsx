@@ -6,11 +6,12 @@ import { useRouter } from 'expo-router';
 import { Screen, Title, Subtitle, Card, Button } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useT, type Locale } from '@/i18n';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, type ThemeMode } from '@/theme';
 
 /** Segmented EN / AR language selector. */
 function LanguageSwitcher() {
   const { t, locale, setLocale } = useT();
+  const { colors } = useTheme();
   const options: { value: Locale; label: string }[] = [
     { value: 'en', label: t('common.languageEn') },
     { value: 'ar', label: t('common.languageAr') },
@@ -77,6 +78,78 @@ function LanguageSwitcher() {
   );
 }
 
+/** Segmented Light / Dark theme selector. */
+function ThemeSwitcher() {
+  const { t } = useT();
+  const { colors, mode, setMode } = useTheme();
+  const options: { value: ThemeMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { value: 'light', label: t('common.themeLight'), icon: 'sunny-outline' },
+    { value: 'dark', label: t('common.themeDark'), icon: 'moon-outline' },
+  ];
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.md,
+        borderTopColor: colors.border,
+        borderTopWidth: 1,
+      }}
+    >
+      <Ionicons name="contrast-outline" size={18} color={colors.accent} />
+      <Text style={{ color: colors.text, fontSize: font.md, flex: 1 }}>
+        {t('common.theme')}
+      </Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: radius.pill,
+          padding: 2,
+        }}
+      >
+        {options.map((opt) => {
+          const active = opt.value === mode;
+          return (
+            <Pressable
+              key={opt.value}
+              onPress={() => setMode(opt.value)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                paddingHorizontal: spacing.md,
+                paddingVertical: 4,
+                borderRadius: radius.pill,
+                backgroundColor: active ? colors.accent : 'transparent',
+              }}
+            >
+              <Ionicons
+                name={opt.icon}
+                size={14}
+                color={active ? colors.bg : colors.textDim}
+              />
+              <Text
+                style={{
+                  color: active ? colors.bg : colors.textDim,
+                  fontSize: font.sm,
+                  fontWeight: '700',
+                }}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function LinkRow({
   icon,
   label,
@@ -86,6 +159,7 @@ function LinkRow({
   label: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -107,6 +181,7 @@ function LinkRow({
 }
 
 function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string | null }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -134,6 +209,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useT();
+  const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
   const isAdmin = useAuthStore((s) => s.isAdmin());
   const signOut = useAuthStore((s) => s.signOut);
@@ -227,6 +303,7 @@ export default function ProfileScreen() {
       </Text>
       <Card style={{ paddingVertical: 0 }}>
         <LanguageSwitcher />
+        <ThemeSwitcher />
       </Card>
 
       {isAdmin && (

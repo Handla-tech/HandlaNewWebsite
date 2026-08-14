@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { analyticsApi } from '@/lib/endpoints';
 import type { AnalyticsQuery } from '@/lib/endpoints';
 import { Title, Loading, Chip } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type {
   AnalyticsOverview,
   AnalyticsTimeseries,
@@ -39,6 +39,7 @@ const RANGE_PRESETS = [
 
 // ─── KPI card ──────────────────────────────────────────────────────────────────
 function Kpi({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -62,6 +63,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 
 // ─── View-based bar chart (dependency-free) ──────────────────────────────────
 function BarChart({ ts }: { ts?: AnalyticsTimeseries }) {
+  const { colors } = useTheme();
   const series = ts?.series ?? [];
   const max = Math.max(1, ...series.map((p) => p.pageviews));
   if (series.length === 0) {
@@ -104,6 +106,7 @@ function BarChart({ ts }: { ts?: AnalyticsTimeseries }) {
 
 // ─── Top-N list with proportional bars ────────────────────────────────────────
 function BarList({ title, data, emptyLabel }: { title: string; data?: AnalyticsTopResult; emptyLabel: string }) {
+  const { colors } = useTheme();
   const rows = data?.rows ?? [];
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
@@ -142,6 +145,7 @@ function BarList({ title, data, emptyLabel }: { title: string; data?: AnalyticsT
 }
 
 export default function AnalyticsScreen() {
+  const { colors } = useTheme();
   const [rangeKey, setRangeKey] = useState('30');
   const preset = RANGE_PRESETS.find((r) => r.key === rangeKey) ?? RANGE_PRESETS[1];
 
@@ -244,7 +248,7 @@ export default function AnalyticsScreen() {
 }
 
 const sectionLabel = {
-  color: colors.textDim,
+  color: staticColors.textDim,
   fontSize: font.xs,
   fontWeight: '600' as const,
   textTransform: 'uppercase' as const,
@@ -253,8 +257,8 @@ const sectionLabel = {
 };
 
 const cardStyle = {
-  backgroundColor: colors.card,
-  borderColor: colors.border,
+  backgroundColor: staticColors.card,
+  borderColor: staticColors.border,
   borderWidth: 1,
   borderRadius: radius.md,
   padding: spacing.md,

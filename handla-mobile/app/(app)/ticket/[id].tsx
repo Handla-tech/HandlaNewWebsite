@@ -23,7 +23,7 @@ import {
   STATUS_ORDER,
   PRIORITY_ORDER,
 } from '@/lib/ticketMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { Ticket, TicketStatus, TicketPriority, TicketReply } from '@/types';
 
 function fmtDateTime(iso: string) {
@@ -51,6 +51,7 @@ function ThreadEntry({
   isInternal?: boolean;
   isOpening?: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '88%', marginVertical: 4 }}>
       <View
@@ -112,6 +113,7 @@ function ThreadEntry({
 }
 
 export default function TicketDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const ticketId = String(id);
   const router = useRouter();

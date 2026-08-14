@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { dashboardApi } from '@/lib/endpoints';
 import { Card, Title, Subtitle, Loading } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 
 // Best-effort label formatting for arbitrary stat keys.
 function humanize(key: string) {
@@ -17,6 +17,7 @@ function humanize(key: string) {
 }
 
 function StatTile({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
   return (
     <View style={{ width: '48%', marginBottom: spacing.md }}>
       <Card style={{ padding: spacing.md }}>
@@ -32,6 +33,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 }
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
   const isStaff = useAuthStore((s) => s.isStaff());
 

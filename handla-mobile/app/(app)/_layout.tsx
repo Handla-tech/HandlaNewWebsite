@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { useT } from '@/i18n';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 
 /**
  * Role-aware bottom tab navigator.
@@ -15,6 +15,7 @@ import { colors } from '@/theme';
 export default function AppLayout() {
   const isStaff = useAuthStore((s) => s.isStaff());
   const { t } = useT();
+  const { colors } = useTheme();
 
   return (
     <Tabs

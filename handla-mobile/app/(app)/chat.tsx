@@ -9,7 +9,7 @@ import { chatApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { Title, Loading, Button } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { Conversation, PaginatedConversations } from '@/types';
 
 function timeAgo(iso?: string) {
@@ -24,6 +24,7 @@ function timeAgo(iso?: string) {
 }
 
 function Avatar({ name, uri }: { name?: string; uri?: string | null }) {
+  const { colors } = useTheme();
   const initials = (name ?? '?')
     .split(' ')
     .map((p) => p[0])
@@ -52,6 +53,7 @@ function Avatar({ name, uri }: { name?: string; uri?: string | null }) {
 }
 
 export default function ChatListScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);

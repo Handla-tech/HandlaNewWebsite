@@ -7,10 +7,11 @@ import { contractsApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
 import { CONTRACT_STATUS_META, fmtDate } from '@/lib/salesMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Contract } from '@/types';
 
 export default function ContractDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const contractId = String(id);
   const router = useRouter();
@@ -127,7 +128,7 @@ export default function ContractDetailScreen() {
 }
 
 const sectionLabel = {
-  color: colors.textDim,
+  color: staticColors.textDim,
   fontSize: font.xs,
   fontWeight: '600' as const,
   textTransform: 'uppercase' as const,
@@ -136,8 +137,8 @@ const sectionLabel = {
 };
 
 const cardStyle = {
-  backgroundColor: colors.card,
-  borderColor: colors.border,
+  backgroundColor: staticColors.card,
+  borderColor: staticColors.border,
   borderWidth: 1,
   borderRadius: radius.md,
   padding: spacing.md,

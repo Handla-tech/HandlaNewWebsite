@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { notificationsApi } from '@/lib/endpoints';
 import { Title, Loading } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { Notification } from '@/types';
 
 function timeAgo(iso: string) {
@@ -19,6 +19,7 @@ function timeAgo(iso: string) {
 }
 
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
   const qc = useQueryClient();
 
   const list = useQuery({

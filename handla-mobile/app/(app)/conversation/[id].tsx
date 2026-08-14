@@ -24,7 +24,7 @@ import {
   emitTyping,
 } from '@/lib/socket';
 import { Loading } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { ConversationDetail, Message } from '@/types';
 
 function fmtTime(iso: string) {
@@ -32,6 +32,7 @@ function fmtTime(iso: string) {
 }
 
 export default function ConversationScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const conversationId = String(id);
   const router = useRouter();

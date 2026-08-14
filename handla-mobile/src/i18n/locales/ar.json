@@ -15,7 +15,10 @@
     "language": "اللغة",
     "languageEn": "English",
     "languageAr": "العربية",
-    "changeLanguage": "تغيير اللغة"
+    "changeLanguage": "تغيير اللغة",
+    "theme": "السمة",
+    "themeLight": "فاتح",
+    "themeDark": "داكن"
   },
   "auth": {
     "title": "مرحبًا بعودتك",

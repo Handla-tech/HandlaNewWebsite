@@ -9,7 +9,7 @@ import { View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { useI18nStore } from '@/i18n';
 import { Loading } from '@/components/ui';
-import { colors } from '@/theme';
+import { useTheme, useThemeStore } from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,14 +27,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const hydrateI18n = useI18nStore((s) => s.hydrate);
   const i18nHydrated = useI18nStore((s) => s.hydrated);
+  const hydrateTheme = useThemeStore((s) => s.hydrate);
+  const themeHydrated = useThemeStore((s) => s.hydrated);
+  const { colors } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // Restore the persisted language + layout direction before anything renders.
+    // Restore persisted theme + language (and layout direction) before render.
+    hydrateTheme();
     hydrateI18n();
     bootstrap();
-  }, [bootstrap, hydrateI18n]);
+  }, [bootstrap, hydrateI18n, hydrateTheme]);
 
   useEffect(() => {
     if (status === 'idle' || status === 'loading') return;
@@ -46,7 +50,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [status, segments, router]);
 
-  if (status === 'idle' || status === 'loading' || !i18nHydrated) {
+  if (status === 'idle' || status === 'loading' || !i18nHydrated || !themeHydrated) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <Loading />
@@ -56,24 +60,34 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Themed navigator — reads the active palette so bg + status bar follow the theme. */
+function ThemedStack() {
+  const { colors, isDark } = useTheme();
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AuthGate>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+            animation: 'fade',
+          }}
+        >
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(app)" />
+        </Stack>
+      </AuthGate>
+    </>
+  );
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
-          <AuthGate>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.bg },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(app)" />
-            </Stack>
-          </AuthGate>
+          <ThemedStack />
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -15,7 +15,10 @@
     "language": "Language",
     "languageEn": "English",
     "languageAr": "العربية",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "auth": {
     "title": "Welcome back",

@@ -14,7 +14,7 @@ import {
   LEDGER_DIRECTION_META,
   LEDGER_SOURCE_LABEL,
 } from '@/lib/financeMeta';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type {
   PaginatedPurchases,
   PaginatedExpenses,
@@ -34,6 +34,7 @@ const SEGMENTS: { key: Segment; label: string }[] = [
 ];
 
 function SummaryHeader({ s }: { s?: FinancialSummary }) {
+  const { colors } = useTheme();
   if (!s) return null;
   return (
     <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
@@ -49,6 +50,7 @@ function SummaryHeader({ s }: { s?: FinancialSummary }) {
 }
 
 function SummaryTile({ label, value, tone }: { label: string; value: string; tone: string }) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -69,6 +71,7 @@ function SummaryTile({ label, value, tone }: { label: string; value: string; ton
 }
 
 export default function FinanceScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>('purchases');
 
@@ -273,6 +276,7 @@ export default function FinanceScreen() {
 }
 
 function Empty({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) {
+  const { colors } = useTheme();
   return (
     <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
       <Ionicons name={icon} size={40} color={colors.textDim} />
@@ -282,8 +286,8 @@ function Empty({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: s
 }
 
 const rowCard = {
-  backgroundColor: colors.card,
-  borderColor: colors.border,
+  backgroundColor: staticColors.card,
+  borderColor: staticColors.border,
   borderWidth: 1,
   borderRadius: radius.md,
   padding: spacing.md,

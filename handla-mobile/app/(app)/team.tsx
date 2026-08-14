@@ -7,13 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { usersApi } from '@/lib/endpoints';
 import type { UsersQuery } from '@/lib/endpoints';
 import { Loading, Badge, Chip } from '@/components/ui';
-import { colors, spacing, radius, font } from '@/theme';
+import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { PaginatedUsers, TeamMember, UserRole } from '@/types';
 
 const ROLE_META: Record<UserRole, { label: string; color: string; soft: string }> = {
-  ADMIN: { label: 'Admin', color: colors.accent, soft: colors.accentSoft },
-  EMPLOYEE: { label: 'Employee', color: colors.info, soft: 'rgba(96,165,250,0.15)' },
-  CLIENT: { label: 'Client', color: colors.success, soft: colors.successSoft },
+  ADMIN: { label: 'Admin', color: staticColors.accent, soft: staticColors.accentSoft },
+  EMPLOYEE: { label: 'Employee', color: staticColors.info, soft: 'rgba(96,165,250,0.15)' },
+  CLIENT: { label: 'Client', color: staticColors.success, soft: staticColors.successSoft },
   LEAD: { label: 'Lead', color: '#c084fc', soft: 'rgba(192,132,252,0.15)' },
 };
 
@@ -29,6 +29,7 @@ function initials(name: string) {
 }
 
 export default function TeamScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
 
