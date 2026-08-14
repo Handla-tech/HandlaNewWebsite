@@ -522,9 +522,52 @@ export interface UsersQuery {
   isArchived?: boolean;
 }
 
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+}
+
 export const usersApi = {
   list: (params?: UsersQuery) =>
     api.get<{ message: string; data: PaginatedUsers }>('/users', { params }),
+  /** POST /users — ADMIN. Returns { data: { user } }. */
+  create: (body: CreateUserInput) =>
+    api.post<{ message: string; data: { user: User } }>('/users', body),
+  /** PATCH /users/:id — ADMIN (name/email). */
+  update: (id: string, body: UpdateUserInput) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}`, body),
+  /** PATCH /users/:id/reset-password — ADMIN. */
+  resetPassword: (id: string, newPassword: string) =>
+    api.patch(`/users/${id}/reset-password`, { newPassword }),
+  /** PATCH /users/:id/role — ADMIN. */
+  setRole: (id: string, role: UserRole) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}/role`, { role }),
+  /** PATCH /users/:leadId/promote — ADMIN. */
+  promote: (leadId: string) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${leadId}/promote`, {}),
+  /** PATCH /users/:fromId/reassign/:toId — ADMIN. */
+  reassign: (fromId: string, toId: string) =>
+    api.patch(`/users/${fromId}/reassign/${toId}`, {}),
+  /** PATCH /users/:id/archive — ADMIN. */
+  archive: (id: string) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}/archive`, {}),
+  /** PATCH /users/:id/unarchive — ADMIN. */
+  unarchive: (id: string) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}/unarchive`, {}),
+  /** PATCH /users/:id/disable — ADMIN. */
+  disable: (id: string) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}/disable`, {}),
+  /** PATCH /users/:id/enable — ADMIN. */
+  enable: (id: string) =>
+    api.patch<{ message: string; data: { user: User } }>(`/users/${id}/enable`, {}),
+  /** DELETE /users/:id — ADMIN. */
+  remove: (id: string) => api.delete(`/users/${id}`),
 };
 
 // ─── Testimonials (@Controller('testimonials')) — ADMIN ──────────────────────
