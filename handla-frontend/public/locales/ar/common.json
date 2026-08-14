@@ -1857,6 +1857,78 @@
         "confirm": "حذف {{number}} نهائياً؟",
         "failed": "تعذّر الحذف"
       }
+    },
+    "quotations": {
+      "title": "عروض الأسعار",
+      "subtitle": "أرسل عروض الأسعار؛ العروض المقبولة تتحول إلى عقد وفاتورة.",
+      "new": "عرض سعر جديد",
+      "searchPlaceholder": "ابحث في العروض…",
+      "loadFailed": "تعذّر تحميل عروض الأسعار.",
+      "empty": "لا توجد عروض أسعار.",
+      "unknownClient": "عميل غير معروف",
+      "unnamedClient": "عميل بدون اسم",
+      "pageInfo": "{{total}} عرض سعر · صفحة {{page}} من {{pages}}",
+      "status": {
+        "all": "الكل",
+        "DRAFT": "مسودة",
+        "SENT": "مُرسل",
+        "ACCEPTED": "مقبول",
+        "REJECTED": "مرفوض",
+        "EXPIRED": "منتهي",
+        "CONVERTED": "محوّل"
+      },
+      "col": {
+        "quote": "عرض السعر",
+        "client": "العميل",
+        "created": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "total": "الإجمالي"
+      },
+      "valid": "صالح حتى: {{date}}",
+      "toast": {
+        "converted": "تم التحويل ← أُنشئ عقد مسودة + فاتورة",
+        "linkCopied": "تم نسخ الرابط العام"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "send": "إرسال إلى العميل",
+        "accept": "تعليم كمقبول",
+        "reject": "تعليم كمرفوض",
+        "convert": "تحويل (عقد + فاتورة)",
+        "copyLink": "نسخ الرابط العام",
+        "delete": "حذف"
+      },
+      "modal": {
+        "editTitle": "تعديل عرض السعر",
+        "newTitle": "عرض سعر جديد",
+        "subtitle": "عند القبول، يُنشئ عقد مسودة + فاتورة مسودة.",
+        "title": "العنوان *",
+        "titlePlaceholder": "عرض إعادة تصميم الموقع",
+        "client": "العميل *",
+        "selectClient": "اختر عميلاً…",
+        "validUntil": "صالح حتى",
+        "lineItems": "البنود",
+        "description": "الوصف",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "addLine": "إضافة بند",
+        "taxRate": "نسبة الضريبة (%)",
+        "currencyOptional": "العملة (اختياري)",
+        "subtotal": "المجموع الفرعي",
+        "tax": "الضريبة",
+        "total": "الإجمالي",
+        "notesOptional": "ملاحظات (اختياري)",
+        "notesPlaceholder": "الشروط، ملاحظات النطاق…",
+        "saveFailed": "تعذّر حفظ عرض السعر",
+        "saveChanges": "حفظ التغييرات",
+        "create": "إنشاء عرض سعر"
+      },
+      "delete": {
+        "title": "حذف عرض السعر",
+        "subtitle": "المسودّات فقط. لا يمكن التراجع.",
+        "confirm": "حذف {{number}}؟",
+        "failed": "تعذّر الحذف"
+      }
     }
   },
   "footer": {

@@ -1857,6 +1857,78 @@
         "confirm": "Permanently delete {{number}}?",
         "failed": "Failed to delete"
       }
+    },
+    "quotations": {
+      "title": "Quotations",
+      "subtitle": "Send quotes; accepted quotes convert into a contract and invoice.",
+      "new": "New Quotation",
+      "searchPlaceholder": "Search quotes…",
+      "loadFailed": "Failed to load quotations.",
+      "empty": "No quotations found.",
+      "unknownClient": "Unknown client",
+      "unnamedClient": "Unnamed client",
+      "pageInfo": "{{total}} quotations · page {{page}} of {{pages}}",
+      "status": {
+        "all": "All",
+        "DRAFT": "Draft",
+        "SENT": "Sent",
+        "ACCEPTED": "Accepted",
+        "REJECTED": "Rejected",
+        "EXPIRED": "Expired",
+        "CONVERTED": "Converted"
+      },
+      "col": {
+        "quote": "Quotation",
+        "client": "Client",
+        "created": "Created",
+        "status": "Status",
+        "total": "Total"
+      },
+      "valid": "Valid: {{date}}",
+      "toast": {
+        "converted": "Converted → draft contract + invoice created",
+        "linkCopied": "Public link copied"
+      },
+      "actions": {
+        "edit": "Edit",
+        "send": "Send to client",
+        "accept": "Mark accepted",
+        "reject": "Mark rejected",
+        "convert": "Convert (Contract + Invoice)",
+        "copyLink": "Copy public link",
+        "delete": "Delete"
+      },
+      "modal": {
+        "editTitle": "Edit Quotation",
+        "newTitle": "New Quotation",
+        "subtitle": "On accept, generates a draft contract + draft invoice.",
+        "title": "Title *",
+        "titlePlaceholder": "Website redesign proposal",
+        "client": "Client *",
+        "selectClient": "Select client…",
+        "validUntil": "Valid Until",
+        "lineItems": "Line Items",
+        "description": "Description",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "addLine": "Add line",
+        "taxRate": "Tax Rate (%)",
+        "currencyOptional": "Currency (optional)",
+        "subtotal": "Subtotal",
+        "tax": "Tax",
+        "total": "Total",
+        "notesOptional": "Notes (optional)",
+        "notesPlaceholder": "Terms, scope notes…",
+        "saveFailed": "Failed to save quotation",
+        "saveChanges": "Save Changes",
+        "create": "Create Quotation"
+      },
+      "delete": {
+        "title": "Delete Quotation",
+        "subtitle": "Drafts only. Cannot be undone.",
+        "confirm": "Delete {{number}}?",
+        "failed": "Failed to delete"
+      }
     }
   },
   "footer": {
