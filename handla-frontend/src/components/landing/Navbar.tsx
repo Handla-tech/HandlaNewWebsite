@@ -18,25 +18,60 @@ import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 // <Link> navigation from same-page smooth-scroll anchors. Anchors carry both
 // a `hash` (for scrolling when already on the landing page) and an `href`
 // (`/#hash`) so they still work from other routes like /projects.
+//
+// `section` is the id of the on-landing-page section this link corresponds to.
+// The scroll-spy uses it to highlight the matching link as the user scrolls.
+// Page links (Projects/Products) also have a landing section, so they light up
+// while scrolling the homepage and fall back to a pathname match elsewhere.
 type NavLink =
-  | { type: 'page';   href: string; key: string }
-  | { type: 'anchor'; href: string; hash: string; key: string };
+  | { type: 'page';   href: string; key: string; section: string }
+  | { type: 'anchor'; href: string; hash: string; key: string; section: string };
 
 const NAV_KEYS: NavLink[] = [
-  { type: 'page',   href: '/',           key: 'nav.home'      },
-  { type: 'anchor', href: '/#about',     hash: '#about',      key: 'nav.about'     },
-  { type: 'anchor', href: '/#services',  hash: '#services',   key: 'nav.services'  },
-  { type: 'page',   href: '/projects',   key: 'nav.projects'  },
-  { type: 'page',   href: '/products',   key: 'nav.products'  },
-  { type: 'anchor', href: '/#contact',   hash: '#contact',    key: 'nav.contact'   },
+  { type: 'page',   href: '/',           key: 'nav.home',     section: 'home'     },
+  { type: 'anchor', href: '/#about',     hash: '#about',      key: 'nav.about',    section: 'about'    },
+  { type: 'anchor', href: '/#services',  hash: '#services',   key: 'nav.services', section: 'services' },
+  { type: 'page',   href: '/projects',   key: 'nav.projects', section: 'projects' },
+  { type: 'page',   href: '/products',   key: 'nav.products', section: 'products' },
+  { type: 'anchor', href: '/#contact',   hash: '#contact',    key: 'nav.contact',  section: 'contact'  },
 ];
+
+// All section ids present on the landing page, ordered top→bottom. The
+// scroll-spy observes these; sections without a dedicated nav link (hero
+// overlaps `home`, `process`, `testimonials`) still participate so the active
+// link only changes once a *linked* section is genuinely in view.
+const SPY_SECTION_IDS = [
+  'home',
+  'about',
+  'services',
+  'process',
+  'projects',
+  'products',
+  'testimonials',
+  'contact',
+] as const;
+
+// Map every observable section to the nav `section` that should light up while
+// it is in view. Unlinked sections inherit the nearest preceding linked one so
+// the active state never blanks out mid-scroll.
+const SECTION_TO_NAV: Record<string, string> = {
+  home: 'home',
+  about: 'about',
+  services: 'services',
+  process: 'services',      // Process has no own link → keep Services active
+  projects: 'projects',
+  products: 'products',
+  testimonials: 'products', // Testimonials has no own link → keep Products active
+  contact: 'contact',
+};
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
-  const [scrolled,   setScrolled]   = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState<string>('');
+  const [scrolled,      setScrolled]      = useState(false);
+  const [mobileOpen,    setMobileOpen]    = useState(false);
+  // The nav `section` currently in view (scroll-spy). Empty until resolved.
+  const [activeSection, setActiveSection] = useState<string>('home');
 
   const router = useRouter();
   const pathname = usePathname();
@@ -52,12 +87,96 @@ export default function Navbar() {
   const theme                 = useUIStore((s) => s.theme);
   const toggleTheme           = useUIStore((s) => s.toggleTheme);
 
-  // ── Scroll detection ─────────────────────────────────────────────────────
+  // ── Scroll detection (shrunk/opaque header) ───────────────────────────────
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // ── Scroll-spy: highlight the nav link for whichever section is in view ────
+  //
+  // A pure scroll-position calculation drives the active link. On every scroll
+  // (rAF-throttled) we find the last section whose top has passed just under
+  // the sticky header — that's the section the user is currently reading — and
+  // map it to the owning nav link.
+  //
+  // Why not IntersectionObserver alone? Several landing sections are lazy
+  // (`ssr:false` dynamic imports: projects/products/testimonials/contact), so
+  // they mount *after* the navbar and aren't in the DOM when the effect first
+  // runs. A scroll calculation re-reads the DOM live every frame, so it always
+  // sees late-mounting sections (this is why Contact was "stuck" on Services).
+  //
+  // A MutationObserver also nudges a recompute when new sections appear, and a
+  // bottom-of-page guard force-selects the final section so Contact reliably
+  // lights up when you reach the end. Only runs on the landing page ("/").
+  useEffect(() => {
+    if (!onLanding) return;
+
+    const HEADER_OFFSET = 96; // sticky header height + a little breathing room.
+
+    const recompute = () => {
+      const scrollY = window.scrollY;
+
+      // Near the very top → Home.
+      if (scrollY < 80) {
+        setActiveSection('home');
+        return;
+      }
+
+      // At (or near) the bottom → force the last section, since the final
+      // section often can't scroll far enough to cross the header line.
+      const atBottom =
+        window.innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) {
+        for (let i = SPY_SECTION_IDS.length - 1; i >= 0; i--) {
+          if (document.getElementById(SPY_SECTION_IDS[i])) {
+            setActiveSection(SECTION_TO_NAV[SPY_SECTION_IDS[i]]);
+            return;
+          }
+        }
+      }
+
+      // Otherwise: the last section whose top edge is above the header line.
+      let current = 'home';
+      for (const id of SPY_SECTION_IDS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if (top <= HEADER_OFFSET) current = id;
+        else break; // sections are in document order; stop at the first below.
+      }
+      const nav = SECTION_TO_NAV[current];
+      if (nav) setActiveSection(nav);
+    };
+
+    // rAF-throttle the scroll handler.
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        recompute();
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    // Lazy sections mount after first paint — recompute when the DOM changes so
+    // late arrivals (projects/products/testimonials/contact) are picked up.
+    const mo = new MutationObserver(() => recompute());
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    recompute(); // resolve an initial value on mount.
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      mo.disconnect();
+    };
+  }, [onLanding]);
 
   // ── Close mobile drawer on Escape ────────────────────────────────────────
   useEffect(() => {
@@ -82,7 +201,10 @@ export default function Navbar() {
       }
       e.preventDefault();
       setMobileOpen(false);
-      setActiveLink(hash);
+      // Optimistically light the clicked link; the scroll-spy keeps it in sync
+      // as the smooth-scroll settles.
+      const section = hash.replace('#', '');
+      if (SECTION_TO_NAV[section]) setActiveSection(SECTION_TO_NAV[section]);
       const el = document.querySelector(hash);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
@@ -148,12 +270,15 @@ export default function Navbar() {
             {/* ── Desktop nav ───────────────────────────────────────────── */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Primary navigation">
               {NAV_KEYS.map((link) => {
-                // Active state: pages match the current pathname; anchors match
-                // the last-clicked hash (only meaningful on the landing page).
-                const isActive =
-                  link.type === 'page'
-                    ? pathname === link.href
-                    : onLanding && activeLink === link.hash;
+                // Active state:
+                //  • On the landing page → the scroll-spy section wins for every
+                //    link (including Projects/Products, which have inline
+                //    sections), so the highlight tracks the scroll position.
+                //  • On other routes → page links match the current pathname;
+                //    anchors are inactive.
+                const isActive = onLanding
+                  ? activeSection === link.section
+                  : link.type === 'page' && pathname === link.href;
 
                 const className = `relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
                   isRTL ? 'font-[family-name:var(--font-space-grotesk)]' : ''
@@ -390,10 +515,9 @@ export default function Navbar() {
               {/* Nav links */}
               <div className="flex-1 px-4 py-5 space-y-0.5 overflow-y-auto">
                 {NAV_KEYS.map((link, i) => {
-                  const isActive =
-                    link.type === 'page'
-                      ? pathname === link.href
-                      : onLanding && activeLink === link.hash;
+                  const isActive = onLanding
+                    ? activeSection === link.section
+                    : link.type === 'page' && pathname === link.href;
 
                   const style = {
                     color: isActive ? '#fbbf24' : 'var(--ink-3)',
