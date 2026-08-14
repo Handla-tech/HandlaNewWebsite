@@ -178,8 +178,8 @@ Goal: **full feature parity with web**, role-gated. Shipped in slices.
 
 - [x] Scaffold Expo SDK 51 (TypeScript, expo-router typed routes, React Query, Zustand, Axios), shared API client (reuses `{message,data}` envelope + Bearer auth), secure token storage (expo-secure-store / localStorage web fallback), dark/gold theme, shared UI primitives. Backend `signin/signup/refresh` extended to also return tokens in body (backward-compatible) so mobile can use Bearer auth.
 - [x] **Slice 1 — Auth + Shell:** email/password login, transparent single-flight token refresh + retry, AuthGate redirect (auth ↔ app), role-aware bottom-tab navigator, dashboard (staff KPIs / client portal welcome), notifications (list + mark read / mark-all-read), profile + sign-out. Typechecks clean; iOS Metro bundle exports successfully.
-- [ ] **Slice 2 — Dashboard + Notifications:** KPIs, notification center, push (Expo notifications) later.
-- [ ] **Slice 3 — Chat:** real-time Socket.io, file upload (S3 presigned), typing.
+- [x] **Slice 2 — Dashboard + Notifications:** dashboard KPI tiles (staff) / portal welcome (client); notification center (list + mark read / mark-all-read). Push (Expo notifications) deferred.
+- [x] **Slice 3 — Chat:** real-time Socket.io (singleton client, `handshake.auth.token`, reuses ChatGateway events sendMessage/messageReceived/markAsRead/typing/join/leave), conversation list (staff: all, client: own + Start Chat) with live badge refresh + online indicator, conversation detail with optimistic-safe send (socket path + REST fallback), typing indicator, auto mark-read, auto-scroll. File upload (S3 presigned) deferred to a later pass.
 - [ ] **Slice 4 — Support:** ticket queue (staff) / my tickets (client), replies, attachments.
 - [ ] **Slice 5 — Sales:** clients, quotations, contracts, invoices (view + create + PDF share).
 - [ ] **Slice 6 — Finance:** purchases, expenses, accounting ledger, reports (mobile charts).

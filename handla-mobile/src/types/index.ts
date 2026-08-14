@@ -55,3 +55,53 @@ export interface Paginated<T> {
   pages: number;
   [key: string]: unknown | T[];
 }
+
+// ─── Chat ──────────────────────────────────────────────────────────────────────
+export type ConversationStatus = 'OPEN' | 'PENDING' | 'RESOLVED' | 'CLOSED' | string;
+
+export interface ChatUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl: string | null;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string | null;
+  fileUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
+  sender?: ChatUser;
+}
+
+export interface Conversation {
+  id: string;
+  adminId: string;
+  clientId: string;
+  assignedEmployeeId: string | null;
+  status: ConversationStatus;
+  createdAt: string;
+  updatedAt: string;
+  admin?: ChatUser;
+  client?: ChatUser;
+  // Enriched fields from the list endpoint
+  unreadCount?: number;
+  lastMessage?: Message | null;
+  lastMessageAt?: string;
+}
+
+export interface PaginatedConversations {
+  conversations: Conversation[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface ConversationDetail {
+  conversation: Conversation;
+  messages: Message[];
+}

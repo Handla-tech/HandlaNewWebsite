@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { authApi } from '@/lib/endpoints';
 import { registerAuthFailureCallback } from '@/lib/api';
 import { tokenStorage } from '@/lib/storage';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -37,6 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await authApi.me();
       set({ user: res.data.data.user, status: 'authenticated' });
+      connectSocket().catch(() => {/* best-effort; chat screens retry */});
     } catch {
       await tokenStorage.clear();
       set({ status: 'unauthenticated', user: null });
@@ -50,6 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user, accessToken, refreshToken } = res.data.data;
       await tokenStorage.save(accessToken, refreshToken);
       set({ user, status: 'authenticated' });
+      connectSocket().catch(() => {/* best-effort */});
       return user;
     } catch (err: unknown) {
       const message =
@@ -66,6 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       /* best-effort; clear locally regardless */
     }
+    disconnectSocket();
     await tokenStorage.clear();
     set({ user: null, status: 'unauthenticated', error: null });
   },
@@ -90,5 +94,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 // Wire the interceptor's forced-logout hook into the store once.
 registerAuthFailureCallback(() => {
+  disconnectSocket();
   useAuthStore.setState({ user: null, status: 'unauthenticated' });
 });

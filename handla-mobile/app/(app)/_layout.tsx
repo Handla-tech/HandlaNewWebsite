@@ -39,6 +39,15 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} />,
+        }}
+      />
+      {/* Conversation detail is pushed on top of the tabs, not itself a tab. */}
+      <Tabs.Screen name="conversation/[id]" options={{ href: null }} />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',
