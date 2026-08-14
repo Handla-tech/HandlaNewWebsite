@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, Pressable, RefreshControl } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { purchasesApi, expensesApi, accountingApi } from '@/lib/endpoints';
-import { Title, Loading, Badge } from '@/components/ui';
+import {
+  purchasesApi,
+  expensesApi,
+  accountingApi,
+  suppliersApi,
+  type ExpenseInput,
+  type PurchaseInput,
+  type LineItemInput,
+} from '@/lib/endpoints';
+import { apiError } from '@/lib/apiError';
+import { useAuthStore } from '@/store/authStore';
+import { Title, Loading, Badge, Input } from '@/components/ui';
+import {
+  FormModal,
+  Textarea,
+  Select,
+  DateField,
+  ConfirmModal,
+  ActionSheet,
+  Fab,
+  type SelectOption,
+} from '@/components/forms';
+import { LineItemsEditor } from '@/components/LineItemsEditor';
 import { money, fmtDate } from '@/lib/salesMeta';
 import {
   PURCHASE_STATUS_META,
@@ -70,15 +91,45 @@ function SummaryTile({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
+const PURCHASE_STATUS_OPTIONS: SelectOption[] = [
+  { label: 'Draft', value: 'DRAFT' },
+  { label: 'Ordered', value: 'ORDERED' },
+  { label: 'Received', value: 'RECEIVED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
+];
+
+const EMPTY_EXPENSE: ExpenseInput = { type: 'EXPENSE', category: '', amount: 0, description: '', expenseDate: '' };
+const EMPTY_PURCHASE: PurchaseInput = {
+  supplierId: '',
+  lineItems: [{ description: '', quantity: 1, unitPrice: 0 }],
+  taxRate: 0,
+  status: 'DRAFT',
+  notes: '',
+};
+
 export default function FinanceScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const qc = useQueryClient();
+  const isStaff = useAuthStore((s) => s.isStaff());
+  const isAdmin = useAuthStore((s) => s.isAdmin());
   const [segment, setSegment] = useState<Segment>('purchases');
 
   const summary = useQuery({
     queryKey: ['financeSummary'],
     queryFn: (): Promise<FinancialSummary> => expensesApi.summary().then((r) => r.data.data),
   });
+
+  // Suppliers for the purchase picker.
+  const supplierList = useQuery({
+    queryKey: ['suppliers-for-purchase'],
+    enabled: segment === 'purchases' && isStaff,
+    queryFn: () => suppliersApi.list({ limit: 100 }).then((r) => r.data.data.suppliers),
+  });
+  const supplierOptions: SelectOption[] = (supplierList.data ?? []).map((s) => ({
+    label: s.company || s.name,
+    value: s.id,
+  }));
 
   const purchases = useQuery({
     queryKey: ['purchases'],
@@ -106,6 +157,127 @@ export default function FinanceScreen() {
     summary.refetch();
     active.refetch();
   };
+
+  // ─── Expense create/edit/delete ─────────────────────────────────────────────
+  const [expOpen, setExpOpen] = useState(false);
+  const [expEditing, setExpEditing] = useState<Expense | null>(null);
+  const [expForm, setExpForm] = useState<ExpenseInput>(EMPTY_EXPENSE);
+  const [expErr, setExpErr] = useState<string | null>(null);
+
+  const openExpenseCreate = () => {
+    setExpEditing(null);
+    setExpForm(EMPTY_EXPENSE);
+    setExpErr(null);
+    setExpOpen(true);
+  };
+  const openExpenseEdit = (e: Expense) => {
+    setExpEditing(e);
+    setExpForm({
+      type: e.type,
+      category: e.category,
+      amount: e.amount,
+      description: e.description ?? '',
+      expenseDate: e.expenseDate ? e.expenseDate.slice(0, 10) : '',
+    });
+    setExpErr(null);
+    setExpOpen(true);
+  };
+  const saveExpense = useMutation({
+    mutationFn: () => {
+      const payload: ExpenseInput = {
+        type: expForm.type,
+        category: expForm.category?.trim(),
+        amount: Number(expForm.amount),
+        description: expForm.description?.trim() || undefined,
+        expenseDate: expForm.expenseDate?.trim() || undefined,
+      };
+      return expEditing ? expensesApi.update(expEditing.id, payload) : expensesApi.create(payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['financeSummary'] });
+      setExpOpen(false);
+    },
+    onError: (e) => setExpErr(apiError(e, 'Failed to save expense')),
+  });
+  const submitExpense = () => {
+    if (!expForm.category?.trim()) return setExpErr('Category is required.');
+    if (!expForm.amount || Number(expForm.amount) <= 0) return setExpErr('Amount must be greater than 0.');
+    setExpErr(null);
+    saveExpense.mutate();
+  };
+
+  // ─── Purchase create + actions ──────────────────────────────────────────────
+  const [purOpen, setPurOpen] = useState(false);
+  const [purForm, setPurForm] = useState<PurchaseInput>(EMPTY_PURCHASE);
+  const [purErr, setPurErr] = useState<string | null>(null);
+
+  const openPurchaseCreate = () => {
+    setPurForm(EMPTY_PURCHASE);
+    setPurErr(null);
+    setPurOpen(true);
+  };
+  const savePurchase = useMutation({
+    mutationFn: () =>
+      purchasesApi.create({
+        supplierId: purForm.supplierId,
+        lineItems: purForm.lineItems,
+        taxRate: Number(purForm.taxRate) || 0,
+        status: purForm.status,
+        orderDate: purForm.orderDate?.trim() || undefined,
+        dueDate: purForm.dueDate?.trim() || undefined,
+        notes: purForm.notes?.trim() || undefined,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['purchases'] });
+      qc.invalidateQueries({ queryKey: ['financeSummary'] });
+      setPurOpen(false);
+    },
+    onError: (e) => setPurErr(apiError(e, 'Failed to create purchase')),
+  });
+  const submitPurchase = () => {
+    if (!purForm.supplierId) return setPurErr('Supplier is required.');
+    const items = (purForm.lineItems ?? []).filter((li) => li.description.trim());
+    if (items.length === 0) return setPurErr('At least one line item is required.');
+    setPurForm((f) => ({ ...f, lineItems: items }));
+    setPurErr(null);
+    savePurchase.mutate();
+  };
+
+  // Row action sheets (expense + purchase).
+  const [expSheet, setExpSheet] = useState<Expense | null>(null);
+  const [expDelete, setExpDelete] = useState<Expense | null>(null);
+  const [expDeleteErr, setExpDeleteErr] = useState<string | null>(null);
+  const delExpense = useMutation({
+    mutationFn: (id: string) => expensesApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['financeSummary'] });
+      setExpDelete(null);
+    },
+    onError: (e) => setExpDeleteErr(apiError(e, 'Failed to delete expense')),
+  });
+
+  const [purSheet, setPurSheet] = useState<Purchase | null>(null);
+  const [purDelete, setPurDelete] = useState<Purchase | null>(null);
+  const [purActionErr, setPurActionErr] = useState<string | null>(null);
+  const markPurchasePaid = useMutation({
+    mutationFn: (id: string) => purchasesApi.markPaid(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['purchases'] });
+      qc.invalidateQueries({ queryKey: ['financeSummary'] });
+      setPurSheet(null);
+    },
+  });
+  const delPurchase = useMutation({
+    mutationFn: (id: string) => purchasesApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['purchases'] });
+      qc.invalidateQueries({ queryKey: ['financeSummary'] });
+      setPurDelete(null);
+    },
+    onError: (e) => setPurActionErr(apiError(e, 'Failed to delete purchase')),
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
@@ -165,6 +337,7 @@ export default function FinanceScreen() {
           renderItem={({ item }: { item: Purchase }) => (
             <Pressable
               onPress={() => router.push(`/(app)/purchase/${item.id}`)}
+              onLongPress={() => isStaff && setPurSheet(item)}
               style={({ pressed }) => [rowCard, pressed && { opacity: 0.85 }]}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -204,7 +377,10 @@ export default function FinanceScreen() {
           renderItem={({ item }: { item: Expense }) => {
             const m = EXPENSE_TYPE_META[item.type];
             return (
-              <View style={rowCard}>
+              <Pressable
+                onPress={() => isStaff && setExpSheet(item)}
+                style={({ pressed }) => [rowCard, pressed && { opacity: 0.85 }]}
+              >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
                     {item.category}
@@ -225,7 +401,7 @@ export default function FinanceScreen() {
                     {item.description}
                   </Text>
                 ) : null}
-              </View>
+              </Pressable>
             );
           }}
         />
@@ -271,6 +447,186 @@ export default function FinanceScreen() {
           }}
         />
       )}
+
+      {/* FAB — create for the active segment (ledger is read-only). */}
+      {isStaff && segment === 'expenses' ? <Fab onPress={openExpenseCreate} /> : null}
+      {isStaff && segment === 'purchases' ? <Fab onPress={openPurchaseCreate} /> : null}
+
+      {/* Expense create/edit */}
+      <FormModal
+        visible={expOpen}
+        onClose={() => setExpOpen(false)}
+        title={expEditing ? 'Edit Entry' : 'New Entry'}
+        onSubmit={submitExpense}
+        submitting={saveExpense.isPending}
+        error={expErr}
+      >
+        <Select
+          label="Type"
+          value={expForm.type}
+          options={[
+            { label: 'Expense', value: 'EXPENSE' },
+            { label: 'Income', value: 'INCOME' },
+          ]}
+          onChange={(v) => setExpForm((f) => ({ ...f, type: v as ExpenseInput['type'] }))}
+        />
+        <Input
+          label="Category *"
+          value={expForm.category ?? ''}
+          onChangeText={(v) => setExpForm((f) => ({ ...f, category: v }))}
+          placeholder="e.g. Marketing, Salaries"
+        />
+        <Input
+          label="Amount *"
+          value={expForm.amount ? String(expForm.amount) : ''}
+          onChangeText={(v) => setExpForm((f) => ({ ...f, amount: Number(v.replace(/[^0-9.]/g, '')) || 0 }))}
+          placeholder="0.00"
+          keyboardType="decimal-pad"
+        />
+        <DateField
+          label="Date"
+          value={expForm.expenseDate}
+          onChange={(v) => setExpForm((f) => ({ ...f, expenseDate: v }))}
+        />
+        <Textarea
+          label="Description"
+          value={expForm.description ?? ''}
+          onChangeText={(v) => setExpForm((f) => ({ ...f, description: v }))}
+          placeholder="Optional notes"
+        />
+      </FormModal>
+
+      {/* Purchase create */}
+      <FormModal
+        visible={purOpen}
+        onClose={() => setPurOpen(false)}
+        title="New Purchase"
+        onSubmit={submitPurchase}
+        submitting={savePurchase.isPending}
+        error={purErr}
+      >
+        <Select
+          label="Supplier *"
+          value={purForm.supplierId}
+          options={supplierOptions}
+          onChange={(v) => setPurForm((f) => ({ ...f, supplierId: v }))}
+          placeholder={supplierList.isLoading ? 'Loading…' : 'Select a supplier'}
+        />
+        <LineItemsEditor
+          items={purForm.lineItems ?? []}
+          onChange={(items: LineItemInput[]) => setPurForm((f) => ({ ...f, lineItems: items }))}
+        />
+        <Input
+          label="Tax Rate (%)"
+          value={purForm.taxRate ? String(purForm.taxRate) : ''}
+          onChangeText={(v) => setPurForm((f) => ({ ...f, taxRate: Number(v.replace(/[^0-9.]/g, '')) || 0 }))}
+          placeholder="0"
+          keyboardType="decimal-pad"
+        />
+        <Select
+          label="Status"
+          value={purForm.status}
+          options={PURCHASE_STATUS_OPTIONS}
+          onChange={(v) => setPurForm((f) => ({ ...f, status: v as PurchaseInput['status'] }))}
+        />
+        <DateField
+          label="Order Date"
+          value={purForm.orderDate ?? ''}
+          onChange={(v) => setPurForm((f) => ({ ...f, orderDate: v }))}
+        />
+        <DateField
+          label="Due Date"
+          value={purForm.dueDate ?? ''}
+          onChange={(v) => setPurForm((f) => ({ ...f, dueDate: v }))}
+        />
+        <Textarea
+          label="Notes"
+          value={purForm.notes ?? ''}
+          onChangeText={(v) => setPurForm((f) => ({ ...f, notes: v }))}
+          placeholder="Optional notes"
+        />
+      </FormModal>
+
+      {/* Expense actions */}
+      <ActionSheet
+        visible={!!expSheet}
+        onClose={() => setExpSheet(null)}
+        title={expSheet?.category}
+        actions={[
+          { label: 'Edit', icon: 'create-outline', onPress: () => expSheet && openExpenseEdit(expSheet) },
+          ...(isAdmin
+            ? [
+                {
+                  label: 'Delete',
+                  icon: 'trash-outline' as const,
+                  destructive: true,
+                  onPress: () => {
+                    setExpDeleteErr(null);
+                    setExpDelete(expSheet);
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
+      <ConfirmModal
+        visible={!!expDelete}
+        onClose={() => setExpDelete(null)}
+        onConfirm={() => expDelete && delExpense.mutate(expDelete.id)}
+        title="Delete Entry"
+        message={`Delete "${expDelete?.category}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        submitting={delExpense.isPending}
+        error={expDeleteErr}
+      />
+
+      {/* Purchase actions */}
+      <ActionSheet
+        visible={!!purSheet}
+        onClose={() => setPurSheet(null)}
+        title={purSheet?.purchaseNumber}
+        actions={[
+          {
+            label: 'Open',
+            icon: 'open-outline',
+            onPress: () => purSheet && router.push(`/(app)/purchase/${purSheet.id}`),
+          },
+          ...(purSheet && purSheet.paymentStatus !== 'PAID'
+            ? [
+                {
+                  label: 'Mark as Paid',
+                  icon: 'checkmark-circle-outline' as const,
+                  onPress: () => purSheet && markPurchasePaid.mutate(purSheet.id),
+                },
+              ]
+            : []),
+          ...(isAdmin
+            ? [
+                {
+                  label: 'Delete',
+                  icon: 'trash-outline' as const,
+                  destructive: true,
+                  onPress: () => {
+                    setPurActionErr(null);
+                    setPurDelete(purSheet);
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
+      <ConfirmModal
+        visible={!!purDelete}
+        onClose={() => setPurDelete(null)}
+        onConfirm={() => purDelete && delPurchase.mutate(purDelete.id)}
+        title="Delete Purchase"
+        message={`Delete "${purDelete?.purchaseNumber}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        submitting={delPurchase.isPending}
+        error={purActionErr}
+      />
     </SafeAreaView>
   );
 }
