@@ -16,6 +16,7 @@ import {
   VerificationPurpose,
 } from './entities/email-verification.entity';
 import { EmailService } from '../email/email.service';
+import { EmailDeliveryException } from '../../utils/exceptions';
 
 /** Thrown when a resend is requested before the cooldown window elapses. */
 export class ResendCooldownException extends HttpException {
@@ -148,14 +149,27 @@ export class OtpService {
     });
     await this.repo.save(record);
 
-    await this.emailService.sendVerificationCodeEmail({
-      recipientEmail: email,
-      recipientName: params.recipientName ?? null,
-      code,
-      expiresInMinutes: Math.round(this.cfg.ttlSeconds / 60),
-      purpose: this.purposeToEmailKind(params.purpose),
-      locale: params.locale,
-    });
+    try {
+      await this.emailService.sendVerificationCodeEmail({
+        recipientEmail: email,
+        recipientName: params.recipientName ?? null,
+        code,
+        expiresInMinutes: Math.round(this.cfg.ttlSeconds / 60),
+        purpose: this.purposeToEmailKind(params.purpose),
+        locale: params.locale,
+      });
+    } catch (err) {
+      // The SMTP layer (nodemailer) rejected the send — most commonly a Gmail
+      // 535 BadCredentials (wrong/expired App Password) or an unreachable mail
+      // host. Log the real cause for operators, but surface a clean 503 to the
+      // client instead of leaking the raw SMTP error as a 500.
+      this.logger.error(
+        `Failed to send ${params.purpose} OTP email to ${email}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      throw new EmailDeliveryException();
+    }
 
     // NEVER log the code.
     this.logger.log(`Issued ${params.purpose} OTP → ${email} (expires ${expiresAt.toISOString()})`);

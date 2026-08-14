@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  ServiceUnavailableException as NestServiceUnavailableException,
 } from '@nestjs/common';
 
 export class EmailAlreadyExistsException extends ConflictException {
@@ -59,6 +60,20 @@ export class ConversationAccessDeniedException extends ForbiddenException {
 export class AppException extends HttpException {
   constructor(message: string, statusCode: HttpStatus = HttpStatus.BAD_REQUEST) {
     super({ message, statusCode }, statusCode);
+  }
+}
+
+/**
+ * Thrown when a verification / OTP email cannot be sent (e.g. the SMTP server
+ * rejects our credentials with 535 BadCredentials, or the mail host is
+ * unreachable). We surface a clean, user-facing message instead of leaking the
+ * raw nodemailer/SMTP error as a 500. The underlying cause is logged upstream.
+ */
+export class EmailDeliveryException extends NestServiceUnavailableException {
+  constructor() {
+    super(
+      'We could not send your verification email right now. Please try again in a moment.',
+    );
   }
 }
 

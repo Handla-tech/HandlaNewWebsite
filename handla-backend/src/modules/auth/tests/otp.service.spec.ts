@@ -12,6 +12,7 @@ import {
 } from '../otp.service';
 import { EmailVerification, VerificationPurpose } from '../entities/email-verification.entity';
 import { EmailService } from '../../email/email.service';
+import { EmailDeliveryException } from '../../../utils/exceptions';
 
 /**
  * Verifies the OTP security contract (PART 8/13/14):
@@ -141,5 +142,17 @@ describe('OtpService (security)', () => {
     await expect(
       service.issueAndSend({ email: 'a@b.com', purpose: VerificationPurpose.LOGIN, enforceCooldown: true }),
     ).rejects.toThrow(ResendCooldownException);
+  });
+
+  it('surfaces a clean EmailDeliveryException when SMTP send fails (no raw 500)', async () => {
+    // Simulate Gmail rejecting our credentials (535 BadCredentials) — nodemailer
+    // re-throws, and issueAndSend must translate that into a clean 503 instead
+    // of leaking the raw SMTP error to the client.
+    emailService.sendVerificationCodeEmail.mockRejectedValueOnce(
+      new Error('Invalid login: 535-5.7.8 Username and Password not accepted'),
+    );
+    await expect(
+      service.issueAndSend({ email: 'a@b.com', purpose: VerificationPurpose.SIGNUP }),
+    ).rejects.toThrow(EmailDeliveryException);
   });
 });
