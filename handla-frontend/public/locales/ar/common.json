@@ -1712,6 +1712,74 @@
       "OVERDUE": "متأخر السداد",
       "INCOME": "دخل",
       "EXPENSE": "مصروف"
+    },
+    "accounting": {
+      "title": "المحاسبة",
+      "subtitle": "دليل الحسابات ودفتر المعاملات الموحّد.",
+      "tabs": {
+        "ledger": "دفتر الأستاذ",
+        "accounts": "دليل الحسابات"
+      },
+      "accountType": {
+        "ASSET": "أصول",
+        "LIABILITY": "التزامات",
+        "INCOME": "دخل",
+        "EXPENSE": "مصروفات",
+        "EQUITY": "حقوق ملكية"
+      },
+      "account": {
+        "new": "حساب جديد",
+        "editTitle": "تعديل الحساب",
+        "newTitle": "حساب جديد",
+        "modalSubtitle": "إدخال في دليل الحسابات.",
+        "code": "الرمز *",
+        "type": "النوع *",
+        "name": "الاسم *",
+        "currencyOptional": "العملة (اختياري)",
+        "descriptionOptional": "الوصف (اختياري)",
+        "active": "نشط",
+        "saveFailed": "تعذّر حفظ الحساب",
+        "add": "إضافة حساب",
+        "noAccounts": "لا توجد حسابات بعد.",
+        "system": "نظامي",
+        "inactive": "غير نشط"
+      },
+      "deleteAccount": {
+        "title": "حذف الحساب",
+        "subtitle": "يمكن حذف الحسابات غير المستخدمة فقط.",
+        "confirm": "حذف {{code}} — {{name}}؟",
+        "failed": "تعذّر الحذف"
+      },
+      "ledger": {
+        "all": "الكل",
+        "moneyIn": "وارد",
+        "moneyOut": "صادر",
+        "manualEntry": "إدخال يدوي",
+        "noEntries": "لا توجد قيود بعد.",
+        "pageInfo": "{{total}} قيد · صفحة {{page}} من {{pages}}"
+      },
+      "manualEntry": {
+        "title": "قيد يدوي في دفتر الأستاذ",
+        "date": "التاريخ *",
+        "direction": "الاتجاه *",
+        "account": "الحساب *",
+        "selectAccount": "اختر حساباً…",
+        "amount": "المبلغ *",
+        "currencyOptional": "العملة (اختياري)",
+        "description": "الوصف",
+        "descriptionPlaceholder": "مرجع / ملاحظة",
+        "saveFailed": "تعذّر حفظ القيد",
+        "add": "إضافة قيد"
+      }
+    },
+    "common": {
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "delete": "حذف",
+      "deleting": "جارٍ الحذف…",
+      "edit": "تعديل",
+      "retry": "إعادة المحاولة"
     }
   },
   "footer": {

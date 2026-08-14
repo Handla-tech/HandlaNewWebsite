@@ -1712,6 +1712,74 @@
       "OVERDUE": "Overdue",
       "INCOME": "Income",
       "EXPENSE": "Expense"
+    },
+    "accounting": {
+      "title": "Accounting",
+      "subtitle": "Chart of accounts and unified transaction ledger.",
+      "tabs": {
+        "ledger": "Ledger",
+        "accounts": "Chart of Accounts"
+      },
+      "accountType": {
+        "ASSET": "Asset",
+        "LIABILITY": "Liability",
+        "INCOME": "Income",
+        "EXPENSE": "Expense",
+        "EQUITY": "Equity"
+      },
+      "account": {
+        "new": "New Account",
+        "editTitle": "Edit Account",
+        "newTitle": "New Account",
+        "modalSubtitle": "Chart of accounts entry.",
+        "code": "Code *",
+        "type": "Type *",
+        "name": "Name *",
+        "currencyOptional": "Currency (optional)",
+        "descriptionOptional": "Description (optional)",
+        "active": "Active",
+        "saveFailed": "Failed to save account",
+        "add": "Add Account",
+        "noAccounts": "No accounts yet.",
+        "system": "system",
+        "inactive": "inactive"
+      },
+      "deleteAccount": {
+        "title": "Delete Account",
+        "subtitle": "Only unused accounts can be deleted.",
+        "confirm": "Delete {{code}} — {{name}}?",
+        "failed": "Failed to delete"
+      },
+      "ledger": {
+        "all": "All",
+        "moneyIn": "Money In",
+        "moneyOut": "Money Out",
+        "manualEntry": "Manual Entry",
+        "noEntries": "No ledger entries yet.",
+        "pageInfo": "{{total}} entries · page {{page}} of {{pages}}"
+      },
+      "manualEntry": {
+        "title": "Manual Ledger Entry",
+        "date": "Date *",
+        "direction": "Direction *",
+        "account": "Account *",
+        "selectAccount": "Select account…",
+        "amount": "Amount *",
+        "currencyOptional": "Currency (optional)",
+        "description": "Description",
+        "descriptionPlaceholder": "Reference / memo",
+        "saveFailed": "Failed to save entry",
+        "add": "Add Entry"
+      }
+    },
+    "common": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "edit": "Edit",
+      "retry": "Retry"
     }
   },
   "footer": {

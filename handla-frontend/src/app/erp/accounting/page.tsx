@@ -8,6 +8,7 @@ import {
   CheckCircle2, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight, Landmark,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { accountingApi } from '@/lib/api';
 import type {
   Account, AccountType, LedgerEntry, PaginatedLedger, LedgerDirection,
@@ -41,6 +42,7 @@ function fmtDate(d: string | null | undefined) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function AccountModal({ isOpen, onClose, editAccount }: { isOpen: boolean; onClose: () => void; editAccount: Account | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const isEdit = editAccount !== null;
   const [code, setCode] = useState('');
@@ -78,53 +80,53 @@ function AccountModal({ isOpen, onClose, editAccount }: { isOpen: boolean; onClo
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <div>
-            <h2 className="text-base font-bold text-white">{isEdit ? 'Edit Account' : 'New Account'}</h2>
-            <p className="text-xs text-white/30">Chart of accounts entry.</p>
+            <h2 className="text-base font-bold text-white">{isEdit ? t('erp.accounting.account.editTitle') : t('erp.accounting.account.newTitle')}</h2>
+            <p className="text-xs text-white/30">{t('erp.accounting.account.modalSubtitle')}</p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Code *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.account.code')}</label>
               <input value={code} onChange={e => setCode(e.target.value)} placeholder="4000" className={sharedInput} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Type *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.account.type')}</label>
               <select value={type} onChange={e => setType(e.target.value as AccountType)} className={sharedInput}>
-                {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                {ACCOUNT_TYPES.map(at => <option key={at} value={at}>{t(`erp.accounting.accountType.${at}`)}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Name *</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.account.name')}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Sales Revenue" className={sharedInput} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Currency (optional)</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.account.currencyOptional')}</label>
             <input value={currency} onChange={e => setCurrency(e.target.value)} maxLength={3} placeholder="USD" className={cn(sharedInput, 'uppercase')} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Description (optional)</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.account.descriptionOptional')}</label>
             <textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} className={cn(sharedInput, 'resize-none')} />
           </div>
           <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
             <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-white/20 bg-[#0f0f0f] accent-[#fbbf24]" />
-            Active
+            {t('erp.accounting.account.active')}
           </label>
 
           {mutation.isError && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {(mutation.error as any)?.response?.data?.message ?? 'Failed to save account'}
+              {(mutation.error as any)?.response?.data?.message ?? t('erp.accounting.account.saveFailed')}
             </div>
           )}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.common.cancel')}</button>
             <button type="button" disabled={mutation.isPending || !code || !name} onClick={() => mutation.mutate()}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] text-sm disabled:opacity-50 min-h-[44px] transition-colors">
               {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              {mutation.isPending ? 'Saving…' : isEdit ? 'Save' : 'Add Account'}
+              {mutation.isPending ? t('erp.common.saving') : isEdit ? t('erp.common.save') : t('erp.accounting.account.add')}
             </button>
           </div>
         </div>
@@ -134,6 +136,7 @@ function AccountModal({ isOpen, onClose, editAccount }: { isOpen: boolean; onClo
 }
 
 function DeleteAccountModal({ isOpen, account, onClose }: { isOpen: boolean; account: Account | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => accountingApi.deleteAccount(account!.id),
@@ -146,18 +149,18 @@ function DeleteAccountModal({ isOpen, account, onClose }: { isOpen: boolean; acc
       <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#111] shadow-2xl p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 className="w-4.5 h-4.5 text-red-400" /></div>
-          <div><h2 className="text-base font-bold text-white">Delete Account</h2><p className="text-xs text-white/30">Only unused accounts can be deleted.</p></div>
+          <div><h2 className="text-base font-bold text-white">{t('erp.accounting.deleteAccount.title')}</h2><p className="text-xs text-white/30">{t('erp.accounting.deleteAccount.subtitle')}</p></div>
         </div>
-        <p className="text-sm text-white/60">Delete <strong className="text-white">{account.code} — {account.name}</strong>?</p>
+        <p className="text-sm text-white/60">{t('erp.accounting.deleteAccount.confirm', { code: account.code, name: account.name })}</p>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {(mutation.error as any)?.response?.data?.message ?? 'Failed to delete'}
+            {(mutation.error as any)?.response?.data?.message ?? t('erp.accounting.deleteAccount.failed')}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
-          <button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 text-sm disabled:opacity-50 min-h-[44px] transition-colors">{mutation.isPending ? 'Deleting…' : 'Delete'}</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.common.cancel')}</button>
+          <button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 text-sm disabled:opacity-50 min-h-[44px] transition-colors">{mutation.isPending ? t('erp.common.deleting') : t('erp.common.delete')}</button>
         </div>
       </div>
     </div>
@@ -165,6 +168,7 @@ function DeleteAccountModal({ isOpen, account, onClose }: { isOpen: boolean; acc
 }
 
 function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState<Account | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<Account | null>(null);
@@ -184,7 +188,7 @@ function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex justify-end">
         <button onClick={() => { setEditEntry(null); setShowModal(true); }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm">
-          <Plus className="w-4 h-4" /> New Account
+          <Plus className="w-4 h-4" /> {t('erp.accounting.account.new')}
         </button>
       </div>
 
@@ -192,19 +196,19 @@ function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
       {isError && (
         <div className="text-center py-10 space-y-3">
           <AlertCircle className="w-8 h-8 text-red-400/50 mx-auto" />
-          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50">Retry</button>
+          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50">{t('erp.common.retry')}</button>
         </div>
       )}
       {!isLoading && !isError && accounts.length === 0 && (
         <div className="text-center py-16 space-y-3">
           <Landmark className="w-8 h-8 text-white/15 mx-auto" />
-          <p className="text-sm text-white/30">No accounts yet.</p>
+          <p className="text-sm text-white/30">{t('erp.accounting.account.noAccounts')}</p>
         </div>
       )}
 
       {grouped.map(({ type, items }) => (
         <div key={type} className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-1">{type}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-1">{t(`erp.accounting.accountType.${type}`)}</p>
           {items.map(a => (
             <AccountRow key={a.id} account={a} isAdmin={isAdmin}
               onEdit={(acc) => { setEditEntry(acc); setShowModal(true); }} onDelete={setDeleteEntry} />
@@ -221,25 +225,26 @@ function AccountsTab({ isAdmin }: { isAdmin: boolean }) {
 function AccountRow({ account: a, isAdmin, onEdit, onDelete }: {
   account: Account; isAdmin: boolean; onEdit: (a: Account) => void; onDelete: (a: Account) => void;
 }) {
+  const { t } = useTranslation();
   const menu = useDropdown('right');
   return (
     <div className="group flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 hover:bg-white/[0.04] transition-all">
       <div className="flex items-center gap-3 min-w-0">
         <span className="font-mono text-xs text-white/40 w-14">{a.code}</span>
         <span className="text-sm font-medium text-white truncate">{a.name}</span>
-        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border', TYPE_BADGE[a.type])}>{a.type}</span>
-        {a.isSystem && <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/5 text-white/40">system</span>}
-        {!a.isActive && <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/5 text-white/40">inactive</span>}
+        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border', TYPE_BADGE[a.type])}>{t(`erp.accounting.accountType.${a.type}`)}</span>
+        {a.isSystem && <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/5 text-white/40">{t('erp.accounting.account.system')}</span>}
+        {!a.isActive && <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/5 text-white/40">{t('erp.accounting.account.inactive')}</span>}
       </div>
       {!a.isSystem && (
         <div ref={menu.triggerRef} className="relative flex-shrink-0">
           <button onClick={menu.toggle} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"><MoreVertical className="w-4 h-4" /></button>
           <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={140}>
             <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-              <button onClick={() => { onEdit(a); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"><Edit2 className="w-3.5 h-3.5" /> Edit</button>
+              <button onClick={() => { onEdit(a); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"><Edit2 className="w-3.5 h-3.5" /> {t('erp.common.edit')}</button>
               {isAdmin && <>
                 <div className="my-1 border-t border-white/[0.06]" />
-                <button onClick={() => { onDelete(a); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                <button onClick={() => { onDelete(a); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 className="w-3.5 h-3.5" /> {t('erp.common.delete')}</button>
               </>}
             </div>
           </DropdownPortal>
@@ -254,6 +259,7 @@ function AccountRow({ account: a, isAdmin, onEdit, onDelete }: {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function LedgerTab({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [dirFilter, setDirFilter] = useState<'all' | LedgerDirection>('all');
@@ -273,27 +279,27 @@ function LedgerTab({ isAdmin }: { isAdmin: boolean }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          {(['all', 'IN', 'OUT'] as const).map(t => (
-            <button key={t} onClick={() => { setDirFilter(t); setPage(1); }}
+          {(['all', 'IN', 'OUT'] as const).map(dir => (
+            <button key={dir} onClick={() => { setDirFilter(dir); setPage(1); }}
               className={cn('px-4 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                dirFilter === t ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
-              {t === 'all' ? 'All' : t === 'IN' ? 'Money In' : 'Money Out'}
+                dirFilter === dir ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
+              {dir === 'all' ? t('erp.accounting.ledger.all') : dir === 'IN' ? t('erp.accounting.ledger.moneyIn') : t('erp.accounting.ledger.moneyOut')}
             </button>
           ))}
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm">
-          <Plus className="w-4 h-4" /> Manual Entry
+          <Plus className="w-4 h-4" /> {t('erp.accounting.ledger.manualEntry')}
         </button>
       </div>
 
       {isLoading && <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 animate-pulse h-14" />)}</div>}
       {isError && (
         <div className="text-center py-10 space-y-3"><AlertCircle className="w-8 h-8 text-red-400/50 mx-auto" />
-          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50">Retry</button></div>
+          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50">{t('erp.common.retry')}</button></div>
       )}
       {!isLoading && !isError && entries.length === 0 && (
-        <div className="text-center py-16 space-y-3"><BookOpen className="w-8 h-8 text-white/15 mx-auto" /><p className="text-sm text-white/30">No ledger entries yet.</p></div>
+        <div className="text-center py-16 space-y-3"><BookOpen className="w-8 h-8 text-white/15 mx-auto" /><p className="text-sm text-white/30">{t('erp.accounting.ledger.noEntries')}</p></div>
       )}
 
       {!isLoading && !isError && entries.length > 0 && (
@@ -324,7 +330,7 @@ function LedgerTab({ isAdmin }: { isAdmin: boolean }) {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-white/30">{data?.total ?? 0} entries · page {page} of {totalPages}</p>
+          <p className="text-xs text-white/30">{t('erp.accounting.ledger.pageInfo', { total: data?.total ?? 0, page, pages: totalPages })}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 transition-all"><ChevronLeft className="w-4 h-4" /></button>
             <span className="px-3 text-xs text-white/40">{page} / {totalPages}</span>
@@ -339,6 +345,7 @@ function LedgerTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function ManualEntryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const [accountId, setAccountId] = useState('');
@@ -374,57 +381,57 @@ function ManualEntryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-          <h2 className="text-base font-bold text-white">Manual Ledger Entry</h2>
+          <h2 className="text-base font-bold text-white">{t('erp.accounting.manualEntry.title')}</h2>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Date *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.date')}</label>
               <input type="date" value={entryDate} onChange={e => setEntryDate(e.target.value)} className={sharedInput} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Direction *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.direction')}</label>
               <select value={direction} onChange={e => setDirection(e.target.value as LedgerDirection)} className={sharedInput}>
-                <option value="IN">Money In</option>
-                <option value="OUT">Money Out</option>
+                <option value="IN">{t('erp.accounting.ledger.moneyIn')}</option>
+                <option value="OUT">{t('erp.accounting.ledger.moneyOut')}</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Account *</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.account')}</label>
             <select value={accountId} onChange={e => setAccountId(e.target.value)} className={sharedInput}>
-              <option value="">Select account…</option>
+              <option value="">{t('erp.accounting.manualEntry.selectAccount')}</option>
               {accounts.map(a => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Amount *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.amount')}</label>
               <input type="number" step="0.01" min="0" value={amount} onChange={e => setAmount(parseFloat(e.target.value) || 0)} className={sharedInput} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Currency (optional)</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.currencyOptional')}</label>
               <input value={currency} onChange={e => setCurrency(e.target.value)} maxLength={3} placeholder="USD" className={cn(sharedInput, 'uppercase')} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Description</label>
-            <input value={description} onChange={e => setDescription(e.target.value)} className={sharedInput} placeholder="Reference / memo" />
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.accounting.manualEntry.description')}</label>
+            <input value={description} onChange={e => setDescription(e.target.value)} className={sharedInput} placeholder={t('erp.accounting.manualEntry.descriptionPlaceholder')} />
           </div>
 
           {mutation.isError && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {(mutation.error as any)?.response?.data?.message ?? 'Failed to save entry'}
+              {(mutation.error as any)?.response?.data?.message ?? t('erp.accounting.manualEntry.saveFailed')}
             </div>
           )}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.common.cancel')}</button>
             <button type="button" disabled={mutation.isPending || !accountId || !amount} onClick={() => mutation.mutate()}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] text-sm disabled:opacity-50 min-h-[44px] transition-colors">
               {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              {mutation.isPending ? 'Saving…' : 'Add Entry'}
+              {mutation.isPending ? t('erp.common.saving') : t('erp.accounting.manualEntry.add')}
             </button>
           </div>
         </div>
@@ -438,6 +445,7 @@ function ManualEntryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function AccountingPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const { user } = useAuthStore();
@@ -451,17 +459,17 @@ export default function AccountingPage() {
       <div>
         <h1 className="text-xl font-bold text-white flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20"><BookOpen className="w-4.5 h-4.5 text-[#fbbf24]" /></span>
-          Accounting
+          {t('erp.accounting.title')}
         </h1>
-        <p className="text-sm text-white/30 mt-1 ml-11">Chart of accounts and unified transaction ledger.</p>
+        <p className="text-sm text-white/30 mt-1 ml-11">{t('erp.accounting.subtitle')}</p>
       </div>
 
       <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] w-fit">
-        {(['ledger', 'accounts'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={cn('px-5 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize',
-              tab === t ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
-            {t === 'ledger' ? 'Ledger' : 'Chart of Accounts'}
+        {(['ledger', 'accounts'] as const).map(tb => (
+          <button key={tb} onClick={() => setTab(tb)}
+            className={cn('px-5 py-1.5 rounded-lg text-xs font-semibold transition-all',
+              tab === tb ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
+            {tb === 'ledger' ? t('erp.accounting.tabs.ledger') : t('erp.accounting.tabs.accounts')}
           </button>
         ))}
       </div>

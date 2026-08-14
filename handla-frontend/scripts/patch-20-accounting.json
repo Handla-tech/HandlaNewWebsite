@@ -1,0 +1,140 @@
+{
+  "en": {
+    "erp": {
+      "accounting": {
+        "title": "Accounting",
+        "subtitle": "Chart of accounts and unified transaction ledger.",
+        "tabs": { "ledger": "Ledger", "accounts": "Chart of Accounts" },
+        "accountType": {
+          "ASSET": "Asset",
+          "LIABILITY": "Liability",
+          "INCOME": "Income",
+          "EXPENSE": "Expense",
+          "EQUITY": "Equity"
+        },
+        "account": {
+          "new": "New Account",
+          "editTitle": "Edit Account",
+          "newTitle": "New Account",
+          "modalSubtitle": "Chart of accounts entry.",
+          "code": "Code *",
+          "type": "Type *",
+          "name": "Name *",
+          "currencyOptional": "Currency (optional)",
+          "descriptionOptional": "Description (optional)",
+          "active": "Active",
+          "saveFailed": "Failed to save account",
+          "add": "Add Account",
+          "noAccounts": "No accounts yet.",
+          "system": "system",
+          "inactive": "inactive"
+        },
+        "deleteAccount": {
+          "title": "Delete Account",
+          "subtitle": "Only unused accounts can be deleted.",
+          "confirm": "Delete {{code}} — {{name}}?",
+          "failed": "Failed to delete"
+        },
+        "ledger": {
+          "all": "All",
+          "moneyIn": "Money In",
+          "moneyOut": "Money Out",
+          "manualEntry": "Manual Entry",
+          "noEntries": "No ledger entries yet.",
+          "pageInfo": "{{total}} entries · page {{page}} of {{pages}}"
+        },
+        "manualEntry": {
+          "title": "Manual Ledger Entry",
+          "date": "Date *",
+          "direction": "Direction *",
+          "account": "Account *",
+          "selectAccount": "Select account…",
+          "amount": "Amount *",
+          "currencyOptional": "Currency (optional)",
+          "description": "Description",
+          "descriptionPlaceholder": "Reference / memo",
+          "saveFailed": "Failed to save entry",
+          "add": "Add Entry"
+        }
+      },
+      "common": {
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "delete": "Delete",
+        "deleting": "Deleting…",
+        "edit": "Edit",
+        "retry": "Retry"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "accounting": {
+        "title": "المحاسبة",
+        "subtitle": "دليل الحسابات ودفتر المعاملات الموحّد.",
+        "tabs": { "ledger": "دفتر الأستاذ", "accounts": "دليل الحسابات" },
+        "accountType": {
+          "ASSET": "أصول",
+          "LIABILITY": "التزامات",
+          "INCOME": "دخل",
+          "EXPENSE": "مصروفات",
+          "EQUITY": "حقوق ملكية"
+        },
+        "account": {
+          "new": "حساب جديد",
+          "editTitle": "تعديل الحساب",
+          "newTitle": "حساب جديد",
+          "modalSubtitle": "إدخال في دليل الحسابات.",
+          "code": "الرمز *",
+          "type": "النوع *",
+          "name": "الاسم *",
+          "currencyOptional": "العملة (اختياري)",
+          "descriptionOptional": "الوصف (اختياري)",
+          "active": "نشط",
+          "saveFailed": "تعذّر حفظ الحساب",
+          "add": "إضافة حساب",
+          "noAccounts": "لا توجد حسابات بعد.",
+          "system": "نظامي",
+          "inactive": "غير نشط"
+        },
+        "deleteAccount": {
+          "title": "حذف الحساب",
+          "subtitle": "يمكن حذف الحسابات غير المستخدمة فقط.",
+          "confirm": "حذف {{code}} — {{name}}؟",
+          "failed": "تعذّر الحذف"
+        },
+        "ledger": {
+          "all": "الكل",
+          "moneyIn": "وارد",
+          "moneyOut": "صادر",
+          "manualEntry": "إدخال يدوي",
+          "noEntries": "لا توجد قيود بعد.",
+          "pageInfo": "{{total}} قيد · صفحة {{page}} من {{pages}}"
+        },
+        "manualEntry": {
+          "title": "قيد يدوي في دفتر الأستاذ",
+          "date": "التاريخ *",
+          "direction": "الاتجاه *",
+          "account": "الحساب *",
+          "selectAccount": "اختر حساباً…",
+          "amount": "المبلغ *",
+          "currencyOptional": "العملة (اختياري)",
+          "description": "الوصف",
+          "descriptionPlaceholder": "مرجع / ملاحظة",
+          "saveFailed": "تعذّر حفظ القيد",
+          "add": "إضافة قيد"
+        }
+      },
+      "common": {
+        "cancel": "إلغاء",
+        "save": "حفظ",
+        "saving": "جارٍ الحفظ…",
+        "delete": "حذف",
+        "deleting": "جارٍ الحذف…",
+        "edit": "تعديل",
+        "retry": "إعادة المحاولة"
+      }
+    }
+  }
+}
