@@ -1377,7 +1377,15 @@
         "totalExpenses": "المصروفات (الشهر)",
         "netBalance": "صافي الرصيد",
         "outstandingInvoices": "الفواتير المستحقة",
-        "overdueInvoicesCount": "فواتير متأخرة"
+        "overdueInvoicesCount": "فواتير متأخرة",
+        "tasksDone": "المهام المنجزة",
+        "contractsSigned": "العقود الموقّعة",
+        "thisMonthCount": "+{{count}} هذا الشهر",
+        "percentComplete": "{{rate}}% مكتمل",
+        "overdueCount": "{{count}} متأخرة",
+        "awaitingCount": "{{count}} قيد الانتظار",
+        "delayedTasksCard": "المهام المتأخرة",
+        "outstanding": "المستحقات"
       },
       "sections": {
         "financials": "الماليات — هذا الشهر",
@@ -1418,7 +1426,35 @@
         "newExpense": "مصروف جديد"
       },
       "thisMonth": "هذا الشهر",
-      "currency": "$"
+      "currency": "$",
+      "welcomeMorning": "صباح الخير",
+      "welcomeAfternoon": "مساء الخير",
+      "welcomeEvening": "مساء الخير",
+      "overviewToday": "إليك نظرة عامة على أعمالك اليوم.",
+      "refresh": "تحديث",
+      "trend": {
+        "up": "في ارتفاع",
+        "down": "في انخفاض",
+        "stable": "مستقر"
+      },
+      "gauge": {
+        "completion": "الإنجاز",
+        "done": "منجزة",
+        "total": "الإجمالي"
+      },
+      "alerts": {
+        "overdueInvoices": "{{count}} فاتورة متأخرة",
+        "overdueInvoicesPlural": "{{count}} فواتير متأخرة",
+        "totalOutstanding": "{{amount}} إجمالي المستحقات.",
+        "viewInvoices": "عرض الفواتير ←",
+        "contractsAwaiting": "{{count}} عقد بانتظار التوقيع",
+        "contractsAwaitingPlural": "{{count}} عقود بانتظار التوقيع",
+        "viewContracts": "عرض العقود ←"
+      },
+      "breakdown": {
+        "delayed": "متأخرة",
+        "pending": "قيد الانتظار"
+      }
     },
     "sidebar": {
       "sections": {

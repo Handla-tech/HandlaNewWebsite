@@ -1,0 +1,70 @@
+{
+  "en": {
+    "erp": {
+      "dashboard": {
+        "welcomeMorning": "morning",
+        "welcomeAfternoon": "afternoon",
+        "welcomeEvening": "evening",
+        "overviewToday": "Here's your business overview for today.",
+        "refresh": "Refresh",
+        "trend": { "up": "Trending up", "down": "Trending down", "stable": "Stable" },
+        "kpi": {
+          "tasksDone": "Tasks Done",
+          "contractsSigned": "Contracts Signed",
+          "thisMonthCount": "+{{count}} this month",
+          "percentComplete": "{{rate}}% complete",
+          "overdueCount": "{{count}} overdue",
+          "awaitingCount": "{{count}} awaiting"
+        },
+        "gauge": {
+          "completion": "completion",
+          "done": "done",
+          "total": "total"
+        },
+        "alerts": {
+          "overdueInvoices": "{{count}} overdue invoice",
+          "overdueInvoicesPlural": "{{count}} overdue invoices",
+          "totalOutstanding": "{{amount}} total outstanding.",
+          "viewInvoices": "View invoices →",
+          "contractsAwaiting": "{{count}} contract awaiting signature",
+          "contractsAwaitingPlural": "{{count}} contracts awaiting signature",
+          "viewContracts": "View contracts →"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "dashboard": {
+        "welcomeMorning": "صباح الخير",
+        "welcomeAfternoon": "مساء الخير",
+        "welcomeEvening": "مساء الخير",
+        "overviewToday": "إليك نظرة عامة على أعمالك اليوم.",
+        "refresh": "تحديث",
+        "trend": { "up": "في ارتفاع", "down": "في انخفاض", "stable": "مستقر" },
+        "kpi": {
+          "tasksDone": "المهام المنجزة",
+          "contractsSigned": "العقود الموقّعة",
+          "thisMonthCount": "+{{count}} هذا الشهر",
+          "percentComplete": "{{rate}}% مكتمل",
+          "overdueCount": "{{count}} متأخرة",
+          "awaitingCount": "{{count}} قيد الانتظار"
+        },
+        "gauge": {
+          "completion": "الإنجاز",
+          "done": "منجزة",
+          "total": "الإجمالي"
+        },
+        "alerts": {
+          "overdueInvoices": "{{count}} فاتورة متأخرة",
+          "overdueInvoicesPlural": "{{count}} فواتير متأخرة",
+          "totalOutstanding": "{{amount}} إجمالي المستحقات.",
+          "viewInvoices": "عرض الفواتير ←",
+          "contractsAwaiting": "{{count}} عقد بانتظار التوقيع",
+          "contractsAwaitingPlural": "{{count}} عقود بانتظار التوقيع",
+          "viewContracts": "عرض العقود ←"
+        }
+      }
+    }
+  }
+}

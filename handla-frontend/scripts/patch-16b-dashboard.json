@@ -1,0 +1,30 @@
+{
+  "en": {
+    "erp": {
+      "dashboard": {
+        "kpi": {
+          "delayedTasksCard": "Delayed Tasks",
+          "outstanding": "Outstanding"
+        },
+        "breakdown": {
+          "delayed": "Delayed",
+          "pending": "Pending"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "dashboard": {
+        "kpi": {
+          "delayedTasksCard": "المهام المتأخرة",
+          "outstanding": "المستحقات"
+        },
+        "breakdown": {
+          "delayed": "متأخرة",
+          "pending": "قيد الانتظار"
+        }
+      }
+    }
+  }
+}

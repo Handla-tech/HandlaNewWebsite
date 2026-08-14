@@ -34,6 +34,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useErpStats, useErpFinancialChart } from '@/hooks/useErpDashboard';
 import { cn } from '@/lib/utils';
 import type { DashboardStats, FinancialChartMonth } from '@/hooks/useErpDashboard';
@@ -98,6 +99,7 @@ function KpiCard({
     purple: { bg: 'bg-purple-500/10',  border: 'border-purple-500/20',  icon: 'text-purple-400',  text: 'text-purple-400',  glow: 'shadow-purple-500/10' },
   };
   const ac = accents[accent];
+  const { t } = useTranslation();
 
   const content = (
     <motion.div
@@ -126,9 +128,9 @@ function KpiCard({
 
       {trend && (
         <div className="mt-3 flex items-center gap-1.5 pt-3 border-t border-white/[0.05]">
-          {trend === 'up'   && <><TrendingUp   className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-400">Trending up</span></>}
-          {trend === 'down' && <><TrendingDown  className="h-3 w-3 text-red-400"     /><span className="text-[10px] text-red-400">Trending down</span></>}
-          {trend === 'neutral' && <><Activity  className="h-3 w-3 text-white/30"    /><span className="text-[10px] text-white/30">Stable</span></>}
+          {trend === 'up'   && <><TrendingUp   className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-400">{t('erp.dashboard.trend.up')}</span></>}
+          {trend === 'down' && <><TrendingDown  className="h-3 w-3 text-red-400"     /><span className="text-[10px] text-red-400">{t('erp.dashboard.trend.down')}</span></>}
+          {trend === 'neutral' && <><Activity  className="h-3 w-3 text-white/30"    /><span className="text-[10px] text-white/30">{t('erp.dashboard.trend.stable')}</span></>}
           {href && <ArrowUpRight className="ml-auto h-3 w-3 text-white/20 group-hover:text-white/50 transition-colors" />}
         </div>
       )}
@@ -161,6 +163,7 @@ function SectionHeader({ title, icon: Icon }: { title: string; icon: React.Compo
 // ─── Financial Chart (pure CSS bars) ─────────────────────────────────────────
 
 function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
+  const { t } = useTranslation();
   const safeData = Array.isArray(data) ? data : [];
   const maxVal = useMemo(
     () => Math.max(...safeData.flatMap(d => [d.income, d.expenses]), 1),
@@ -174,11 +177,7 @@ function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
   };
 
   if (safeData.length === 0 || safeData.every(d => d.income === 0 && d.expenses === 0)) {
-    return (
-      <div className="flex h-40 items-center justify-center text-sm text-white/20">
-        No financial data available for this period.
-      </div>
-    );
+    return <FinancialChartEmpty />;
   }
 
   return (
@@ -191,13 +190,13 @@ function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
             <div
               className="w-1/2 rounded-t-md bg-gradient-to-t from-emerald-600/60 to-emerald-500/80 transition-all duration-700 hover:from-emerald-600/80 hover:to-emerald-400"
               style={{ height: `${Math.max((d.income / maxVal) * 168, 3)}px` }}
-              title={`Income: ${fmtCurrency(d.income)}`}
+              title={`${t('erp.dashboard.chart.income')}: ${fmtCurrency(d.income)}`}
             />
             {/* Expenses bar */}
             <div
               className="w-1/2 rounded-t-md bg-gradient-to-t from-red-600/60 to-red-500/80 transition-all duration-700 hover:from-red-600/80 hover:to-red-400"
               style={{ height: `${Math.max((d.expenses / maxVal) * 168, 3)}px` }}
-              title={`Expenses: ${fmtCurrency(d.expenses)}`}
+              title={`${t('erp.dashboard.chart.expenses')}: ${fmtCurrency(d.expenses)}`}
             />
           </div>
           {/* Month label */}
@@ -210,6 +209,15 @@ function FinancialChart({ data }: { data: FinancialChartMonth[] }) {
 
 // ─── Task Completion Gauge ───────────────────────────────────────────────────
 
+function FinancialChartEmpty() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-40 items-center justify-center text-sm text-white/20">
+      {t('erp.dashboard.chart.noData')}
+    </div>
+  );
+}
+
 function TaskGauge({
   rate,
   completed,
@@ -219,6 +227,7 @@ function TaskGauge({
   completed: number;
   total:     number;
 }) {
+  const { t } = useTranslation();
   const R        = 60;
   const cx       = 70;
   const cy       = 70;
@@ -255,12 +264,12 @@ function TaskGauge({
           {rate}%
         </text>
         <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.3)">
-          completion
+          {t('erp.dashboard.gauge.completion')}
         </text>
       </svg>
       <div className="flex gap-5 text-[11px] text-white/40">
-        <span><span className="font-bold text-emerald-400">{completed}</span> done</span>
-        <span><span className="font-bold text-white/70">{total}</span> total</span>
+        <span><span className="font-bold text-emerald-400">{completed}</span> {t('erp.dashboard.gauge.done')}</span>
+        <span><span className="font-bold text-white/70">{total}</span> {t('erp.dashboard.gauge.total')}</span>
       </div>
     </div>
   );
@@ -269,12 +278,13 @@ function TaskGauge({
 // ─── Project Status Bars ─────────────────────────────────────────────────────
 
 function ProjectStatusBars({ stats }: { stats: DashboardStats }) {
+  const { t } = useTranslation();
   const items = [
-    { label: 'Active',    value: stats.projectsByStatus.active,    colour: 'bg-emerald-500', glow: 'shadow-emerald-500/30' },
-    { label: 'Planning',  value: stats.projectsByStatus.planning,  colour: 'bg-blue-500',    glow: 'shadow-blue-500/30' },
-    { label: 'On Hold',   value: stats.projectsByStatus.onHold,    colour: 'bg-amber-500',   glow: 'shadow-amber-500/30' },
-    { label: 'Completed', value: stats.projectsByStatus.completed, colour: 'bg-purple-500',  glow: 'shadow-purple-500/30' },
-    { label: 'Cancelled', value: stats.projectsByStatus.cancelled, colour: 'bg-red-500',     glow: 'shadow-red-500/30' },
+    { label: t('erp.dashboard.projectStatus.active'),    value: stats.projectsByStatus.active,    colour: 'bg-emerald-500', glow: 'shadow-emerald-500/30' },
+    { label: t('erp.dashboard.projectStatus.planning'),  value: stats.projectsByStatus.planning,  colour: 'bg-blue-500',    glow: 'shadow-blue-500/30' },
+    { label: t('erp.dashboard.projectStatus.onHold'),   value: stats.projectsByStatus.onHold,    colour: 'bg-amber-500',   glow: 'shadow-amber-500/30' },
+    { label: t('erp.dashboard.projectStatus.completed'), value: stats.projectsByStatus.completed, colour: 'bg-purple-500',  glow: 'shadow-purple-500/30' },
+    { label: t('erp.dashboard.projectStatus.cancelled'), value: stats.projectsByStatus.cancelled, colour: 'bg-red-500',     glow: 'shadow-red-500/30' },
   ];
   const total = items.reduce((s, i) => s + i.value, 0) || 1;
 
@@ -301,11 +311,12 @@ function ProjectStatusBars({ stats }: { stats: DashboardStats }) {
 // ─── Contract Status Pills ───────────────────────────────────────────────────
 
 function ContractPills({ stats }: { stats: DashboardStats }) {
+  const { t } = useTranslation();
   const pills = [
-    { label: 'Draft',    value: stats.contractsByStatus.draft,    cls: 'border-white/10 bg-white/5 text-white/50'          },
-    { label: 'Sent',     value: stats.contractsByStatus.sent,     cls: 'border-blue-500/30 bg-blue-500/10 text-blue-400'   },
-    { label: 'Signed',   value: stats.contractsByStatus.signed,   cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
-    { label: 'Rejected', value: stats.contractsByStatus.rejected, cls: 'border-red-500/30 bg-red-500/10 text-red-400'      },
+    { label: t('erp.dashboard.contractStatus.draft'),    value: stats.contractsByStatus.draft,    cls: 'border-white/10 bg-white/5 text-white/50'          },
+    { label: t('erp.dashboard.contractStatus.sent'),     value: stats.contractsByStatus.sent,     cls: 'border-blue-500/30 bg-blue-500/10 text-blue-400'   },
+    { label: t('erp.dashboard.contractStatus.signed'),   value: stats.contractsByStatus.signed,   cls: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
+    { label: t('erp.dashboard.contractStatus.rejected'), value: stats.contractsByStatus.rejected, cls: 'border-red-500/30 bg-red-500/10 text-red-400'      },
   ];
 
   return (
@@ -326,13 +337,14 @@ function ContractPills({ stats }: { stats: DashboardStats }) {
 // ─── Quick Action Buttons ────────────────────────────────────────────────────
 
 function QuickActions() {
+  const { t } = useTranslation();
   const actions = [
-    { label: 'New Client',   href: '/erp/clients',   icon: Briefcase,   accent: 'from-[#fbbf24]/20 to-[#fbbf24]/5 border-[#fbbf24]/20 text-[#fbbf24]'   },
-    { label: 'New Project',  href: '/erp/projects',  icon: FolderOpen,  accent: 'from-blue-500/20 to-blue-500/5 border-blue-500/20 text-blue-400'        },
-    { label: 'New Task',     href: '/erp/tasks',     icon: CheckSquare, accent: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400' },
-    { label: 'New Contract', href: '/erp/contracts', icon: FileText,    accent: 'from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400'  },
-    { label: 'New Invoice',  href: '/erp/invoices',  icon: Receipt,     accent: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400'     },
-    { label: 'New Expense',  href: '/erp/expenses',  icon: DollarSign,  accent: 'from-red-500/20 to-red-500/5 border-red-500/20 text-red-400'             },
+    { label: t('erp.dashboard.quickActions.newClient'),   href: '/erp/clients',   icon: Briefcase,   accent: 'from-[#fbbf24]/20 to-[#fbbf24]/5 border-[#fbbf24]/20 text-[#fbbf24]'   },
+    { label: t('erp.dashboard.quickActions.newProject'),  href: '/erp/projects',  icon: FolderOpen,  accent: 'from-blue-500/20 to-blue-500/5 border-blue-500/20 text-blue-400'        },
+    { label: t('erp.dashboard.quickActions.newTask'),     href: '/erp/tasks',     icon: CheckSquare, accent: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400' },
+    { label: t('erp.dashboard.quickActions.newContract'), href: '/erp/contracts', icon: FileText,    accent: 'from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400'  },
+    { label: t('erp.dashboard.quickActions.newInvoice'),  href: '/erp/invoices',  icon: Receipt,     accent: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400'     },
+    { label: t('erp.dashboard.quickActions.newExpense'),  href: '/erp/expenses',  icon: DollarSign,  accent: 'from-red-500/20 to-red-500/5 border-red-500/20 text-red-400'             },
   ];
 
   return (
@@ -390,14 +402,15 @@ function DashboardSkeleton() {
 // ─── Error State ──────────────────────────────────────────────────────────────
 
 function DashboardError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 p-10">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
         <AlertTriangle className="h-7 w-7 text-red-400" />
       </div>
       <div className="text-center">
-        <p className="font-semibold text-white">Failed to load dashboard</p>
-        <p className="mt-1 text-sm text-white/30">Could not fetch dashboard data. Please try again.</p>
+        <p className="font-semibold text-white">{t('erp.dashboard.errorTitle')}</p>
+        <p className="mt-1 text-sm text-white/30">{t('erp.dashboard.errorMessage')}</p>
       </div>
       <button
         type="button"
@@ -405,7 +418,7 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
         className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-5 py-2.5 text-sm font-semibold text-[#fbbf24] transition hover:bg-[#fbbf24]/20"
       >
         <RefreshCw className="h-3.5 w-3.5" />
-        Retry
+        {t('erp.dashboard.retry')}
       </button>
     </div>
   );
@@ -415,6 +428,7 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
 
 export default function ErpDashboardPage() {
   const { user, isAdmin } = useAuth();
+  const { t } = useTranslation();
 
   const {
     data:    stats,
@@ -432,7 +446,16 @@ export default function ErpDashboardPage() {
   const isLoading = statsLoading || chartLoading;
   const hasError  = statsError;
 
-  const greeting  = isAdmin ? `Good ${timeOfDay()}, Admin` : `Good ${timeOfDay()}`;
+  const timeOfDayLabel = t(
+    timeOfDay() === 'morning'
+      ? 'erp.dashboard.welcomeMorning'
+      : timeOfDay() === 'afternoon'
+        ? 'erp.dashboard.welcomeAfternoon'
+        : 'erp.dashboard.welcomeEvening'
+  );
+  const greeting = isAdmin
+    ? t('erp.dashboard.welcomeAdmin', { timeOfDay: timeOfDayLabel })
+    : t('erp.dashboard.welcomeEmployee', { timeOfDay: timeOfDayLabel });
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading || (!stats && !hasError)) return <DashboardSkeleton />;
@@ -477,9 +500,9 @@ export default function ErpDashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-4 w-4 text-[#fbbf24]" />
-            <h1 className="text-xl font-bold tracking-tight text-white">{greeting}!</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">{greeting}</h1>
           </div>
-          <p className="text-sm text-white/30">Here&apos;s your business overview for today.</p>
+          <p className="text-sm text-white/30">{t('erp.dashboard.overviewToday')}</p>
         </div>
         <button
           type="button"
@@ -487,7 +510,7 @@ export default function ErpDashboardPage() {
           className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/40 transition hover:border-white/20 hover:text-white"
         >
           <RefreshCw className="h-3 w-3" />
-          Refresh
+          {t('erp.dashboard.refresh')}
         </button>
       </div>
 
@@ -503,46 +526,46 @@ export default function ErpDashboardPage() {
         {isAdmin && (
           <KpiCard
             icon={Users}
-            label="Total Leads"
+            label={t('erp.dashboard.kpi.totalLeads')}
             value={safeStats.totalLeads}
-            sub={`+${safeStats.newLeadsThisMonth} this month`}
+            sub={t('erp.dashboard.kpi.thisMonthCount', { count: safeStats.newLeadsThisMonth })}
             accent="gold"
             href="/erp/clients"
           />
         )}
         <KpiCard
           icon={Briefcase}
-          label="Total Clients"
+          label={t('erp.dashboard.kpi.totalClients')}
           value={safeStats.totalClients}
-          sub={`+${safeStats.newClientsThisMonth} this month`}
+          sub={t('erp.dashboard.kpi.thisMonthCount', { count: safeStats.newClientsThisMonth })}
           accent="blue"
           href="/erp/clients"
         />
         <KpiCard
           icon={FolderOpen}
-          label="Active Projects"
+          label={t('erp.dashboard.kpi.activeProjects')}
           value={safeStats.activeProjects}
           accent="purple"
           href="/erp/projects"
         />
         <KpiCard
           icon={CheckSquare}
-          label="Tasks Done"
+          label={t('erp.dashboard.kpi.tasksDone')}
           value={`${safeStats.completedTasks}/${safeStats.totalTasks}`}
-          sub={`${safeStats.completionRate}% complete`}
+          sub={t('erp.dashboard.kpi.percentComplete', { rate: safeStats.completionRate })}
           accent={safeStats.completionRate >= 70 ? 'green' : safeStats.completionRate >= 40 ? 'amber' : 'red'}
           href="/erp/tasks"
         />
         <KpiCard
           icon={Clock}
-          label="Delayed Tasks"
+          label={t('erp.dashboard.kpi.delayedTasksCard')}
           value={safeStats.delayedTasks}
           accent={safeStats.delayedTasks > 0 ? 'red' : 'green'}
           href="/erp/tasks"
         />
         <KpiCard
           icon={TrendingUp}
-          label="Income (Month)"
+          label={t('erp.dashboard.kpi.totalIncome')}
           value={fmtCurrency(safeStats.totalIncome)}
           accent="green"
           trend="up"
@@ -550,7 +573,7 @@ export default function ErpDashboardPage() {
         />
         <KpiCard
           icon={TrendingDown}
-          label="Expenses (Month)"
+          label={t('erp.dashboard.kpi.totalExpenses')}
           value={fmtCurrency(safeStats.totalExpenses)}
           accent="red"
           trend="down"
@@ -558,24 +581,24 @@ export default function ErpDashboardPage() {
         />
         <KpiCard
           icon={Wallet}
-          label="Net Balance"
+          label={t('erp.dashboard.kpi.netBalance')}
           value={fmtCurrency(safeStats.netBalance)}
           accent={safeStats.netBalance >= 0 ? 'green' : 'red'}
           trend={safeStats.netBalance >= 0 ? 'up' : 'down'}
         />
         <KpiCard
           icon={Receipt}
-          label="Outstanding"
+          label={t('erp.dashboard.kpi.outstanding')}
           value={fmtCurrency(safeStats.outstandingInvoices)}
-          sub={`${safeStats.overdueInvoicesCount} overdue`}
+          sub={t('erp.dashboard.kpi.overdueCount', { count: safeStats.overdueInvoicesCount })}
           accent={safeStats.overdueInvoicesCount > 0 ? 'amber' : 'gold'}
           href="/erp/invoices"
         />
         <KpiCard
           icon={FileText}
-          label="Contracts Signed"
+          label={t('erp.dashboard.kpi.contractsSigned')}
           value={safeStats.contractsByStatus.signed}
-          sub={`${safeStats.contractsByStatus.sent} awaiting`}
+          sub={t('erp.dashboard.kpi.awaitingCount', { count: safeStats.contractsByStatus.sent })}
           accent="gold"
           href="/erp/contracts"
         />
@@ -593,17 +616,17 @@ export default function ErpDashboardPage() {
           transition={{ delay: 0.15 }}
           className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5 lg:col-span-2"
         >
-          <SectionHeader title="Income vs Expenses — Last 6 Months" icon={BarChart3} />
+          <SectionHeader title={t('erp.dashboard.sections.financialChart')} icon={BarChart3} />
 
           {/* Legend */}
           <div className="mb-4 flex gap-4 text-[11px]">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-3 rounded-sm bg-emerald-500/80" />
-              <span className="text-white/40">Income</span>
+              <span className="text-white/40">{t('erp.dashboard.chart.income')}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-3 rounded-sm bg-red-500/80" />
-              <span className="text-white/40">Expenses</span>
+              <span className="text-white/40">{t('erp.dashboard.chart.expenses')}</span>
             </span>
           </div>
 
@@ -617,11 +640,11 @@ export default function ErpDashboardPage() {
           transition={{ delay: 0.2 }}
           className="flex flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
-          <SectionHeader title="Task Progress" icon={Target} />
+          <SectionHeader title={t('erp.dashboard.sections.taskProgress')} icon={Target} />
           {safeStats.totalTasks === 0 ? (
             <div className="flex flex-col items-center gap-3 text-white/20">
               <CheckCircle2 className="h-10 w-10" />
-              <p className="text-sm">No tasks yet</p>
+              <p className="text-sm">{t('erp.dashboard.taskGauge.noTasks')}</p>
             </div>
           ) : (
             <TaskGauge
@@ -634,11 +657,11 @@ export default function ErpDashboardPage() {
           <div className="mt-4 grid w-full grid-cols-2 gap-2 text-center">
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 py-2.5">
               <p className="text-lg font-bold text-amber-400">{safeStats.delayedTasks}</p>
-              <p className="text-[10px] text-white/30">Delayed</p>
+              <p className="text-[10px] text-white/30">{t('erp.dashboard.breakdown.delayed')}</p>
             </div>
             <div className="rounded-xl border border-blue-500/20 bg-blue-500/8 py-2.5">
               <p className="text-lg font-bold text-blue-400">{safeStats.pendingTasks}</p>
-              <p className="text-[10px] text-white/30">Pending</p>
+              <p className="text-[10px] text-white/30">{t('erp.dashboard.breakdown.pending')}</p>
             </div>
           </div>
         </motion.div>
@@ -656,7 +679,7 @@ export default function ErpDashboardPage() {
           transition={{ delay: 0.25 }}
           className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
-          <SectionHeader title="Projects by Status" icon={FolderOpen} />
+          <SectionHeader title={t('erp.dashboard.sections.projectsByStatus')} icon={FolderOpen} />
           <ProjectStatusBars stats={safeStats} />
         </motion.div>
 
@@ -667,7 +690,7 @@ export default function ErpDashboardPage() {
           transition={{ delay: 0.3 }}
           className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
         >
-          <SectionHeader title="Contracts" icon={FileText} />
+          <SectionHeader title={t('erp.dashboard.sections.contractsByStatus')} icon={FileText} />
           <ContractPills stats={safeStats} />
 
           {/* Overdue invoice alert */}
@@ -678,12 +701,14 @@ export default function ErpDashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-amber-400">
-                  {safeStats.overdueInvoicesCount} overdue invoice{safeStats.overdueInvoicesCount !== 1 ? 's' : ''}
+                  {safeStats.overdueInvoicesCount !== 1
+                    ? t('erp.dashboard.alerts.overdueInvoicesPlural', { count: safeStats.overdueInvoicesCount })
+                    : t('erp.dashboard.alerts.overdueInvoices', { count: safeStats.overdueInvoicesCount })}
                 </p>
                 <p className="mt-0.5 text-[11px] text-white/30">
-                  {fmtCurrency(safeStats.outstandingInvoices)} total outstanding.{' '}
+                  {t('erp.dashboard.alerts.totalOutstanding', { amount: fmtCurrency(safeStats.outstandingInvoices) })}{' '}
                   <Link href="/erp/invoices" className="underline hover:text-amber-400 transition-colors">
-                    View invoices →
+                    {t('erp.dashboard.alerts.viewInvoices')}
                   </Link>
                 </p>
               </div>
@@ -698,11 +723,13 @@ export default function ErpDashboardPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-blue-400">
-                  {safeStats.contractsByStatus.sent} contract{safeStats.contractsByStatus.sent !== 1 ? 's' : ''} awaiting signature
+                  {safeStats.contractsByStatus.sent !== 1
+                    ? t('erp.dashboard.alerts.contractsAwaitingPlural', { count: safeStats.contractsByStatus.sent })
+                    : t('erp.dashboard.alerts.contractsAwaiting', { count: safeStats.contractsByStatus.sent })}
                 </p>
                 <p className="mt-0.5 text-[11px] text-white/30">
                   <Link href="/erp/contracts" className="underline hover:text-blue-400 transition-colors">
-                    View contracts →
+                    {t('erp.dashboard.alerts.viewContracts')}
                   </Link>
                 </p>
               </div>
@@ -720,7 +747,7 @@ export default function ErpDashboardPage() {
         transition={{ delay: 0.35 }}
         className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f] p-5"
       >
-        <SectionHeader title="Quick Actions" icon={Activity} />
+        <SectionHeader title={t('erp.dashboard.sections.quickActions')} icon={Activity} />
         <QuickActions />
       </motion.div>
     </div>

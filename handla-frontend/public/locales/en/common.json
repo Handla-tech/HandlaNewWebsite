@@ -1377,7 +1377,15 @@
         "totalExpenses": "Expenses (Month)",
         "netBalance": "Net Balance",
         "outstandingInvoices": "Outstanding Invoices",
-        "overdueInvoicesCount": "Overdue Invoices"
+        "overdueInvoicesCount": "Overdue Invoices",
+        "tasksDone": "Tasks Done",
+        "contractsSigned": "Contracts Signed",
+        "thisMonthCount": "+{{count}} this month",
+        "percentComplete": "{{rate}}% complete",
+        "overdueCount": "{{count}} overdue",
+        "awaitingCount": "{{count}} awaiting",
+        "delayedTasksCard": "Delayed Tasks",
+        "outstanding": "Outstanding"
       },
       "sections": {
         "financials": "Financials — This Month",
@@ -1418,7 +1426,35 @@
         "newExpense": "New Expense"
       },
       "thisMonth": "This month",
-      "currency": "$"
+      "currency": "$",
+      "welcomeMorning": "morning",
+      "welcomeAfternoon": "afternoon",
+      "welcomeEvening": "evening",
+      "overviewToday": "Here's your business overview for today.",
+      "refresh": "Refresh",
+      "trend": {
+        "up": "Trending up",
+        "down": "Trending down",
+        "stable": "Stable"
+      },
+      "gauge": {
+        "completion": "completion",
+        "done": "done",
+        "total": "total"
+      },
+      "alerts": {
+        "overdueInvoices": "{{count}} overdue invoice",
+        "overdueInvoicesPlural": "{{count}} overdue invoices",
+        "totalOutstanding": "{{amount}} total outstanding.",
+        "viewInvoices": "View invoices →",
+        "contractsAwaiting": "{{count}} contract awaiting signature",
+        "contractsAwaitingPlural": "{{count}} contracts awaiting signature",
+        "viewContracts": "View contracts →"
+      },
+      "breakdown": {
+        "delayed": "Delayed",
+        "pending": "Pending"
+      }
     },
     "sidebar": {
       "sections": {
