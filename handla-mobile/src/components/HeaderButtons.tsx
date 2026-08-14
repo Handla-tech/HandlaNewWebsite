@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
-import { notificationsApi } from '@/lib/endpoints';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 import { spacing, radius, font, useTheme } from '@/theme';
 
 /**
@@ -32,22 +31,7 @@ export function HeaderActions() {
   const router = useRouter();
   const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
-  const authed = useAuthStore((s) => s.status === 'authenticated');
-
-  const unread = useQuery({
-    queryKey: ['notifications-unread-count'],
-    queryFn: () =>
-      notificationsApi.unreadCount().then((r) => {
-        const d = r.data?.data as { count?: number } | number | undefined;
-        if (typeof d === 'number') return d;
-        return d?.count ?? 0;
-      }),
-    enabled: authed,
-    refetchInterval: 30_000,
-    staleTime: 15_000,
-  });
-
-  const count = unread.data ?? 0;
+  const count = useUnreadCount();
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingRight: spacing.md }}>

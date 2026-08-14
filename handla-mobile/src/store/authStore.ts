@@ -4,6 +4,7 @@ import { registerAuthFailureCallback } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { tokenStorage } from '@/lib/storage';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
+import { registerForPushNotifications, unregisterPushNotifications } from '@/lib/push';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -40,6 +41,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await authApi.me();
       set({ user: res.data.data.user, status: 'authenticated' });
       connectSocket().catch(() => {/* best-effort; chat screens retry */});
+      // Register this device for native push (best-effort, non-blocking).
+      void registerForPushNotifications();
     } catch {
       await tokenStorage.clear();
       set({ status: 'unauthenticated', user: null });
@@ -54,6 +57,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await tokenStorage.save(accessToken, refreshToken);
       set({ user, status: 'authenticated' });
       connectSocket().catch(() => {/* best-effort */});
+      // Register this device for native push (best-effort, non-blocking).
+      void registerForPushNotifications();
       return user;
     } catch (err: unknown) {
       const axiosErr = err as {
@@ -79,6 +84,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Unregister this device's push token first (best-effort) while we still
+    // have a valid session.
+    await unregisterPushNotifications();
     try {
       await authApi.logout();
     } catch {

@@ -15,7 +15,10 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "tech.handla.mobile"
+      "bundleIdentifier": "tech.handla.mobile",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "package": "tech.handla.mobile",
@@ -34,6 +37,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0a0a0a"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FBBF24"
         }
       ]
     ],

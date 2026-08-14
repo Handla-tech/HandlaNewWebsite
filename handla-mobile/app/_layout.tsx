@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useI18nStore } from '@/i18n';
 import { Loading } from '@/components/ui';
 import { useTheme, useThemeStore } from '@/theme';
+import { useNotificationObserver } from '@/lib/useNotificationObserver';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 /** Themed navigator — reads the active palette so bg + status bar follow the theme. */
 function ThemedStack() {
   const { colors, isDark } = useTheme();
+  // Deep-link on notification tap + refresh unread badge on foreground receipt.
+  useNotificationObserver();
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />

@@ -3,6 +3,7 @@ import { View, Text, Pressable, Image } from 'react-native';
 import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useT } from '@/i18n';
 import { spacing, radius, font, useTheme } from '@/theme';
 
@@ -19,6 +20,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
   const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const unreadCount = useUnreadCount();
 
   // The route currently focused in the drawer navigator.
   const activeRouteName = state.routeNames[state.index];
@@ -112,6 +114,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 />
                 <Text
                   style={{
+                    flex: 1,
                     color: focused ? colors.accent : colors.text,
                     fontSize: font.md,
                     fontWeight: focused ? '700' : '500',
@@ -119,6 +122,23 @@ export function DrawerContent(props: DrawerContentComponentProps) {
                 >
                   {label}
                 </Text>
+                {route.name === 'chat' && unreadCount > 0 && (
+                  <View
+                    style={{
+                      minWidth: 20,
+                      height: 20,
+                      borderRadius: radius.pill,
+                      backgroundColor: '#ef4444',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingHorizontal: 6,
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </Pressable>
             );
           })}

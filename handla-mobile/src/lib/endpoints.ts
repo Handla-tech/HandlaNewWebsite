@@ -66,6 +66,11 @@ export const notificationsApi = {
   unreadCount: () => api.get('/notifications/unread-count'),
   markRead: (id: string) => api.patch(`/notifications/${id}/read`),
   markAllRead: () => api.patch('/notifications/read-all'),
+  // Native push (Expo) device-token registration.
+  registerPushToken: (body: { token: string; platform?: string; deviceName?: string }) =>
+    api.post('/notifications/push-token', body),
+  unregisterPushToken: (token: string) =>
+    api.delete('/notifications/push-token', { data: { token } }),
 };
 
 export const chatApi = {
