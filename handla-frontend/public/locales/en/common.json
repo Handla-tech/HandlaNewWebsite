@@ -1987,6 +1987,83 @@
         "confirm": "Permanently delete {{name}}?",
         "failed": "Failed to delete. Supplier may have linked purchases."
       }
+    },
+    "support": {
+      "title": "Support",
+      "subtitle": "Tickets tied to clients & projects, with threaded replies.",
+      "apiKeys": "API Keys",
+      "newTicket": "New Ticket",
+      "searchPlaceholder": "Search tickets…",
+      "loadFailed": "Failed to load tickets.",
+      "empty": "No tickets found.",
+      "pageInfo": "{{total}} tickets · page {{page}} of {{totalPages}}",
+      "clientFallback": "Client",
+      "stats": {
+        "total": "Total",
+        "open": "Open",
+        "slaBreached": "SLA Breached",
+        "resolved": "Resolved"
+      },
+      "status": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In Progress",
+        "WAITING_CUSTOMER": "Waiting on Customer",
+        "RESOLVED": "Resolved",
+        "CLOSED": "Closed"
+      },
+      "priority": {
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High",
+        "URGENT": "Urgent"
+      },
+      "category": {
+        "BUG": "Bug",
+        "FEATURE": "Feature",
+        "QUESTION": "Question",
+        "BILLING": "Billing",
+        "OTHER": "Other"
+      },
+      "detail": {
+        "projectFallback": "Project",
+        "opened": "Opened {{date}}",
+        "description": "Description",
+        "userFallback": "User",
+        "internal": "Internal",
+        "replyPlaceholder": "Write a reply…",
+        "internalNote": "Internal note (hidden from client)",
+        "reply": "Reply",
+        "replyFailed": "Failed to send reply"
+      },
+      "create": {
+        "title": "New Ticket",
+        "client": "Client *",
+        "selectClient": "Select client…",
+        "subject": "Subject *",
+        "subjectPlaceholder": "Brief summary",
+        "description": "Description *",
+        "descriptionPlaceholder": "Describe the issue…",
+        "priority": "Priority",
+        "category": "Category",
+        "createFailed": "Failed to create ticket",
+        "creating": "Creating…",
+        "submit": "Create Ticket"
+      },
+      "keys": {
+        "title": "API Keys",
+        "subtitle": "Per-client keys for programmatic ticket creation.",
+        "createdNotice": "Key created — copy it now, it won't be shown again:",
+        "generateNew": "Generate new key",
+        "selectClient": "Select client…",
+        "labelPlaceholder": "Label (optional, e.g. Zapier)",
+        "generate": "Generate",
+        "createFailed": "Failed to create key",
+        "existing": "Existing keys",
+        "noKeys": "No keys yet.",
+        "revoked": "revoked",
+        "unlabeled": "Unlabeled",
+        "lastUsed": "· last used {{date}}"
+      }
     }
   },
   "footer": {

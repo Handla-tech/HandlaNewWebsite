@@ -1987,6 +1987,83 @@
         "confirm": "حذف {{name}} نهائياً؟",
         "failed": "فشل الحذف. قد يكون للمورد مشتريات مرتبطة."
       }
+    },
+    "support": {
+      "title": "الدعم",
+      "subtitle": "تذاكر مرتبطة بالعملاء والمشاريع، مع ردود متسلسلة.",
+      "apiKeys": "مفاتيح API",
+      "newTicket": "تذكرة جديدة",
+      "searchPlaceholder": "بحث عن التذاكر…",
+      "loadFailed": "فشل تحميل التذاكر.",
+      "empty": "لا توجد تذاكر.",
+      "pageInfo": "{{total}} تذكرة · صفحة {{page}} من {{totalPages}}",
+      "clientFallback": "عميل",
+      "stats": {
+        "total": "الإجمالي",
+        "open": "مفتوحة",
+        "slaBreached": "تجاوز اتفاقية الخدمة",
+        "resolved": "محلولة"
+      },
+      "status": {
+        "OPEN": "مفتوحة",
+        "IN_PROGRESS": "قيد المعالجة",
+        "WAITING_CUSTOMER": "بانتظار العميل",
+        "RESOLVED": "محلولة",
+        "CLOSED": "مغلقة"
+      },
+      "priority": {
+        "LOW": "منخفضة",
+        "MEDIUM": "متوسطة",
+        "HIGH": "عالية",
+        "URGENT": "عاجلة"
+      },
+      "category": {
+        "BUG": "خطأ برمجي",
+        "FEATURE": "ميزة",
+        "QUESTION": "سؤال",
+        "BILLING": "الفوترة",
+        "OTHER": "أخرى"
+      },
+      "detail": {
+        "projectFallback": "مشروع",
+        "opened": "فُتحت في {{date}}",
+        "description": "الوصف",
+        "userFallback": "مستخدم",
+        "internal": "داخلي",
+        "replyPlaceholder": "اكتب رداً…",
+        "internalNote": "ملاحظة داخلية (مخفية عن العميل)",
+        "reply": "رد",
+        "replyFailed": "فشل إرسال الرد"
+      },
+      "create": {
+        "title": "تذكرة جديدة",
+        "client": "العميل *",
+        "selectClient": "اختر عميلاً…",
+        "subject": "الموضوع *",
+        "subjectPlaceholder": "ملخص موجز",
+        "description": "الوصف *",
+        "descriptionPlaceholder": "صف المشكلة…",
+        "priority": "الأولوية",
+        "category": "الفئة",
+        "createFailed": "فشل إنشاء التذكرة",
+        "creating": "جارٍ الإنشاء…",
+        "submit": "إنشاء تذكرة"
+      },
+      "keys": {
+        "title": "مفاتيح API",
+        "subtitle": "مفاتيح لكل عميل لإنشاء التذاكر برمجياً.",
+        "createdNotice": "تم إنشاء المفتاح — انسخه الآن، لن يُعرض مرة أخرى:",
+        "generateNew": "إنشاء مفتاح جديد",
+        "selectClient": "اختر عميلاً…",
+        "labelPlaceholder": "التسمية (اختياري، مثل Zapier)",
+        "generate": "إنشاء",
+        "createFailed": "فشل إنشاء المفتاح",
+        "existing": "المفاتيح الحالية",
+        "noKeys": "لا توجد مفاتيح بعد.",
+        "revoked": "ملغى",
+        "unlabeled": "بدون تسمية",
+        "lastUsed": "· آخر استخدام {{date}}"
+      }
     }
   },
   "footer": {

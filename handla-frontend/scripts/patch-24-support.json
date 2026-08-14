@@ -1,0 +1,164 @@
+{
+  "en": {
+    "erp": {
+      "support": {
+        "title": "Support",
+        "subtitle": "Tickets tied to clients & projects, with threaded replies.",
+        "apiKeys": "API Keys",
+        "newTicket": "New Ticket",
+        "searchPlaceholder": "Search tickets…",
+        "loadFailed": "Failed to load tickets.",
+        "empty": "No tickets found.",
+        "pageInfo": "{{total}} tickets · page {{page}} of {{totalPages}}",
+        "clientFallback": "Client",
+        "stats": {
+          "total": "Total",
+          "open": "Open",
+          "slaBreached": "SLA Breached",
+          "resolved": "Resolved"
+        },
+        "status": {
+          "OPEN": "Open",
+          "IN_PROGRESS": "In Progress",
+          "WAITING_CUSTOMER": "Waiting on Customer",
+          "RESOLVED": "Resolved",
+          "CLOSED": "Closed"
+        },
+        "priority": {
+          "LOW": "Low",
+          "MEDIUM": "Medium",
+          "HIGH": "High",
+          "URGENT": "Urgent"
+        },
+        "category": {
+          "BUG": "Bug",
+          "FEATURE": "Feature",
+          "QUESTION": "Question",
+          "BILLING": "Billing",
+          "OTHER": "Other"
+        },
+        "detail": {
+          "projectFallback": "Project",
+          "opened": "Opened {{date}}",
+          "description": "Description",
+          "userFallback": "User",
+          "internal": "Internal",
+          "replyPlaceholder": "Write a reply…",
+          "internalNote": "Internal note (hidden from client)",
+          "reply": "Reply",
+          "replyFailed": "Failed to send reply"
+        },
+        "create": {
+          "title": "New Ticket",
+          "client": "Client *",
+          "selectClient": "Select client…",
+          "subject": "Subject *",
+          "subjectPlaceholder": "Brief summary",
+          "description": "Description *",
+          "descriptionPlaceholder": "Describe the issue…",
+          "priority": "Priority",
+          "category": "Category",
+          "createFailed": "Failed to create ticket",
+          "creating": "Creating…",
+          "submit": "Create Ticket"
+        },
+        "keys": {
+          "title": "API Keys",
+          "subtitle": "Per-client keys for programmatic ticket creation.",
+          "createdNotice": "Key created — copy it now, it won't be shown again:",
+          "generateNew": "Generate new key",
+          "selectClient": "Select client…",
+          "labelPlaceholder": "Label (optional, e.g. Zapier)",
+          "generate": "Generate",
+          "createFailed": "Failed to create key",
+          "existing": "Existing keys",
+          "noKeys": "No keys yet.",
+          "revoked": "revoked",
+          "unlabeled": "Unlabeled",
+          "lastUsed": "· last used {{date}}"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "support": {
+        "title": "الدعم",
+        "subtitle": "تذاكر مرتبطة بالعملاء والمشاريع، مع ردود متسلسلة.",
+        "apiKeys": "مفاتيح API",
+        "newTicket": "تذكرة جديدة",
+        "searchPlaceholder": "بحث عن التذاكر…",
+        "loadFailed": "فشل تحميل التذاكر.",
+        "empty": "لا توجد تذاكر.",
+        "pageInfo": "{{total}} تذكرة · صفحة {{page}} من {{totalPages}}",
+        "clientFallback": "عميل",
+        "stats": {
+          "total": "الإجمالي",
+          "open": "مفتوحة",
+          "slaBreached": "تجاوز اتفاقية الخدمة",
+          "resolved": "محلولة"
+        },
+        "status": {
+          "OPEN": "مفتوحة",
+          "IN_PROGRESS": "قيد المعالجة",
+          "WAITING_CUSTOMER": "بانتظار العميل",
+          "RESOLVED": "محلولة",
+          "CLOSED": "مغلقة"
+        },
+        "priority": {
+          "LOW": "منخفضة",
+          "MEDIUM": "متوسطة",
+          "HIGH": "عالية",
+          "URGENT": "عاجلة"
+        },
+        "category": {
+          "BUG": "خطأ برمجي",
+          "FEATURE": "ميزة",
+          "QUESTION": "سؤال",
+          "BILLING": "الفوترة",
+          "OTHER": "أخرى"
+        },
+        "detail": {
+          "projectFallback": "مشروع",
+          "opened": "فُتحت في {{date}}",
+          "description": "الوصف",
+          "userFallback": "مستخدم",
+          "internal": "داخلي",
+          "replyPlaceholder": "اكتب رداً…",
+          "internalNote": "ملاحظة داخلية (مخفية عن العميل)",
+          "reply": "رد",
+          "replyFailed": "فشل إرسال الرد"
+        },
+        "create": {
+          "title": "تذكرة جديدة",
+          "client": "العميل *",
+          "selectClient": "اختر عميلاً…",
+          "subject": "الموضوع *",
+          "subjectPlaceholder": "ملخص موجز",
+          "description": "الوصف *",
+          "descriptionPlaceholder": "صف المشكلة…",
+          "priority": "الأولوية",
+          "category": "الفئة",
+          "createFailed": "فشل إنشاء التذكرة",
+          "creating": "جارٍ الإنشاء…",
+          "submit": "إنشاء تذكرة"
+        },
+        "keys": {
+          "title": "مفاتيح API",
+          "subtitle": "مفاتيح لكل عميل لإنشاء التذاكر برمجياً.",
+          "createdNotice": "تم إنشاء المفتاح — انسخه الآن، لن يُعرض مرة أخرى:",
+          "generateNew": "إنشاء مفتاح جديد",
+          "selectClient": "اختر عميلاً…",
+          "labelPlaceholder": "التسمية (اختياري، مثل Zapier)",
+          "generate": "إنشاء",
+          "createFailed": "فشل إنشاء المفتاح",
+          "existing": "المفاتيح الحالية",
+          "noKeys": "لا توجد مفاتيح بعد.",
+          "revoked": "ملغى",
+          "unlabeled": "بدون تسمية",
+          "lastUsed": "· آخر استخدام {{date}}"
+        }
+      }
+    }
+  }
+}
