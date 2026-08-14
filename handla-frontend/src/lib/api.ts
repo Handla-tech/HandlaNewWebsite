@@ -534,4 +534,55 @@ export const analyticsApi = {
   topEvents:        (params?: object) => api.get('/erp/analytics/top-events', { params }),
 };
 
+// ─── NEW-11: SaaS Control Plane (admin-only provisioning) ─────────────────────
+// Backend: @Controller('saas') → /api/saas/*  (ADMIN only)
+
+export const saasApi = {
+  // ── Products ──
+  /** GET /saas/products */
+  getProducts:    ()                          => api.get('/saas/products'),
+  /** GET /saas/products/:id */
+  getProduct:     (id: string)                => api.get(`/saas/products/${id}`),
+  /** POST /saas/products */
+  createProduct:  (data: object)              => api.post('/saas/products', data),
+  /** PATCH /saas/products/:id */
+  updateProduct:  (id: string, data: object)  => api.patch(`/saas/products/${id}`, data),
+  /** DELETE /saas/products/:id */
+  deleteProduct:  (id: string)                => api.delete(`/saas/products/${id}`),
+
+  // ── Plans (scoped to a product) ──
+  /** GET /saas/products/:productId/plans */
+  getPlans:       (productId: string)         => api.get(`/saas/products/${productId}/plans`),
+  /** POST /saas/products/:productId/plans */
+  createPlan:     (productId: string, data: object) => api.post(`/saas/products/${productId}/plans`, data),
+  /** GET /saas/plans/:id */
+  getPlan:        (id: string)                => api.get(`/saas/plans/${id}`),
+  /** PATCH /saas/plans/:id */
+  updatePlan:     (id: string, data: object)  => api.patch(`/saas/plans/${id}`, data),
+  /** DELETE /saas/plans/:id */
+  deletePlan:     (id: string)                => api.delete(`/saas/plans/${id}`),
+
+  // ── Tenants ──
+  /** GET /saas/tenants — paginated */
+  getTenants:     (params?: object)           => api.get('/saas/tenants', { params }),
+  /** GET /saas/tenants/:id — tenant + subscription + logs + nextStates */
+  getTenant:      (id: string)                => api.get(`/saas/tenants/${id}`),
+  /** POST /saas/tenants — provision a tenant for a client */
+  createTenant:   (data: object)              => api.post('/saas/tenants', data),
+  /** POST /saas/tenants/:id/suspend */
+  suspendTenant:  (id: string, data?: object) => api.post(`/saas/tenants/${id}/suspend`, data ?? {}),
+  /** POST /saas/tenants/:id/reactivate */
+  reactivateTenant:(id: string, data?: object)=> api.post(`/saas/tenants/${id}/reactivate`, data ?? {}),
+  /** POST /saas/tenants/:id/archive */
+  archiveTenant:  (id: string, data?: object) => api.post(`/saas/tenants/${id}/archive`, data ?? {}),
+  /** POST /saas/tenants/:id/retry — re-queue a FAILED tenant */
+  retryTenant:    (id: string)                => api.post(`/saas/tenants/${id}/retry`),
+  /** POST /saas/tenants/:id/change-plan */
+  changePlan:     (id: string, data: object)  => api.post(`/saas/tenants/${id}/change-plan`, data),
+
+  // ── Lead → Client → Tenant conversion ──
+  /** POST /saas/convert-lead */
+  convertLead:    (data: object)              => api.post('/saas/convert-lead', data),
+};
+
 export default api;

@@ -832,6 +832,134 @@ export interface ClientApiKey {
   plaintext?: string; // present only on creation
 }
 
+// ─── Phase 11: SaaS Control Plane ─────────────────────────────────────────────
+// Handla as a managed, admin-only SaaS control plane for its products.
+
+export type TenantStatus =
+  | 'PENDING'
+  | 'PROVISIONING'
+  | 'ACTIVE'
+  | 'SUSPENDED'
+  | 'FAILED'
+  | 'ARCHIVED';
+
+export type SubscriptionStatus =
+  | 'TRIAL'
+  | 'ACTIVE'
+  | 'PAST_DUE'
+  | 'EXPIRED'
+  | 'CANCELLED';
+
+export type BillingInterval = 'MONTHLY' | 'YEARLY';
+
+export type ProvisioningAction =
+  | 'PROVISION'
+  | 'SUSPEND'
+  | 'REACTIVATE'
+  | 'UPDATE_PLAN'
+  | 'UPDATE_LIMITS'
+  | 'ARCHIVE';
+
+export type ProvisioningStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+
+export interface SaasProduct {
+  id:                  string;
+  code:                string;
+  name:                string;
+  description:         string | null;
+  subdomainZone:       string | null;
+  provisioner:         string;
+  provisioningBaseUrl: string | null;
+  provisioningKeyHash: string | null;
+  isActive:            boolean;
+  createdAt:           string;
+  updatedAt:           string;
+}
+
+export interface SaasPlan {
+  id:           string;
+  productId:    string;
+  code:         string;
+  name:         string;
+  description:  string | null;
+  priceMonthly: string | null;
+  priceYearly:  string | null;
+  currency:     string | null;
+  limits:       Record<string, unknown> | null;
+  entitlements: Record<string, unknown> | null;
+  trialDays:    number;
+  isActive:     boolean;
+  createdAt:    string;
+  updatedAt:    string;
+}
+
+export interface SaasTenantDomain {
+  id:         string;
+  tenantId:   string;
+  domain:     string;
+  isPrimary:  boolean;
+  isVerified: boolean;
+}
+
+export interface SaasTenant {
+  id:               string;
+  clientId:         string;
+  productId:        string;
+  slug:             string;
+  name:             string;
+  status:           TenantStatus;
+  externalTenantId: string | null;
+  metadata:         Record<string, unknown> | null;
+  lastError:        string | null;
+  archivedAt:       string | null;
+  createdAt:        string;
+  updatedAt:        string;
+  product?:         SaasProduct;
+  client?:          Client;
+  domains?:         SaasTenantDomain[];
+}
+
+export interface SaasSubscription {
+  id:                 string;
+  tenantId:           string;
+  planId:             string;
+  status:             SubscriptionStatus;
+  billingInterval:    BillingInterval;
+  trialEndsAt:        string | null;
+  currentPeriodStart: string | null;
+  currentPeriodEnd:   string | null;
+  cancelledAt:        string | null;
+  plan?:              SaasPlan;
+}
+
+export interface SaasProvisioningLog {
+  id:           string;
+  tenantId:     string;
+  action:       ProvisioningAction;
+  status:       ProvisioningStatus;
+  requestId:    string;
+  attempts:     number;
+  errorMessage: string | null;
+  triggeredBy:  string | null;
+  startedAt:    string | null;
+  finishedAt:   string | null;
+  createdAt:    string;
+}
+
+export interface PaginatedTenants {
+  tenants: SaasTenant[];
+  total:   number;
+  page:    number;
+  pages:   number;
+}
+
+export interface TenantDetail {
+  tenant:       SaasTenant;
+  subscription: SaasSubscription | null;
+  logs:         SaasProvisioningLog[];
+  nextStates:   TenantStatus[];
+}
+
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
 export type DeepPartial<T> = T extends object

@@ -28,6 +28,7 @@ import {
   LifeBuoy,
   BarChart3,
   LineChart,
+  Server,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -94,6 +95,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Admin',
     items: [
+      { href: '/erp/saas',         icon: Server, label: 'SaaS Tenants', adminOnly: true },
       { href: '/erp/testimonials', icon: Star,  label: 'Testimonials', adminOnly: true },
       { href: '/erp/users',        icon: Users, label: 'Users',        adminOnly: true },
     ],

@@ -259,4 +259,19 @@ Handla implemented as a **managed** SaaS Control Plane. Admin-only provisioning;
 
 **Tests:** 38 new unit tests (FSM edges, provisioner registry + mock idempotency, product/plan CRUD, tenant create/lifecycle/callback idempotency, worker claim/retry/exhaust, internal-key guard, lead conversion). Full suite **834/834 green**; `nest build` clean.
 
-**Deferred:** Admin UI (web) for SaaS screens; custom domain verification flow; subscription billing (PAST_DUE/EXPIRED automation); mobile parity.
+**Deferred:** custom domain verification flow; subscription billing (PAST_DUE/EXPIRED automation); mobile parity.
+
+### ✅ Phase 11 — ADMIN UI COMPLETE (2026-08-14)
+Web admin UI for the SaaS Control Plane, gated to ADMIN only (nav `adminOnly` + in-page `isAdmin` guard with access-denied fallback).
+
+**Frontend (`handla-frontend`):**
+- `src/types/index.ts` — SaaS type unions (TenantStatus/SubscriptionStatus/BillingInterval/ProvisioningAction/ProvisioningStatus) + interfaces (SaasProduct, SaasPlan, SaasTenantDomain, SaasTenant, SaasSubscription, SaasProvisioningLog) + PaginatedTenants + TenantDetail. Purely additive.
+- `src/lib/api.ts` — `saasApi`: products CRUD, plans CRUD (per product), tenants list/detail/create + lifecycle (suspend/reactivate/archive/retry/change-plan), convert-lead. All hit `/saas/*` with httpOnly cookies.
+- `src/app/erp/layout.tsx` — `Server` icon + `SaaS Tenants` (`adminOnly`) nav item as first entry in the Admin section.
+- `src/app/erp/saas/page.tsx` (~930 lines) — two tabs:
+  - **Tenants**: status filter, debounced search, paginated list, `CreateTenantModal` (client picker + cascading product/plan selects + name/slug/billing), `TenantDetailDrawer` (right drawer, polls every 3s while PENDING/PROVISIONING, lifecycle action buttons gated by `nextStates`, provisioning logs, subscription card), `ChangePlanModal`.
+  - **Catalog**: products list with `ProductModal` (provisioner mock|http, base URL, key), `PlansModal` + `PlanForm` (prices/currency/trialDays + limits/entitlements JSON with client-side parse validation).
+
+**Verification:** `tsc --noEmit` clean for all new/modified files (the sole remaining error is a pre-existing one in `accounting/page.tsx`, unrelated to Phase 11).
+
+**Deferred (frontend):** mobile SaaS parity; custom-domain UI once backend verification flow lands.
