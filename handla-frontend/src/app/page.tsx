@@ -26,6 +26,21 @@ const Projects = dynamic(
   },
 );
 
+const Products = dynamic(
+  () => import('@/components/landing/Products'),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="py-24 flex items-center justify-center">
+        <div
+          className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: '#fbbf24', borderTopColor: 'transparent' }}
+        />
+      </section>
+    ),
+  },
+);
+
 const Testimonials = dynamic(
   () => import('@/components/landing/Testimonials'),
   {
@@ -73,7 +88,10 @@ export default function LandingPage() {
         {/* 6. Projects — featured website portfolio + "View all projects" (client-only, API fetch) */}
         <Projects />
 
-        {/* 7. Testimonials — client stories carousel (client-only, API fetch) */}
+        {/* 7. Products — featured products/solutions showcase (client-only, API fetch) */}
+        <Products />
+
+        {/* 8. Testimonials — client stories carousel (client-only, API fetch) */}
         <Testimonials />
 
         {/* 7. Contact — live chat widget + social media links */}

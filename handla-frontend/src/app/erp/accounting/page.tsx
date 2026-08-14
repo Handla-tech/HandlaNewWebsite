@@ -310,7 +310,7 @@ function LedgerTab({ isAdmin }: { isAdmin: boolean }) {
                       <span className="px-2 py-0.5 rounded-full text-[10px] border border-white/10 bg-white/5 text-white/40">{e.sourceType}</span>
                       {e.account && <span className="text-[11px] text-white/30">{e.account.code} {e.account.name}</span>}
                     </div>
-                    <div className="text-[11px] text-white/25 mt-0.5">{fmtDate(e.entryDate)}{e.client ? ` · ${e.client.name}` : ''}</div>
+                    <div className="text-[11px] text-white/25 mt-0.5">{fmtDate(e.entryDate)}{e.client ? ` · ${e.client.company || e.client.user?.name || 'Client'}` : ''}</div>
                   </div>
                 </div>
                 <span className={cn('text-sm font-bold flex-shrink-0', isIn ? 'text-emerald-400' : 'text-red-400')}>

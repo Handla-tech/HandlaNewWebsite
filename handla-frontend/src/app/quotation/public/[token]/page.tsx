@@ -182,7 +182,7 @@ export default function PublicQuotationPage() {
           <div className="border-t border-white/[0.06] p-6">
             {actionDone === 'accept' || isAccepted ? (
               <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300">
-                <CheckCircle className="w-5 h-5" /> Quotation accepted. We'll be in touch shortly.
+                <CheckCircle className="w-5 h-5" /> Quotation accepted. We&apos;ll be in touch shortly.
               </div>
             ) : actionDone === 'reject' || isRejected ? (
               <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-300">

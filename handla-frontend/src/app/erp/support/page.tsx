@@ -340,7 +340,7 @@ function ApiKeysModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <div className="p-5 space-y-4">
           {newKey && (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
-              <p className="text-xs text-emerald-300 font-semibold">Key created — copy it now, it won't be shown again:</p>
+              <p className="text-xs text-emerald-300 font-semibold">Key created — copy it now, it won&apos;t be shown again:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs text-white bg-black/40 rounded-lg px-3 py-2 break-all font-mono">{newKey}</code>
                 <button onClick={() => navigator.clipboard?.writeText(newKey)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"><Copy className="w-4 h-4" /></button>

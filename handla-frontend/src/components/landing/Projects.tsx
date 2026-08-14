@@ -68,9 +68,16 @@ export default function Projects() {
     queryKey: ['website-projects-featured'],
     queryFn: async () => {
       try {
-        const res = await websiteProjectApi.getAll({ page: 1, limit: 6, featured: true });
-        const list: WebsiteProject[] = res.data?.data?.projects ?? [];
-        return list;
+        // 1) Prefer featured projects.
+        const featuredRes = await websiteProjectApi.getAll({ page: 1, limit: 6, featured: true });
+        const featured: WebsiteProject[] = featuredRes.data?.data?.projects ?? [];
+        if (featured.length > 0) return featured;
+
+        // 2) No featured ones yet — show the most recent projects instead,
+        //    so content added via the ERP still surfaces on the homepage.
+        const anyRes = await websiteProjectApi.getAll({ page: 1, limit: 6 });
+        const any: WebsiteProject[] = anyRes.data?.data?.projects ?? [];
+        return any;
       } catch {
         return [] as WebsiteProject[];
       }
@@ -78,6 +85,8 @@ export default function Projects() {
     staleTime: 5 * 60_000,
   });
 
+  // Use real data whenever the API returns any projects (featured or not).
+  // The hardcoded FALLBACK only shows while loading or when the DB is empty.
   const items = (data && data.length > 0) ? data : FALLBACK;
 
   return (

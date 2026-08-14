@@ -1084,5 +1084,10 @@
     "retry": "Retry",
     "prev": "Previous",
     "next": "Next"
+  },
+  "products": {
+    "label": "Our Products",
+    "title": "Ready-Made Products",
+    "subtitle": "Battle-tested platforms you can deploy today — built and maintained by our team, tailored to your business."
   }
 }
