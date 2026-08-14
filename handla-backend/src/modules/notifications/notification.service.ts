@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Notification } from './entities/notification.entity';
+import { PushService } from './push.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { NotificationQueryDto } from './dto/notification-query.dto';
 import { NotificationType } from '../../common/enums';
@@ -23,6 +24,7 @@ export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
+    private readonly pushService: PushService,
   ) {}
 
   // ─── Create Notification ─────────────────────────────────────────────────────
@@ -41,6 +43,23 @@ export class NotificationService {
     this.logger.log(
       `Notification created → user=${dto.userId} type=${dto.type} title="${dto.title}"`,
     );
+
+    // Fire a native push to the recipient's registered devices. Best-effort:
+    // PushService swallows its own errors so a delivery failure never breaks
+    // notification creation. Includes the current unread count as the iOS badge.
+    const unreadCount = await this.getUnreadCount(dto.userId).catch(() => undefined);
+    void this.pushService.sendToUser(dto.userId, {
+      title: dto.title,
+      body: dto.message,
+      badge: unreadCount,
+      data: {
+        type: dto.type,
+        notificationId: saved.id,
+        relatedEntityId: dto.relatedEntityId ?? null,
+        relatedMessageId: dto.relatedMessageId ?? null,
+      },
+    });
+
     return saved;
   }
 

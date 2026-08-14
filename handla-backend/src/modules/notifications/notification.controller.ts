@@ -1,8 +1,10 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
+  Body,
   Param,
   Query,
   UseGuards,
@@ -13,7 +15,9 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 
 import { NotificationService } from './notification.service';
+import { PushService } from './push.service';
 import { NotificationQueryDto } from './dto/notification-query.dto';
+import { RegisterPushTokenDto, UnregisterPushTokenDto } from './dto/register-push-token.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { User } from '../auth/entities/user.entity';
@@ -23,7 +27,32 @@ import { User } from '../auth/entities/user.entity';
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly pushService: PushService,
+  ) {}
+
+  // ─── POST /api/notifications/push-token ──────────────────────────────────────
+  // Register (upsert) this device's Expo push token for the current user.
+  @Post('push-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Register a device Expo push token for the current user' })
+  @ApiResponse({ status: 200, description: 'Push token registered' })
+  async registerPushToken(@CurrentUser() user: User, @Body() dto: RegisterPushTokenDto) {
+    const token = await this.pushService.registerToken(user.id, dto);
+    return { message: 'Push token registered', data: { id: token.id } };
+  }
+
+  // ─── DELETE /api/notifications/push-token ────────────────────────────────────
+  // Remove a device token (sign-out / disable push).
+  @Delete('push-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unregister a device Expo push token' })
+  @ApiResponse({ status: 200, description: 'Push token removed' })
+  async unregisterPushToken(@CurrentUser() user: User, @Body() dto: UnregisterPushTokenDto) {
+    const result = await this.pushService.unregisterToken(user.id, dto.token);
+    return { message: 'Push token removed', data: result };
+  }
 
   // ─── GET /api/notifications ───────────────────────────────────────────────────
   // IMPORTANT: all literal-path routes (unread-count, read-all, read) MUST be
