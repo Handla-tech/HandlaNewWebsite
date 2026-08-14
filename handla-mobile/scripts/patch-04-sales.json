@@ -1,0 +1,96 @@
+{
+  "en": {
+    "sales": {
+      "header": "Sales",
+      "segments": {
+        "quotations": "Quotations",
+        "contracts": "Contracts",
+        "invoices": "Invoices"
+      },
+      "empty": {
+        "quotations": "No quotations yet.",
+        "contracts": "No contracts yet.",
+        "invoices": "No invoices yet."
+      },
+      "validUntil": "Valid until {{date}}",
+      "updated": "Updated {{date}}",
+      "due": "Due {{date}}",
+      "contract": "Contract",
+      "signed": "Signed",
+      "invoice": "Invoice",
+      "create": {
+        "quotation": "New Quotation",
+        "contract": "New Contract",
+        "invoice": "New Invoice"
+      },
+      "form": {
+        "client": "Client",
+        "selectClient": "Select a client",
+        "title": "Title",
+        "titlePlaceholder": "Document title",
+        "contractBody": "Contract body",
+        "contractBodyPlaceholder": "Terms and conditions…",
+        "taxRate": "Tax rate (%)",
+        "currency": "Currency",
+        "validUntil": "Valid until",
+        "dueDate": "Due date",
+        "notes": "Notes",
+        "notesPlaceholder": "Optional"
+      },
+      "errors": {
+        "createFailed": "Failed to create",
+        "clientRequired": "Client is required.",
+        "titleMin": "Title must be at least 2 characters.",
+        "bodyRequired": "Contract body is required.",
+        "lineItemRequired": "Add at least one line item (description + quantity)."
+      }
+    }
+  },
+  "ar": {
+    "sales": {
+      "header": "المبيعات",
+      "segments": {
+        "quotations": "عروض الأسعار",
+        "contracts": "العقود",
+        "invoices": "الفواتير"
+      },
+      "empty": {
+        "quotations": "لا توجد عروض أسعار بعد.",
+        "contracts": "لا توجد عقود بعد.",
+        "invoices": "لا توجد فواتير بعد."
+      },
+      "validUntil": "صالح حتى {{date}}",
+      "updated": "آخر تحديث {{date}}",
+      "due": "الاستحقاق {{date}}",
+      "contract": "عقد",
+      "signed": "موقّع",
+      "invoice": "فاتورة",
+      "create": {
+        "quotation": "عرض سعر جديد",
+        "contract": "عقد جديد",
+        "invoice": "فاتورة جديدة"
+      },
+      "form": {
+        "client": "العميل",
+        "selectClient": "اختر عميلاً",
+        "title": "العنوان",
+        "titlePlaceholder": "عنوان المستند",
+        "contractBody": "نص العقد",
+        "contractBodyPlaceholder": "الشروط والأحكام…",
+        "taxRate": "نسبة الضريبة (%)",
+        "currency": "العملة",
+        "validUntil": "صالح حتى",
+        "dueDate": "تاريخ الاستحقاق",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "اختياري"
+      },
+      "errors": {
+        "createFailed": "فشل الإنشاء",
+        "clientRequired": "العميل مطلوب.",
+        "titleMin": "يجب أن يكون العنوان حرفين على الأقل.",
+        "bodyRequired": "نص العقد مطلوب.",
+        "lineItemRequired": "أضف بندًا واحدًا على الأقل (الوصف + الكمية)."
+      }
+    }
+  }
+}

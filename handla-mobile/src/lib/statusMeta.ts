@@ -49,3 +49,17 @@ export function prettyStatus(status?: string | null): string {
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+/**
+ * Localized status label. Resolves `status.<ENUM>` via the shared status
+ * dictionary; falls back to the English prettified form when the key is
+ * missing (unknown/legacy statuses) so nothing ever renders blank.
+ */
+export function prettyStatusT(status: string | null | undefined, t: TFn): string {
+  if (!status) return '';
+  const key = `status.${status.toUpperCase()}`;
+  const translated = t(key);
+  return translated && translated !== key ? translated : prettyStatus(status);
+}

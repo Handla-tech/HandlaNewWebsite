@@ -134,7 +134,49 @@
     "quotations": "عروض الأسعار",
     "contracts": "العقود",
     "invoices": "الفواتير",
-    "empty": "لا يوجد شيء هنا بعد"
+    "empty": {
+      "quotations": "لا توجد عروض أسعار بعد.",
+      "contracts": "لا توجد عقود بعد.",
+      "invoices": "لا توجد فواتير بعد."
+    },
+    "header": "المبيعات",
+    "segments": {
+      "quotations": "عروض الأسعار",
+      "contracts": "العقود",
+      "invoices": "الفواتير"
+    },
+    "validUntil": "صالح حتى {{date}}",
+    "updated": "آخر تحديث {{date}}",
+    "due": "الاستحقاق {{date}}",
+    "contract": "عقد",
+    "signed": "موقّع",
+    "invoice": "فاتورة",
+    "create": {
+      "quotation": "عرض سعر جديد",
+      "contract": "عقد جديد",
+      "invoice": "فاتورة جديدة"
+    },
+    "form": {
+      "client": "العميل",
+      "selectClient": "اختر عميلاً",
+      "title": "العنوان",
+      "titlePlaceholder": "عنوان المستند",
+      "contractBody": "نص العقد",
+      "contractBodyPlaceholder": "الشروط والأحكام…",
+      "taxRate": "نسبة الضريبة (%)",
+      "currency": "العملة",
+      "validUntil": "صالح حتى",
+      "dueDate": "تاريخ الاستحقاق",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "اختياري"
+    },
+    "errors": {
+      "createFailed": "فشل الإنشاء",
+      "clientRequired": "العميل مطلوب.",
+      "titleMin": "يجب أن يكون العنوان حرفين على الأقل.",
+      "bodyRequired": "نص العقد مطلوب.",
+      "lineItemRequired": "أضف بندًا واحدًا على الأقل (الوصف + الكمية)."
+    }
   },
   "finance": {
     "title": "المالية",
@@ -178,5 +220,59 @@
     "total": "الإجمالي",
     "add": "إضافة بند",
     "subtotal": "المجموع الفرعي"
+  },
+  "status": {
+    "DRAFT": "مسودة",
+    "SENT": "مُرسل",
+    "ACCEPTED": "مقبول",
+    "REJECTED": "مرفوض",
+    "EXPIRED": "منتهي الصلاحية",
+    "CONVERTED": "محوّل",
+    "SIGNED": "موقّع",
+    "UNPAID": "غير مدفوع",
+    "PAID": "مدفوع",
+    "OVERDUE": "متأخر",
+    "ORDERED": "تم الطلب",
+    "RECEIVED": "تم الاستلام",
+    "CANCELLED": "ملغى",
+    "INCOME": "إيراد",
+    "EXPENSE": "مصروف",
+    "IN": "وارد",
+    "OUT": "صادر",
+    "OPEN": "مفتوح",
+    "IN_PROGRESS": "قيد التنفيذ",
+    "WAITING_CUSTOMER": "بانتظار العميل",
+    "RESOLVED": "تم الحل",
+    "CLOSED": "مغلق",
+    "URGENT": "عاجل",
+    "HIGH": "عالية",
+    "MEDIUM": "متوسطة",
+    "LOW": "منخفضة",
+    "PLANNING": "تخطيط",
+    "ACTIVE": "نشط",
+    "ON_HOLD": "معلّق",
+    "COMPLETED": "مكتمل",
+    "PENDING": "قيد الانتظار",
+    "DELAYED": "متأخر",
+    "INACTIVE": "غير نشط",
+    "LEAD": "عميل محتمل",
+    "PROVISIONING": "قيد التجهيز",
+    "SUSPENDED": "موقوف",
+    "FAILED": "فشل",
+    "ARCHIVED": "مؤرشف"
+  },
+  "source": {
+    "INVOICE": "فاتورة",
+    "EXPENSE": "مصروف",
+    "PURCHASE": "شراء",
+    "QUOTATION": "عرض سعر",
+    "MANUAL": "يدوي"
+  },
+  "category": {
+    "BUG": "خطأ برمجي",
+    "FEATURE": "ميزة",
+    "QUESTION": "سؤال",
+    "BILLING": "الفوترة",
+    "OTHER": "أخرى"
   }
 }

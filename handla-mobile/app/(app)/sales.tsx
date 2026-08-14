@@ -34,6 +34,7 @@ import {
   money,
   fmtDate,
 } from '@/lib/salesMeta';
+import { useT } from '@/i18n';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type {
   PaginatedQuotations,
@@ -46,10 +47,10 @@ import type {
 
 type Segment = 'quotations' | 'contracts' | 'invoices';
 
-const SEGMENTS: { key: Segment; label: string }[] = [
-  { key: 'quotations', label: 'Quotations' },
-  { key: 'contracts', label: 'Contracts' },
-  { key: 'invoices', label: 'Invoices' },
+const SEGMENTS: { key: Segment }[] = [
+  { key: 'quotations' },
+  { key: 'contracts' },
+  { key: 'invoices' },
 ];
 
 function DocCard({
@@ -104,6 +105,7 @@ function DocCard({
 
 export default function SalesScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());
@@ -224,17 +226,17 @@ export default function SalesScreen() {
       invalidateList();
       setCreateOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to create')),
+    onError: (e) => setErr(apiError(e, t('sales.errors.createFailed'))),
   });
 
   const submitCreate = () => {
-    if (!clientId) return setErr('Client is required.');
+    if (!clientId) return setErr(t('sales.errors.clientRequired'));
     if (segment !== 'invoices' && title.trim().length < 2)
-      return setErr('Title must be at least 2 characters.');
+      return setErr(t('sales.errors.titleMin'));
     if (segment === 'contracts') {
-      if (body.trim().length < 1) return setErr('Contract body is required.');
+      if (body.trim().length < 1) return setErr(t('sales.errors.bodyRequired'));
     } else if (cleanItems().length === 0) {
-      return setErr('Add at least one line item (description + quantity).');
+      return setErr(t('sales.errors.lineItemRequired'));
     }
     setErr(null);
     create.mutate();
@@ -242,14 +244,14 @@ export default function SalesScreen() {
 
   const createTitle =
     segment === 'quotations'
-      ? 'New Quotation'
+      ? t('sales.create.quotation')
       : segment === 'contracts'
-        ? 'New Contract'
-        : 'New Invoice';
+        ? t('sales.create.contract')
+        : t('sales.create.invoice');
 
   return (
     <GlassScreen>
-      <GradientHeader title="Sales" icon="cash-outline" />
+      <GradientHeader title={t('sales.header')} icon="cash-outline" />
 
       {/* Segmented control */}
       <View
@@ -283,7 +285,7 @@ export default function SalesScreen() {
                   fontWeight: on ? '800' : '600',
                 }}
               >
-                {s.label}
+                {t(`sales.segments.${s.key}`)}
               </Text>
             </Pressable>
           );
@@ -300,15 +302,15 @@ export default function SalesScreen() {
           refreshControl={
             <RefreshControl refreshing={quotations.isFetching} onRefresh={() => quotations.refetch()} tintColor={colors.accent} />
           }
-          ListEmptyComponent={<Empty icon="document-text-outline" label="No quotations yet." />}
+          ListEmptyComponent={<Empty icon="document-text-outline" label={t('sales.empty.quotations')} />}
           renderItem={({ item }: { item: Quotation }) => (
             <DocCard
               number={item.quoteNumber}
               title={item.title}
-              subtitle={isStaff ? clientLabel(item.client) : `Valid until ${fmtDate(item.validUntil)}`}
+              subtitle={isStaff ? clientLabel(item.client) : t('sales.validUntil', { date: fmtDate(item.validUntil) })}
               amount={item.total}
               currency={item.currency}
-              badge={statusMeta(QUOTATION_STATUS_META, item.status)}
+              badge={statusMeta(QUOTATION_STATUS_META, item.status, t)}
               onPress={() => router.push(`/(app)/quotation/${item.id}`)}
             />
           )}
@@ -321,13 +323,13 @@ export default function SalesScreen() {
           refreshControl={
             <RefreshControl refreshing={contracts.isFetching} onRefresh={() => contracts.refetch()} tintColor={colors.accent} />
           }
-          ListEmptyComponent={<Empty icon="ribbon-outline" label="No contracts yet." />}
+          ListEmptyComponent={<Empty icon="ribbon-outline" label={t('sales.empty.contracts')} />}
           renderItem={({ item }: { item: Contract }) => (
             <DocCard
-              number={item.status === 'SIGNED' ? 'Signed' : 'Contract'}
+              number={item.status === 'SIGNED' ? t('sales.signed') : t('sales.contract')}
               title={item.title}
-              subtitle={isStaff ? clientLabel(item.client) : `Updated ${fmtDate(item.updatedAt)}`}
-              badge={statusMeta(CONTRACT_STATUS_META, item.status)}
+              subtitle={isStaff ? clientLabel(item.client) : t('sales.updated', { date: fmtDate(item.updatedAt) })}
+              badge={statusMeta(CONTRACT_STATUS_META, item.status, t)}
               onPress={() => router.push(`/(app)/contract/${item.id}`)}
             />
           )}
@@ -340,15 +342,15 @@ export default function SalesScreen() {
           refreshControl={
             <RefreshControl refreshing={invoices.isFetching} onRefresh={() => invoices.refetch()} tintColor={colors.accent} />
           }
-          ListEmptyComponent={<Empty icon="receipt-outline" label="No invoices yet." />}
+          ListEmptyComponent={<Empty icon="receipt-outline" label={t('sales.empty.invoices')} />}
           renderItem={({ item }: { item: Invoice }) => (
             <DocCard
               number={item.invoiceNumber}
-              title={isStaff ? clientLabel(item.client) || 'Invoice' : `Due ${fmtDate(item.dueDate)}`}
-              subtitle={`Due ${fmtDate(item.dueDate)}`}
+              title={isStaff ? clientLabel(item.client) || t('sales.invoice') : t('sales.due', { date: fmtDate(item.dueDate) })}
+              subtitle={t('sales.due', { date: fmtDate(item.dueDate) })}
               amount={item.total}
               currency={item.currency}
-              badge={statusMeta(INVOICE_STATUS_META, item.paymentStatus)}
+              badge={statusMeta(INVOICE_STATUS_META, item.paymentStatus, t)}
               onPress={() => router.push(`/(app)/invoice/${item.id}`)}
             />
           )}
@@ -366,29 +368,29 @@ export default function SalesScreen() {
         error={err ?? undefined}
       >
         <Select
-          label="Client"
+          label={t('sales.form.client')}
           value={clientId}
           options={clientOptions}
           onChange={setClientId}
-          placeholder="Select a client"
+          placeholder={t('sales.form.selectClient')}
         />
 
         {segment !== 'invoices' ? (
-          <Input label="Title" value={title} onChangeText={setTitle} placeholder="Document title" />
+          <Input label={t('sales.form.title')} value={title} onChangeText={setTitle} placeholder={t('sales.form.titlePlaceholder')} />
         ) : null}
 
         {segment === 'contracts' ? (
           <Textarea
-            label="Contract body"
+            label={t('sales.form.contractBody')}
             value={body}
             onChangeText={setBody}
-            placeholder="Terms and conditions…"
+            placeholder={t('sales.form.contractBodyPlaceholder')}
           />
         ) : (
           <>
             <LineItemsEditor items={lineItems} onChange={setLineItems} />
             <Input
-              label="Tax rate (%)"
+              label={t('sales.form.taxRate')}
               value={taxRate}
               onChangeText={setTaxRate}
               placeholder="0"
@@ -397,18 +399,18 @@ export default function SalesScreen() {
             {segment === 'quotations' ? (
               <>
                 <Input
-                  label="Currency"
+                  label={t('sales.form.currency')}
                   value={currency}
                   onChangeText={setCurrency}
                   placeholder="SEK"
                   autoCapitalize="characters"
                 />
-                <DateField label="Valid until" value={validUntil} onChange={setValidUntil} />
+                <DateField label={t('sales.form.validUntil')} value={validUntil} onChange={setValidUntil} />
               </>
             ) : (
-              <DateField label="Due date" value={dueDate} onChange={setDueDate} />
+              <DateField label={t('sales.form.dueDate')} value={dueDate} onChange={setDueDate} />
             )}
-            <Textarea label="Notes" value={notes} onChangeText={setNotes} placeholder="Optional" />
+            <Textarea label={t('sales.form.notes')} value={notes} onChangeText={setNotes} placeholder={t('sales.form.notesPlaceholder')} />
           </>
         )}
       </FormModal>

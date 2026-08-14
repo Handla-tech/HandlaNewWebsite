@@ -134,7 +134,49 @@
     "quotations": "Quotations",
     "contracts": "Contracts",
     "invoices": "Invoices",
-    "empty": "Nothing here yet"
+    "empty": {
+      "quotations": "No quotations yet.",
+      "contracts": "No contracts yet.",
+      "invoices": "No invoices yet."
+    },
+    "header": "Sales",
+    "segments": {
+      "quotations": "Quotations",
+      "contracts": "Contracts",
+      "invoices": "Invoices"
+    },
+    "validUntil": "Valid until {{date}}",
+    "updated": "Updated {{date}}",
+    "due": "Due {{date}}",
+    "contract": "Contract",
+    "signed": "Signed",
+    "invoice": "Invoice",
+    "create": {
+      "quotation": "New Quotation",
+      "contract": "New Contract",
+      "invoice": "New Invoice"
+    },
+    "form": {
+      "client": "Client",
+      "selectClient": "Select a client",
+      "title": "Title",
+      "titlePlaceholder": "Document title",
+      "contractBody": "Contract body",
+      "contractBodyPlaceholder": "Terms and conditions…",
+      "taxRate": "Tax rate (%)",
+      "currency": "Currency",
+      "validUntil": "Valid until",
+      "dueDate": "Due date",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional"
+    },
+    "errors": {
+      "createFailed": "Failed to create",
+      "clientRequired": "Client is required.",
+      "titleMin": "Title must be at least 2 characters.",
+      "bodyRequired": "Contract body is required.",
+      "lineItemRequired": "Add at least one line item (description + quantity)."
+    }
   },
   "finance": {
     "title": "Finance",
@@ -178,5 +220,59 @@
     "total": "TOTAL",
     "add": "Add line item",
     "subtotal": "Subtotal"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "SENT": "Sent",
+    "ACCEPTED": "Accepted",
+    "REJECTED": "Rejected",
+    "EXPIRED": "Expired",
+    "CONVERTED": "Converted",
+    "SIGNED": "Signed",
+    "UNPAID": "Unpaid",
+    "PAID": "Paid",
+    "OVERDUE": "Overdue",
+    "ORDERED": "Ordered",
+    "RECEIVED": "Received",
+    "CANCELLED": "Cancelled",
+    "INCOME": "Income",
+    "EXPENSE": "Expense",
+    "IN": "In",
+    "OUT": "Out",
+    "OPEN": "Open",
+    "IN_PROGRESS": "In Progress",
+    "WAITING_CUSTOMER": "Waiting",
+    "RESOLVED": "Resolved",
+    "CLOSED": "Closed",
+    "URGENT": "Urgent",
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low",
+    "PLANNING": "Planning",
+    "ACTIVE": "Active",
+    "ON_HOLD": "On Hold",
+    "COMPLETED": "Completed",
+    "PENDING": "Pending",
+    "DELAYED": "Delayed",
+    "INACTIVE": "Inactive",
+    "LEAD": "Lead",
+    "PROVISIONING": "Provisioning",
+    "SUSPENDED": "Suspended",
+    "FAILED": "Failed",
+    "ARCHIVED": "Archived"
+  },
+  "source": {
+    "INVOICE": "Invoice",
+    "EXPENSE": "Expense",
+    "PURCHASE": "Purchase",
+    "QUOTATION": "Quotation",
+    "MANUAL": "Manual"
+  },
+  "category": {
+    "BUG": "Bug",
+    "FEATURE": "Feature",
+    "QUESTION": "Question",
+    "BILLING": "Billing",
+    "OTHER": "Other"
   }
 }
