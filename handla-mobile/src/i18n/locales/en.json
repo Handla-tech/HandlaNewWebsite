@@ -499,5 +499,20 @@
   "team": {
     "title": "Team",
     "empty": "No members found."
+  },
+  "ticketDetail": {
+    "fallback": "Ticket",
+    "loading": "Loading…",
+    "slaBreach": "SLA Breach",
+    "status": "Status",
+    "priority": "Priority",
+    "reporter": "Reporter",
+    "unknown": "Unknown",
+    "opened": "• opened",
+    "internal": "internal",
+    "internalNote": "Internal note (staff only)",
+    "closedNotice": "This ticket is closed. Reopen it from a new ticket if needed.",
+    "internalPlaceholder": "Add an internal note…",
+    "replyPlaceholder": "Write a reply…"
   }
 }

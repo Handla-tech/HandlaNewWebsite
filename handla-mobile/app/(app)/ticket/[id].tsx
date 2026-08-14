@@ -20,12 +20,12 @@ import { Loading, Badge } from '@/components/ui';
 import {
   STATUS_META,
   PRIORITY_META,
-  CATEGORY_LABEL,
   STATUS_ORDER,
   PRIORITY_ORDER,
 } from '@/lib/ticketMeta';
 import { statusMeta } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { Ticket, TicketStatus, TicketPriority, TicketReply } from '@/types';
 
 function fmtDateTime(iso: string) {
@@ -54,6 +54,7 @@ function ThreadEntry({
   isOpening?: boolean;
 }) {
   const { colors } = useTheme();
+  const { t } = useT();
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '88%', marginVertical: 4 }}>
       <View
@@ -84,13 +85,13 @@ function ThreadEntry({
           </Text>
           {isOpening && (
             <Text style={{ color: mine ? '#0a0a0a' : colors.textDim, fontSize: 10 }}>
-              • opened
+              {t('ticketDetail.opened')}
             </Text>
           )}
           {isInternal && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
               <Ionicons name="lock-closed" size={10} color={colors.accent} />
-              <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '700' }}>internal</Text>
+              <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '700' }}>{t('ticketDetail.internal')}</Text>
             </View>
           )}
         </View>
@@ -116,6 +117,7 @@ function ThreadEntry({
 
 export default function TicketDetailScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const ticketId = String(id);
   const router = useRouter();
@@ -190,10 +192,10 @@ export default function TicketDetailScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>
-            {ticket?.ticketNumber ?? 'Ticket'}
+            {ticket?.ticketNumber ?? t('ticketDetail.fallback')}
           </Text>
           <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {ticket?.subject ?? 'Loading…'}
+            {ticket?.subject ?? t('ticketDetail.loading')}
           </Text>
         </View>
       </View>
@@ -224,21 +226,21 @@ export default function TicketDetailScreen() {
             >
               <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
                 {(() => {
-                  const m = statusMeta(STATUS_META, ticket.status);
+                  const m = statusMeta(STATUS_META, ticket.status, t);
                   return <Badge label={m.label} color={m.color} soft={m.soft} />;
                 })()}
                 <Badge
-                  label={PRIORITY_META[ticket.priority].label}
+                  label={t(`status.${ticket.priority}`)}
                   color={PRIORITY_META[ticket.priority].color}
                   soft={PRIORITY_META[ticket.priority].soft}
                 />
                 <Badge
-                  label={CATEGORY_LABEL[ticket.category]}
+                  label={t(`category.${ticket.category}`)}
                   color={colors.textMuted}
                   soft={colors.cardAlt}
                 />
                 {ticket.slaBreached && (
-                  <Badge label="SLA Breach" color={colors.danger} soft={colors.dangerSoft} />
+                  <Badge label={t('ticketDetail.slaBreach')} color={colors.danger} soft={colors.dangerSoft} />
                 )}
               </View>
               {isStaff && ticket.client ? (
@@ -261,7 +263,7 @@ export default function TicketDetailScreen() {
                     marginBottom: spacing.xs,
                   }}
                 >
-                  Status
+                  {t('ticketDetail.status')}
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                   {STATUS_ORDER.map((s) => {
@@ -288,7 +290,7 @@ export default function TicketDetailScreen() {
                             fontWeight: active ? '700' : '500',
                           }}
                         >
-                          {m.label}
+                          {t(`status.${s}`)}
                         </Text>
                       </Pressable>
                     );
@@ -306,7 +308,7 @@ export default function TicketDetailScreen() {
                     marginBottom: spacing.xs,
                   }}
                 >
-                  Priority
+                  {t('ticketDetail.priority')}
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                   {PRIORITY_ORDER.map((p) => {
@@ -333,7 +335,7 @@ export default function TicketDetailScreen() {
                             fontWeight: active ? '700' : '500',
                           }}
                         >
-                          {m.label}
+                          {t(`status.${p}`)}
                         </Text>
                       </Pressable>
                     );
@@ -344,7 +346,7 @@ export default function TicketDetailScreen() {
 
             {/* Thread: opening description first, then replies. */}
             <ThreadEntry
-              authorName={ticket.reporter?.name ?? 'Reporter'}
+              authorName={ticket.reporter?.name ?? t('ticketDetail.reporter')}
               body={ticket.description}
               createdAt={ticket.createdAt}
               mine={ticket.reporterId === user?.id}
@@ -353,7 +355,7 @@ export default function TicketDetailScreen() {
             {(ticket.replies ?? []).map((r: TicketReply) => (
               <ThreadEntry
                 key={r.id}
-                authorName={r.author?.name ?? r.authorName ?? 'Unknown'}
+                authorName={r.author?.name ?? r.authorName ?? t('ticketDetail.unknown')}
                 body={r.body}
                 createdAt={r.createdAt}
                 mine={r.authorId === user?.id}
@@ -374,7 +376,7 @@ export default function TicketDetailScreen() {
               }}
             >
               <Text style={{ color: colors.textFaint, fontSize: font.sm }}>
-                This ticket is closed. Reopen it from a new ticket if needed.
+                {t('ticketDetail.closedNotice')}
               </Text>
             </View>
           ) : (
@@ -404,7 +406,7 @@ export default function TicketDetailScreen() {
                     color={internal ? colors.accent : colors.textDim}
                   />
                   <Text style={{ color: internal ? colors.accent : colors.textMuted, fontSize: font.sm }}>
-                    Internal note (staff only)
+                    {t('ticketDetail.internalNote')}
                   </Text>
                 </Pressable>
               )}
@@ -412,7 +414,7 @@ export default function TicketDetailScreen() {
                 <TextInput
                   value={body}
                   onChangeText={setBody}
-                  placeholder={internal ? 'Add an internal note…' : 'Write a reply…'}
+                  placeholder={internal ? t('ticketDetail.internalPlaceholder') : t('ticketDetail.replyPlaceholder')}
                   placeholderTextColor={colors.textDim}
                   multiline
                   style={{

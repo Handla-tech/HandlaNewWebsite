@@ -499,5 +499,20 @@
   "team": {
     "title": "الفريق",
     "empty": "لم يتم العثور على أعضاء."
+  },
+  "ticketDetail": {
+    "fallback": "تذكرة",
+    "loading": "جارٍ التحميل…",
+    "slaBreach": "خرق SLA",
+    "status": "الحالة",
+    "priority": "الأولوية",
+    "reporter": "المُبلِّغ",
+    "unknown": "غير معروف",
+    "opened": "• تم الفتح",
+    "internal": "داخلي",
+    "internalNote": "ملاحظة داخلية (للموظفين فقط)",
+    "closedNotice": "هذه التذكرة مغلقة. أعد فتحها من خلال تذكرة جديدة إذا لزم الأمر.",
+    "internalPlaceholder": "أضف ملاحظة داخلية…",
+    "replyPlaceholder": "اكتب رداً…"
   }
 }
