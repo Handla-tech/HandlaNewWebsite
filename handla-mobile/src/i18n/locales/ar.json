@@ -320,7 +320,8 @@
     "PROVISIONING": "قيد التجهيز",
     "SUSPENDED": "موقوف",
     "FAILED": "فشل",
-    "ARCHIVED": "مؤرشف"
+    "ARCHIVED": "مؤرشف",
+    "CHURNED": "منسحب"
   },
   "source": {
     "INVOICE": "فاتورة",
@@ -335,5 +336,30 @@
     "QUESTION": "سؤال",
     "BILLING": "الفوترة",
     "OTHER": "أخرى"
+  },
+  "clients": {
+    "title": "العملاء",
+    "empty": "لا يوجد عملاء بعد.",
+    "fallbackName": "عميل",
+    "newClient": "عميل جديد",
+    "editClient": "تعديل العميل",
+    "newSubtitle": "سيتم إنشاء حساب دخول جديد كعميل لهذا الشخص.",
+    "fullName": "الاسم الكامل",
+    "fullNamePlaceholder": "جين سميث",
+    "emailPlaceholder": "jane@example.com",
+    "tempPassword": "كلمة مرور مؤقتة",
+    "tempPasswordPlaceholder": "8 أحرف على الأقل، أحرف كبيرة وصغيرة ورقم",
+    "company": "الشركة",
+    "notesPlaceholder": "ملاحظات داخلية (اختياري)",
+    "deleteTitle": "حذف العميل",
+    "deleteMessage": "حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteFallback": "هذا العميل",
+    "errors": {
+      "save": "فشل حفظ العميل",
+      "delete": "فشل حذف العميل",
+      "name": "يجب أن يكون الاسم حرفين على الأقل.",
+      "email": "البريد الإلكتروني الصالح مطلوب.",
+      "password": "كلمة المرور: 8 أحرف على الأقل مع حرف كبير وصغير ورقم."
+    }
   }
 }

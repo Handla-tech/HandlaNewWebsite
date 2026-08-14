@@ -17,15 +17,12 @@ import {
   type SelectOption,
   type SheetAction,
 } from '@/components/forms';
-import { statusColor, prettyStatus } from '@/lib/statusMeta';
+import { statusColor, prettyStatusT } from '@/lib/statusMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedClients, Client } from '@/types';
 
-const STATUS_OPTIONS: SelectOption[] = [
-  { label: 'Active', value: 'ACTIVE' },
-  { label: 'Inactive', value: 'INACTIVE' },
-  { label: 'Churned', value: 'CHURNED' },
-];
+const STATUS_VALUES = ['ACTIVE', 'INACTIVE', 'CHURNED'];
 
 interface ClientForm {
   name: string;
@@ -45,7 +42,12 @@ const EMPTY: ClientForm = {
 };
 
 export default function ClientsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
+  const STATUS_OPTIONS: SelectOption[] = STATUS_VALUES.map((v) => ({
+    label: t(`status.${v}`),
+    value: v,
+  }));
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -135,7 +137,7 @@ export default function ClientsScreen() {
       qc.invalidateQueries({ queryKey: ['clients-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save client')),
+    onError: (e) => setErr(apiError(e, t('clients.errors.save'))),
   });
 
   const del = useMutation({
@@ -144,26 +146,26 @@ export default function ClientsScreen() {
       qc.invalidateQueries({ queryKey: ['clients-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete client')),
+    onError: (e) => setDeleteErr(apiError(e, t('clients.errors.delete'))),
   });
 
   const submit = () => {
     if (!editing) {
-      if (form.name.trim().length < 2) return setErr('Name must be at least 2 characters.');
+      if (form.name.trim().length < 2) return setErr(t('clients.errors.name'));
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-        return setErr('A valid email is required.');
+        return setErr(t('clients.errors.email'));
       if (
         form.password.length < 8 ||
         !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)
       )
-        return setErr('Password: min 8 chars with uppercase, lowercase and a number.');
+        return setErr(t('clients.errors.password'));
     }
     setErr(null);
     save.mutate();
   };
 
   const renderItem = ({ item }: { item: Client }) => {
-    const name = item.user?.name ?? item.company ?? 'Client';
+    const name = item.user?.name ?? item.company ?? t('clients.fallbackName');
     const email = item.user?.email ?? '';
     return (
       <GlassListItem
@@ -175,7 +177,7 @@ export default function ClientsScreen() {
         right={
           item.status ? (
             <Badge
-              label={prettyStatus(item.status)}
+              label={prettyStatusT(item.status, t)}
               color={statusColor(item.status).color}
               soft={statusColor(item.status).soft}
             />
@@ -187,7 +189,7 @@ export default function ClientsScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Clients" icon="people-circle-outline" />
+      <GradientHeader title={t('clients.title')} icon="people-circle-outline" />
       {clients.isLoading ? (
         <Loading />
       ) : (
@@ -206,7 +208,7 @@ export default function ClientsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="people-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No clients yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('clients.empty')}</Text>
             </View>
           }
         />
@@ -217,66 +219,66 @@ export default function ClientsScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Client' : 'New Client'}
+        title={editing ? t('clients.editClient') : t('clients.newClient')}
         subtitle={
-          editing ? undefined : 'A new CLIENT login is created for this person.'
+          editing ? undefined : t('clients.newSubtitle')
         }
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Full name"
+          label={t('clients.fullName')}
           value={form.name}
-          onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
-          placeholder="Jane Smith"
+          onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+          placeholder={t('clients.fullNamePlaceholder')}
           autoCapitalize="words"
         />
         <Input
-          label="Email"
+          label={t('common.email')}
           value={form.email}
-          onChangeText={(t) => setForm((f) => ({ ...f, email: t }))}
-          placeholder="jane@example.com"
+          onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
+          placeholder={t('clients.emailPlaceholder')}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         {!editing ? (
           <Input
-            label="Temporary password"
+            label={t('clients.tempPassword')}
             value={form.password}
-            onChangeText={(t) => setForm((f) => ({ ...f, password: t }))}
-            placeholder="Min 8 chars, mixed case + number"
+            onChangeText={(v) => setForm((f) => ({ ...f, password: v }))}
+            placeholder={t('clients.tempPasswordPlaceholder')}
             autoCapitalize="none"
             secureTextEntry
           />
         ) : null}
         <Input
-          label="Company"
+          label={t('clients.company')}
           value={form.company}
-          onChangeText={(t) => setForm((f) => ({ ...f, company: t }))}
-          placeholder="Optional"
+          onChangeText={(v) => setForm((f) => ({ ...f, company: v }))}
+          placeholder={t('common.optional')}
         />
         <Select
-          label="Status"
+          label={t('common.status')}
           value={form.status}
           options={STATUS_OPTIONS}
           onChange={(v) => setForm((f) => ({ ...f, status: v }))}
         />
         <Textarea
-          label="Notes"
+          label={t('common.notes')}
           value={form.notes}
-          onChangeText={(t) => setForm((f) => ({ ...f, notes: t }))}
-          placeholder="Internal notes (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
+          placeholder={t('clients.notesPlaceholder')}
         />
       </FormModal>
 
       <ActionSheet
         visible={!!sheetFor}
         onClose={() => setSheetFor(null)}
-        title={sheetFor?.user?.name ?? sheetFor?.company ?? 'Client'}
+        title={sheetFor?.user?.name ?? sheetFor?.company ?? t('clients.fallbackName')}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
               const c = sheetFor;
@@ -287,7 +289,7 @@ export default function ClientsScreen() {
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('common.delete'),
                   icon: 'trash-outline',
                   destructive: true,
                   onPress: () => {
@@ -306,9 +308,9 @@ export default function ClientsScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Client"
-        message={`Delete "${deleteFor?.user?.name ?? deleteFor?.company ?? 'this client'}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('clients.deleteTitle')}
+        message={t('clients.deleteMessage', { name: deleteFor?.user?.name ?? deleteFor?.company ?? t('clients.deleteFallback') })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}

@@ -320,7 +320,8 @@
     "PROVISIONING": "Provisioning",
     "SUSPENDED": "Suspended",
     "FAILED": "Failed",
-    "ARCHIVED": "Archived"
+    "ARCHIVED": "Archived",
+    "CHURNED": "Churned"
   },
   "source": {
     "INVOICE": "Invoice",
@@ -335,5 +336,30 @@
     "QUESTION": "Question",
     "BILLING": "Billing",
     "OTHER": "Other"
+  },
+  "clients": {
+    "title": "Clients",
+    "empty": "No clients yet.",
+    "fallbackName": "Client",
+    "newClient": "New Client",
+    "editClient": "Edit Client",
+    "newSubtitle": "A new CLIENT login is created for this person.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Jane Smith",
+    "emailPlaceholder": "jane@example.com",
+    "tempPassword": "Temporary password",
+    "tempPasswordPlaceholder": "Min 8 chars, mixed case + number",
+    "company": "Company",
+    "notesPlaceholder": "Internal notes (optional)",
+    "deleteTitle": "Delete Client",
+    "deleteMessage": "Delete \"{{name}}\"? This cannot be undone.",
+    "deleteFallback": "this client",
+    "errors": {
+      "save": "Failed to save client",
+      "delete": "Failed to delete client",
+      "name": "Name must be at least 2 characters.",
+      "email": "A valid email is required.",
+      "password": "Password: min 8 chars with uppercase, lowercase and a number."
+    }
   }
 }

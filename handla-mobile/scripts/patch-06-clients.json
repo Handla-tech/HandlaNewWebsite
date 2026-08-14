@@ -1,0 +1,58 @@
+{
+  "en": {
+    "status": { "CHURNED": "Churned" },
+    "clients": {
+      "title": "Clients",
+      "empty": "No clients yet.",
+      "fallbackName": "Client",
+      "newClient": "New Client",
+      "editClient": "Edit Client",
+      "newSubtitle": "A new CLIENT login is created for this person.",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Jane Smith",
+      "emailPlaceholder": "jane@example.com",
+      "tempPassword": "Temporary password",
+      "tempPasswordPlaceholder": "Min 8 chars, mixed case + number",
+      "company": "Company",
+      "notesPlaceholder": "Internal notes (optional)",
+      "deleteTitle": "Delete Client",
+      "deleteMessage": "Delete \"{{name}}\"? This cannot be undone.",
+      "deleteFallback": "this client",
+      "errors": {
+        "save": "Failed to save client",
+        "delete": "Failed to delete client",
+        "name": "Name must be at least 2 characters.",
+        "email": "A valid email is required.",
+        "password": "Password: min 8 chars with uppercase, lowercase and a number."
+      }
+    }
+  },
+  "ar": {
+    "status": { "CHURNED": "منسحب" },
+    "clients": {
+      "title": "العملاء",
+      "empty": "لا يوجد عملاء بعد.",
+      "fallbackName": "عميل",
+      "newClient": "عميل جديد",
+      "editClient": "تعديل العميل",
+      "newSubtitle": "سيتم إنشاء حساب دخول جديد كعميل لهذا الشخص.",
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "جين سميث",
+      "emailPlaceholder": "jane@example.com",
+      "tempPassword": "كلمة مرور مؤقتة",
+      "tempPasswordPlaceholder": "8 أحرف على الأقل، أحرف كبيرة وصغيرة ورقم",
+      "company": "الشركة",
+      "notesPlaceholder": "ملاحظات داخلية (اختياري)",
+      "deleteTitle": "حذف العميل",
+      "deleteMessage": "حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "deleteFallback": "هذا العميل",
+      "errors": {
+        "save": "فشل حفظ العميل",
+        "delete": "فشل حذف العميل",
+        "name": "يجب أن يكون الاسم حرفين على الأقل.",
+        "email": "البريد الإلكتروني الصالح مطلوب.",
+        "password": "كلمة المرور: 8 أحرف على الأقل مع حرف كبير وصغير ورقم."
+      }
+    }
+  }
+}
