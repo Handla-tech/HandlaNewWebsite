@@ -1,0 +1,76 @@
+{
+  "en": {
+    "erp": {
+      "statusLabel": {
+        "ACTIVE": "Active",
+        "INACTIVE": "Inactive",
+        "CHURNED": "Churned",
+        "PLANNING": "Planning",
+        "ON_HOLD": "On Hold",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "PENDING": "Pending",
+        "IN_PROGRESS": "In Progress",
+        "DELAYED": "Delayed",
+        "DRAFT": "Draft",
+        "SENT": "Sent",
+        "SIGNED": "Signed",
+        "REJECTED": "Rejected",
+        "UNPAID": "Unpaid",
+        "PAID": "Paid",
+        "OVERDUE": "Overdue",
+        "INCOME": "Income",
+        "EXPENSE": "Expense"
+      },
+      "ui": {
+        "unassigned": "Unassigned",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "search": "Search…",
+        "all": "All",
+        "from": "From",
+        "to": "To",
+        "clear": "Clear",
+        "increase": "Increase",
+        "decrease": "Decrease"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "statusLabel": {
+        "ACTIVE": "نشط",
+        "INACTIVE": "غير نشط",
+        "CHURNED": "منسحب",
+        "PLANNING": "التخطيط",
+        "ON_HOLD": "معلّق",
+        "COMPLETED": "مكتمل",
+        "CANCELLED": "ملغى",
+        "PENDING": "قيد الانتظار",
+        "IN_PROGRESS": "قيد التنفيذ",
+        "DELAYED": "متأخر",
+        "DRAFT": "مسودة",
+        "SENT": "مُرسل",
+        "SIGNED": "موقّع",
+        "REJECTED": "مرفوض",
+        "UNPAID": "غير مدفوع",
+        "PAID": "مدفوع",
+        "OVERDUE": "متأخر السداد",
+        "INCOME": "دخل",
+        "EXPENSE": "مصروف"
+      },
+      "ui": {
+        "unassigned": "غير مُعيّن",
+        "confirm": "تأكيد",
+        "cancel": "إلغاء",
+        "search": "بحث…",
+        "all": "الكل",
+        "from": "من",
+        "to": "إلى",
+        "clear": "مسح",
+        "increase": "زيادة",
+        "decrease": "نقصان"
+      }
+    }
+  }
+}

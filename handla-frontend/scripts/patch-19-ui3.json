@@ -1,0 +1,24 @@
+{
+  "en": {
+    "erp": {
+      "ui": {
+        "filterRecords": "Filter records",
+        "clearSearch": "Clear search",
+        "filterOptions": "Filter options",
+        "dateRangeFilter": "Date range filter",
+        "clearDateRange": "Clear date range"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "ui": {
+        "filterRecords": "تصفية السجلات",
+        "clearSearch": "مسح البحث",
+        "filterOptions": "خيارات التصفية",
+        "dateRangeFilter": "تصفية حسب النطاق الزمني",
+        "clearDateRange": "مسح النطاق الزمني"
+      }
+    }
+  }
+}

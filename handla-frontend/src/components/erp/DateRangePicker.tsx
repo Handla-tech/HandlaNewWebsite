@@ -17,6 +17,7 @@
 import React from 'react';
 import { CalendarRange } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface DateRangePickerProps {
   from?:          string;
@@ -34,9 +35,12 @@ export default function DateRangePicker({
   onFromChange,
   onToChange,
   className,
-  fromLabel = 'From',
-  toLabel   = 'To',
+  fromLabel,
+  toLabel,
 }: DateRangePickerProps) {
+  const { t } = useTranslation();
+  const resolvedFromLabel = fromLabel ?? t('erp.ui.from');
+  const resolvedToLabel   = toLabel   ?? t('erp.ui.to');
   return (
     <div
       className={cn(
@@ -44,7 +48,7 @@ export default function DateRangePicker({
         className,
       )}
       role="group"
-      aria-label="Date range filter"
+      aria-label={t('erp.ui.dateRangeFilter')}
     >
       <CalendarRange className="h-4 w-4 text-[#fbbf24] shrink-0" aria-hidden="true" />
 
@@ -55,7 +59,7 @@ export default function DateRangePicker({
             htmlFor="drp-from"
             className="text-xs text-[#666] whitespace-nowrap"
           >
-            {fromLabel}
+            {resolvedFromLabel}
           </label>
           <input
             id="drp-from"
@@ -70,7 +74,7 @@ export default function DateRangePicker({
               // Date input native styling
               '[color-scheme:dark]',
             )}
-            aria-label={`Date range start: ${fromLabel}`}
+            aria-label={`${t('erp.ui.dateRangeFilter')}: ${resolvedFromLabel}`}
           />
         </div>
 
@@ -80,7 +84,7 @@ export default function DateRangePicker({
             htmlFor="drp-to"
             className="text-xs text-[#666] whitespace-nowrap"
           >
-            {toLabel}
+            {resolvedToLabel}
           </label>
           <input
             id="drp-to"
@@ -94,7 +98,7 @@ export default function DateRangePicker({
               'min-h-[44px]',
               '[color-scheme:dark]',
             )}
-            aria-label={`Date range end: ${toLabel}`}
+            aria-label={`${t('erp.ui.dateRangeFilter')}: ${resolvedToLabel}`}
           />
         </div>
 
@@ -103,9 +107,9 @@ export default function DateRangePicker({
           <button
             onClick={() => { onFromChange(''); onToChange(''); }}
             className="text-xs text-[#555] underline hover:text-[#888] min-h-[44px] flex items-center"
-            aria-label="Clear date range"
+            aria-label={t('erp.ui.clearDateRange')}
           >
-            Clear
+            {t('erp.ui.clear')}
           </button>
         )}
       </div>

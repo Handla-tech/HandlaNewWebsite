@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface StatCardProps {
   icon:      React.ComponentType<{ className?: string }>;
@@ -39,6 +40,7 @@ export default function StatCard({
   loading = false,
   className,
 }: StatCardProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div
@@ -47,7 +49,7 @@ export default function StatCard({
           className,
         )}
         aria-busy="true"
-        aria-label={`Loading ${title}`}
+        aria-label={t('erp.ui.loading')}
       >
         <div className="mb-3 h-5 w-5 rounded bg-[#2a2a2a]" />
         <div className="mb-2 h-3 w-24 rounded bg-[#2a2a2a]" />
@@ -97,7 +99,7 @@ export default function StatCard({
                 ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
                 : 'border-red-400/30 bg-red-400/10 text-red-400',
             )}
-            aria-label={`${deltaPositive ? 'Increase' : 'Decrease'}: ${delta}`}
+            aria-label={`${deltaPositive ? t('erp.ui.increase') : t('erp.ui.decrease')}: ${delta}`}
           >
             {deltaPositive ? '+' : ''}{typeof delta === 'number' ? delta.toLocaleString() : delta}
           </span>

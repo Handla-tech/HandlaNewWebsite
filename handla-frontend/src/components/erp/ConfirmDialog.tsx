@@ -25,6 +25,7 @@ import React, { useEffect, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertTriangle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ConfirmDialogProps {
   open:          boolean;
@@ -42,14 +43,17 @@ export default function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel  = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant      = 'default',
   loading      = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
   const titleId = useId();
+  const resolvedConfirmLabel = confirmLabel ?? t('erp.ui.confirm');
+  const resolvedCancelLabel  = cancelLabel  ?? t('erp.ui.cancel');
 
   // Escape key closes the dialog
   const handleKey = useCallback(
@@ -99,7 +103,7 @@ export default function ConfirmDialog({
             <button
               className="absolute right-4 top-4 rounded-lg p-1 text-[#666] transition-colors hover:bg-white/5 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
               onClick={onCancel}
-              aria-label="Close dialog"
+              aria-label={t('erp.ui.closeDialog')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -133,7 +137,7 @@ export default function ConfirmDialog({
                 onClick={onCancel}
                 disabled={loading}
               >
-                {cancelLabel}
+                {resolvedCancelLabel}
               </button>
               <button
                 className={cn(
@@ -152,9 +156,9 @@ export default function ConfirmDialog({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Processing…
+                    {t('erp.ui.processing')}
                   </span>
-                ) : confirmLabel}
+                ) : resolvedConfirmLabel}
               </button>
             </div>
           </motion.div>

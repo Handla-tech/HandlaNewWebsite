@@ -10,6 +10,7 @@
  */
 
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 import type {
   ClientStatus,
   ProjectStatus,
@@ -70,36 +71,6 @@ const EXPENSE_COLOURS: Record<ExpenseType, string> = {
   EXPENSE: 'border-red-400/30     bg-red-400/10     text-red-400',
 };
 
-// ─── Human-readable labels ────────────────────────────────────────────────────
-
-const LABELS: Record<string, string> = {
-  // client
-  ACTIVE:     'Active',
-  INACTIVE:   'Inactive',
-  CHURNED:    'Churned',
-  // project
-  PLANNING:   'Planning',
-  ON_HOLD:    'On Hold',
-  COMPLETED:  'Completed',
-  CANCELLED:  'Cancelled',
-  // task
-  PENDING:    'Pending',
-  IN_PROGRESS:'In Progress',
-  DELAYED:    'Delayed',
-  // contract
-  DRAFT:      'Draft',
-  SENT:       'Sent',
-  SIGNED:     'Signed',
-  REJECTED:   'Rejected',
-  // invoice
-  UNPAID:     'Unpaid',
-  PAID:       'Paid',
-  OVERDUE:    'Overdue',
-  // expense
-  INCOME:     'Income',
-  EXPENSE:    'Expense',
-};
-
 function resolveColour(status: AnyStatus, type: StatusType): string {
   switch (type) {
     case 'client':   return CLIENT_COLOURS[status as ClientStatus]   ?? '';
@@ -126,8 +97,9 @@ export default function StatusBadge({
   size = 'sm',
   className,
 }: StatusBadgeProps) {
+  const { t } = useTranslation();
   const colour = resolveColour(status, type);
-  const label  = LABELS[status] ?? status;
+  const label  = t(`erp.statusLabel.${status}`);
 
   return (
     <span

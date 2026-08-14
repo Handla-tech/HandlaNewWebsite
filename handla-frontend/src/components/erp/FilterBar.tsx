@@ -22,6 +22,7 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface FilterOption {
   label: string;
@@ -42,13 +43,15 @@ interface FilterBarProps {
 export default function FilterBar({
   search,
   onSearchChange,
-  placeholder = 'Search…',
+  placeholder,
   filters,
   activeFilter,
   onFilterChange,
   className,
   children,
 }: FilterBarProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t('erp.ui.search');
   return (
     <div
       className={cn(
@@ -56,7 +59,7 @@ export default function FilterBar({
         className,
       )}
       role="search"
-      aria-label="Filter records"
+      aria-label={t('erp.ui.filterRecords')}
     >
       {/* Search input */}
       <div className="relative flex-1 min-w-[180px]">
@@ -68,19 +71,19 @@ export default function FilterBar({
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className={cn(
             'w-full rounded-xl border border-[#1a1a1a] bg-white/[0.03] py-2 pl-9 pr-9 text-sm text-white placeholder-[#555]',
             'transition-colors focus:border-[#fbbf24]/50 focus:outline-none focus:ring-1 focus:ring-[#fbbf24]/30',
             'min-h-[44px]',
           )}
-          aria-label={placeholder}
+          aria-label={resolvedPlaceholder}
         />
         {search && (
           <button
             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
             onClick={() => onSearchChange('')}
-            aria-label="Clear search"
+            aria-label={t('erp.ui.clearSearch')}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -92,7 +95,7 @@ export default function FilterBar({
         <div
           className="flex flex-wrap gap-1.5"
           role="group"
-          aria-label="Filter options"
+          aria-label={t('erp.ui.filterOptions')}
         >
           {filters.map((f) => {
             const isActive = activeFilter === f.value;

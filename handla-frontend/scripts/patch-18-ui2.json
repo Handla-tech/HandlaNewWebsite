@@ -1,0 +1,18 @@
+{
+  "en": {
+    "erp": {
+      "ui": {
+        "processing": "Processing…",
+        "closeDialog": "Close dialog"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "ui": {
+        "processing": "جارٍ المعالجة…",
+        "closeDialog": "إغلاق النافذة"
+      }
+    }
+  }
+}

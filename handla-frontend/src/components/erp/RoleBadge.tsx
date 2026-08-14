@@ -10,6 +10,7 @@
  */
 
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { UserRole } from '@/types';
 
 const ROLE_COLOURS: Record<UserRole, string> = {
@@ -19,13 +20,6 @@ const ROLE_COLOURS: Record<UserRole, string> = {
   LEAD:     'border-slate-400/30  bg-slate-400/10  text-slate-400',
 };
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  ADMIN:    'Admin',
-  EMPLOYEE: 'Employee',
-  CLIENT:   'Client',
-  LEAD:     'Lead',
-};
-
 interface RoleBadgeProps {
   role:       UserRole;
   size?:      'sm' | 'md';
@@ -33,6 +27,8 @@ interface RoleBadgeProps {
 }
 
 export default function RoleBadge({ role, size = 'sm', className }: RoleBadgeProps) {
+  const { t } = useTranslation();
+  const label = t(`erp.userRole.${role}`);
   return (
     <span
       className={cn(
@@ -41,9 +37,9 @@ export default function RoleBadge({ role, size = 'sm', className }: RoleBadgePro
         ROLE_COLOURS[role] ?? 'border-[#2a2a2a] bg-[#111] text-[#666]',
         className,
       )}
-      aria-label={`Role: ${ROLE_LABELS[role] ?? role}`}
+      aria-label={label}
     >
-      {ROLE_LABELS[role] ?? role}
+      {label}
     </span>
   );
 }

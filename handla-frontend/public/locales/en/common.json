@@ -1543,7 +1543,19 @@
       "createdAt": "Created",
       "updatedAt": "Updated",
       "actionsFailed": "Something went wrong. Please try again.",
-      "notAvailable": "N/A"
+      "notAvailable": "N/A",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear",
+      "increase": "Increase",
+      "decrease": "Decrease",
+      "processing": "Processing…",
+      "closeDialog": "Close dialog",
+      "filterRecords": "Filter records",
+      "clearSearch": "Clear search",
+      "filterOptions": "Filter options",
+      "dateRangeFilter": "Date range filter",
+      "clearDateRange": "Clear date range"
     },
     "projectStatus": {
       "PLANNING": "Planning",
@@ -1679,6 +1691,27 @@
       "EMPLOYEE": "Employee",
       "CLIENT": "Client",
       "LEAD": "Lead"
+    },
+    "statusLabel": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "CHURNED": "Churned",
+      "PLANNING": "Planning",
+      "ON_HOLD": "On Hold",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "PENDING": "Pending",
+      "IN_PROGRESS": "In Progress",
+      "DELAYED": "Delayed",
+      "DRAFT": "Draft",
+      "SENT": "Sent",
+      "SIGNED": "Signed",
+      "REJECTED": "Rejected",
+      "UNPAID": "Unpaid",
+      "PAID": "Paid",
+      "OVERDUE": "Overdue",
+      "INCOME": "Income",
+      "EXPENSE": "Expense"
     }
   },
   "footer": {

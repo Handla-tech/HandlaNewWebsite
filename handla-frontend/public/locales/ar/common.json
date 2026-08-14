@@ -1543,7 +1543,19 @@
       "createdAt": "تاريخ الإنشاء",
       "updatedAt": "آخر تحديث",
       "actionsFailed": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-      "notAvailable": "غير متوفر"
+      "notAvailable": "غير متوفر",
+      "from": "من",
+      "to": "إلى",
+      "clear": "مسح",
+      "increase": "زيادة",
+      "decrease": "نقصان",
+      "processing": "جارٍ المعالجة…",
+      "closeDialog": "إغلاق النافذة",
+      "filterRecords": "تصفية السجلات",
+      "clearSearch": "مسح البحث",
+      "filterOptions": "خيارات التصفية",
+      "dateRangeFilter": "تصفية حسب النطاق الزمني",
+      "clearDateRange": "مسح النطاق الزمني"
     },
     "projectStatus": {
       "PLANNING": "تخطيط",
@@ -1679,6 +1691,27 @@
       "EMPLOYEE": "موظف",
       "CLIENT": "عميل",
       "LEAD": "عميل محتمل"
+    },
+    "statusLabel": {
+      "ACTIVE": "نشط",
+      "INACTIVE": "غير نشط",
+      "CHURNED": "منسحب",
+      "PLANNING": "التخطيط",
+      "ON_HOLD": "معلّق",
+      "COMPLETED": "مكتمل",
+      "CANCELLED": "ملغى",
+      "PENDING": "قيد الانتظار",
+      "IN_PROGRESS": "قيد التنفيذ",
+      "DELAYED": "متأخر",
+      "DRAFT": "مسودة",
+      "SENT": "مُرسل",
+      "SIGNED": "موقّع",
+      "REJECTED": "مرفوض",
+      "UNPAID": "غير مدفوع",
+      "PAID": "مدفوع",
+      "OVERDUE": "متأخر السداد",
+      "INCOME": "دخل",
+      "EXPENSE": "مصروف"
     }
   },
   "footer": {

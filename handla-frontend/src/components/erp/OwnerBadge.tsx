@@ -6,6 +6,7 @@
  */
 
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
 
 interface OwnerBadgeProps {
@@ -14,6 +15,7 @@ interface OwnerBadgeProps {
 }
 
 export default function OwnerBadge({ owner, className }: OwnerBadgeProps) {
+  const { t } = useTranslation();
   if (!owner) {
     return (
       <span
@@ -21,12 +23,12 @@ export default function OwnerBadge({ owner, className }: OwnerBadgeProps) {
           'inline-flex items-center gap-1.5 rounded-full border border-[#2a2a2a] bg-[#111] px-2 py-0.5 text-xs text-[#666]',
           className,
         )}
-        aria-label="Unassigned"
+        aria-label={t('erp.ui.unassigned')}
       >
         <span className="h-4 w-4 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[8px] text-[#666]">
           ?
         </span>
-        Unassigned
+        {t('erp.ui.unassigned')}
       </span>
     );
   }
