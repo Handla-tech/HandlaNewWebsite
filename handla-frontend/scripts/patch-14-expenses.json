@@ -1,0 +1,36 @@
+{
+  "en": {
+    "erp": {
+      "expenses": {
+        "columns": { "entry": "Entry", "type": "Type", "date": "Date", "owner": "Owner", "amount": "Amount" },
+        "modals": {
+          "delete": { "subtitle": "This cannot be undone." },
+          "saving": "Saving…",
+          "deleting": "Deleting…",
+          "cancel": "Cancel",
+          "amountPlaceholder": "0.00"
+        },
+        "retry": "Retry",
+        "addFirstEntry": "Add first entry",
+        "paginationEntries": "{{total}} entries · page {{page}} of {{pages}}"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "expenses": {
+        "columns": { "entry": "القيد", "type": "النوع", "date": "التاريخ", "owner": "المالك", "amount": "المبلغ" },
+        "modals": {
+          "delete": { "subtitle": "لا يمكن التراجع عن هذا." },
+          "saving": "جارٍ الحفظ…",
+          "deleting": "جارٍ الحذف…",
+          "cancel": "إلغاء",
+          "amountPlaceholder": "0.00"
+        },
+        "retry": "إعادة المحاولة",
+        "addFirstEntry": "إضافة أول قيد",
+        "paginationEntries": "{{total}} قيد · صفحة {{page}} من {{pages}}"
+      }
+    }
+  }
+}

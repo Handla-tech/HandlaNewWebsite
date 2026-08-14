@@ -1219,8 +1219,13 @@
         "delete": {
           "title": "حذف الإدخال",
           "message": "حذف {{category}} ({{amount}}) بشكل دائم؟ لا يمكن التراجع عن هذا الإجراء.",
-          "submit": "حذف"
-        }
+          "submit": "حذف",
+          "subtitle": "لا يمكن التراجع عن هذا."
+        },
+        "saving": "جارٍ الحفظ…",
+        "deleting": "جارٍ الحذف…",
+        "cancel": "إلغاء",
+        "amountPlaceholder": "0.00"
       },
       "fields": {
         "type": "النوع",
@@ -1246,7 +1251,17 @@
       },
       "pagination": {
         "page": "الصفحة {{page}} من {{total}}"
-      }
+      },
+      "columns": {
+        "entry": "القيد",
+        "type": "النوع",
+        "date": "التاريخ",
+        "owner": "المالك",
+        "amount": "المبلغ"
+      },
+      "retry": "إعادة المحاولة",
+      "addFirstEntry": "إضافة أول قيد",
+      "paginationEntries": "{{total}} قيد · صفحة {{page}} من {{pages}}"
     },
     "dashboard": {
       "title": "لوحة تحكم ERP",

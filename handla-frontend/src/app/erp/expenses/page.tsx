@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { expensesApi } from '@/lib/api';
 import type { Expense, ExpenseType, FinancialSummary, PaginatedExpenses } from '@/types';
 import { cn } from '@/lib/utils';
@@ -25,8 +26,24 @@ const TYPE_BADGE: Record<ExpenseType, string> = {
   EXPENSE: 'border-red-500/30 bg-red-500/10 text-red-400',
 };
 
-const CATEGORIES_INCOME  = ['Invoice Payment', 'Consulting', 'Sales', 'Grant', 'Other Income'];
-const CATEGORIES_EXPENSE = ['Software', 'Payroll', 'Marketing', 'Travel', 'Utilities', 'Rent', 'Hardware', 'Other'];
+// Category values are stored/sent in English (backend contract); labelKey is used for display.
+const CATEGORIES_INCOME = [
+  { value: 'Invoice Payment', labelKey: 'erp.expenses.categories.income.invoicePayment' },
+  { value: 'Consulting',      labelKey: 'erp.expenses.categories.income.consulting' },
+  { value: 'Sales',           labelKey: 'erp.expenses.categories.income.sales' },
+  { value: 'Grant',           labelKey: 'erp.expenses.categories.income.grant' },
+  { value: 'Other Income',    labelKey: 'erp.expenses.categories.income.other' },
+];
+const CATEGORIES_EXPENSE = [
+  { value: 'Software',  labelKey: 'erp.expenses.categories.expense.software' },
+  { value: 'Payroll',   labelKey: 'erp.expenses.categories.expense.payroll' },
+  { value: 'Marketing', labelKey: 'erp.expenses.categories.expense.marketing' },
+  { value: 'Travel',    labelKey: 'erp.expenses.categories.expense.travel' },
+  { value: 'Utilities', labelKey: 'erp.expenses.categories.expense.utilities' },
+  { value: 'Rent',      labelKey: 'erp.expenses.categories.expense.rent' },
+  { value: 'Hardware',  labelKey: 'erp.expenses.categories.expense.hardware' },
+  { value: 'Other',     labelKey: 'erp.expenses.categories.expense.other' },
+];
 
 type ActiveTab = 'all' | 'income' | 'expense';
 
@@ -54,23 +71,24 @@ function fmtDate(d: string | null | undefined) {
 // ─── Summary Cards ────────────────────────────────────────────────────────────
 
 function SummaryCards({ summary }: { summary: FinancialSummary }) {
+  const { t } = useTranslation();
   const netPositive = summary.netBalance >= 0;
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">Total Income</p>
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">{t('erp.expenses.summary.totalIncome')}</p>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20">
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
           </div>
         </div>
         <p className="text-xl font-bold text-emerald-400">{fmt(summary.totalIncome)}</p>
-        <p className="text-[11px] text-white/25 mt-1">Manual: {fmt(summary.manualIncome)}</p>
+        <p className="text-[11px] text-white/25 mt-1">{t('erp.expenses.summary.manualLabel')} {fmt(summary.manualIncome)}</p>
       </div>
 
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">Total Expenses</p>
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">{t('erp.expenses.summary.totalExpenses')}</p>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/20">
             <TrendingDown className="w-3.5 h-3.5 text-red-400" />
           </div>
@@ -80,7 +98,7 @@ function SummaryCards({ summary }: { summary: FinancialSummary }) {
 
       <div className={cn('rounded-2xl border p-4', netPositive ? 'border-[#fbbf24]/20 bg-[#fbbf24]/5' : 'border-red-500/20 bg-red-500/5')}>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">Net Balance</p>
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">{t('erp.expenses.summary.netBalance')}</p>
           <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg', netPositive ? 'bg-[#fbbf24]/20' : 'bg-red-500/20')}>
             <Wallet className={cn('w-3.5 h-3.5', netPositive ? 'text-[#fbbf24]' : 'text-red-400')} />
           </div>
@@ -92,13 +110,13 @@ function SummaryCards({ summary }: { summary: FinancialSummary }) {
 
       <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">Outstanding</p>
+          <p className="text-[10px] font-semibold text-white/25 uppercase tracking-wide">{t('erp.expenses.summary.outstanding')}</p>
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20">
             <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
           </div>
         </div>
         <p className="text-xl font-bold text-amber-400">{fmt(summary.outstandingInvoices)}</p>
-        <p className="text-[11px] text-white/25 mt-1">Unpaid + Overdue invoices</p>
+        <p className="text-[11px] text-white/25 mt-1">{t('erp.expenses.summary.outstandingHint')}</p>
       </div>
     </div>
   );
@@ -107,6 +125,7 @@ function SummaryCards({ summary }: { summary: FinancialSummary }) {
 // ─── Create / Edit Modal ──────────────────────────────────────────────────────
 
 function EntryModal({ isOpen, onClose, editExpense }: { isOpen: boolean; onClose: () => void; editExpense: Expense | null }) {
+  const { t } = useTranslation();
   const qc     = useQueryClient();
   const isEdit = editExpense !== null;
   const sharedInput = 'w-full rounded-xl border border-white/10 bg-[#0f0f0f] text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.04] transition-all';
@@ -139,8 +158,8 @@ function EntryModal({ isOpen, onClose, editExpense }: { isOpen: boolean; onClose
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#111] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <div>
-            <h2 className="text-base font-bold text-white">{isEdit ? 'Edit Entry' : 'New Entry'}</h2>
-            <p className="text-xs text-white/30">{isEdit ? 'Update this manual entry.' : 'Add a manual income or expense record.'}</p>
+            <h2 className="text-base font-bold text-white">{isEdit ? t('erp.expenses.modals.edit.title') : t('erp.expenses.modals.create.title')}</h2>
+            <p className="text-xs text-white/30">{isEdit ? t('erp.expenses.modals.edit.subtitle') : t('erp.expenses.modals.create.subtitle')}</p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
         </div>
@@ -148,64 +167,64 @@ function EntryModal({ isOpen, onClose, editExpense }: { isOpen: boolean; onClose
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="p-5 space-y-4">
           {/* Type */}
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-2">Type</label>
+            <label className="block text-xs font-medium text-white/50 mb-2">{t('erp.expenses.fields.type')}</label>
             <div className="grid grid-cols-2 gap-2">
-              {(['INCOME', 'EXPENSE'] as ExpenseType[]).map(t => (
-                <label key={t} className={cn(
+              {(['INCOME', 'EXPENSE'] as ExpenseType[]).map(ty => (
+                <label key={ty} className={cn(
                   'flex items-center justify-center gap-2 px-3 py-3 rounded-xl border cursor-pointer text-sm font-semibold transition-all',
-                  watchedType === t
-                    ? t === 'INCOME' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-red-500/40 bg-red-500/10 text-red-400'
+                  watchedType === ty
+                    ? ty === 'INCOME' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-red-500/40 bg-red-500/10 text-red-400'
                     : 'border-white/10 text-white/35 hover:border-white/20 hover:text-white/60',
                 )}>
-                  <input type="radio" value={t} {...register('type')} className="sr-only" />
-                  {t === 'INCOME' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                  {t}
+                  <input type="radio" value={ty} {...register('type')} className="sr-only" />
+                  {ty === 'INCOME' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                  {t(`erp.expenses.type.${ty}`)}
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Category</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.expenses.fields.category')}</label>
             <select {...register('category')} className={cn(sharedInput)}>
-              <option value="">Select category…</option>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="">{t('erp.expenses.fields.selectCategory')}</option>
+              {categories.map(c => <option key={c.value} value={c.value}>{t(c.labelKey)}</option>)}
             </select>
             {errors.category && <p className="mt-1 text-xs text-red-400">{errors.category.message}</p>}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Amount (USD)</label>
-            <input type="number" step="0.01" min="0.01" placeholder="0.00"
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.expenses.fields.amount')}</label>
+            <input type="number" step="0.01" min="0.01" placeholder={t('erp.expenses.modals.amountPlaceholder')}
               {...register('amount', { valueAsNumber: true })} className={sharedInput} />
             {errors.amount && <p className="mt-1 text-xs text-red-400">{errors.amount.message}</p>}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Date</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.expenses.fields.date')}</label>
             <input type="date" {...register('expenseDate')} className={sharedInput} />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Description (optional)</label>
-            <textarea rows={2} placeholder="Brief note…" {...register('description')}
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.expenses.fields.description')}</label>
+            <textarea rows={2} placeholder={t('erp.expenses.fields.descriptionPlaceholder')} {...register('description')}
               className={cn(sharedInput, 'resize-none')} />
           </div>
 
           {mutation.isError && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {(mutation.error as any)?.response?.data?.message ?? 'Failed to save entry'}
+              {(mutation.error as any)?.response?.data?.message ?? t('erp.expenses.errors.saveFailed')}
             </div>
           )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.expenses.modals.cancel')}</button>
             <button type="submit" disabled={mutation.isPending}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] text-sm disabled:opacity-50 min-h-[44px] transition-colors">
               {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {mutation.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Entry'}
+              {mutation.isPending ? t('erp.expenses.modals.saving') : isEdit ? t('erp.expenses.modals.edit.submit') : t('erp.expenses.modals.create.submit')}
             </button>
           </div>
         </form>
@@ -217,6 +236,7 @@ function EntryModal({ isOpen, onClose, editExpense }: { isOpen: boolean; onClose
 // ─── Delete Confirm Modal ─────────────────────────────────────────────────────
 
 function DeleteModal({ isOpen, expense, onClose }: { isOpen: boolean; expense: Expense | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => expensesApi.deleteExpense(expense!.id),
@@ -233,24 +253,24 @@ function DeleteModal({ isOpen, expense, onClose }: { isOpen: boolean; expense: E
             <Trash2 className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Delete Entry</h2>
-            <p className="text-xs text-white/30">This cannot be undone.</p>
+            <h2 className="text-base font-bold text-white">{t('erp.expenses.modals.delete.title')}</h2>
+            <p className="text-xs text-white/30">{t('erp.expenses.modals.delete.subtitle')}</p>
           </div>
         </div>
         <p className="text-sm text-white/60">
-          Permanently delete <strong className="text-white">{expense.category}</strong> ({fmt(expense.amount)})?
+          {t('erp.expenses.modals.delete.message', { category: expense.category, amount: fmt(expense.amount) })}
         </p>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {(mutation.error as any)?.response?.data?.message ?? 'Failed to delete'}
+            {(mutation.error as any)?.response?.data?.message ?? t('erp.expenses.errors.deleteFailed')}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.expenses.modals.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 text-sm disabled:opacity-50 min-h-[44px] transition-colors">
-            {mutation.isPending ? 'Deleting…' : 'Delete'}
+            {mutation.isPending ? t('erp.expenses.modals.deleting') : t('erp.expenses.modals.delete.submit')}
           </button>
         </div>
       </div>
@@ -261,6 +281,7 @@ function DeleteModal({ isOpen, expense, onClose }: { isOpen: boolean; expense: E
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ExpensesPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -309,7 +330,7 @@ export default function ExpensesPage() {
   const columns: Column<Expense>[] = [
     {
       key: 'category',
-      header: 'Entry',
+      header: t('erp.expenses.columns.entry'),
       cell: (e) => {
         const isIncome = e.type === 'INCOME';
         return (
@@ -323,7 +344,7 @@ export default function ExpensesPage() {
                 <span className="text-sm font-semibold text-white truncate">{e.category}</span>
                 {e.invoiceId !== null && (
                   <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] border border-blue-500/30 bg-blue-500/10 text-blue-400 flex-shrink-0">
-                    <FileText className="w-2.5 h-2.5" /> Auto
+                    <FileText className="w-2.5 h-2.5" /> {t('erp.expenses.row.autoInvoice')}
                   </span>
                 )}
               </div>
@@ -335,21 +356,21 @@ export default function ExpensesPage() {
     },
     {
       key: 'type',
-      header: 'Type',
+      header: t('erp.expenses.columns.type'),
       align: 'center',
       cell: (e) => (
-        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block', TYPE_BADGE[e.type])}>{e.type}</span>
+        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block', TYPE_BADGE[e.type])}>{t(`erp.expenses.type.${e.type}`)}</span>
       ),
     },
     {
       key: 'date',
-      header: 'Date',
+      header: t('erp.expenses.columns.date'),
       hideOnMobile: true,
       cell: (e) => <span className="text-white/40 text-xs">{fmtDate(e.expenseDate)}</span>,
     },
     {
       key: 'owner',
-      header: 'Owner',
+      header: t('erp.expenses.columns.owner'),
       hideOnMobile: true,
       cell: (e) => (
         <span className="text-white/50 text-xs">
@@ -360,7 +381,7 @@ export default function ExpensesPage() {
     },
     {
       key: 'amount',
-      header: 'Amount',
+      header: t('erp.expenses.columns.amount'),
       align: 'right',
       cell: (e) => {
         const isIncome = e.type === 'INCOME';
@@ -374,8 +395,8 @@ export default function ExpensesPage() {
   ];
 
   const rowActions: RowAction<Expense>[] = [
-    { label: 'Edit', icon: Edit2, onClick: (e) => openEdit(e), show: (e) => e.invoiceId === null },
-    { label: 'Delete', icon: Trash2, danger: true, onClick: (e) => setDeleteEntry(e), show: (e) => e.invoiceId === null && isAdmin },
+    { label: t('erp.expenses.row.edit'), icon: Edit2, onClick: (e) => openEdit(e), show: (e) => e.invoiceId === null },
+    { label: t('erp.expenses.row.delete'), icon: Trash2, danger: true, onClick: (e) => setDeleteEntry(e), show: (e) => e.invoiceId === null && isAdmin },
   ];
 
   if (!mounted) return null;
@@ -389,16 +410,16 @@ export default function ExpensesPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <DollarSign className="w-4.5 h-4.5 text-emerald-400" />
             </span>
-            Expenses & Income
+            {t('erp.expenses.title')}
           </h1>
           <p className="text-sm text-white/30 mt-1 ml-11">
-            {isAdmin ? 'Track all income and expenses.' : 'Track your income and expenses.'}
+            {isAdmin ? t('erp.expenses.subtitle') : t('erp.expenses.subtitleEmployee')}
           </p>
         </div>
         {(isAdmin || isEmployee) && (
           <button onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm min-h-[44px]">
-            <Plus className="w-4 h-4" /> New Entry
+            <Plus className="w-4 h-4" /> {t('erp.expenses.newEntry')}
           </button>
         )}
       </div>
@@ -412,10 +433,10 @@ export default function ExpensesPage() {
 
       {/* Date Range Filter */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-        <span className="text-xs font-medium text-white/30">Period:</span>
+        <span className="text-xs font-medium text-white/30">{t('erp.expenses.periodLabel')}</span>
         <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }}
           className="rounded-lg border border-white/10 bg-[#0f0f0f] text-white px-3 py-1.5 text-xs focus:outline-none focus:border-[#fbbf24]/50 transition-all" />
-        <span className="text-xs text-white/25">to</span>
+        <span className="text-xs text-white/25">{t('erp.expenses.periodTo')}</span>
         <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }}
           className="rounded-lg border border-white/10 bg-[#0f0f0f] text-white px-3 py-1.5 text-xs focus:outline-none focus:border-[#fbbf24]/50 transition-all" />
         {(dateFrom || dateTo) && (
@@ -429,18 +450,18 @@ export default function ExpensesPage() {
       {/* Tabs + Search */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          {(['all', 'income', 'expense'] as ActiveTab[]).map(t => (
-            <button key={t} onClick={() => { setActiveTab(t); setPage(1); }}
-              className={cn('px-4 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize',
-                activeTab === t ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
-              {t === 'all' ? 'All Entries' : t === 'income' ? 'Income' : 'Expenses'}
+          {(['all', 'income', 'expense'] as ActiveTab[]).map(tab => (
+            <button key={tab} onClick={() => { setActiveTab(tab); setPage(1); }}
+              className={cn('px-4 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                activeTab === tab ? 'bg-[#fbbf24] text-black shadow-sm' : 'text-white/35 hover:text-white')}>
+              {tab === 'all' ? t('erp.expenses.tabs.all') : tab === 'income' ? t('erp.expenses.tabs.income') : t('erp.expenses.tabs.expense')}
             </button>
           ))}
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
-          <input placeholder="Search category…" value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
+          <input placeholder={t('erp.expenses.searchPlaceholder')} value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
             className="pl-8 pr-4 py-2 rounded-lg border border-white/10 bg-white/[0.04] text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/40 focus:bg-white/[0.06] w-52 transition-all" />
         </div>
       </div>
@@ -452,8 +473,8 @@ export default function ExpensesPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-3">
             <AlertCircle className="w-8 h-8 text-red-400/50 mx-auto" />
-            <p className="text-sm text-white/30">Failed to load entries.</p>
-            <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50 transition-colors">Retry</button>
+            <p className="text-sm text-white/30">{t('erp.expenses.errors.loadFailed')}</p>
+            <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50 transition-colors">{t('erp.expenses.retry')}</button>
           </div>
         </div>
       )}
@@ -464,10 +485,10 @@ export default function ExpensesPage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] mx-auto">
               <DollarSign className="w-7 h-7 text-white/15" />
             </div>
-            <p className="text-sm text-white/30">No entries found.</p>
+            <p className="text-sm text-white/30">{t('erp.expenses.empty')}</p>
             {(isAdmin || isEmployee) && (
               <button onClick={openCreate} className="px-4 py-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 text-[#fbbf24] text-xs font-semibold hover:bg-[#fbbf24]/20 transition-colors">
-                Add first entry
+                {t('erp.expenses.addFirstEntry')}
               </button>
             )}
           </div>
@@ -481,7 +502,7 @@ export default function ExpensesPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-white/30">{data?.total ?? 0} entries · page {page} of {totalPages}</p>
+          <p className="text-xs text-white/30">{t('erp.expenses.paginationEntries', { total: data?.total ?? 0, page, pages: totalPages })}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
