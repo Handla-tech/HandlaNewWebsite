@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import * as compression from 'compression';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { DataSource } from 'typeorm';
@@ -75,6 +77,35 @@ async function bootstrap() {
   const corsOriginEnv = configService.get<string>('SOCKET_CORS_ORIGIN') || 'http://localhost:3000';
   const nodeEnv = configService.get<string>('NODE_ENV') || 'development';
 
+  // ─── Fail-fast on insecure production configuration ─────────────────────────
+  // In production we must NEVER boot with the built-in development fallback
+  // secrets (they are public in the repo). Refuse to start rather than run
+  // with a trivially-forgeable JWT signing key.
+  if (nodeEnv === 'production') {
+    const bootLog = new Logger('Bootstrap');
+    const jwtSecret = configService.get<string>('jwt.secret');
+    const refreshSecret = configService.get<string>('jwt.refreshSecret');
+    const insecure = [
+      ['JWT_SECRET', jwtSecret, 'dev_secret_change_in_prod'],
+      ['JWT_REFRESH_SECRET', refreshSecret, 'dev_refresh_secret_change_in_prod'],
+    ].filter(([, value, fallback]) => !value || value === fallback || String(value).length < 32);
+
+    if (insecure.length > 0) {
+      const names = insecure.map(([n]) => n).join(', ');
+      bootLog.error(
+        `FATAL: refusing to start in production with missing/weak secrets: ${names}. ` +
+          `Set strong (>=32 char) unique values in the environment.`,
+      );
+      process.exit(1);
+    }
+
+    if (!process.env.SAAS_INTERNAL_CALLBACK_SECRET) {
+      bootLog.warn(
+        'SAAS_INTERNAL_CALLBACK_SECRET is not set — product provisioning callbacks will be rejected (fail-closed).',
+      );
+    }
+  }
+
   // In development, accept any localhost port (3000–3010) so the frontend
   // can run on whatever port Next.js picks (3000, 3001, 3002, …)
   const corsOrigin =
@@ -92,12 +123,42 @@ async function bootstrap() {
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   // ─── Security ───────────────────────────────────────────────────────────────
+  const isProd = nodeEnv === 'production';
   app.use(
     helmet({
-      contentSecurityPolicy: nodeEnv === 'production',
-      crossOriginEmbedderPolicy: nodeEnv === 'production',
+      // CSP is disabled in dev because it interferes with the Swagger UI assets;
+      // enabled with a conservative policy in production.
+      contentSecurityPolicy: isProd
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              baseUri: ["'self'"],
+              frameAncestors: ["'none'"],
+              objectSrc: ["'none'"],
+              imgSrc: ["'self'", 'data:', 'https:'],
+              scriptSrc: ["'self'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              connectSrc: ["'self'", 'https:', 'wss:'],
+              upgradeInsecureRequests: [],
+            },
+          }
+        : false,
+      crossOriginEmbedderPolicy: isProd,
+      // Strict-Transport-Security: force HTTPS for a year (incl. subdomains).
+      hsts: isProd
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
+      referrerPolicy: { policy: 'no-referrer' },
     }),
   );
+
+  // Hide the Express fingerprint header.
+  const httpAdapter = app.getHttpAdapter();
+  const instance = httpAdapter.getInstance?.();
+  if (instance?.disable) instance.disable('x-powered-by');
+
+  // ─── Response compression ───────────────────────────────────────────────────
+  app.use(compression());
 
   app.enableCors({
     origin: corsOrigin,
@@ -109,8 +170,21 @@ async function bootstrap() {
   // ─── Cookie Parser ──────────────────────────────────────────────────────────
   app.use(cookieParser());
 
+  // ─── Body size limits (mitigate large-payload DoS) ──────────────────────────
+  // Explicit 1 MB cap on JSON / urlencoded bodies. Endpoints that legitimately
+  // accept larger uploads should use dedicated multipart handling, not the
+  // JSON body parser.
+  const bodyLimit = configService.get<string>('BODY_LIMIT') || '1mb';
+  app.use(json({ limit: bodyLimit }));
+  app.use(urlencoded({ extended: true, limit: bodyLimit }));
+
   // ─── Global Prefix ──────────────────────────────────────────────────────────
   app.setGlobalPrefix('api');
+
+  // ─── Graceful shutdown ──────────────────────────────────────────────────────
+  // Ensures OnApplicationShutdown hooks (e.g. the SaaS ProvisioningWorker
+  // interval, DB pool) are cleaned up on SIGTERM/SIGINT.
+  app.enableShutdownHooks();
 
   // ─── Global Pipes, Filters, Interceptors, Guards ────────────────────────────
   const reflector = app.get(Reflector);

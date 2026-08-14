@@ -9,6 +9,7 @@ import { User } from './entities/user.entity';
 import { SignUpDto } from './dto/signup.dto';
 import { SignInDto } from './dto/signin.dto';
 import { UserRole } from '../../common/enums';
+import { BCRYPT_ROUNDS } from '../../common/constants/security.constants';
 import { EmailAlreadyExistsException, InvalidCredentialsException } from '../../utils/exceptions';
 
 export interface AuthTokens {
@@ -25,7 +26,7 @@ export interface AuthResponse {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly BCRYPT_ROUNDS = 10;
+  private readonly BCRYPT_ROUNDS = BCRYPT_ROUNDS;
 
   constructor(
     @InjectRepository(User)

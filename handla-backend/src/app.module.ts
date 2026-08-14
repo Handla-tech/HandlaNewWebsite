@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
 
 import databaseConfig from './config/database.config';
@@ -133,6 +134,17 @@ import { SaasModule } from './modules/saas/saas.module';
         ],
       }),
     }),
+  ],
+  providers: [
+    // Global rate-limiting. Without this APP_GUARD registration the
+    // ThrottlerModule config and every @Throttle() decorator (e.g. on the
+    // auth login/register endpoints) would be INERT — no brute-force
+    // protection at all. Registering the guard here enforces the default
+    // limit platform-wide and activates all per-route overrides.
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

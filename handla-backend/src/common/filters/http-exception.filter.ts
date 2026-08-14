@@ -17,9 +17,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    const isProd = process.env.NODE_ENV === 'production';
+
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors: any = undefined;
+    // The full, potentially-sensitive message is always logged, but only
+    // surfaced to the client for non-5xx (client-fault) errors.
+    let internalMessage = 'Internal server error';
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -35,19 +40,30 @@ export class AllExceptionsFilter implements ExceptionFilter {
           message = 'Validation failed';
         }
       }
+      internalMessage = Array.isArray(message) ? message.join('; ') : String(message);
     } else if (exception instanceof Error) {
-      message = exception.message;
+      internalMessage = exception.message;
+      // SECURITY: never echo raw runtime/ORM/driver error text to the client
+      // in production — it can leak SQL, file paths, stack context, secrets.
+      // Client only ever sees the generic 500 message.
+      message = isProd ? 'Internal server error' : exception.message;
     }
 
     this.logger.error(
-      `[${request.method}] ${request.url} → ${status}: ${message}`,
+      `[${request.method}] ${request.url} → ${status}: ${internalMessage}`,
       exception instanceof Error ? exception.stack : undefined,
     );
+
+    // For any 5xx in production, force a generic message so we never leak
+    // server internals even if an HttpException was constructed with a
+    // detailed message.
+    const clientMessage =
+      isProd && status >= HttpStatus.INTERNAL_SERVER_ERROR ? 'Internal server error' : message;
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      message,
+      message: clientMessage,
       ...(errors ? { errors } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,

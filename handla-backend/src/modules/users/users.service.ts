@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from '../auth/entities/user.entity';
 import { UserRole, NotificationType } from '../../common/enums';
+import { BCRYPT_ROUNDS } from '../../common/constants/security.constants';
 import { EmailService } from '../email/email.service';
 import { NotificationService } from '../notifications/notification.service';
 import { ClientsService } from '../clients/clients.service';
@@ -134,7 +135,7 @@ export class UsersService {
       throw new EmailAlreadyExistsException(dto.email);
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = this.userRepo.create({
       email: dto.email.toLowerCase(),
       passwordHash,
@@ -224,7 +225,7 @@ export class UsersService {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new ResourceNotFoundException('User', userId);
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     await this.userRepo.save(user);
     this.logger.log(`Password reset for user: ${userId} (${user.email})`);
   }
