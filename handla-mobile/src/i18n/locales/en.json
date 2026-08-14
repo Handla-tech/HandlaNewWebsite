@@ -385,5 +385,30 @@
       "title": "Title must be at least 2 characters.",
       "client": "Client is required."
     }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "all": "All",
+    "empty": "No tasks found.",
+    "unassigned": "Unassigned",
+    "due": "Due {{date}}",
+    "overdue": " • overdue",
+    "newTask": "New Task",
+    "editTask": "Edit Task",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Task title",
+    "descPlaceholder": "Optional description",
+    "project": "Project",
+    "selectProject": "Select a project",
+    "assignee": "Assignee",
+    "dueDate": "Due date",
+    "deleteTitle": "Delete Task",
+    "deleteMessage": "Delete \"{{name}}\"? This cannot be undone.",
+    "errors": {
+      "save": "Failed to save task",
+      "delete": "Failed to delete task",
+      "title": "Title must be at least 2 characters.",
+      "project": "Project is required."
+    }
   }
 }

@@ -18,12 +18,12 @@ import {
   type SelectOption,
   type SheetAction,
 } from '@/components/forms';
-import { statusColor, prettyStatus } from '@/lib/statusMeta';
+import { statusColor, prettyStatusT } from '@/lib/statusMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedTasks, Task, TaskStatus } from '@/types';
 
 const STATUSES: TaskStatus[] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'];
-const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatus(s), value: s }));
 
 const EMPTY: TaskInput = {
   title: '',
@@ -40,7 +40,9 @@ function fmtDate(iso?: string | null) {
 }
 
 export default function TasksScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
+  const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatusT(s, t), value: s }));
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -69,7 +71,7 @@ export default function TasksScreen() {
     queryFn: () => usersApi.list({ limit: 100 }).then((r) => r.data.data.users),
   });
   const assigneeOptions: SelectOption[] = [
-    { label: 'Unassigned', value: '' },
+    { label: t('tasks.unassigned'), value: '' },
     ...(staffList.data ?? [])
       .filter((u) => u.role === 'ADMIN' || u.role === 'EMPLOYEE')
       .map((u) => ({ label: u.name || u.email, value: u.id })),
@@ -92,15 +94,15 @@ export default function TasksScreen() {
     setErr(null);
     setFormOpen(true);
   };
-  const openEdit = (t: Task) => {
-    setEditing(t);
+  const openEdit = (task: Task) => {
+    setEditing(task);
     setForm({
-      title: t.title,
-      description: t.description ?? '',
-      projectId: t.projectId,
-      assigneeId: t.assigneeId ?? '',
-      status: t.status,
-      dueDate: t.dueDate ? t.dueDate.slice(0, 10) : '',
+      title: task.title,
+      description: task.description ?? '',
+      projectId: task.projectId,
+      assigneeId: task.assigneeId ?? '',
+      status: task.status,
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
     });
     setErr(null);
     setFormOpen(true);
@@ -122,7 +124,7 @@ export default function TasksScreen() {
       qc.invalidateQueries({ queryKey: ['tasks-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save task')),
+    onError: (e) => setErr(apiError(e, t('tasks.errors.save'))),
   });
   const del = useMutation({
     mutationFn: (id: string) => tasksApi.remove(id),
@@ -130,11 +132,11 @@ export default function TasksScreen() {
       qc.invalidateQueries({ queryKey: ['tasks-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete task')),
+    onError: (e) => setDeleteErr(apiError(e, t('tasks.errors.delete'))),
   });
   const submit = () => {
-    if (!form.title?.trim() || form.title.trim().length < 2) return setErr('Title must be at least 2 characters.');
-    if (!editing && !form.projectId) return setErr('Project is required.');
+    if (!form.title?.trim() || form.title.trim().length < 2) return setErr(t('tasks.errors.title'));
+    if (!editing && !form.projectId) return setErr(t('tasks.errors.project'));
     setErr(null);
     save.mutate();
   };
@@ -166,7 +168,7 @@ export default function TasksScreen() {
             >
               {item.title}
             </Text>
-            <Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />
+            <Badge label={prettyStatusT(item.status, t)} color={sc.color} soft={sc.soft} />
           </View>
           {item.project?.title ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
@@ -188,8 +190,8 @@ export default function TasksScreen() {
                   fontWeight: overdue ? '700' : '400',
                 }}
               >
-                Due {due}
-                {overdue ? ' • overdue' : ''}
+                {t('tasks.due', { date: due })}
+                {overdue ? t('tasks.overdue') : ''}
               </Text>
             ) : null}
           </View>
@@ -200,7 +202,7 @@ export default function TasksScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Tasks" icon="checkbox-outline" />
+      <GradientHeader title={t('tasks.title')} icon="checkbox-outline" />
 
       <ScrollView
         horizontal
@@ -208,9 +210,9 @@ export default function TasksScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}
         style={{ maxHeight: 44, flexGrow: 0 }}
       >
-        <Chip label="All" active={status === null} onPress={() => setStatus(null)} />
+        <Chip label={t('tasks.all')} active={status === null} onPress={() => setStatus(null)} />
         {STATUSES.map((s) => (
-          <Chip key={s} label={prettyStatus(s)} active={status === s} onPress={() => setStatus(s)} />
+          <Chip key={s} label={prettyStatusT(s, t)} active={status === s} onPress={() => setStatus(s)} />
         ))}
       </ScrollView>
 
@@ -232,7 +234,7 @@ export default function TasksScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="checkbox-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No tasks found.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('tasks.empty')}</Text>
             </View>
           }
         />
@@ -243,47 +245,47 @@ export default function TasksScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Task' : 'New Task'}
+        title={editing ? t('tasks.editTask') : t('tasks.newTask')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Title"
+          label={t('tasks.titleLabel')}
           value={form.title}
-          onChangeText={(t) => setForm((f) => ({ ...f, title: t }))}
-          placeholder="Task title"
+          onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
+          placeholder={t('tasks.titlePlaceholder')}
         />
         <Textarea
-          label="Description"
+          label={t('common.description')}
           value={form.description}
-          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
-          placeholder="Optional description"
+          onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder={t('tasks.descPlaceholder')}
         />
         {!editing ? (
           <Select
-            label="Project"
+            label={t('tasks.project')}
             value={form.projectId}
             options={projectOptions}
             onChange={(v) => setForm((f) => ({ ...f, projectId: v }))}
-            placeholder="Select a project"
+            placeholder={t('tasks.selectProject')}
           />
         ) : null}
         <Select
-          label="Assignee"
+          label={t('tasks.assignee')}
           value={form.assigneeId}
           options={assigneeOptions}
           onChange={(v) => setForm((f) => ({ ...f, assigneeId: v }))}
-          placeholder="Unassigned"
+          placeholder={t('tasks.unassigned')}
         />
         <Select
-          label="Status"
+          label={t('common.status')}
           value={form.status}
           options={STATUS_OPTIONS}
           onChange={(v) => setForm((f) => ({ ...f, status: v as TaskStatus }))}
         />
         <DateField
-          label="Due date"
+          label={t('tasks.dueDate')}
           value={form.dueDate}
           onChange={(v) => setForm((f) => ({ ...f, dueDate: v }))}
         />
@@ -295,25 +297,25 @@ export default function TasksScreen() {
         title={sheetFor?.title}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
-              const t = sheetFor;
+              const task = sheetFor;
               setSheetFor(null);
-              if (t) openEdit(t);
+              if (task) openEdit(task);
             },
           },
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('common.delete'),
                   icon: 'trash-outline',
                   destructive: true,
                   onPress: () => {
-                    const t = sheetFor;
+                    const task = sheetFor;
                     setSheetFor(null);
                     setDeleteErr(null);
-                    if (t) setDeleteFor(t);
+                    if (task) setDeleteFor(task);
                   },
                 },
               ]
@@ -325,9 +327,9 @@ export default function TasksScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Task"
-        message={`Delete "${deleteFor?.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('tasks.deleteTitle')}
+        message={t('tasks.deleteMessage', { name: deleteFor?.title ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}
