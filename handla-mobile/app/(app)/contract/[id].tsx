@@ -3,9 +3,11 @@ import { View, Text, ScrollView, Alert, Linking } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { contractsApi } from '@/lib/endpoints';
+import { contractsApi, type ContractInput } from '@/lib/endpoints';
+import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
+import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/ui';
+import { FormModal, Textarea } from '@/components/forms';
 import { CONTRACT_STATUS_META, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Contract } from '@/types';
@@ -58,6 +60,39 @@ export default function ContractDetailScreen() {
 
   const isAdmin = useAuthStore((s) => s.isAdmin());
 
+  // ─── Edit (DRAFT only) ──────────────────────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false);
+  const [editErr, setEditErr] = useState<string | null>(null);
+  const [eTitle, setETitle] = useState('');
+  const [eBody, setEBody] = useState('');
+
+  const openEdit = () => {
+    if (!c) return;
+    setETitle(c.title);
+    setEBody(c.body ?? '');
+    setEditErr(null);
+    setEditOpen(true);
+  };
+
+  const edit = useMutation({
+    mutationFn: () => {
+      const payload: ContractInput = { title: eTitle.trim(), body: eBody.trim() };
+      return contractsApi.update(contractId, payload);
+    },
+    onSuccess: () => {
+      invalidate();
+      setEditOpen(false);
+    },
+    onError: (e) => setEditErr(apiError(e, 'Failed to save changes')),
+  });
+
+  const submitEdit = () => {
+    if (eTitle.trim().length < 2) return setEditErr('Title must be at least 2 characters.');
+    if (eBody.trim().length < 1) return setEditErr('Contract body is required.');
+    setEditErr(null);
+    edit.mutate();
+  };
+
   const confirmReject = () =>
     Alert.alert('Reject contract?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -90,6 +125,7 @@ export default function ContractDetailScreen() {
 
   const canRespond = isClient && c?.status === 'SENT';
   const canSend = isStaff && c?.status === 'DRAFT';
+  const canEdit = isStaff && c?.status === 'DRAFT';
   const canDelete = isAdmin && c?.status === 'DRAFT';
 
   return (
@@ -152,8 +188,11 @@ export default function ContractDetailScreen() {
           )}
 
           {/* Staff workflow actions */}
-          {isStaff && (canSend || canDelete) && (
+          {isStaff && (canSend || canDelete || canEdit) && (
             <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+              {canEdit && (
+                <Button title="Edit contract" variant="ghost" onPress={openEdit} />
+              )}
               {canSend && (
                 <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
               )}
@@ -169,6 +208,23 @@ export default function ContractDetailScreen() {
           )}
         </ScrollView>
       )}
+
+      <FormModal
+        visible={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Contract"
+        onSubmit={submitEdit}
+        submitting={edit.isPending}
+        error={editErr ?? undefined}
+      >
+        <Input label="Title" value={eTitle} onChangeText={setETitle} placeholder="Contract title" />
+        <Textarea
+          label="Contract body"
+          value={eBody}
+          onChangeText={setEBody}
+          placeholder="Terms and conditions…"
+        />
+      </FormModal>
     </SafeAreaView>
   );
 }

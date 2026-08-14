@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { quotationsApi } from '@/lib/endpoints';
+import { quotationsApi, type QuotationInput, type LineItemInput } from '@/lib/endpoints';
+import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
+import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/ui';
+import { FormModal, Textarea, DateField } from '@/components/forms';
+import { LineItemsEditor } from '@/components/LineItemsEditor';
 import { QUOTATION_STATUS_META, money, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Quotation, LineItem } from '@/types';
@@ -64,6 +67,70 @@ export default function QuotationDetailScreen() {
       Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
   });
 
+  // ─── Edit (DRAFT only) ──────────────────────────────────────────────────────
+  const [editOpen, setEditOpen] = useState(false);
+  const [editErr, setEditErr] = useState<string | null>(null);
+  const [eTitle, setETitle] = useState('');
+  const [eItems, setEItems] = useState<LineItemInput[]>([]);
+  const [eTax, setETax] = useState('0');
+  const [eCurrency, setECurrency] = useState('SEK');
+  const [eValidUntil, setEValidUntil] = useState('');
+  const [eNotes, setENotes] = useState('');
+
+  const openEdit = () => {
+    if (!q) return;
+    setETitle(q.title);
+    setEItems(
+      (q.lineItems ?? []).map((li) => ({
+        description: li.description,
+        quantity: li.quantity,
+        unitPrice: li.unitPrice,
+      })),
+    );
+    setETax(String(q.taxRate ?? 0));
+    setECurrency(q.currency ?? 'SEK');
+    setEValidUntil(q.validUntil ? q.validUntil.slice(0, 10) : '');
+    setENotes(q.notes ?? '');
+    setEditErr(null);
+    setEditOpen(true);
+  };
+
+  const cleanItems = () =>
+    eItems
+      .map((li) => ({
+        description: li.description.trim(),
+        quantity: Number(li.quantity) || 0,
+        unitPrice: Number(li.unitPrice) || 0,
+      }))
+      .filter((li) => li.description && li.quantity > 0);
+
+  const edit = useMutation({
+    mutationFn: () => {
+      const payload: QuotationInput = {
+        title: eTitle.trim(),
+        lineItems: cleanItems(),
+        taxRate: Number(eTax) || 0,
+        currency: eCurrency.trim() || undefined,
+        validUntil: eValidUntil.trim() || undefined,
+        notes: eNotes.trim() || undefined,
+      };
+      return quotationsApi.update(quotationId, payload);
+    },
+    onSuccess: () => {
+      invalidate();
+      setEditOpen(false);
+    },
+    onError: (e) => setEditErr(apiError(e, 'Failed to save changes')),
+  });
+
+  const submitEdit = () => {
+    if (eTitle.trim().length < 2) return setEditErr('Title must be at least 2 characters.');
+    if (cleanItems().length === 0)
+      return setEditErr('Add at least one line item (description + quantity).');
+    setEditErr(null);
+    edit.mutate();
+  };
+
   const confirmReject = () =>
     Alert.alert('Reject quotation?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -88,6 +155,7 @@ export default function QuotationDetailScreen() {
   const canRespond = q?.status === 'SENT';
   const isAdmin = useAuthStore.getState().isAdmin();
   const canSend = isStaff && q?.status === 'DRAFT';
+  const canEdit = isStaff && q?.status === 'DRAFT';
   const canConvert = isStaff && q?.status === 'ACCEPTED' && !q?.convertedInvoiceId;
   const canDelete = isAdmin && q?.status !== 'CONVERTED';
   const cur = q?.currency;
@@ -191,6 +259,9 @@ export default function QuotationDetailScreen() {
           {/* Staff workflow actions */}
           {isStaff && (
             <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+              {canEdit && (
+                <Button title="Edit quotation" variant="ghost" onPress={openEdit} />
+              )}
               {canSend && (
                 <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
               )}
@@ -213,6 +284,35 @@ export default function QuotationDetailScreen() {
           )}
         </ScrollView>
       )}
+
+      <FormModal
+        visible={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Quotation"
+        subtitle={q?.quoteNumber}
+        onSubmit={submitEdit}
+        submitting={edit.isPending}
+        error={editErr ?? undefined}
+      >
+        <Input label="Title" value={eTitle} onChangeText={setETitle} placeholder="Document title" />
+        <LineItemsEditor items={eItems} onChange={setEItems} />
+        <Input
+          label="Tax rate (%)"
+          value={eTax}
+          onChangeText={setETax}
+          placeholder="0"
+          keyboardType="decimal-pad"
+        />
+        <Input
+          label="Currency"
+          value={eCurrency}
+          onChangeText={setECurrency}
+          placeholder="SEK"
+          autoCapitalize="characters"
+        />
+        <DateField label="Valid until" value={eValidUntil} onChange={setEValidUntil} />
+        <Textarea label="Notes" value={eNotes} onChangeText={setENotes} placeholder="Optional" />
+      </FormModal>
     </SafeAreaView>
   );
 }
