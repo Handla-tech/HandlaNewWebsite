@@ -4,8 +4,9 @@ module.exports = function (api) {
     // babel-preset-expo handles expo-router transforms in SDK 50+.
     presets: ['babel-preset-expo'],
     plugins: [
-      // Reanimated plugin must be listed last.
-      'react-native-reanimated/plugin',
+      // Reanimated 4 moved its Babel plugin into react-native-worklets.
+      // This plugin must be listed last.
+      'react-native-worklets/plugin',
     ],
   };
 };

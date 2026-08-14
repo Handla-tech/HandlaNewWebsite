@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "scheme": "handla",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#0a0a0a",
       "resizeMode": "contain"
