@@ -2555,6 +2555,61 @@
         "descriptionMin": "يجب ألا يقل الوصف عن 10 أحرف",
         "invalidUrl": "يجب أن يكون رابطاً صالحاً"
       }
+    },
+    "webProjects": {
+      "title": "مشاريع الموقع",
+      "totalBadge": "{{total}} إجمالي",
+      "subtitle": "معرض الأعمال / دراسات الحالة المعروضة على الموقع العام. منفصلة عن مشاريع التسليم في نظام تخطيط الموارد.",
+      "addProject": "إضافة مشروع",
+      "searchPlaceholder": "ابحث بالعنوان أو العميل أو الفئة…",
+      "loadError": "فشل تحميل المشاريع",
+      "emptySearch": "لا توجد مشاريع تطابق بحثك",
+      "empty": "لا توجد مشاريع للموقع بعد",
+      "addFirst": "أضف مشروعك الأول",
+      "featured": "مميّز",
+      "toast": {
+        "deleted": "تم حذف المشروع.",
+        "updated": "تم تحديث المشروع.",
+        "added": "تمت إضافة المشروع."
+      },
+      "modal": {
+        "titleEdit": "تعديل المشروع",
+        "titleAdd": "إضافة مشروع",
+        "title": "العنوان *",
+        "titlePlaceholder": "TechFlow SaaS Platform",
+        "clientName": "العميل / الشركة",
+        "clientNamePlaceholder": "TechFlow (اختياري)",
+        "summary": "ملخص (سطر واحد)",
+        "summaryPlaceholder": "شعار قصير يظهر على البطاقات",
+        "description": "الوصف *",
+        "descriptionPlaceholder": "وصف كامل للمشروع…",
+        "category": "الفئة",
+        "categoryPlaceholder": "SaaS، ERP، تطبيقات…",
+        "sortOrder": "ترتيب العرض",
+        "tags": "الوسوم (مفصولة بفواصل)",
+        "tagsPlaceholder": "Next.js, NestJS, MySQL",
+        "projectUrl": "رابط المشروع",
+        "urlPlaceholder": "https://… (اختياري)",
+        "imageUrl": "رابط صورة الغلاف",
+        "preview": "معاينة",
+        "featuredOn": "مميّز في الصفحة الرئيسية",
+        "notFeatured": "غير مميّز",
+        "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        "saveChanges": "حفظ التغييرات"
+      },
+      "delete": {
+        "title": "حذف المشروع؟",
+        "body": "سيؤدي هذا إلى إزالة {{name}} نهائيًا. لا يمكن التراجع عن هذا الإجراء."
+      },
+      "card": {
+        "editAria": "تعديل {{title}}",
+        "deleteAria": "حذف {{title}}"
+      },
+      "validation": {
+        "titleRequired": "العنوان مطلوب",
+        "descriptionMin": "يجب أن يكون الوصف 10 أحرف على الأقل",
+        "invalidUrl": "يجب أن يكون رابطًا صالحًا"
+      }
     }
   },
   "footer": {

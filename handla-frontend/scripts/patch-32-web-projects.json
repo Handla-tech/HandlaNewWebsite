@@ -1,0 +1,120 @@
+{
+  "en": {
+    "erp": {
+      "webProjects": {
+        "title": "Website Projects",
+        "totalBadge": "{{total}} total",
+        "subtitle": "Portfolio / case studies shown on the public website. Separate from ERP delivery projects.",
+        "addProject": "Add Project",
+        "searchPlaceholder": "Search by title, client or category…",
+        "loadError": "Failed to load projects",
+        "emptySearch": "No projects match your search",
+        "empty": "No website projects yet",
+        "addFirst": "Add your first project",
+        "featured": "Featured",
+        "toast": {
+          "deleted": "Project deleted.",
+          "updated": "Project updated.",
+          "added": "Project added."
+        },
+        "modal": {
+          "titleEdit": "Edit Project",
+          "titleAdd": "Add Project",
+          "title": "Title *",
+          "titlePlaceholder": "TechFlow SaaS Platform",
+          "clientName": "Client / Company",
+          "clientNamePlaceholder": "TechFlow (optional)",
+          "summary": "Summary (one line)",
+          "summaryPlaceholder": "Short tagline shown on cards",
+          "description": "Description *",
+          "descriptionPlaceholder": "Full project description…",
+          "category": "Category",
+          "categoryPlaceholder": "SaaS, ERP, Mobile…",
+          "sortOrder": "Sort order",
+          "tags": "Tags (comma-separated)",
+          "tagsPlaceholder": "Next.js, NestJS, MySQL",
+          "projectUrl": "Project URL",
+          "urlPlaceholder": "https://… (optional)",
+          "imageUrl": "Cover Image URL",
+          "preview": "preview",
+          "featuredOn": "Featured on landing page",
+          "notFeatured": "Not featured",
+          "genericError": "Something went wrong. Please try again.",
+          "saveChanges": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Project?",
+          "body": "This will permanently remove {{name}}. This action cannot be undone."
+        },
+        "card": {
+          "editAria": "Edit {{title}}",
+          "deleteAria": "Delete {{title}}"
+        },
+        "validation": {
+          "titleRequired": "Title is required",
+          "descriptionMin": "Description must be at least 10 characters",
+          "invalidUrl": "Must be a valid URL"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "webProjects": {
+        "title": "مشاريع الموقع",
+        "totalBadge": "{{total}} إجمالي",
+        "subtitle": "معرض الأعمال / دراسات الحالة المعروضة على الموقع العام. منفصلة عن مشاريع التسليم في نظام تخطيط الموارد.",
+        "addProject": "إضافة مشروع",
+        "searchPlaceholder": "ابحث بالعنوان أو العميل أو الفئة…",
+        "loadError": "فشل تحميل المشاريع",
+        "emptySearch": "لا توجد مشاريع تطابق بحثك",
+        "empty": "لا توجد مشاريع للموقع بعد",
+        "addFirst": "أضف مشروعك الأول",
+        "featured": "مميّز",
+        "toast": {
+          "deleted": "تم حذف المشروع.",
+          "updated": "تم تحديث المشروع.",
+          "added": "تمت إضافة المشروع."
+        },
+        "modal": {
+          "titleEdit": "تعديل المشروع",
+          "titleAdd": "إضافة مشروع",
+          "title": "العنوان *",
+          "titlePlaceholder": "TechFlow SaaS Platform",
+          "clientName": "العميل / الشركة",
+          "clientNamePlaceholder": "TechFlow (اختياري)",
+          "summary": "ملخص (سطر واحد)",
+          "summaryPlaceholder": "شعار قصير يظهر على البطاقات",
+          "description": "الوصف *",
+          "descriptionPlaceholder": "وصف كامل للمشروع…",
+          "category": "الفئة",
+          "categoryPlaceholder": "SaaS، ERP، تطبيقات…",
+          "sortOrder": "ترتيب العرض",
+          "tags": "الوسوم (مفصولة بفواصل)",
+          "tagsPlaceholder": "Next.js, NestJS, MySQL",
+          "projectUrl": "رابط المشروع",
+          "urlPlaceholder": "https://… (اختياري)",
+          "imageUrl": "رابط صورة الغلاف",
+          "preview": "معاينة",
+          "featuredOn": "مميّز في الصفحة الرئيسية",
+          "notFeatured": "غير مميّز",
+          "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+          "saveChanges": "حفظ التغييرات"
+        },
+        "delete": {
+          "title": "حذف المشروع؟",
+          "body": "سيؤدي هذا إلى إزالة {{name}} نهائيًا. لا يمكن التراجع عن هذا الإجراء."
+        },
+        "card": {
+          "editAria": "تعديل {{title}}",
+          "deleteAria": "حذف {{title}}"
+        },
+        "validation": {
+          "titleRequired": "العنوان مطلوب",
+          "descriptionMin": "يجب أن يكون الوصف 10 أحرف على الأقل",
+          "invalidUrl": "يجب أن يكون رابطًا صالحًا"
+        }
+      }
+    }
+  }
+}

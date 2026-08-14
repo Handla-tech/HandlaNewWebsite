@@ -20,26 +20,29 @@ import {
   RefreshCw, ImageIcon, CheckCircle2, Search, ChevronLeft, ChevronRight, Star,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { websiteProjectApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { WebsiteProject } from '@/types';
 
+type TFn = (key: string, params?: Record<string, any>) => string;
+
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  title:       z.string().min(2, 'Title is required'),
+const makeSchema = (t: TFn) => z.object({
+  title:       z.string().min(2, t('erp.webProjects.validation.titleRequired')),
   clientName:  z.string().optional(),
   summary:     z.string().optional(),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  description: z.string().min(10, t('erp.webProjects.validation.descriptionMin')),
   category:    z.string().optional(),
-  imageUrl:    z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  projectUrl:  z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  imageUrl:    z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
+  projectUrl:  z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
   tagsCsv:     z.string().optional(),
   featured:    z.boolean(),
   sortOrder:   z.number().min(0),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof makeSchema>>;
 
 const PAGE_SIZE = 12;
 const QUERY_KEY = 'erp-website-projects';
@@ -71,6 +74,7 @@ function ProjectModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const isEdit = !!initial;
 
   useEffect(() => {
@@ -83,7 +87,7 @@ function ProjectModal({
     register, handleSubmit, setValue, watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema(t)),
     defaultValues: {
       title:       initial?.title       ?? '',
       clientName:  initial?.clientName  ?? '',
@@ -128,7 +132,7 @@ function ProjectModal({
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         (err instanceof Error ? err.message : null) ||
-        'Something went wrong. Please try again.';
+        t('erp.webProjects.modal.genericError');
       setSubmitError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
   };
@@ -148,9 +152,9 @@ function ProjectModal({
         <div className="flex items-center justify-between border-b border-[#1e1e1e] px-5 py-4">
           <div className="flex items-center gap-2">
             <FolderGit2 className="h-4 w-4 text-[#fbbf24]" />
-            <h2 className="text-sm font-semibold text-white">{isEdit ? 'Edit Project' : 'Add Project'}</h2>
+            <h2 className="text-sm font-semibold text-white">{isEdit ? t('erp.webProjects.modal.titleEdit') : t('erp.webProjects.modal.titleAdd')}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog"
+          <button type="button" onClick={onClose} aria-label={t('erp.ui.closeDialog')}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-[#555] transition-colors hover:bg-[#1e1e1e] hover:text-white">
             <X className="h-4 w-4" />
           </button>
@@ -158,45 +162,45 @@ function ProjectModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="max-h-[72vh] space-y-4 overflow-y-auto px-5 py-5">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Title *" error={errors.title?.message}>
+            <Field label={t('erp.webProjects.modal.title')} error={errors.title?.message}>
               <input {...register('title')} placeholder="TechFlow SaaS Platform" className={inputClass} />
             </Field>
-            <Field label="Client / Company" error={errors.clientName?.message}>
-              <input {...register('clientName')} placeholder="TechFlow (optional)" className={inputClass} />
+            <Field label={t('erp.webProjects.modal.clientName')} error={errors.clientName?.message}>
+              <input {...register('clientName')} placeholder={t('erp.webProjects.modal.clientNamePlaceholder')} className={inputClass} />
             </Field>
           </div>
 
-          <Field label="Summary (one line)" error={errors.summary?.message}>
-            <input {...register('summary')} placeholder="Short tagline shown on cards" className={inputClass} />
+          <Field label={t('erp.webProjects.modal.summary')} error={errors.summary?.message}>
+            <input {...register('summary')} placeholder={t('erp.webProjects.modal.summaryPlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label="Description *" error={errors.description?.message}>
-            <textarea {...register('description')} rows={4} placeholder="Full project description…" className={cn(inputClass, 'resize-none')} />
+          <Field label={t('erp.webProjects.modal.description')} error={errors.description?.message}>
+            <textarea {...register('description')} rows={4} placeholder={t('erp.webProjects.modal.descriptionPlaceholder')} className={cn(inputClass, 'resize-none')} />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Category" error={errors.category?.message}>
-              <input {...register('category')} placeholder="SaaS, ERP, Mobile…" className={inputClass} />
+            <Field label={t('erp.webProjects.modal.category')} error={errors.category?.message}>
+              <input {...register('category')} placeholder={t('erp.webProjects.modal.categoryPlaceholder')} className={inputClass} />
             </Field>
-            <Field label="Sort order" error={errors.sortOrder?.message}>
+            <Field label={t('erp.webProjects.modal.sortOrder')} error={errors.sortOrder?.message}>
               <input type="number" {...register('sortOrder', { valueAsNumber: true })} className={inputClass} />
             </Field>
           </div>
 
-          <Field label="Tags (comma-separated)" error={errors.tagsCsv?.message}>
+          <Field label={t('erp.webProjects.modal.tags')} error={errors.tagsCsv?.message}>
             <input {...register('tagsCsv')} placeholder="Next.js, NestJS, MySQL" className={inputClass} />
           </Field>
 
-          <Field label="Project URL" error={errors.projectUrl?.message}>
-            <input {...register('projectUrl')} placeholder="https://… (optional)" className={inputClass} />
+          <Field label={t('erp.webProjects.modal.projectUrl')} error={errors.projectUrl?.message}>
+            <input {...register('projectUrl')} placeholder={t('erp.webProjects.modal.urlPlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label="Cover Image URL" error={errors.imageUrl?.message}>
+          <Field label={t('erp.webProjects.modal.imageUrl')} error={errors.imageUrl?.message}>
             <div className="flex gap-2">
-              <input {...register('imageUrl')} placeholder="https://… (optional)" className={cn(inputClass, 'flex-1')} />
+              <input {...register('imageUrl')} placeholder={t('erp.webProjects.modal.urlPlaceholder')} className={cn(inputClass, 'flex-1')} />
               {imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={imageUrl} alt="preview"
+                <img src={imageUrl} alt={t('erp.webProjects.modal.preview')}
                   className="h-10 w-10 flex-shrink-0 rounded-lg border border-[#2a2a2a] object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               ) : (
@@ -210,7 +214,7 @@ function ProjectModal({
           <button type="button" onClick={() => setValue('featured', !featured, { shouldValidate: true })}
             className="flex items-center gap-2 rounded-xl border border-[#2a2a2a] bg-[#141414] px-3 py-2.5 text-xs font-medium text-[#aaa] transition-all hover:text-white">
             <Star className={cn('h-4 w-4', featured ? 'fill-[#fbbf24] text-[#fbbf24]' : 'text-[#555]')} />
-            {featured ? 'Featured on landing page' : 'Not featured'}
+            {featured ? t('erp.webProjects.modal.featuredOn') : t('erp.webProjects.modal.notFeatured')}
           </button>
 
           {submitError && (
@@ -223,12 +227,12 @@ function ProjectModal({
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose}
               className="rounded-xl border border-[#2a2a2a] bg-[#141414] px-4 py-2 text-xs font-medium text-[#aaa] transition-all hover:text-white">
-              Cancel
+              {t('erp.common.cancel')}
             </button>
             <button type="submit" disabled={isSubmitting}
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20 disabled:cursor-wait disabled:opacity-60">
               {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {isEdit ? 'Save Changes' : 'Add Project'}
+              {isEdit ? t('erp.webProjects.modal.saveChanges') : t('erp.webProjects.modal.titleAdd')}
             </button>
           </div>
         </form>
@@ -242,6 +246,7 @@ function ProjectModal({
 function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
   name: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
     document.addEventListener('keydown', onKey);
@@ -258,19 +263,19 @@ function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
           <Trash2 className="h-5 w-5 text-red-400" />
         </div>
-        <h3 className="mt-4 text-sm font-semibold text-white">Delete Project?</h3>
+        <h3 className="mt-4 text-sm font-semibold text-white">{t('erp.webProjects.delete.title')}</h3>
         <p className="mt-1.5 text-xs text-[#666]">
-          This will permanently remove <span className="text-white">{name}</span>. This action cannot be undone.
+          {t('erp.webProjects.delete.body', { name })}
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onCancel}
             className="rounded-xl border border-[#2a2a2a] bg-[#141414] px-4 py-2 text-xs font-medium text-[#aaa] hover:text-white">
-            Cancel
+            {t('erp.common.cancel')}
           </button>
           <button type="button" onClick={onConfirm} disabled={isDeleting}
             className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-60">
             {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Delete
+            {t('erp.common.delete')}
           </button>
         </div>
       </motion.div>
@@ -281,15 +286,16 @@ function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
 function ProjectRow({ p, onEdit, onDelete }: { p: WebsiteProject; onEdit: () => void; onDelete: () => void }) {
+  const { t } = useTranslation();
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0f0f0f] transition-all hover:border-white/[0.12] hover:bg-[#131313]">
       <div className="absolute right-3 top-3 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button type="button" onClick={onEdit} aria-label={`Edit ${p.title}`}
+        <button type="button" onClick={onEdit} aria-label={t('erp.webProjects.card.editAria', { title: p.title })}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]/90 text-[#666] transition-all hover:border-[#fbbf24]/30 hover:text-[#fbbf24]">
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button type="button" onClick={onDelete} aria-label={`Delete ${p.title}`}
+        <button type="button" onClick={onDelete} aria-label={t('erp.webProjects.card.deleteAria', { title: p.title })}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]/90 text-[#666] transition-all hover:border-red-500/30 hover:text-red-400">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -307,7 +313,7 @@ function ProjectRow({ p, onEdit, onDelete }: { p: WebsiteProject; onEdit: () => 
         )}
         {p.featured && (
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-[#fbbf24] backdrop-blur-sm">
-            <Star className="h-2.5 w-2.5 fill-[#fbbf24]" /> Featured
+            <Star className="h-2.5 w-2.5 fill-[#fbbf24]" /> {t('erp.webProjects.featured')}
           </span>
         )}
       </div>
@@ -332,6 +338,7 @@ function ProjectRow({ p, onEdit, onDelete }: { p: WebsiteProject; onEdit: () => 
 
 export default function WebsiteProjectsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user: me, isAdmin, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
@@ -375,7 +382,7 @@ export default function WebsiteProjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       setDeleteTarget(null);
-      showSuccess('Project deleted.');
+      showSuccess(t('erp.webProjects.toast.deleted'));
     },
   });
 
@@ -393,8 +400,8 @@ export default function WebsiteProjectsPage() {
     setModalOpen(false);
     editTargetRef.current = null;
     setEditTarget(null);
-    showSuccess(wasEditing ? 'Project updated.' : 'Project added.');
-  }, [queryClient, showSuccess]);
+    showSuccess(wasEditing ? t('erp.webProjects.toast.updated') : t('erp.webProjects.toast.added'));
+  }, [queryClient, showSuccess, t]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -403,13 +410,13 @@ export default function WebsiteProjectsPage() {
           <div>
             <div className="flex items-center gap-2">
               <FolderGit2 className="h-5 w-5 text-[#fbbf24]" />
-              <h1 className="text-base font-semibold text-white">Website Projects</h1>
+              <h1 className="text-base font-semibold text-white">{t('erp.webProjects.title')}</h1>
               <span className="rounded-full border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-2 py-0.5 text-[10px] text-[#fbbf24]">
-                {total} total
+                {t('erp.webProjects.totalBadge', { total })}
               </span>
             </div>
             <p className="mt-0.5 text-xs text-[#555]">
-              Portfolio / case studies shown on the public website. Separate from ERP delivery projects.
+              {t('erp.webProjects.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -419,7 +426,7 @@ export default function WebsiteProjectsPage() {
             </button>
             <button type="button" onClick={handleOpenCreate}
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20">
-              <Plus className="h-3.5 w-3.5" /> Add Project
+              <Plus className="h-3.5 w-3.5" /> {t('erp.webProjects.addProject')}
             </button>
           </div>
         </div>
@@ -427,7 +434,7 @@ export default function WebsiteProjectsPage() {
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#555]" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title, client or category…"
+            placeholder={t('erp.webProjects.searchPlaceholder')}
             className="w-full rounded-xl border border-[#2a2a2a] bg-[#141414] py-2 pl-8 pr-8 text-xs text-white placeholder-[#555] outline-none focus:border-[#fbbf24]/40 focus:ring-1 focus:ring-[#fbbf24]/20" />
           {search && (
             <button type="button" onClick={() => setSearch('')}
@@ -455,9 +462,9 @@ export default function WebsiteProjectsPage() {
         {isError && (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <AlertCircle className="h-8 w-8 text-red-400" />
-            <p className="text-sm text-[#666]">Failed to load projects</p>
+            <p className="text-sm text-[#666]">{t('erp.webProjects.loadError')}</p>
             <button type="button" onClick={() => refetch()}
-              className="rounded-xl border border-[#2a2a2a] px-3 py-1.5 text-xs text-[#aaa] hover:text-white">Retry</button>
+              className="rounded-xl border border-[#2a2a2a] px-3 py-1.5 text-xs text-[#aaa] hover:text-white">{t('erp.common.retry')}</button>
           </div>
         )}
         {!isLoading && !isError && filtered.length === 0 && (
@@ -465,11 +472,11 @@ export default function WebsiteProjectsPage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#141414]">
               <FolderGit2 className="h-6 w-6 text-[#555]" />
             </div>
-            <p className="text-sm font-medium text-[#666]">{search ? 'No projects match your search' : 'No website projects yet'}</p>
+            <p className="text-sm font-medium text-[#666]">{search ? t('erp.webProjects.emptySearch') : t('erp.webProjects.empty')}</p>
             {!search && (
               <button type="button" onClick={handleOpenCreate}
                 className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-3 py-2 text-xs font-semibold text-[#fbbf24] hover:bg-[#fbbf24]/10">
-                <Plus className="h-3.5 w-3.5" /> Add your first project
+                <Plus className="h-3.5 w-3.5" /> {t('erp.webProjects.addFirst')}
               </button>
             )}
           </div>

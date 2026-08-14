@@ -2555,6 +2555,61 @@
         "descriptionMin": "Description must be at least 10 characters",
         "invalidUrl": "Must be a valid URL"
       }
+    },
+    "webProjects": {
+      "title": "Website Projects",
+      "totalBadge": "{{total}} total",
+      "subtitle": "Portfolio / case studies shown on the public website. Separate from ERP delivery projects.",
+      "addProject": "Add Project",
+      "searchPlaceholder": "Search by title, client or category…",
+      "loadError": "Failed to load projects",
+      "emptySearch": "No projects match your search",
+      "empty": "No website projects yet",
+      "addFirst": "Add your first project",
+      "featured": "Featured",
+      "toast": {
+        "deleted": "Project deleted.",
+        "updated": "Project updated.",
+        "added": "Project added."
+      },
+      "modal": {
+        "titleEdit": "Edit Project",
+        "titleAdd": "Add Project",
+        "title": "Title *",
+        "titlePlaceholder": "TechFlow SaaS Platform",
+        "clientName": "Client / Company",
+        "clientNamePlaceholder": "TechFlow (optional)",
+        "summary": "Summary (one line)",
+        "summaryPlaceholder": "Short tagline shown on cards",
+        "description": "Description *",
+        "descriptionPlaceholder": "Full project description…",
+        "category": "Category",
+        "categoryPlaceholder": "SaaS, ERP, Mobile…",
+        "sortOrder": "Sort order",
+        "tags": "Tags (comma-separated)",
+        "tagsPlaceholder": "Next.js, NestJS, MySQL",
+        "projectUrl": "Project URL",
+        "urlPlaceholder": "https://… (optional)",
+        "imageUrl": "Cover Image URL",
+        "preview": "preview",
+        "featuredOn": "Featured on landing page",
+        "notFeatured": "Not featured",
+        "genericError": "Something went wrong. Please try again.",
+        "saveChanges": "Save Changes"
+      },
+      "delete": {
+        "title": "Delete Project?",
+        "body": "This will permanently remove {{name}}. This action cannot be undone."
+      },
+      "card": {
+        "editAria": "Edit {{title}}",
+        "deleteAria": "Delete {{title}}"
+      },
+      "validation": {
+        "titleRequired": "Title is required",
+        "descriptionMin": "Description must be at least 10 characters",
+        "invalidUrl": "Must be a valid URL"
+      }
     }
   },
   "footer": {
