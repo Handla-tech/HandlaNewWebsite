@@ -1,0 +1,76 @@
+import 'react-native-gesture-handler';
+import React, { useEffect } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { View } from 'react-native';
+import { useAuthStore } from '@/store/authStore';
+import { Loading } from '@/components/ui';
+import { colors } from '@/theme';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 15_000, refetchOnWindowFocus: false },
+  },
+});
+
+/**
+ * Auth gate: redirects between the (auth) and (app) route groups based on the
+ * authentication status. Runs after bootstrap so we don't flash the login
+ * screen for an already-signed-in user.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const status = useAuthStore((s) => s.status);
+  const bootstrap = useAuthStore((s) => s.bootstrap);
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    bootstrap();
+  }, [bootstrap]);
+
+  useEffect(() => {
+    if (status === 'idle' || status === 'loading') return;
+    const inAuthGroup = segments[0] === '(auth)';
+    if (status === 'authenticated' && inAuthGroup) {
+      router.replace('/(app)/dashboard');
+    } else if (status === 'unauthenticated' && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    }
+  }, [status, segments, router]);
+
+  if (status === 'idle' || status === 'loading') {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <Loading />
+      </View>
+    );
+  }
+  return <>{children}</>;
+}
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="light" />
+          <AuthGate>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.bg },
+                animation: 'fade',
+              }}
+            >
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(app)" />
+            </Stack>
+          </AuthGate>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}
