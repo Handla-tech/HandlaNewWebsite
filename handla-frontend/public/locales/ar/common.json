@@ -710,7 +710,8 @@
         "pending": "قيد الانتظار",
         "inProgress": "قيد التنفيذ",
         "completed": "مكتملة",
-        "delayed": "متأخرة"
+        "delayed": "متأخرة",
+        "inProgressFilter": "قيد التنفيذ"
       },
       "status": {
         "PENDING": "قيد الانتظار",
@@ -741,12 +742,20 @@
         "createTitle": "مهمة جديدة",
         "editTitle": "تعديل المهمة",
         "deleteTitle": "حذف المهمة",
-        "deleteMessage": "هل أنت متأكد من حذف «{title}»؟ لا يمكن التراجع عن هذا الإجراء.",
+        "deleteMessage": "هل أنت متأكد من حذف «{{title}}»؟ لا يمكن التراجع عن هذا الإجراء.",
         "createSubmit": "إنشاء المهمة",
         "editSubmit": "حفظ التغييرات",
         "creating": "جارٍ الإنشاء…",
         "saving": "جارٍ الحفظ…",
-        "deleting": "جارٍ الحذف…"
+        "deleting": "جارٍ الحذف…",
+        "titleLabel": "العنوان *",
+        "titlePlaceholder": "عنوان المهمة",
+        "projectLabel": "المشروع *",
+        "projectPlaceholder": "اختر مشروعًا...",
+        "descriptionLabel": "الوصف",
+        "descriptionPlaceholder": "وصف المهمة (اختياري)",
+        "statusLabel": "الحالة",
+        "dueDateLabel": "تاريخ الاستحقاق"
       },
       "views": {
         "table": "جدول",
@@ -770,7 +779,22 @@
         "metadata": "تفاصيل المهمة",
         "clientLabel": "العميل",
         "projectLabel": "المشروع",
-        "overdueNote": "هذه المهمة متأخرة."
+        "overdueNote": "هذه المهمة متأخرة.",
+        "breadcrumb": "المهام",
+        "statusUpdated": "تم تحديث الحالة",
+        "statusUpdateFailed": "فشل تحديث الحالة",
+        "notFound": "المهمة غير موجودة أو ليس لديك صلاحية الوصول.",
+        "goBack": "رجوع",
+        "overdue": "متأخرة",
+        "statusLabel": "الحالة:",
+        "descriptionHeading": "الوصف",
+        "noDescription": "لا يوجد وصف.",
+        "detailsHeading": "التفاصيل",
+        "dueDateLabel": "تاريخ الاستحقاق",
+        "assigneeLabel": "المكلَّف",
+        "ownerLabel": "المالك",
+        "createdLabel": "تاريخ الإنشاء",
+        "updatedLabel": "آخر تحديث"
       },
       "list": {
         "taskCount": "{{count}} مهمة",

@@ -1,0 +1,40 @@
+{
+  "en": {
+    "erp": {
+      "tasks": {
+        "modals": {
+          "titleLabel": "Title *",
+          "titlePlaceholder": "Task title",
+          "projectLabel": "Project *",
+          "projectPlaceholder": "Select a project...",
+          "descriptionLabel": "Description",
+          "descriptionPlaceholder": "Task description (optional)",
+          "statusLabel": "Status",
+          "dueDateLabel": "Due Date"
+        },
+        "filters": {
+          "inProgressFilter": "In Progress"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "tasks": {
+        "modals": {
+          "titleLabel": "العنوان *",
+          "titlePlaceholder": "عنوان المهمة",
+          "projectLabel": "المشروع *",
+          "projectPlaceholder": "اختر مشروعًا...",
+          "descriptionLabel": "الوصف",
+          "descriptionPlaceholder": "وصف المهمة (اختياري)",
+          "statusLabel": "الحالة",
+          "dueDateLabel": "تاريخ الاستحقاق"
+        },
+        "filters": {
+          "inProgressFilter": "قيد التنفيذ"
+        }
+      }
+    }
+  }
+}

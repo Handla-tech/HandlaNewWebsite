@@ -1,0 +1,48 @@
+{
+  "en": {
+    "erp": {
+      "tasks": {
+        "detail": {
+          "breadcrumb": "Tasks",
+          "statusUpdated": "Status updated",
+          "statusUpdateFailed": "Failed to update status",
+          "notFound": "Task not found or you don't have access.",
+          "goBack": "Go Back",
+          "overdue": "Overdue",
+          "statusLabel": "Status:",
+          "descriptionHeading": "Description",
+          "noDescription": "No description provided.",
+          "detailsHeading": "Details",
+          "dueDateLabel": "Due Date",
+          "assigneeLabel": "Assignee",
+          "ownerLabel": "Owner",
+          "createdLabel": "Created",
+          "updatedLabel": "Updated"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "tasks": {
+        "detail": {
+          "breadcrumb": "المهام",
+          "statusUpdated": "تم تحديث الحالة",
+          "statusUpdateFailed": "فشل تحديث الحالة",
+          "notFound": "المهمة غير موجودة أو ليس لديك صلاحية الوصول.",
+          "goBack": "رجوع",
+          "overdue": "متأخرة",
+          "statusLabel": "الحالة:",
+          "descriptionHeading": "الوصف",
+          "noDescription": "لا يوجد وصف.",
+          "detailsHeading": "التفاصيل",
+          "dueDateLabel": "تاريخ الاستحقاق",
+          "assigneeLabel": "المكلَّف",
+          "ownerLabel": "المالك",
+          "createdLabel": "تاريخ الإنشاء",
+          "updatedLabel": "آخر تحديث"
+        }
+      }
+    }
+  }
+}

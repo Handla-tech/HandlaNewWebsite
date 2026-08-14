@@ -31,18 +31,19 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { tasksApi, projectsApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 import type { Task, PaginatedTasks, Project, TaskStatus } from '@/types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: { label: string; value: TaskStatus | 'ALL' }[] = [
-  { label: 'All',         value: 'ALL'         },
-  { label: 'Pending',     value: 'PENDING'     },
-  { label: 'In Progress', value: 'IN_PROGRESS' },
-  { label: 'Completed',   value: 'COMPLETED'   },
-  { label: 'Delayed',     value: 'DELAYED'     },
+const STATUS_FILTERS: { labelKey: string; value: TaskStatus | 'ALL' }[] = [
+  { labelKey: 'erp.tasks.filters.all',        value: 'ALL'         },
+  { labelKey: 'erp.tasks.filters.pending',    value: 'PENDING'     },
+  { labelKey: 'erp.tasks.filters.inProgress', value: 'IN_PROGRESS' },
+  { labelKey: 'erp.tasks.filters.completed',  value: 'COMPLETED'   },
+  { labelKey: 'erp.tasks.filters.delayed',    value: 'DELAYED'     },
 ];
 
 const STATUS_BADGE: Record<TaskStatus, string> = {
@@ -123,6 +124,7 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
   onSubmit: (values: CreateFormValues) => void;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const { register, handleSubmit, control, formState: { errors } } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     defaultValues: {
@@ -148,27 +150,27 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
       >
         <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
           <h2 id="task-modal-title" className="text-base font-bold text-white">
-            {mode === 'create' ? 'New Task' : 'Edit Task'}
+            {mode === 'create' ? t('erp.tasks.modals.createTitle') : t('erp.tasks.modals.editTitle')}
           </h2>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors" aria-label={t('erp.ui.close')}>
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-title">Title *</label>
-            <input id="task-title" {...register('title')} placeholder="Task title" className={sharedInput}
+            <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-title">{t('erp.tasks.modals.titleLabel')}</label>
+            <input id="task-title" {...register('title')} placeholder={t('erp.tasks.modals.titlePlaceholder')} className={sharedInput}
               aria-invalid={!!errors.title} />
             {errors.title && <p className="mt-1 text-xs text-red-400">{errors.title.message}</p>}
           </div>
 
           {mode === 'create' && (
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-project">Project *</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-project">{t('erp.tasks.modals.projectLabel')}</label>
               <Controller name="projectId" control={control} render={({ field }) => (
                 <select id="task-project" {...field} className={cn(sharedInput, 'bg-[#0f0f0f]')} aria-invalid={!!errors.projectId}>
-                  <option value="">Select a project...</option>
+                  <option value="">{t('erp.tasks.modals.projectPlaceholder')}</option>
                   {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
                 </select>
               )} />
@@ -177,26 +179,26 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-desc">Description</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-desc">{t('erp.tasks.modals.descriptionLabel')}</label>
             <textarea id="task-desc" {...register('description')} rows={3}
-              placeholder="Task description (optional)"
+              placeholder={t('erp.tasks.modals.descriptionPlaceholder')}
               className={cn(sharedInput, 'resize-none h-auto min-h-0 py-2')} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-status">Status</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-status">{t('erp.tasks.modals.statusLabel')}</label>
               <Controller name="status" control={control} render={({ field }) => (
                 <select id="task-status" {...field} className={cn(sharedInput, 'bg-[#0f0f0f]')}>
-                  <option value="PENDING">Pending</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="DELAYED">Delayed</option>
+                  <option value="PENDING">{t('erp.tasks.status.PENDING')}</option>
+                  <option value="IN_PROGRESS">{t('erp.tasks.status.IN_PROGRESS')}</option>
+                  <option value="COMPLETED">{t('erp.tasks.status.COMPLETED')}</option>
+                  <option value="DELAYED">{t('erp.tasks.status.DELAYED')}</option>
                 </select>
               )} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-due">Due Date</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5" htmlFor="task-due">{t('erp.tasks.modals.dueDateLabel')}</label>
               <input id="task-due" type="date" {...register('dueDate')} className={sharedInput} />
             </div>
           </div>
@@ -204,11 +206,11 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-sm text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors">
-              Cancel
+              {t('erp.ui.cancel')}
             </button>
             <button type="submit" disabled={isLoading}
               className="flex-1 rounded-xl bg-[#fbbf24] py-2.5 text-sm font-semibold text-black hover:bg-[#f59e0b] disabled:opacity-60 transition-colors">
-              {isLoading ? 'Saving…' : mode === 'create' ? 'Create Task' : 'Save Changes'}
+              {isLoading ? t('erp.ui.saving') : mode === 'create' ? t('erp.tasks.modals.createSubmit') : t('erp.tasks.modals.editSubmit')}
             </button>
           </div>
         </form>
@@ -222,6 +224,7 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
 function DeleteDialog({ task, onConfirm, onClose, isLoading }: {
   task: Task; onConfirm: () => void; onClose: () => void; isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -234,16 +237,15 @@ function DeleteDialog({ task, onConfirm, onClose, isLoading }: {
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20">
           <Trash2 className="h-5 w-5 text-red-400" />
         </div>
-        <h3 className="text-base font-bold text-white mb-2">Delete Task</h3>
+        <h3 className="text-base font-bold text-white mb-2">{t('erp.tasks.modals.deleteTitle')}</h3>
         <p className="text-sm text-white/50 mb-6">
-          Are you sure you want to delete <span className="text-white font-semibold">{task.title}</span>?
-          This action cannot be undone.
+          {t('erp.tasks.modals.deleteMessage', { title: task.title })}
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-sm text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-sm text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors">{t('erp.ui.cancel')}</button>
           <button onClick={onConfirm} disabled={isLoading}
             className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 transition-colors">
-            {isLoading ? 'Deleting…' : 'Delete'}
+            {isLoading ? t('erp.ui.deleting') : t('erp.ui.delete')}
           </button>
         </div>
       </motion.div>
@@ -254,6 +256,7 @@ function DeleteDialog({ task, onConfirm, onClose, isLoading }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TasksPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -326,7 +329,7 @@ export default function TasksPage() {
   const columns: Column<Task>[] = [
     {
       key: 'title',
-      header: 'Task',
+      header: t('erp.tasks.fields.title'),
       cell: (task) => {
         const StatusIcon = STATUS_ICON[task.status];
         return (
@@ -354,7 +357,7 @@ export default function TasksPage() {
     },
     {
       key: 'assignee',
-      header: 'Assignee',
+      header: t('erp.tasks.fields.assignee'),
       hideOnMobile: true,
       cell: (task) => task.assignee ? (
         <div className="flex items-center gap-1.5">
@@ -367,7 +370,7 @@ export default function TasksPage() {
     },
     {
       key: 'due',
-      header: 'Due Date',
+      header: t('erp.tasks.fields.dueDate'),
       hideOnMobile: true,
       cell: (task) => {
         const overdue = isOverdue(task.dueDate, task.status);
@@ -381,19 +384,19 @@ export default function TasksPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('erp.tasks.fields.status'),
       align: 'center',
       cell: (task) => (
         <span className={cn('px-2 py-0.5 rounded-full border text-[10px] font-semibold inline-block', STATUS_BADGE[task.status])}>
-          {task.status.replace('_', ' ')}
+          {t(`erp.tasks.status.${task.status}`)}
         </span>
       ),
     },
   ];
 
   const rowActions: RowAction<Task>[] = [
-    { label: 'Edit', icon: Pencil, onClick: (t) => setEditTask(t) },
-    { label: 'Delete', icon: Trash2, danger: true, onClick: (t) => setDeleteTask(t), show: () => user?.role === 'ADMIN' },
+    { label: t('erp.ui.edit'), icon: Pencil, onClick: (task) => setEditTask(task) },
+    { label: t('erp.ui.delete'), icon: Trash2, danger: true, onClick: (task) => setDeleteTask(task), show: () => user?.role === 'ADMIN' },
   ];
 
   return (
@@ -405,26 +408,26 @@ export default function TasksPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
               <CheckSquare className="h-4.5 w-4.5 text-emerald-400" />
             </span>
-            Tasks
+            {t('erp.tasks.title')}
           </h1>
-          <p className="mt-1 text-sm text-white/30 ml-11">Manage and track all tasks across projects</p>
+          <p className="mt-1 text-sm text-white/30 ml-11">{t('erp.tasks.subtitle')}</p>
         </div>
         {(user?.role === 'ADMIN' || user?.role === 'EMPLOYEE') && (
           <button
             onClick={() => setCreateOpen(true)}
             className="flex items-center gap-2 rounded-xl bg-[#fbbf24] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#f59e0b] transition-colors min-h-[44px]"
           >
-            <Plus className="h-4 w-4" /> New Task
+            <Plus className="h-4 w-4" /> {t('erp.tasks.newTask')}
           </button>
         )}
       </div>
 
       {/* ── Stats row ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Pending"     value={pendingCount}    status="PENDING"     />
-        <StatCard label="In Progress" value={inProgressCount} status="IN_PROGRESS" />
-        <StatCard label="Completed"   value={completedCount}  status="COMPLETED"   />
-        <StatCard label="Delayed"     value={delayedCount}    status="DELAYED"     />
+        <StatCard label={t('erp.tasks.stats.pending')}    value={pendingCount}    status="PENDING"     />
+        <StatCard label={t('erp.tasks.stats.inProgress')} value={inProgressCount} status="IN_PROGRESS" />
+        <StatCard label={t('erp.tasks.stats.completed')}  value={completedCount}  status="COMPLETED"   />
+        <StatCard label={t('erp.tasks.stats.delayed')}    value={delayedCount}    status="DELAYED"     />
       </div>
 
       {/* ── Filters ────────────────────────────────────────────────────── */}
@@ -433,9 +436,9 @@ export default function TasksPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25" />
           <input
             value={searchInput} onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
-            placeholder="Search tasks..."
+            placeholder={t('erp.tasks.searchPlaceholder')}
             className="w-full rounded-xl border border-white/10 bg-white/[0.04] pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:border-[#fbbf24]/50 focus:outline-none focus:bg-white/[0.06] transition-all"
-            aria-label="Search tasks"
+            aria-label={t('erp.tasks.searchPlaceholder')}
           />
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -447,7 +450,7 @@ export default function TasksPage() {
                   ? 'bg-[#fbbf24] border-[#fbbf24] text-black'
                   : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white hover:border-white/20',
               )}>
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>
@@ -460,8 +463,8 @@ export default function TasksPage() {
         ) : isError ? (
           <div className="flex flex-col items-center py-20 gap-4">
             <AlertTriangle className="h-10 w-10 text-red-400/40" />
-            <p className="text-white/30 text-sm">Failed to load tasks.</p>
-            <button onClick={() => refetch()} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/50 hover:text-white hover:bg-white/[0.08] transition-colors">Retry</button>
+            <p className="text-white/30 text-sm">{t('erp.tasks.list.loadFailed')}</p>
+            <button onClick={() => refetch()} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/50 hover:text-white hover:bg-white/[0.08] transition-colors">{t('erp.ui.retry')}</button>
           </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center py-20 gap-4">
@@ -469,7 +472,7 @@ export default function TasksPage() {
               <CheckSquare className="h-8 w-8 text-white/15" />
             </div>
             <p className="text-white/30 text-sm">
-              {search || statusFilter !== 'ALL' ? 'No tasks match your filters.' : 'No tasks yet. Create the first one!'}
+              {search || statusFilter !== 'ALL' ? t('erp.tasks.empty.withFilters') : t('erp.tasks.empty.noTasks')}
             </p>
           </div>
         ) : (
@@ -481,10 +484,10 @@ export default function TasksPage() {
       {/* ── Pagination ─────────────────────────────────────────────────── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-white/30">{data?.total ?? 0} task{(data?.total ?? 0) !== 1 ? 's' : ''} · page {page} of {totalPages}</p>
+          <p className="text-xs text-white/30">{t('erp.tasks.pagination.pageOf', { page, pages: totalPages, total: data?.total ?? 0 })}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Previous page">
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label={t('erp.ui.prev')}>
               <ChevronLeft className="h-4 w-4" />
             </button>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -502,7 +505,7 @@ export default function TasksPage() {
               );
             })}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Next page">
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label={t('erp.ui.next')}>
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

@@ -24,6 +24,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { tasksApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Task, TaskStatus } from '@/types';
@@ -45,13 +46,6 @@ const STATUS_ICON: Record<TaskStatus, React.ComponentType<{ className?: string }
 };
 
 const ALL_STATUSES: TaskStatus[] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'];
-
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  PENDING:     'Pending',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED:   'Completed',
-  DELAYED:     'Delayed',
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -113,6 +107,7 @@ function StatusSelector({
   onChange: (s: TaskStatus) => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const CurrentIcon = STATUS_ICON[current];
 
@@ -133,7 +128,7 @@ function StatusSelector({
         ) : (
           <CurrentIcon className={cn('h-3.5 w-3.5', current === 'IN_PROGRESS' && 'animate-spin')} />
         )}
-        {STATUS_LABEL[current]}
+        {t(`erp.tasks.status.${current}`)}
         <ChevronDown className="h-3 w-3 opacity-60" />
       </button>
 
@@ -157,7 +152,7 @@ function StatusSelector({
                   )}
                 >
                   <Icon className={cn('h-3.5 w-3.5', status === 'IN_PROGRESS' && isActive && 'animate-spin')} />
-                  {STATUS_LABEL[status]}
+                  {t(`erp.tasks.status.${status}`)}
                   {isActive && <Check className="ml-auto h-3 w-3 text-[#fbbf24]" />}
                 </button>
               );
@@ -172,6 +167,7 @@ function StatusSelector({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TaskDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
@@ -207,7 +203,7 @@ export default function TaskDetailPage() {
       }
       // Also invalidate task list
       qc.invalidateQueries({ queryKey: ['erp-tasks'] });
-      setSuccessMsg('Status updated');
+      setSuccessMsg(t('erp.tasks.detail.statusUpdated'));
       setTimeout(() => setSuccessMsg(''), 3000);
     },
   });
@@ -220,9 +216,9 @@ export default function TaskDetailPage() {
     return (
       <div className="flex flex-col items-center py-20 gap-4">
         <AlertTriangle className="h-12 w-12 text-red-400/60" />
-        <p className="text-white/50">Task not found or you don&apos;t have access.</p>
+        <p className="text-white/50">{t('erp.tasks.detail.notFound')}</p>
         <button onClick={() => router.back()} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 transition-colors">
-          Go Back
+          {t('erp.tasks.detail.goBack')}
         </button>
       </div>
     );
@@ -235,7 +231,7 @@ export default function TaskDetailPage() {
     <div className="space-y-6">
       {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
       <nav className="flex items-center gap-2 text-sm text-white/40" aria-label="Breadcrumb">
-        <Link href="/erp/tasks" className="hover:text-white transition-colors">Tasks</Link>
+        <Link href="/erp/tasks" className="hover:text-white transition-colors">{t('erp.tasks.detail.breadcrumb')}</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-white/70 truncate max-w-[200px]">{task.title}</span>
       </nav>
@@ -259,7 +255,7 @@ export default function TaskDetailPage() {
               <h1 className="text-2xl font-bold text-white break-words">{task.title}</h1>
               {overdue && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-xs text-red-400">
-                  <AlertTriangle className="h-3 w-3" /> Overdue
+                  <AlertTriangle className="h-3 w-3" /> {t('erp.tasks.detail.overdue')}
                 </span>
               )}
             </div>
@@ -277,7 +273,7 @@ export default function TaskDetailPage() {
 
             {/* Status selector — inline, shown directly below title */}
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <p className="text-xs text-white/40">Status:</p>
+              <p className="text-xs text-white/40">{t('erp.tasks.detail.statusLabel')}</p>
               {canUpdateStatus ? (
                 <StatusSelector
                   current={task.status}
@@ -290,13 +286,13 @@ export default function TaskDetailPage() {
                   return (
                     <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-medium', STATUS_BADGE[task.status])}>
                       <Icon className={cn('h-3 w-3', task.status === 'IN_PROGRESS' && 'animate-spin')} />
-                      {STATUS_LABEL[task.status]}
+                      {t(`erp.tasks.status.${task.status}`)}
                     </span>
                   );
                 })()
               )}
               {statusMutation.isError && (
-                <span className="text-xs text-red-400">Failed to update status</span>
+                <span className="text-xs text-red-400">{t('erp.tasks.detail.statusUpdateFailed')}</span>
               )}
             </div>
           </div>
@@ -304,10 +300,10 @@ export default function TaskDetailPage() {
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors min-h-[44px] flex-shrink-0"
-            aria-label="Go back"
+            aria-label={t('erp.tasks.detail.goBack')}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t('erp.ui.back')}
           </button>
         </div>
       </div>
@@ -316,28 +312,28 @@ export default function TaskDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Description */}
         <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">Description</h2>
+          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide mb-4">{t('erp.tasks.detail.descriptionHeading')}</h2>
           {task.description ? (
             <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{task.description}</p>
           ) : (
-            <p className="text-sm text-white/30 italic">No description provided.</p>
+            <p className="text-sm text-white/30 italic">{t('erp.tasks.detail.noDescription')}</p>
           )}
         </div>
 
         {/* Metadata sidebar */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide px-1">Details</h2>
+          <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wide px-1">{t('erp.tasks.detail.detailsHeading')}</h2>
 
           <MetaPill
             icon={Calendar}
-            label="Due Date"
+            label={t('erp.tasks.detail.dueDateLabel')}
             value={<span className={overdue ? 'text-red-400' : 'text-white'}>{task.dueDate ? formatDate(task.dueDate) : '—'}</span>}
           />
 
           {task.assignee && (
             <MetaPill
               icon={User}
-              label="Assignee"
+              label={t('erp.tasks.detail.assigneeLabel')}
               value={task.assignee.name}
             />
           )}
@@ -345,7 +341,7 @@ export default function TaskDetailPage() {
           {task.owner && (
             <MetaPill
               icon={User}
-              label="Owner"
+              label={t('erp.tasks.detail.ownerLabel')}
               value={task.owner.name}
             />
           )}
@@ -353,20 +349,20 @@ export default function TaskDetailPage() {
           {task.project?.client && (
             <MetaPill
               icon={FolderOpen}
-              label="Client"
+              label={t('erp.tasks.detail.clientLabel')}
               value={task.project.client.company ?? `Client #${task.project.clientId.slice(0, 8)}`}
             />
           )}
 
           <MetaPill
             icon={Clock}
-            label="Created"
+            label={t('erp.tasks.detail.createdLabel')}
             value={formatDate(task.createdAt)}
           />
 
           <MetaPill
             icon={Clock}
-            label="Updated"
+            label={t('erp.tasks.detail.updatedLabel')}
             value={formatDate(task.updatedAt)}
           />
         </div>

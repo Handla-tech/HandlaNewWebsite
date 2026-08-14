@@ -710,7 +710,8 @@
         "pending": "Pending",
         "inProgress": "In Progress",
         "completed": "Completed",
-        "delayed": "Delayed"
+        "delayed": "Delayed",
+        "inProgressFilter": "In Progress"
       },
       "status": {
         "PENDING": "Pending",
@@ -741,12 +742,20 @@
         "createTitle": "New Task",
         "editTitle": "Edit Task",
         "deleteTitle": "Delete Task",
-        "deleteMessage": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+        "deleteMessage": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
         "createSubmit": "Create Task",
         "editSubmit": "Save Changes",
         "creating": "Creating…",
         "saving": "Saving…",
-        "deleting": "Deleting…"
+        "deleting": "Deleting…",
+        "titleLabel": "Title *",
+        "titlePlaceholder": "Task title",
+        "projectLabel": "Project *",
+        "projectPlaceholder": "Select a project...",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Task description (optional)",
+        "statusLabel": "Status",
+        "dueDateLabel": "Due Date"
       },
       "views": {
         "table": "Table",
@@ -770,7 +779,22 @@
         "metadata": "Task Details",
         "clientLabel": "Client",
         "projectLabel": "Project",
-        "overdueNote": "This task is overdue."
+        "overdueNote": "This task is overdue.",
+        "breadcrumb": "Tasks",
+        "statusUpdated": "Status updated",
+        "statusUpdateFailed": "Failed to update status",
+        "notFound": "Task not found or you don't have access.",
+        "goBack": "Go Back",
+        "overdue": "Overdue",
+        "statusLabel": "Status:",
+        "descriptionHeading": "Description",
+        "noDescription": "No description provided.",
+        "detailsHeading": "Details",
+        "dueDateLabel": "Due Date",
+        "assigneeLabel": "Assignee",
+        "ownerLabel": "Owner",
+        "createdLabel": "Created",
+        "updatedLabel": "Updated"
       },
       "list": {
         "taskCount": "{{count}} tasks",
