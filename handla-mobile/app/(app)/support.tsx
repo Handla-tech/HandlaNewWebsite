@@ -72,7 +72,7 @@ export default function SupportListScreen() {
   const rows = tickets.data?.tickets ?? [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View
         style={{
           flexDirection: 'row',

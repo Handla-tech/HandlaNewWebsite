@@ -197,7 +197,7 @@ export default function AnalyticsScreen() {
   const anyFetching = overview.isFetching || timeseries.isFetching;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
         <Title>Analytics</Title>
       </View>

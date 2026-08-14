@@ -108,7 +108,7 @@ export default function FinanceScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
         <Title>Finance</Title>
       </View>

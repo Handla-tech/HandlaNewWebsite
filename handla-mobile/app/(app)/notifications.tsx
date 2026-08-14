@@ -44,7 +44,7 @@ export default function NotificationsScreen() {
   const hasUnread = data.some((n) => !n.isRead);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View
         style={{
           flexDirection: 'row',

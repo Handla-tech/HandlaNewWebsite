@@ -85,7 +85,7 @@ export default function ChatListScreen() {
   const otherParty = (c: Conversation) => (isStaff ? c.client : c.admin);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View
         style={{
           flexDirection: 'row',

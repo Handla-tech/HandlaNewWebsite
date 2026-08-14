@@ -124,7 +124,7 @@ export default function SalesScreen() {
     c?.company || c?.user?.name;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
       <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
         <Title>Sales</Title>
       </View>
