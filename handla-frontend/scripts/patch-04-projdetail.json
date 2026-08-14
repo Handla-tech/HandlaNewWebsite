@@ -1,0 +1,32 @@
+{
+  "en": {
+    "erp": {
+      "projects": {
+        "detail": {
+          "notFound": "Project not found or access denied.",
+          "backToProjects": "Back to Projects",
+          "startLabel": "Start",
+          "dueLabel": "Due",
+          "createdLabel": "Created",
+          "updatedLabel": "Updated",
+          "noDescription": "No description provided."
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "projects": {
+        "detail": {
+          "notFound": "المشروع غير موجود أو الوصول مرفوض.",
+          "backToProjects": "العودة إلى المشاريع",
+          "startLabel": "البدء",
+          "dueLabel": "الاستحقاق",
+          "createdLabel": "أُنشئ",
+          "updatedLabel": "آخر تحديث",
+          "noDescription": "لا يوجد وصف."
+        }
+      }
+    }
+  }
+}

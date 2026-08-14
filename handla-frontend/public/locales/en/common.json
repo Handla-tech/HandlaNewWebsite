@@ -658,7 +658,7 @@
         },
         "delete": {
           "title": "Delete Project",
-          "message": "Are you sure you want to delete “{title}”? This will also delete all tasks associated with it.",
+          "message": "Are you sure you want to delete “{{title}}”? This will also delete all tasks associated with it.",
           "confirm": "Delete Project"
         }
       },
@@ -673,7 +673,24 @@
         "metadata": "Project Details",
         "tasksEmpty": "No tasks yet for this project.",
         "clientLink": "Client",
-        "dates": "Dates"
+        "dates": "Dates",
+        "notFound": "Project not found or access denied.",
+        "backToProjects": "Back to Projects",
+        "startLabel": "Start",
+        "dueLabel": "Due",
+        "createdLabel": "Created",
+        "updatedLabel": "Updated",
+        "noDescription": "No description provided."
+      },
+      "timeline": "Timeline",
+      "loadFailed": "Failed to load projects.",
+      "countSummary": "{{count}} projects",
+      "loadingClients": "Loading clients…",
+      "noClients": "No clients found",
+      "selectClient": "Select a client…",
+      "placeholders": {
+        "title": "e.g. Website Redesign",
+        "description": "Brief project description…"
       }
     },
     "tasks": {

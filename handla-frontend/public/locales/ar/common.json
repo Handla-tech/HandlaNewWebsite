@@ -658,7 +658,7 @@
         },
         "delete": {
           "title": "حذف المشروع",
-          "message": "هل أنت متأكد من حذف «{title}»؟ سيتم حذف جميع المهام المرتبطة به.",
+          "message": "هل أنت متأكد من حذف «{{title}}»؟ سيتم حذف جميع المهام المرتبطة به.",
           "confirm": "حذف المشروع"
         }
       },
@@ -673,7 +673,24 @@
         "metadata": "تفاصيل المشروع",
         "tasksEmpty": "لا توجد مهام لهذا المشروع بعد.",
         "clientLink": "العميل",
-        "dates": "التواريخ"
+        "dates": "التواريخ",
+        "notFound": "المشروع غير موجود أو الوصول مرفوض.",
+        "backToProjects": "العودة إلى المشاريع",
+        "startLabel": "البدء",
+        "dueLabel": "الاستحقاق",
+        "createdLabel": "أُنشئ",
+        "updatedLabel": "آخر تحديث",
+        "noDescription": "لا يوجد وصف."
+      },
+      "timeline": "الجدول الزمني",
+      "loadFailed": "فشل تحميل المشاريع.",
+      "countSummary": "{{count}} مشروع",
+      "loadingClients": "جارٍ تحميل العملاء…",
+      "noClients": "لا يوجد عملاء",
+      "selectClient": "اختر عميلاً…",
+      "placeholders": {
+        "title": "مثال: إعادة تصميم الموقع",
+        "description": "وصف موجز للمشروع…"
       }
     },
     "tasks": {

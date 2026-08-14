@@ -24,6 +24,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { projectsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Project, ProjectStatus } from '@/types';
@@ -88,6 +89,7 @@ export default function ProjectDetailPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const { user } = useAuth();
+  const { t } = useTranslation();
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
 
@@ -109,12 +111,12 @@ export default function ProjectDetailPage() {
   if (isError || !data) {
     return (
       <div className="text-center py-20">
-        <p className="text-white/50 mb-4">Project not found or access denied.</p>
+        <p className="text-white/50 mb-4">{t('erp.projects.detail.notFound')}</p>
         <button
           onClick={() => router.push('/erp/projects')}
           className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-sm text-white/70 transition-colors"
         >
-          ← Back to Projects
+          ← {t('erp.projects.detail.backToProjects')}
         </button>
       </div>
     );
@@ -122,12 +124,12 @@ export default function ProjectDetailPage() {
 
   const project    = data;
   const StatusIcon = STATUS_ICON[project.status] ?? Clock;
-  const clientName = project.client?.user?.name ?? 'Unknown Client';
-  const ownerName  = project.owner?.name ?? 'Unassigned';
+  const clientName = project.client?.user?.name ?? t('erp.ui.unknown');
+  const ownerName  = project.owner?.name ?? t('erp.ui.unassigned');
 
   const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'overview', label: 'Overview', icon: FileText  },
-    { id: 'tasks',    label: 'Tasks',    icon: CheckSquare },
+    { id: 'overview', label: t('erp.projects.tabs.overview'), icon: FileText  },
+    { id: 'tasks',    label: t('erp.projects.tabs.tasks'),    icon: CheckSquare },
   ];
 
   return (
@@ -135,7 +137,7 @@ export default function ProjectDetailPage() {
       {/* ── Breadcrumb ── */}
       <nav className="flex items-center gap-2 text-sm text-white/40" aria-label="Breadcrumb">
         <Link href="/erp/projects" className="hover:text-white transition-colors flex items-center gap-1">
-          <FolderOpen className="w-4 h-4" /> Projects
+          <FolderOpen className="w-4 h-4" /> {t('erp.projects.title')}
         </Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-white/70 truncate max-w-[200px]">{project.title}</span>
@@ -160,7 +162,7 @@ export default function ProjectDetailPage() {
                 )}
               >
                 <StatusIcon className="w-3 h-3" />
-                {project.status.replace('_', ' ')}
+                {t(`erp.projects.status.${project.status}`)}
               </span>
             </div>
 
@@ -185,7 +187,7 @@ export default function ProjectDetailPage() {
             onClick={() => router.push('/erp/projects')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 transition-colors text-sm min-h-[44px] flex-shrink-0"
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t('erp.ui.back')}
           </button>
         </div>
 
@@ -194,17 +196,17 @@ export default function ProjectDetailPage() {
           {project.startDate && (
             <div className="flex items-center gap-1.5 text-xs text-white/50 px-3 py-1.5 rounded-lg bg-white/5">
               <Calendar className="w-3.5 h-3.5 text-[#fbbf24]" />
-              Start: {formatDate(project.startDate)}
+              {t('erp.projects.detail.startLabel')}: {formatDate(project.startDate)}
             </div>
           )}
           {project.endDate && (
             <div className="flex items-center gap-1.5 text-xs text-white/50 px-3 py-1.5 rounded-lg bg-white/5">
               <Calendar className="w-3.5 h-3.5 text-red-400" />
-              Due: {formatDate(project.endDate)}
+              {t('erp.projects.detail.dueLabel')}: {formatDate(project.endDate)}
             </div>
           )}
           <div className="flex items-center gap-1.5 text-xs text-white/40 px-3 py-1.5 rounded-lg bg-white/5">
-            Created: {formatDate(project.createdAt)}
+            {t('erp.projects.detail.createdLabel')}: {formatDate(project.createdAt)}
           </div>
         </div>
       </div>
@@ -227,6 +229,7 @@ export default function ProjectDetailPage() {
               <Icon className="w-4 h-4" />
               {tab.label}
             </button>
+            
           );
         })}
       </div>
@@ -237,31 +240,31 @@ export default function ProjectDetailPage() {
           {/* Description */}
           <div className="lg:col-span-2 rounded-xl border border-white/5 bg-white/3 p-5">
             <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">
-              Project Overview
+              {t('erp.projects.detail.overview')}
             </h2>
             {project.description ? (
               <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
                 {project.description}
               </p>
             ) : (
-              <p className="text-sm text-white/30 italic">No description provided.</p>
+              <p className="text-sm text-white/30 italic">{t('erp.projects.detail.noDescription')}</p>
             )}
           </div>
 
           {/* Metadata sidebar */}
           <div className="rounded-xl border border-white/5 bg-white/3 p-5 space-y-4">
             <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide">
-              Project Details
+              {t('erp.projects.detail.metadata')}
             </h2>
             <dl className="space-y-3">
               {[
-                { label: 'Status',   value: project.status.replace('_', ' ') },
-                { label: 'Client',   value: clientName },
-                { label: 'Owner',    value: ownerName },
-                { label: 'Start',    value: formatDate(project.startDate) },
-                { label: 'Due',      value: formatDate(project.endDate) },
-                { label: 'Created',  value: formatDate(project.createdAt) },
-                { label: 'Updated',  value: formatDate(project.updatedAt) },
+                { label: t('erp.projects.fields.status'), value: t(`erp.projects.status.${project.status}`) },
+                { label: t('erp.projects.fields.client'), value: clientName },
+                { label: t('erp.projects.fields.owner'),  value: ownerName },
+                { label: t('erp.projects.detail.startLabel'),   value: formatDate(project.startDate) },
+                { label: t('erp.projects.detail.dueLabel'),     value: formatDate(project.endDate) },
+                { label: t('erp.projects.detail.createdLabel'), value: formatDate(project.createdAt) },
+                { label: t('erp.projects.detail.updatedLabel'), value: formatDate(project.updatedAt) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between items-start gap-2">
                   <dt className="text-xs text-white/40">{label}</dt>

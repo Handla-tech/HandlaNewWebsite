@@ -1,0 +1,34 @@
+{
+  "en": {
+    "erp": {
+      "projects": {
+        "timeline": "Timeline",
+        "loadFailed": "Failed to load projects.",
+        "countSummary": "{{count}} projects",
+        "loadingClients": "Loading clients…",
+        "noClients": "No clients found",
+        "selectClient": "Select a client…",
+        "placeholders": {
+          "title": "e.g. Website Redesign",
+          "description": "Brief project description…"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "projects": {
+        "timeline": "الجدول الزمني",
+        "loadFailed": "فشل تحميل المشاريع.",
+        "countSummary": "{{count}} مشروع",
+        "loadingClients": "جارٍ تحميل العملاء…",
+        "noClients": "لا يوجد عملاء",
+        "selectClient": "اختر عميلاً…",
+        "placeholders": {
+          "title": "مثال: إعادة تصميم الموقع",
+          "description": "وصف موجز للمشروع…"
+        }
+      }
+    }
+  }
+}
