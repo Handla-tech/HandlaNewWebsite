@@ -183,7 +183,68 @@
     "purchases": "المشتريات",
     "expenses": "المصروفات",
     "ledger": "دفتر الأستاذ",
-    "empty": "لا يوجد شيء هنا بعد"
+    "empty": {
+      "purchases": "لا توجد مشتريات بعد.",
+      "expenses": "لا توجد قيود مصروفات بعد.",
+      "ledger": "لا توجد قيود في دفتر الأستاذ بعد."
+    },
+    "header": "المالية",
+    "segments": {
+      "purchases": "المشتريات",
+      "expenses": "المصروفات",
+      "ledger": "دفتر الأستاذ"
+    },
+    "incomeVsExpenses": "الإيرادات مقابل المصروفات",
+    "income": "الإيرادات",
+    "net": "الصافي",
+    "supplier": "المورّد",
+    "errors": {
+      "saveExpense": "فشل حفظ المصروف",
+      "createPurchase": "فشل إنشاء عملية الشراء",
+      "deleteExpense": "فشل حذف المصروف",
+      "deletePurchase": "فشل حذف عملية الشراء",
+      "categoryRequired": "الفئة مطلوبة.",
+      "amountPositive": "يجب أن يكون المبلغ أكبر من 0.",
+      "supplierRequired": "المورّد مطلوب.",
+      "lineItemRequired": "مطلوب بند واحد على الأقل."
+    },
+    "expenseForm": {
+      "titleEdit": "تعديل القيد",
+      "titleNew": "قيد جديد",
+      "type": "النوع",
+      "category": "الفئة *",
+      "categoryPlaceholder": "مثال: التسويق، الرواتب",
+      "amount": "المبلغ *",
+      "date": "التاريخ",
+      "description": "الوصف",
+      "descriptionPlaceholder": "ملاحظات اختيارية"
+    },
+    "purchaseForm": {
+      "title": "عملية شراء جديدة",
+      "supplier": "المورّد *",
+      "loading": "جارٍ التحميل…",
+      "selectSupplier": "اختر مورّدًا",
+      "taxRate": "نسبة الضريبة (%)",
+      "status": "الحالة",
+      "orderDate": "تاريخ الطلب",
+      "dueDate": "تاريخ الاستحقاق",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية"
+    },
+    "actions": {
+      "edit": "تعديل",
+      "delete": "حذف",
+      "open": "فتح",
+      "markPaid": "تحديد كمدفوع"
+    },
+    "deleteEntry": {
+      "title": "حذف القيد",
+      "message": "حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا."
+    },
+    "deletePurchase": {
+      "title": "حذف عملية الشراء",
+      "message": "حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا."
+    }
   },
   "support": {
     "title": "الدعم",

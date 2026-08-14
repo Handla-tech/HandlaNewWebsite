@@ -34,8 +34,8 @@ import {
   PURCHASE_PAYMENT_META,
   EXPENSE_TYPE_META,
   LEDGER_DIRECTION_META,
-  LEDGER_SOURCE_LABEL,
 } from '@/lib/financeMeta';
+import { useT } from '@/i18n';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type {
   PaginatedPurchases,
@@ -45,42 +45,44 @@ import type {
   Purchase,
   Expense,
   LedgerEntry,
+  PurchaseStatus,
 } from '@/types';
 
 type Segment = 'purchases' | 'expenses' | 'ledger';
 
-const SEGMENTS: { key: Segment; label: string }[] = [
-  { key: 'purchases', label: 'Purchases' },
-  { key: 'expenses', label: 'Expenses' },
-  { key: 'ledger', label: 'Ledger' },
+const SEGMENTS: { key: Segment }[] = [
+  { key: 'purchases' },
+  { key: 'expenses' },
+  { key: 'ledger' },
 ];
 
 function SummaryHeader({ s }: { s?: FinancialSummary }) {
   const { colors } = useTheme();
+  const { t } = useT();
   if (!s) return null;
   const hasFlow = s.totalIncome > 0 || s.totalExpenses > 0;
   return (
     <View style={{ marginBottom: spacing.md, gap: spacing.md }}>
       {hasFlow ? (
         <GlassCard raised>
-          <SectionLabel style={{ marginBottom: spacing.md }}>Income vs Expenses</SectionLabel>
+          <SectionLabel style={{ marginBottom: spacing.md }}>{t('finance.incomeVsExpenses')}</SectionLabel>
           <DonutChart
             data={[
-              { label: 'Income', value: s.totalIncome, color: colors.success },
-              { label: 'Expenses', value: s.totalExpenses, color: colors.danger },
+              { label: t('finance.income'), value: s.totalIncome, color: colors.success },
+              { label: t('finance.expenses'), value: s.totalExpenses, color: colors.danger },
             ]}
             size={140}
             thickness={22}
-            centerLabel="Net"
+            centerLabel={t('finance.net')}
             centerValue={money(s.netBalance)}
           />
         </GlassCard>
       ) : null}
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <StatCard label="Income" value={money(s.totalIncome)} icon="arrow-down-outline" tint={colors.success} width="31%" />
-        <StatCard label="Expenses" value={money(s.totalExpenses)} icon="arrow-up-outline" tint={colors.danger} width="31%" />
+        <StatCard label={t('finance.income')} value={money(s.totalIncome)} icon="arrow-down-outline" tint={colors.success} width="31%" />
+        <StatCard label={t('finance.expenses')} value={money(s.totalExpenses)} icon="arrow-up-outline" tint={colors.danger} width="31%" />
         <StatCard
-          label="Net"
+          label={t('finance.net')}
           value={money(s.netBalance)}
           icon="wallet-outline"
           tint={s.netBalance >= 0 ? colors.success : colors.danger}
@@ -91,12 +93,7 @@ function SummaryHeader({ s }: { s?: FinancialSummary }) {
   );
 }
 
-const PURCHASE_STATUS_OPTIONS: SelectOption[] = [
-  { label: 'Draft', value: 'DRAFT' },
-  { label: 'Ordered', value: 'ORDERED' },
-  { label: 'Received', value: 'RECEIVED' },
-  { label: 'Cancelled', value: 'CANCELLED' },
-];
+const PURCHASE_STATUS_VALUES: PurchaseStatus[] = ['DRAFT', 'ORDERED', 'RECEIVED', 'CANCELLED'];
 
 const EMPTY_EXPENSE: ExpenseInput = { type: 'EXPENSE', category: '', amount: 0, description: '', expenseDate: '' };
 const EMPTY_PURCHASE: PurchaseInput = {
@@ -109,11 +106,17 @@ const EMPTY_PURCHASE: PurchaseInput = {
 
 export default function FinanceScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());
   const isAdmin = useAuthStore((s) => s.isAdmin());
   const [segment, setSegment] = useState<Segment>('purchases');
+
+  const purchaseStatusOptions: SelectOption[] = PURCHASE_STATUS_VALUES.map((v) => ({
+    label: t(`status.${v}`),
+    value: v,
+  }));
 
   const summary = useQuery({
     queryKey: ['financeSummary'],
@@ -198,11 +201,11 @@ export default function FinanceScreen() {
       qc.invalidateQueries({ queryKey: ['financeSummary'] });
       setExpOpen(false);
     },
-    onError: (e) => setExpErr(apiError(e, 'Failed to save expense')),
+    onError: (e) => setExpErr(apiError(e, t('finance.errors.saveExpense'))),
   });
   const submitExpense = () => {
-    if (!expForm.category?.trim()) return setExpErr('Category is required.');
-    if (!expForm.amount || Number(expForm.amount) <= 0) return setExpErr('Amount must be greater than 0.');
+    if (!expForm.category?.trim()) return setExpErr(t('finance.errors.categoryRequired'));
+    if (!expForm.amount || Number(expForm.amount) <= 0) return setExpErr(t('finance.errors.amountPositive'));
     setExpErr(null);
     saveExpense.mutate();
   };
@@ -233,12 +236,12 @@ export default function FinanceScreen() {
       qc.invalidateQueries({ queryKey: ['financeSummary'] });
       setPurOpen(false);
     },
-    onError: (e) => setPurErr(apiError(e, 'Failed to create purchase')),
+    onError: (e) => setPurErr(apiError(e, t('finance.errors.createPurchase'))),
   });
   const submitPurchase = () => {
-    if (!purForm.supplierId) return setPurErr('Supplier is required.');
+    if (!purForm.supplierId) return setPurErr(t('finance.errors.supplierRequired'));
     const items = (purForm.lineItems ?? []).filter((li) => li.description.trim());
-    if (items.length === 0) return setPurErr('At least one line item is required.');
+    if (items.length === 0) return setPurErr(t('finance.errors.lineItemRequired'));
     setPurForm((f) => ({ ...f, lineItems: items }));
     setPurErr(null);
     savePurchase.mutate();
@@ -255,7 +258,7 @@ export default function FinanceScreen() {
       qc.invalidateQueries({ queryKey: ['financeSummary'] });
       setExpDelete(null);
     },
-    onError: (e) => setExpDeleteErr(apiError(e, 'Failed to delete expense')),
+    onError: (e) => setExpDeleteErr(apiError(e, t('finance.errors.deleteExpense'))),
   });
 
   const [purSheet, setPurSheet] = useState<Purchase | null>(null);
@@ -276,12 +279,12 @@ export default function FinanceScreen() {
       qc.invalidateQueries({ queryKey: ['financeSummary'] });
       setPurDelete(null);
     },
-    onError: (e) => setPurActionErr(apiError(e, 'Failed to delete purchase')),
+    onError: (e) => setPurActionErr(apiError(e, t('finance.errors.deletePurchase'))),
   });
 
   return (
     <GlassScreen>
-      <GradientHeader title="Finance" icon="wallet-outline" />
+      <GradientHeader title={t('finance.header')} icon="wallet-outline" />
 
       {/* Segmented control */}
       <View
@@ -315,7 +318,7 @@ export default function FinanceScreen() {
                   fontWeight: on ? '800' : '600',
                 }}
               >
-                {s.label}
+                {t(`finance.segments.${s.key}`)}
               </Text>
             </Pressable>
           );
@@ -331,7 +334,7 @@ export default function FinanceScreen() {
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
           ListHeaderComponent={<SummaryHeader s={summary.data} />}
           refreshControl={<RefreshControl refreshing={purchases.isFetching} onRefresh={refreshAll} tintColor={colors.accent} />}
-          ListEmptyComponent={<Empty icon="cart-outline" label="No purchases yet." />}
+          ListEmptyComponent={<Empty icon="cart-outline" label={t('finance.empty.purchases')} />}
           renderItem={({ item }: { item: Purchase }) => (
             <FinanceRow
               onPress={() => router.push(`/(app)/purchase/${item.id}`)}
@@ -346,12 +349,12 @@ export default function FinanceScreen() {
                 </Text>
               </View>
               <Text style={{ color: colors.text, fontSize: font.sm, marginTop: 2 }} numberOfLines={1}>
-                {item.supplier?.company || item.supplier?.name || 'Supplier'}
+                {item.supplier?.company || item.supplier?.name || t('finance.supplier')}
               </Text>
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
                 {(() => {
-                  const s = statusMeta(PURCHASE_STATUS_META, item.status);
-                  const pay = statusMeta(PURCHASE_PAYMENT_META, item.paymentStatus);
+                  const s = statusMeta(PURCHASE_STATUS_META, item.status, t);
+                  const pay = statusMeta(PURCHASE_PAYMENT_META, item.paymentStatus, t);
                   return (
                     <>
                       <Badge label={s.label} color={s.color} soft={s.soft} />
@@ -370,7 +373,7 @@ export default function FinanceScreen() {
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
           ListHeaderComponent={<SummaryHeader s={summary.data} />}
           refreshControl={<RefreshControl refreshing={expenses.isFetching} onRefresh={refreshAll} tintColor={colors.accent} />}
-          ListEmptyComponent={<Empty icon="cash-outline" label="No expense entries yet." />}
+          ListEmptyComponent={<Empty icon="cash-outline" label={t('finance.empty.expenses')} />}
           renderItem={({ item }: { item: Expense }) => {
             const m = EXPENSE_TYPE_META[item.type];
             return (
@@ -385,7 +388,7 @@ export default function FinanceScreen() {
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
-                  <Badge label={m.label} color={m.color} soft={m.soft} />
+                  <Badge label={t(`status.${item.type}`)} color={m.color} soft={m.soft} />
                   <Text style={{ color: colors.textFaint, fontSize: font.xs }}>
                     {fmtDate(item.expenseDate)}
                   </Text>
@@ -406,14 +409,14 @@ export default function FinanceScreen() {
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
           ListHeaderComponent={<SummaryHeader s={summary.data} />}
           refreshControl={<RefreshControl refreshing={ledger.isFetching} onRefresh={refreshAll} tintColor={colors.accent} />}
-          ListEmptyComponent={<Empty icon="book-outline" label="No ledger entries yet." />}
+          ListEmptyComponent={<Empty icon="book-outline" label={t('finance.empty.ledger')} />}
           renderItem={({ item }: { item: LedgerEntry }) => {
             const m = LEDGER_DIRECTION_META[item.direction];
             return (
               <FinanceRow>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ color: colors.text, fontSize: font.sm, fontWeight: '700', flex: 1 }} numberOfLines={1}>
-                    {item.account?.name || item.account?.code || LEDGER_SOURCE_LABEL[item.sourceType]}
+                    {item.account?.name || item.account?.code || t(`source.${item.sourceType}`)}
                   </Text>
                   <Text style={{ color: m.color, fontSize: font.md, fontWeight: '800', marginLeft: 8 }}>
                     {item.direction === 'OUT' ? '-' : '+'}
@@ -422,9 +425,9 @@ export default function FinanceScreen() {
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
                   <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
-                    <Badge label={m.label} color={m.color} soft={m.soft} />
+                    <Badge label={t(`status.${item.direction}`)} color={m.color} soft={m.soft} />
                     <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-                      {LEDGER_SOURCE_LABEL[item.sourceType]}
+                      {t(`source.${item.sourceType}`)}
                     </Text>
                   </View>
                   <Text style={{ color: colors.textFaint, fontSize: font.xs }}>
@@ -450,43 +453,43 @@ export default function FinanceScreen() {
       <FormModal
         visible={expOpen}
         onClose={() => setExpOpen(false)}
-        title={expEditing ? 'Edit Entry' : 'New Entry'}
+        title={expEditing ? t('finance.expenseForm.titleEdit') : t('finance.expenseForm.titleNew')}
         onSubmit={submitExpense}
         submitting={saveExpense.isPending}
         error={expErr}
       >
         <Select
-          label="Type"
+          label={t('finance.expenseForm.type')}
           value={expForm.type}
           options={[
-            { label: 'Expense', value: 'EXPENSE' },
-            { label: 'Income', value: 'INCOME' },
+            { label: t('status.EXPENSE'), value: 'EXPENSE' },
+            { label: t('status.INCOME'), value: 'INCOME' },
           ]}
           onChange={(v) => setExpForm((f) => ({ ...f, type: v as ExpenseInput['type'] }))}
         />
         <Input
-          label="Category *"
+          label={t('finance.expenseForm.category')}
           value={expForm.category ?? ''}
           onChangeText={(v) => setExpForm((f) => ({ ...f, category: v }))}
-          placeholder="e.g. Marketing, Salaries"
+          placeholder={t('finance.expenseForm.categoryPlaceholder')}
         />
         <Input
-          label="Amount *"
+          label={t('finance.expenseForm.amount')}
           value={expForm.amount ? String(expForm.amount) : ''}
           onChangeText={(v) => setExpForm((f) => ({ ...f, amount: Number(v.replace(/[^0-9.]/g, '')) || 0 }))}
           placeholder="0.00"
           keyboardType="decimal-pad"
         />
         <DateField
-          label="Date"
+          label={t('finance.expenseForm.date')}
           value={expForm.expenseDate}
           onChange={(v) => setExpForm((f) => ({ ...f, expenseDate: v }))}
         />
         <Textarea
-          label="Description"
+          label={t('finance.expenseForm.description')}
           value={expForm.description ?? ''}
           onChangeText={(v) => setExpForm((f) => ({ ...f, description: v }))}
-          placeholder="Optional notes"
+          placeholder={t('finance.expenseForm.descriptionPlaceholder')}
         />
       </FormModal>
 
@@ -494,50 +497,50 @@ export default function FinanceScreen() {
       <FormModal
         visible={purOpen}
         onClose={() => setPurOpen(false)}
-        title="New Purchase"
+        title={t('finance.purchaseForm.title')}
         onSubmit={submitPurchase}
         submitting={savePurchase.isPending}
         error={purErr}
       >
         <Select
-          label="Supplier *"
+          label={t('finance.purchaseForm.supplier')}
           value={purForm.supplierId}
           options={supplierOptions}
           onChange={(v) => setPurForm((f) => ({ ...f, supplierId: v }))}
-          placeholder={supplierList.isLoading ? 'Loading…' : 'Select a supplier'}
+          placeholder={supplierList.isLoading ? t('finance.purchaseForm.loading') : t('finance.purchaseForm.selectSupplier')}
         />
         <LineItemsEditor
           items={purForm.lineItems ?? []}
           onChange={(items: LineItemInput[]) => setPurForm((f) => ({ ...f, lineItems: items }))}
         />
         <Input
-          label="Tax Rate (%)"
+          label={t('finance.purchaseForm.taxRate')}
           value={purForm.taxRate ? String(purForm.taxRate) : ''}
           onChangeText={(v) => setPurForm((f) => ({ ...f, taxRate: Number(v.replace(/[^0-9.]/g, '')) || 0 }))}
           placeholder="0"
           keyboardType="decimal-pad"
         />
         <Select
-          label="Status"
+          label={t('finance.purchaseForm.status')}
           value={purForm.status}
-          options={PURCHASE_STATUS_OPTIONS}
+          options={purchaseStatusOptions}
           onChange={(v) => setPurForm((f) => ({ ...f, status: v as PurchaseInput['status'] }))}
         />
         <DateField
-          label="Order Date"
+          label={t('finance.purchaseForm.orderDate')}
           value={purForm.orderDate ?? ''}
           onChange={(v) => setPurForm((f) => ({ ...f, orderDate: v }))}
         />
         <DateField
-          label="Due Date"
+          label={t('finance.purchaseForm.dueDate')}
           value={purForm.dueDate ?? ''}
           onChange={(v) => setPurForm((f) => ({ ...f, dueDate: v }))}
         />
         <Textarea
-          label="Notes"
+          label={t('finance.purchaseForm.notes')}
           value={purForm.notes ?? ''}
           onChangeText={(v) => setPurForm((f) => ({ ...f, notes: v }))}
-          placeholder="Optional notes"
+          placeholder={t('finance.purchaseForm.notesPlaceholder')}
         />
       </FormModal>
 
@@ -547,11 +550,11 @@ export default function FinanceScreen() {
         onClose={() => setExpSheet(null)}
         title={expSheet?.category}
         actions={[
-          { label: 'Edit', icon: 'create-outline', onPress: () => expSheet && openExpenseEdit(expSheet) },
+          { label: t('finance.actions.edit'), icon: 'create-outline', onPress: () => expSheet && openExpenseEdit(expSheet) },
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('finance.actions.delete'),
                   icon: 'trash-outline' as const,
                   destructive: true,
                   onPress: () => {
@@ -567,9 +570,9 @@ export default function FinanceScreen() {
         visible={!!expDelete}
         onClose={() => setExpDelete(null)}
         onConfirm={() => expDelete && delExpense.mutate(expDelete.id)}
-        title="Delete Entry"
-        message={`Delete "${expDelete?.category}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('finance.deleteEntry.title')}
+        message={t('finance.deleteEntry.message', { name: expDelete?.category ?? '' })}
+        confirmLabel={t('finance.actions.delete')}
         destructive
         submitting={delExpense.isPending}
         error={expDeleteErr}
@@ -582,14 +585,14 @@ export default function FinanceScreen() {
         title={purSheet?.purchaseNumber}
         actions={[
           {
-            label: 'Open',
+            label: t('finance.actions.open'),
             icon: 'open-outline',
             onPress: () => purSheet && router.push(`/(app)/purchase/${purSheet.id}`),
           },
           ...(purSheet && purSheet.paymentStatus !== 'PAID'
             ? [
                 {
-                  label: 'Mark as Paid',
+                  label: t('finance.actions.markPaid'),
                   icon: 'checkmark-circle-outline' as const,
                   onPress: () => purSheet && markPurchasePaid.mutate(purSheet.id),
                 },
@@ -598,7 +601,7 @@ export default function FinanceScreen() {
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('finance.actions.delete'),
                   icon: 'trash-outline' as const,
                   destructive: true,
                   onPress: () => {
@@ -614,9 +617,9 @@ export default function FinanceScreen() {
         visible={!!purDelete}
         onClose={() => setPurDelete(null)}
         onConfirm={() => purDelete && delPurchase.mutate(purDelete.id)}
-        title="Delete Purchase"
-        message={`Delete "${purDelete?.purchaseNumber}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('finance.deletePurchase.title')}
+        message={t('finance.deletePurchase.message', { name: purDelete?.purchaseNumber ?? '' })}
+        confirmLabel={t('finance.actions.delete')}
         destructive
         submitting={delPurchase.isPending}
         error={purActionErr}

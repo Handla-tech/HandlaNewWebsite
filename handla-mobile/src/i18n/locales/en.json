@@ -183,7 +183,68 @@
     "purchases": "Purchases",
     "expenses": "Expenses",
     "ledger": "Ledger",
-    "empty": "Nothing here yet"
+    "empty": {
+      "purchases": "No purchases yet.",
+      "expenses": "No expense entries yet.",
+      "ledger": "No ledger entries yet."
+    },
+    "header": "Finance",
+    "segments": {
+      "purchases": "Purchases",
+      "expenses": "Expenses",
+      "ledger": "Ledger"
+    },
+    "incomeVsExpenses": "Income vs Expenses",
+    "income": "Income",
+    "net": "Net",
+    "supplier": "Supplier",
+    "errors": {
+      "saveExpense": "Failed to save expense",
+      "createPurchase": "Failed to create purchase",
+      "deleteExpense": "Failed to delete expense",
+      "deletePurchase": "Failed to delete purchase",
+      "categoryRequired": "Category is required.",
+      "amountPositive": "Amount must be greater than 0.",
+      "supplierRequired": "Supplier is required.",
+      "lineItemRequired": "At least one line item is required."
+    },
+    "expenseForm": {
+      "titleEdit": "Edit Entry",
+      "titleNew": "New Entry",
+      "type": "Type",
+      "category": "Category *",
+      "categoryPlaceholder": "e.g. Marketing, Salaries",
+      "amount": "Amount *",
+      "date": "Date",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional notes"
+    },
+    "purchaseForm": {
+      "title": "New Purchase",
+      "supplier": "Supplier *",
+      "loading": "Loading…",
+      "selectSupplier": "Select a supplier",
+      "taxRate": "Tax Rate (%)",
+      "status": "Status",
+      "orderDate": "Order Date",
+      "dueDate": "Due Date",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "open": "Open",
+      "markPaid": "Mark as Paid"
+    },
+    "deleteEntry": {
+      "title": "Delete Entry",
+      "message": "Delete \"{{name}}\"? This cannot be undone."
+    },
+    "deletePurchase": {
+      "title": "Delete Purchase",
+      "message": "Delete \"{{name}}\"? This cannot be undone."
+    }
   },
   "support": {
     "title": "Support",
