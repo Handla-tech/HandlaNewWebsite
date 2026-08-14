@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { Providers } from '@/components/Providers';
 import { JsonLd, organizationSchema, softwareServicesSchema } from '@/components/JsonLd';
+
+// ─── Analytics endpoint (self-hosted tracker) ──────────────────────────────────
+// NEXT_PUBLIC_API_URL already includes the `/api` prefix (e.g. http://host/api),
+// so the collect endpoint is `${API_URL}/analytics/collect`.
+const ANALYTICS_API =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const ANALYTICS_ENDPOINT = `${ANALYTICS_API.replace(/\/$/, '')}/analytics/collect`;
 
 // ─── Font ─────────────────────────────────────────────────────────────────────
 
@@ -88,6 +96,14 @@ export default function RootLayout({
             {children}
           </div>
         </Providers>
+
+        {/* ── Self-hosted analytics tracker (auto pageviews + handla('event')) ── */}
+        <Script
+          src="/analytics.js"
+          strategy="afterInteractive"
+          data-endpoint={ANALYTICS_ENDPOINT}
+          data-site="handla"
+        />
       </body>
     </html>
   );

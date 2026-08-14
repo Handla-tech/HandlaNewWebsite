@@ -159,9 +159,9 @@ GA-style tracking for the public marketing site.
 - [x] Tests (18 — parsing helpers, record, overview, topPages, timeseries).
 
 ### Frontend
-- [ ] `public/analytics.js` — tiny (<3kb) tracker: sets anon id cookie, sends pageviews on route change, exposes `handla('event', name, data)`.
-- [ ] Wire tracker into the marketing site (landing pages, key CTAs: contact submit, start chat, quote request).
-- [ ] `/erp/analytics` — GA-style dashboard (visitors, pageviews, sessions, top pages/referrers, device charts, live-ish recent events).
+- [x] `public/analytics.js` — tiny (~5.7kb) tracker: first-party anon id cookie, auto pageviews on load + SPA route change (History API + popstate), `handla('event', name, meta)`, sendBeacon→fetch→pixel fallback, honours Do-Not-Track. Config via `data-endpoint`/`data-site`.
+- [x] Wire tracker into the marketing site: `<Script>` in root `layout.tsx` (endpoint derived from `NEXT_PUBLIC_API_URL`); `lib/track.ts` helper + CTA events on Hero primary/secondary and Contact start-chat/admin-panel.
+- [ ] `/erp/analytics` — GA-style dashboard (visitors, pageviews, sessions, top pages/referrers, device charts, top events). _(pending — analyticsApi + endpoints ready)_
 
 ---
 

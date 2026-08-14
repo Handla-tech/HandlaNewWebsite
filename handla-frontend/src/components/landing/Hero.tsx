@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
+import { track } from '@/lib/track';
 
 // ── Bilingual rotating phrases with per-word highlight spec ───────────────────
 const PHRASES_EN = [
@@ -631,6 +632,7 @@ export default function Hero() {
             >
               <Link
                 href="#contact"
+                onClick={() => track('cta_hero_primary', { target: '#contact' })}
                 className="btn-primary flex items-center gap-2 text-sm group"
                 style={{ boxShadow: '0 0 0 0 rgba(251,191,36,0)' }}
                 onMouseEnter={(e) => {
@@ -647,6 +649,7 @@ export default function Hero() {
                 href="#solutions"
                 onClick={(e) => {
                   e.preventDefault();
+                  track('cta_hero_secondary', { target: '#solutions' });
                   document.querySelector('#solutions')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="btn-secondary flex items-center gap-2 text-sm"

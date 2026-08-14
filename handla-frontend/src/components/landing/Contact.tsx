@@ -7,6 +7,7 @@ import { ArrowRight, MessageSquare, ExternalLink } from 'lucide-react';
 import BlurredChatPreview from '@/components/chat/BlurredChatPreview';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { track } from '@/lib/track';
 
 // ── Social links ──────────────────────────────────────────────────────────────
 const SOCIALS = [
@@ -144,6 +145,7 @@ export default function Contact() {
                   {isAdmin ? (
                     <Link
                       href="/erp"
+                      onClick={() => track('cta_contact_admin_panel')}
                       className="group w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02]"
                       style={{
                         background: 'rgba(251,191,36,0.1)',
@@ -159,6 +161,7 @@ export default function Contact() {
                   ) : (
                     <Link
                       href="/dashboard"
+                      onClick={() => track('cta_contact_start_chat')}
                       className="group w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02]"
                       style={{
                         background: 'rgba(251,191,36,0.1)',
