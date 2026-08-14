@@ -28,6 +28,7 @@ const NAV_KEYS: NavLink[] = [
   { type: 'anchor', href: '/#services',  hash: '#services',   key: 'nav.services'  },
   { type: 'anchor', href: '/#solutions', hash: '#solutions',  key: 'nav.solutions' },
   { type: 'page',   href: '/projects',   key: 'nav.projects'  },
+  { type: 'page',   href: '/products',   key: 'nav.products'  },
   { type: 'anchor', href: '/#contact',   hash: '#contact',    key: 'nav.contact'   },
 ];
 

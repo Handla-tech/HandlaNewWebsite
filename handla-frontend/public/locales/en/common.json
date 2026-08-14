@@ -6,6 +6,7 @@
     "solutions": "Solutions",
     "process": "Process",
     "projects": "Projects",
+    "products": "Products",
     "testimonials": "Testimonials",
     "contact": "Contact",
     "signIn": "Sign In",
@@ -1088,6 +1089,15 @@
   "products": {
     "label": "Our Products",
     "title": "Ready-Made Products",
-    "subtitle": "Battle-tested platforms you can deploy today — built and maintained by our team, tailored to your business."
+    "subtitle": "Battle-tested platforms you can deploy today — built and maintained by our team, tailored to your business.",
+    "viewAll": "View all products",
+    "pageTitle": "Products & Solutions",
+    "pageSubtitle": "Explore our ready-made platforms — from School ERP to HR & Payroll and POS — built, maintained and ready to deploy.",
+    "all": "All",
+    "empty": "No products to show yet. Check back soon.",
+    "loadError": "Failed to load products.",
+    "retry": "Retry",
+    "prev": "Previous",
+    "next": "Next"
   }
 }
