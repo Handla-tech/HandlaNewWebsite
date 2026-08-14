@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { purchasesApi } from '@/lib/endpoints';
 import { Loading, Badge, DetailHeader, Row, Button } from '@/components/ui';
-import { money, fmtDate } from '@/lib/salesMeta';
+import { money, fmtDate, statusMeta } from '@/lib/salesMeta';
 import { PURCHASE_STATUS_META, PURCHASE_PAYMENT_META } from '@/lib/financeMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Purchase, LineItem } from '@/types';
@@ -55,16 +55,16 @@ export default function PurchaseDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-            <Badge
-              label={PURCHASE_STATUS_META[p.status].label}
-              color={PURCHASE_STATUS_META[p.status].color}
-              soft={PURCHASE_STATUS_META[p.status].soft}
-            />
-            <Badge
-              label={PURCHASE_PAYMENT_META[p.paymentStatus].label}
-              color={PURCHASE_PAYMENT_META[p.paymentStatus].color}
-              soft={PURCHASE_PAYMENT_META[p.paymentStatus].soft}
-            />
+            {(() => {
+              const s = statusMeta(PURCHASE_STATUS_META, p.status);
+              const pay = statusMeta(PURCHASE_PAYMENT_META, p.paymentStatus);
+              return (
+                <>
+                  <Badge label={s.label} color={s.color} soft={s.soft} />
+                  <Badge label={pay.label} color={pay.color} soft={pay.soft} />
+                </>
+              );
+            })()}
           </View>
 
           <Text style={sectionLabel}>Line Items</Text>

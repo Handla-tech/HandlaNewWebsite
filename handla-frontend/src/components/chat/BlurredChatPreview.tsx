@@ -22,7 +22,7 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
   const { t } = useTranslation();
 
   return (
-    <div className="relative rounded-2xl overflow-hidden" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
+    <div className="relative rounded-2xl overflow-hidden" style={{ background: 'var(--surface-3)', border: '1px solid var(--ov-border)' }}>
 
       {/* ── Chat header ── */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/10" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -62,17 +62,17 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
                 role === 'admin'
-                  ? 'bg-white/10 text-gray-200 rounded-tl-none'
+                  ? 'bg-white/10 rounded-tl-none'
                   : 'rounded-tr-none border'
               }`}
               style={role === 'client' ? {
                 background: 'rgba(251,191,36,0.1)',
                 borderColor: 'rgba(251,191,36,0.25)',
                 color: '#fef3c7',
-              } : {}}
+              } : { color: 'var(--ink-3)' }}
             >
               <p>{text}</p>
-              <p className="text-[10px] text-gray-500 mt-1 text-right">{time}</p>
+              <p className="text-[10px] mt-1 text-right" style={{ color: 'var(--ink-6)' }}>{time}</p>
             </div>
           </div>
         ))}
@@ -80,7 +80,7 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
         {/* ── Blur overlay ── */}
         <div
           className="absolute inset-0 flex items-center justify-center"
-          style={{ backdropFilter: 'blur(12px)', background: 'rgba(10,10,10,0.60)' }}
+          style={{ backdropFilter: 'blur(12px)', background: 'color-mix(in srgb, var(--page-bg) 60%, transparent)' }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 10 }}
@@ -88,9 +88,9 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
             transition={{ delay: 0.15, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-center gap-3 text-center px-6 py-8 rounded-2xl w-[80%] max-w-[320px]"
             style={{
-              background: 'rgba(20,20,20,0.95)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+              background: 'color-mix(in srgb, var(--surface-4) 95%, transparent)',
+              border: '1px solid var(--ov-border)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
             }}
           >
             {/* ── NON-AUTHENTICATED ── */}
@@ -165,7 +165,7 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
 
       {/* ── Disabled input bar ── */}
       <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 opacity-40 pointer-events-none select-none" style={{ background: 'rgba(255,255,255,0.02)' }}>
-        <div className="flex-1 bg-white/5 rounded-xl px-4 py-2.5 text-sm text-gray-500">
+        <div className="flex-1 bg-white/5 rounded-xl px-4 py-2.5 text-sm" style={{ color: 'var(--ink-6)' }}>
           {isAuthenticated ? t('chat.blurInputAuth') : t('chat.blurInputGuest')}
         </div>
         <button

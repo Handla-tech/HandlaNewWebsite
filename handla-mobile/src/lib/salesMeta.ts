@@ -5,7 +5,26 @@
 import { colors } from '@/theme';
 import type { QuotationStatus, ContractStatus, InvoicePaymentStatus } from '@/types';
 
-type Meta = { label: string; color: string; soft: string };
+export type Meta = { label: string; color: string; soft: string };
+
+/** Neutral fallback used when a status value isn't in a meta map (e.g. a
+ *  legacy/unknown status from the API) — prevents "Cannot read property
+ *  'label' of undefined" crashes. */
+const FALLBACK_META: Meta = {
+  label: '—',
+  color: colors.textFaint,
+  soft: 'rgba(255,255,255,0.06)',
+};
+
+/** Safe lookup: returns the meta for `status`, or a neutral fallback that
+ *  shows the raw status text instead of crashing when it's missing/unknown. */
+export function statusMeta(
+  map: Record<string, Meta>,
+  status: string | null | undefined,
+): Meta {
+  if (status && map[status]) return map[status];
+  return status ? { ...FALLBACK_META, label: String(status) } : FALLBACK_META;
+}
 
 export const QUOTATION_STATUS_META: Record<QuotationStatus, Meta> = {
   DRAFT: { label: 'Draft', color: colors.textFaint, soft: 'rgba(255,255,255,0.06)' },

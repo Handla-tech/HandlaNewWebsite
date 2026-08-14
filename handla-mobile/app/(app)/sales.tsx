@@ -30,6 +30,7 @@ import {
   QUOTATION_STATUS_META,
   CONTRACT_STATUS_META,
   INVOICE_STATUS_META,
+  statusMeta,
   money,
   fmtDate,
 } from '@/lib/salesMeta';
@@ -319,7 +320,7 @@ export default function SalesScreen() {
               subtitle={isStaff ? clientLabel(item.client) : `Valid until ${fmtDate(item.validUntil)}`}
               amount={item.total}
               currency={item.currency}
-              badge={QUOTATION_STATUS_META[item.status]}
+              badge={statusMeta(QUOTATION_STATUS_META, item.status)}
               onPress={() => router.push(`/(app)/quotation/${item.id}`)}
             />
           )}
@@ -338,7 +339,7 @@ export default function SalesScreen() {
               number={item.status === 'SIGNED' ? 'Signed' : 'Contract'}
               title={item.title}
               subtitle={isStaff ? clientLabel(item.client) : `Updated ${fmtDate(item.updatedAt)}`}
-              badge={CONTRACT_STATUS_META[item.status]}
+              badge={statusMeta(CONTRACT_STATUS_META, item.status)}
               onPress={() => router.push(`/(app)/contract/${item.id}`)}
             />
           )}
@@ -359,7 +360,7 @@ export default function SalesScreen() {
               subtitle={`Due ${fmtDate(item.dueDate)}`}
               amount={item.total}
               currency={item.currency}
-              badge={INVOICE_STATUS_META[item.paymentStatus]}
+              badge={statusMeta(INVOICE_STATUS_META, item.paymentStatus)}
               onPress={() => router.push(`/(app)/invoice/${item.id}`)}
             />
           )}

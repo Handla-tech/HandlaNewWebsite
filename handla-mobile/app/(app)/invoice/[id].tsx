@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/ui';
 import { FormModal, Textarea, DateField } from '@/components/forms';
 import { LineItemsEditor } from '@/components/LineItemsEditor';
-import { INVOICE_STATUS_META, money, fmtDate } from '@/lib/salesMeta';
+import { INVOICE_STATUS_META, statusMeta, money, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Invoice, LineItem } from '@/types';
 
@@ -134,11 +134,10 @@ export default function InvoiceDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
-            <Badge
-              label={INVOICE_STATUS_META[inv.paymentStatus].label}
-              color={INVOICE_STATUS_META[inv.paymentStatus].color}
-              soft={INVOICE_STATUS_META[inv.paymentStatus].soft}
-            />
+            {(() => {
+              const m = statusMeta(INVOICE_STATUS_META, inv.paymentStatus);
+              return <Badge label={m.label} color={m.color} soft={m.soft} />;
+            })()}
           </View>
 
           <Text style={sectionLabel}>Line Items</Text>

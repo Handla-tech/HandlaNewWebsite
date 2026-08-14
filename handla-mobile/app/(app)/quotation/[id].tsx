@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/ui';
 import { FormModal, Textarea, DateField } from '@/components/forms';
 import { LineItemsEditor } from '@/components/LineItemsEditor';
-import { QUOTATION_STATUS_META, money, fmtDate } from '@/lib/salesMeta';
+import { QUOTATION_STATUS_META, statusMeta, money, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Quotation, LineItem } from '@/types';
 
@@ -174,11 +174,10 @@ export default function QuotationDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
-            <Badge
-              label={QUOTATION_STATUS_META[q.status].label}
-              color={QUOTATION_STATUS_META[q.status].color}
-              soft={QUOTATION_STATUS_META[q.status].soft}
-            />
+            {(() => {
+              const m = statusMeta(QUOTATION_STATUS_META, q.status);
+              return <Badge label={m.label} color={m.color} soft={m.soft} />;
+            })()}
           </View>
 
           {/* Line items */}

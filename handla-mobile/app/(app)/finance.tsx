@@ -27,7 +27,7 @@ import {
   type SelectOption,
 } from '@/components/forms';
 import { LineItemsEditor } from '@/components/LineItemsEditor';
-import { money, fmtDate } from '@/lib/salesMeta';
+import { money, fmtDate, statusMeta } from '@/lib/salesMeta';
 import {
   PURCHASE_STATUS_META,
   PURCHASE_PAYMENT_META,
@@ -352,16 +352,16 @@ export default function FinanceScreen() {
                 {item.supplier?.company || item.supplier?.name || 'Supplier'}
               </Text>
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
-                <Badge
-                  label={PURCHASE_STATUS_META[item.status].label}
-                  color={PURCHASE_STATUS_META[item.status].color}
-                  soft={PURCHASE_STATUS_META[item.status].soft}
-                />
-                <Badge
-                  label={PURCHASE_PAYMENT_META[item.paymentStatus].label}
-                  color={PURCHASE_PAYMENT_META[item.paymentStatus].color}
-                  soft={PURCHASE_PAYMENT_META[item.paymentStatus].soft}
-                />
+                {(() => {
+                  const s = statusMeta(PURCHASE_STATUS_META, item.status);
+                  const pay = statusMeta(PURCHASE_PAYMENT_META, item.paymentStatus);
+                  return (
+                    <>
+                      <Badge label={s.label} color={s.color} soft={s.soft} />
+                      <Badge label={pay.label} color={pay.color} soft={pay.soft} />
+                    </>
+                  );
+                })()}
               </View>
             </Pressable>
           )}

@@ -8,7 +8,7 @@ import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/ui';
 import { FormModal, Textarea } from '@/components/forms';
-import { CONTRACT_STATUS_META, fmtDate } from '@/lib/salesMeta';
+import { CONTRACT_STATUS_META, statusMeta, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
 import type { Contract } from '@/types';
 
@@ -138,11 +138,10 @@ export default function ContractDetailScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
-            <Badge
-              label={CONTRACT_STATUS_META[c.status].label}
-              color={CONTRACT_STATUS_META[c.status].color}
-              soft={CONTRACT_STATUS_META[c.status].soft}
-            />
+            {(() => {
+              const m = statusMeta(CONTRACT_STATUS_META, c.status);
+              return <Badge label={m.label} color={m.color} soft={m.soft} />;
+            })()}
           </View>
 
           <View style={cardStyle}>

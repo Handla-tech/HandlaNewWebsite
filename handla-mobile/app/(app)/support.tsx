@@ -9,6 +9,7 @@ import type { TicketsQuery } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Title, Loading, Badge, Chip } from '@/components/ui';
 import { STATUS_META, PRIORITY_META, STATUS_ORDER } from '@/lib/ticketMeta';
+import { statusMeta } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedTickets, SupportStats, TicketStatus, Ticket } from '@/types';
 
@@ -162,8 +163,8 @@ export default function SupportListScreen() {
           )
         }
         renderItem={({ item }: { item: Ticket }) => {
-          const st = STATUS_META[item.status];
-          const pr = PRIORITY_META[item.priority];
+          const st = statusMeta(STATUS_META, item.status);
+          const pr = statusMeta(PRIORITY_META, item.priority);
           const clientName = item.client?.company || item.client?.user?.name;
           return (
             <Pressable

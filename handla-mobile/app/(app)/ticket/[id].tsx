@@ -23,6 +23,7 @@ import {
   STATUS_ORDER,
   PRIORITY_ORDER,
 } from '@/lib/ticketMeta';
+import { statusMeta } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Ticket, TicketStatus, TicketPriority, TicketReply } from '@/types';
 
@@ -220,11 +221,10 @@ export default function TicketDetailScreen() {
               }}
             >
               <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
-                <Badge
-                  label={STATUS_META[ticket.status].label}
-                  color={STATUS_META[ticket.status].color}
-                  soft={STATUS_META[ticket.status].soft}
-                />
+                {(() => {
+                  const m = statusMeta(STATUS_META, ticket.status);
+                  return <Badge label={m.label} color={m.color} soft={m.soft} />;
+                })()}
                 <Badge
                   label={PRIORITY_META[ticket.priority].label}
                   color={PRIORITY_META[ticket.priority].color}
