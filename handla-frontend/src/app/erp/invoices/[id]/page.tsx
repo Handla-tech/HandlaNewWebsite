@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { invoicesApi } from '@/lib/api';
 import { Invoice, InvoicePaymentStatus } from '@/types';
 // NOTE: jspdf + jspdf-autotable + qrcode together are ~150 kB. We load them
@@ -28,15 +29,10 @@ const STATUS_ICON: Record<InvoicePaymentStatus, React.ElementType> = {
   PAID:    CheckCircle,
   OVERDUE: AlertCircle,
 };
-const STATUS_LABEL: Record<InvoicePaymentStatus, string> = {
-  UNPAID:  'Unpaid',
-  PAID:    'Paid',
-  OVERDUE: 'Overdue',
-};
-
 // ─── MarkPaidModal ────────────────────────────────────────────────────────────
 
 function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,7 +42,7 @@ function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClos
       await invoicesApi.markInvoicePaid(invoice.id);
       onSaved();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to mark as paid');
+      setError(e?.response?.data?.message ?? t('erp.invoices.detail.markPaidFailed'));
     } finally {
       setLoading(false);
     }
@@ -60,17 +56,17 @@ function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClos
             <CreditCard className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Mark as Paid</h3>
+            <h3 className="text-lg font-bold text-white">{t('erp.invoices.detail.markPaidSubtitle')}</h3>
             <p className="text-sm text-gray-400">{invoice.invoiceNumber} — ${Number(invoice.total).toFixed(2)}</p>
           </div>
         </div>
-        <p className="text-gray-300 mb-4 text-sm">Confirm that this invoice has been paid in full?</p>
+        <p className="text-gray-300 mb-4 text-sm">{t('erp.invoices.detail.markPaidConfirm')}</p>
         {error && <div className="p-3 mb-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:bg-white/5 transition-colors">{t('erp.invoices.detail.cancel')}</button>
           <button onClick={handleConfirm} disabled={loading}
             className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />} Confirm Paid
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />} {t('erp.invoices.detail.confirmPaid')}
           </button>
         </div>
       </div>
@@ -81,6 +77,7 @@ function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClos
 // ─── DeleteModal ──────────────────────────────────────────────────────────────
 
 function DeleteModal({ invoice, onClose, onDeleted }: { invoice: Invoice; onClose: () => void; onDeleted: () => void }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -90,7 +87,7 @@ function DeleteModal({ invoice, onClose, onDeleted }: { invoice: Invoice; onClos
       await invoicesApi.deleteInvoice(invoice.id);
       onDeleted();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to delete invoice');
+      setError(e?.response?.data?.message ?? t('erp.invoices.detail.deleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -104,17 +101,17 @@ function DeleteModal({ invoice, onClose, onDeleted }: { invoice: Invoice; onClos
             <Trash2 className="w-6 h-6 text-red-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Delete Invoice</h3>
+            <h3 className="text-lg font-bold text-white">{t('erp.invoices.actions.delete')}</h3>
             <p className="text-sm text-gray-400">{invoice.invoiceNumber}</p>
           </div>
         </div>
-        <p className="text-gray-300 mb-4 text-sm">This action cannot be undone.</p>
+        <p className="text-gray-300 mb-4 text-sm">{t('erp.invoices.detail.deleteWarning')}</p>
         {error && <div className="p-3 mb-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:bg-white/5 transition-colors">{t('erp.invoices.detail.cancel')}</button>
           <button onClick={handleDelete} disabled={loading}
             className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />} Delete
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />} {t('erp.invoices.detail.delete')}
           </button>
         </div>
       </div>
@@ -128,6 +125,7 @@ export default function InvoiceDetailPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const qc = useQueryClient();
@@ -165,8 +163,8 @@ export default function InvoiceDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-300">Invoice not found</h3>
-        <Link href="/erp/invoices" className="mt-4 text-[#fbbf24] hover:underline text-sm">← Back to Invoices</Link>
+        <h3 className="text-lg font-semibold text-gray-300">{t('erp.invoices.detail.notFound')}</h3>
+        <Link href="/erp/invoices" className="mt-4 text-[#fbbf24] hover:underline text-sm">← {t('erp.invoices.detail.backToInvoices')}</Link>
       </div>
     );
   }
@@ -190,7 +188,7 @@ export default function InvoiceDetailPage() {
     } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error('PDF generation failed', e);
-      setPdfError(e?.message ?? 'Failed to generate PDF');
+      setPdfError(e?.message ?? t('erp.invoices.detail.pdfGenFailedGeneric'));
     } finally {
       setPdfLoading(false);
     }
@@ -206,7 +204,7 @@ export default function InvoiceDetailPage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <Link href="/erp/invoices" className="flex items-center gap-1 hover:text-[#fbbf24] transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Invoices
+          <ArrowLeft className="w-4 h-4" /> {t('erp.invoices.title')}
         </Link>
         <span>/</span>
         <span className="text-white">{invoice.invoiceNumber}</span>
@@ -217,9 +215,9 @@ export default function InvoiceDetailPage() {
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-emerald-400" />
           <div>
-            <p className="font-semibold text-emerald-300">Invoice Paid</p>
+            <p className="font-semibold text-emerald-300">{t('erp.invoices.banners.paid')}</p>
             {invoice.paidAt && (
-              <p className="text-sm text-emerald-400/70">Paid on {new Date(invoice.paidAt).toLocaleDateString()}</p>
+              <p className="text-sm text-emerald-400/70">{t('erp.invoices.detail.paidOnDate', { date: new Date(invoice.paidAt).toLocaleDateString() })}</p>
             )}
           </div>
         </div>
@@ -229,14 +227,14 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-400" />
             <div>
-              <p className="font-semibold text-red-300">Invoice Overdue</p>
-              <p className="text-sm text-red-400/70">This invoice was due on {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</p>
+              <p className="font-semibold text-red-300">{t('erp.invoices.banners.overdue')}</p>
+              <p className="text-sm text-red-400/70">{t('erp.invoices.detail.overdueDueDate', { date: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : t('erp.ui.notAvailable') })}</p>
             </div>
           </div>
           {canMarkPaid && (
             <button onClick={() => setShowMarkPaid(true)}
               className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2">
-              <CreditCard className="w-4 h-4" /> Mark Paid
+              <CreditCard className="w-4 h-4" /> {t('erp.invoices.detail.markPaidButton')}
             </button>
           )}
         </div>
@@ -260,29 +258,29 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${STATUS_BADGE[invoice.paymentStatus]}`}>
               <StatusIcon className="w-4 h-4" />
-              {STATUS_LABEL[invoice.paymentStatus]}
+              {t(`erp.invoiceStatus.${invoice.paymentStatus}`)}
             </span>
             <button
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
-              title="Download invoice as PDF (includes QR code)"
+              title={t('erp.invoices.detail.downloadPdfTitle')}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fbbf24]/15 border border-[#fbbf24]/30 text-[#fbbf24] text-sm hover:bg-[#fbbf24]/25 disabled:opacity-60 disabled:cursor-wait transition-colors"
             >
               {pdfLoading
                 ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <Download className="w-4 h-4" />}
-              {pdfLoading ? 'Generating…' : 'Download PDF'}
+              {pdfLoading ? t('erp.invoices.detail.generating') : t('erp.invoices.detail.downloadPdf')}
             </button>
             {canMarkPaid && invoice.paymentStatus !== 'OVERDUE' && (
               <button onClick={() => setShowMarkPaid(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-sm hover:bg-emerald-500/30 transition-colors">
-                <CreditCard className="w-4 h-4" /> Mark Paid
+                <CreditCard className="w-4 h-4" /> {t('erp.invoices.detail.markPaidButton')}
               </button>
             )}
             {canDelete && (
               <button onClick={() => setShowDelete(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-sm hover:bg-red-500/30 transition-colors">
-                <Trash2 className="w-4 h-4" /> Delete
+                <Trash2 className="w-4 h-4" /> {t('erp.invoices.detail.delete')}
               </button>
             )}
           </div>
@@ -295,16 +293,16 @@ export default function InvoiceDetailPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#fbbf24]" /> Line Items
+              <FileText className="w-5 h-5 text-[#fbbf24]" /> {t('erp.invoices.fields.lineItems')}
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-gray-400">
-                    <th className="text-left pb-2 font-medium">Description</th>
-                    <th className="text-center pb-2 font-medium w-16">Qty</th>
-                    <th className="text-right pb-2 font-medium w-24">Unit Price</th>
-                    <th className="text-right pb-2 font-medium w-24">Total</th>
+                    <th className="text-left pb-2 font-medium">{t('erp.invoices.fields.description')}</th>
+                    <th className="text-center pb-2 font-medium w-16">{t('erp.invoices.fields.quantity')}</th>
+                    <th className="text-right pb-2 font-medium w-24">{t('erp.invoices.fields.unitPrice')}</th>
+                    <th className="text-right pb-2 font-medium w-24">{t('erp.invoices.fields.lineTotal')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -323,17 +321,17 @@ export default function InvoiceDetailPage() {
             {/* Totals footer */}
             <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
               <div className="flex justify-between text-sm text-gray-400">
-                <span>Subtotal</span>
+                <span>{t('erp.invoices.fields.subtotal')}</span>
                 <span>${Number(invoice.subtotal).toFixed(2)}</span>
               </div>
               {Number(invoice.taxRate) > 0 && (
                 <div className="flex justify-between text-sm text-gray-400">
-                  <span>Tax ({Number(invoice.taxRate)}%)</span>
+                  <span>{t('erp.invoices.fields.taxAmount')} ({Number(invoice.taxRate)}%)</span>
                   <span>${Number(invoice.taxAmount).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-white text-base pt-2 border-t border-white/10">
-                <span>Total</span>
+                <span>{t('erp.invoices.fields.total')}</span>
                 <span className="text-[#fbbf24] text-xl">${Number(invoice.total).toFixed(2)} {invoice.currency}</span>
               </div>
             </div>
@@ -342,7 +340,7 @@ export default function InvoiceDetailPage() {
           {/* Notes */}
           {invoice.notes && (
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-              <h3 className="text-sm font-semibold text-gray-400 mb-2">Notes</h3>
+              <h3 className="text-sm font-semibold text-gray-400 mb-2">{t('erp.invoices.fields.notes')}</h3>
               <p className="text-gray-300 text-sm whitespace-pre-wrap">{invoice.notes}</p>
             </div>
           )}
@@ -351,12 +349,12 @@ export default function InvoiceDetailPage() {
         {/* Metadata sidebar (1/3) */}
         <div className="space-y-4">
           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Details</h3>
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('erp.invoices.detail.detailsHeading')}</h3>
 
             <div className="flex items-start gap-3">
               <User className="w-4 h-4 text-gray-500 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-500">Client</p>
+                <p className="text-xs text-gray-500">{t('erp.invoices.fields.client')}</p>
                 <p className="text-sm text-white">{invoice.client?.user?.name ?? invoice.clientId}</p>
                 {invoice.client?.company && <p className="text-xs text-gray-400">{invoice.client.company}</p>}
               </div>
@@ -366,7 +364,7 @@ export default function InvoiceDetailPage() {
               <div className="flex items-start gap-3">
                 <User className="w-4 h-4 text-gray-500 mt-0.5" />
                 <div>
-                  <p className="text-xs text-gray-500">Owner</p>
+                  <p className="text-xs text-gray-500">{t('erp.invoices.fields.owner')}</p>
                   <p className="text-sm text-white">{invoice.owner.name}</p>
                 </div>
               </div>
@@ -376,7 +374,7 @@ export default function InvoiceDetailPage() {
               <div className="flex items-start gap-3">
                 <Calendar className={`w-4 h-4 mt-0.5 ${isOverdue ? 'text-red-400' : 'text-gray-500'}`} />
                 <div>
-                  <p className="text-xs text-gray-500">Due Date</p>
+                  <p className="text-xs text-gray-500">{t('erp.invoices.fields.dueDate')}</p>
                   <p className={`text-sm ${isOverdue ? 'text-red-300' : 'text-white'}`}>
                     {new Date(invoice.dueDate).toLocaleDateString()}
                   </p>
@@ -388,7 +386,7 @@ export default function InvoiceDetailPage() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5" />
                 <div>
-                  <p className="text-xs text-gray-500">Paid At</p>
+                  <p className="text-xs text-gray-500">{t('erp.invoices.fields.paidAt')}</p>
                   <p className="text-sm text-white">{new Date(invoice.paidAt).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -397,7 +395,7 @@ export default function InvoiceDetailPage() {
             <div className="flex items-start gap-3">
               <Calendar className="w-4 h-4 text-gray-500 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-500">Issued</p>
+                <p className="text-xs text-gray-500">{t('erp.invoices.fields.issuedAt')}</p>
                 <p className="text-sm text-white">{new Date(invoice.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
@@ -407,7 +405,7 @@ export default function InvoiceDetailPage() {
           <div className="p-5 rounded-2xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
             <div className="flex items-center gap-2 mb-3">
               <DollarSign className="w-4 h-4 text-[#fbbf24]" />
-              <p className="text-sm font-semibold text-[#fbbf24]">Amount Due</p>
+              <p className="text-sm font-semibold text-[#fbbf24]">{t('erp.invoices.summary.amountDue')}</p>
             </div>
             <p className="text-3xl font-bold text-white">${Number(invoice.total).toFixed(2)}</p>
             <p className="text-xs text-gray-400 mt-1">{invoice.currency}</p>
@@ -420,7 +418,7 @@ export default function InvoiceDetailPage() {
         <div className="fixed bottom-6 right-6 z-50 max-w-sm p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm shadow-2xl backdrop-blur flex items-start gap-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">PDF generation failed</p>
+            <p className="font-semibold">{t('erp.invoices.detail.pdfGenFailed')}</p>
             <p className="text-xs text-red-400/80 mt-0.5">{pdfError}</p>
           </div>
           <button onClick={() => setPdfError('')} className="text-red-400/60 hover:text-red-300">

@@ -1132,6 +1132,27 @@
       "revenueOnPage": "Paid revenue on this page:",
       "pagination": {
         "summary": "{{total}} invoices · page {{page}} of {{pages}}"
+      },
+      "detail": {
+        "notFound": "Invoice not found",
+        "backToInvoices": "Back to Invoices",
+        "paidOnDate": "Paid on {{date}}",
+        "overdueDueDate": "This invoice was due on {{date}}",
+        "markPaidButton": "Mark Paid",
+        "downloadPdfTitle": "Download invoice as PDF (includes QR code)",
+        "generating": "Generating…",
+        "downloadPdf": "Download PDF",
+        "detailsHeading": "Details",
+        "pdfGenFailed": "PDF generation failed",
+        "pdfGenFailedGeneric": "Failed to generate PDF",
+        "markPaidFailed": "Failed to mark as paid",
+        "deleteFailed": "Failed to delete invoice",
+        "deleteWarning": "This action cannot be undone.",
+        "markPaidSubtitle": "Mark as Paid",
+        "markPaidConfirm": "Confirm that this invoice has been paid in full?",
+        "confirmPaid": "Confirm Paid",
+        "cancel": "Cancel",
+        "delete": "Delete"
       }
     },
     "expenses": {
@@ -1381,7 +1402,8 @@
       "category": "Category",
       "createdAt": "Created",
       "updatedAt": "Updated",
-      "actionsFailed": "Something went wrong. Please try again."
+      "actionsFailed": "Something went wrong. Please try again.",
+      "notAvailable": "N/A"
     },
     "projectStatus": {
       "PLANNING": "Planning",

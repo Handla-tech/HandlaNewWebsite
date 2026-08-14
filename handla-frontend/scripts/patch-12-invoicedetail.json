@@ -1,0 +1,56 @@
+{
+  "en": {
+    "erp": {
+      "invoices": {
+        "detail": {
+          "notFound": "Invoice not found",
+          "backToInvoices": "Back to Invoices",
+          "paidOnDate": "Paid on {{date}}",
+          "overdueDueDate": "This invoice was due on {{date}}",
+          "markPaidButton": "Mark Paid",
+          "downloadPdfTitle": "Download invoice as PDF (includes QR code)",
+          "generating": "Generating…",
+          "downloadPdf": "Download PDF",
+          "detailsHeading": "Details",
+          "pdfGenFailed": "PDF generation failed",
+          "pdfGenFailedGeneric": "Failed to generate PDF",
+          "markPaidFailed": "Failed to mark as paid",
+          "deleteFailed": "Failed to delete invoice",
+          "deleteWarning": "This action cannot be undone.",
+          "markPaidSubtitle": "Mark as Paid",
+          "markPaidConfirm": "Confirm that this invoice has been paid in full?",
+          "confirmPaid": "Confirm Paid",
+          "cancel": "Cancel",
+          "delete": "Delete"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "invoices": {
+        "detail": {
+          "notFound": "الفاتورة غير موجودة",
+          "backToInvoices": "العودة إلى الفواتير",
+          "paidOnDate": "تم الدفع في {{date}}",
+          "overdueDueDate": "كان موعد استحقاق هذه الفاتورة في {{date}}",
+          "markPaidButton": "تعليم كمدفوعة",
+          "downloadPdfTitle": "تنزيل الفاتورة بصيغة PDF (يتضمن رمز QR)",
+          "generating": "جارٍ الإنشاء…",
+          "downloadPdf": "تنزيل PDF",
+          "detailsHeading": "التفاصيل",
+          "pdfGenFailed": "فشل إنشاء ملف PDF",
+          "pdfGenFailedGeneric": "فشل إنشاء ملف PDF",
+          "markPaidFailed": "فشل تعليم الفاتورة كمدفوعة",
+          "deleteFailed": "فشل حذف الفاتورة",
+          "deleteWarning": "لا يمكن التراجع عن هذا الإجراء.",
+          "markPaidSubtitle": "تعليم كمدفوعة",
+          "markPaidConfirm": "هل تؤكد أن هذه الفاتورة قد تم دفعها بالكامل؟",
+          "confirmPaid": "تأكيد الدفع",
+          "cancel": "إلغاء",
+          "delete": "حذف"
+        }
+      }
+    }
+  }
+}

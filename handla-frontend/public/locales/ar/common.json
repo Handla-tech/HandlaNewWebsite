@@ -1132,6 +1132,27 @@
       "revenueOnPage": "الإيرادات المدفوعة في هذه الصفحة:",
       "pagination": {
         "summary": "{{total}} فاتورة · صفحة {{page}} من {{pages}}"
+      },
+      "detail": {
+        "notFound": "الفاتورة غير موجودة",
+        "backToInvoices": "العودة إلى الفواتير",
+        "paidOnDate": "تم الدفع في {{date}}",
+        "overdueDueDate": "كان موعد استحقاق هذه الفاتورة في {{date}}",
+        "markPaidButton": "تعليم كمدفوعة",
+        "downloadPdfTitle": "تنزيل الفاتورة بصيغة PDF (يتضمن رمز QR)",
+        "generating": "جارٍ الإنشاء…",
+        "downloadPdf": "تنزيل PDF",
+        "detailsHeading": "التفاصيل",
+        "pdfGenFailed": "فشل إنشاء ملف PDF",
+        "pdfGenFailedGeneric": "فشل إنشاء ملف PDF",
+        "markPaidFailed": "فشل تعليم الفاتورة كمدفوعة",
+        "deleteFailed": "فشل حذف الفاتورة",
+        "deleteWarning": "لا يمكن التراجع عن هذا الإجراء.",
+        "markPaidSubtitle": "تعليم كمدفوعة",
+        "markPaidConfirm": "هل تؤكد أن هذه الفاتورة قد تم دفعها بالكامل؟",
+        "confirmPaid": "تأكيد الدفع",
+        "cancel": "إلغاء",
+        "delete": "حذف"
       }
     },
     "expenses": {
@@ -1381,7 +1402,8 @@
       "category": "الفئة",
       "createdAt": "تاريخ الإنشاء",
       "updatedAt": "آخر تحديث",
-      "actionsFailed": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      "actionsFailed": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "notAvailable": "غير متوفر"
     },
     "projectStatus": {
       "PLANNING": "تخطيط",
