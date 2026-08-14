@@ -3,7 +3,6 @@ import Navbar       from '@/components/landing/Navbar';
 import Hero          from '@/components/landing/Hero';
 import About         from '@/components/landing/About';
 import ServicesBento from '@/components/landing/ServicesBento';
-import Solutions     from '@/components/landing/Solutions';
 import Process       from '@/components/landing/Process';
 import Footer        from '@/components/landing/Footer';
 
@@ -79,22 +78,19 @@ export default function LandingPage() {
         {/* 3. Services — 4 service cards */}
         <ServicesBento />
 
-        {/* 4. Solutions — ready-made products (School ERP, HR & Payroll) */}
-        <Solutions />
-
-        {/* 5. Process — 4-step Discover → Design → Build → Launch */}
+        {/* 4. Process — 4-step Discover → Design → Build → Launch */}
         <Process />
 
-        {/* 6. Projects — featured website portfolio + "View all projects" (client-only, API fetch) */}
+        {/* 5. Projects — featured website portfolio + "View all projects" (client-only, API fetch) */}
         <Projects />
 
-        {/* 7. Products — featured products/solutions showcase (client-only, API fetch) */}
+        {/* 6. Products — ready-made products showcase, ERP-driven (client-only, API fetch) */}
         <Products />
 
-        {/* 8. Testimonials — client stories carousel (client-only, API fetch) */}
+        {/* 7. Testimonials — client stories carousel (client-only, API fetch) */}
         <Testimonials />
 
-        {/* 7. Contact — live chat widget + social media links */}
+        {/* 8. Contact — live chat widget + social media links */}
         <Contact />
       </main>
 

@@ -8,8 +8,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 const LINK_KEYS: { href: string; key: string }[] = [
   { href: '#about',     key: 'nav.about'    },
   { href: '#services',  key: 'nav.services' },
-  { href: '#solutions', key: 'nav.solutions'},
-  { href: '#process',   key: 'nav.process'  },
+  { href: '/projects',  key: 'nav.projects' },
+  { href: '/products',  key: 'nav.products' },
   { href: '#contact',   key: 'nav.contact'  },
 ];
 
@@ -41,6 +41,9 @@ export default function Footer() {
   const year   = new Date().getFullYear();
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // In-page hash links → smooth-scroll. Page routes (e.g. /projects) → let
+    // the browser navigate normally.
+    if (!href.startsWith('#')) return;
     e.preventDefault();
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
   };

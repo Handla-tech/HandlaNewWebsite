@@ -646,11 +646,11 @@ export default function Hero() {
                 <ArrowRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isRTL ? 'rotate-180' : ''}`} />
               </Link>
               <a
-                href="#solutions"
+                href="#products"
                 onClick={(e) => {
                   e.preventDefault();
-                  track('cta_hero_secondary', { target: '#solutions' });
-                  document.querySelector('#solutions')?.scrollIntoView({ behavior: 'smooth' });
+                  track('cta_hero_secondary', { target: '#products' });
+                  document.querySelector('#products')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="btn-secondary flex items-center gap-2 text-sm"
               >
