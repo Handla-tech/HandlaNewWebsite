@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogIn, Globe, MessageSquare, LayoutDashboard, LogOut } from 'lucide-react';
+import { Menu, X, LogIn, Globe, MessageSquare, LayoutDashboard, LogOut, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/store/uiStore';
@@ -38,6 +38,8 @@ export default function Navbar() {
   // ── i18n ─────────────────────────────────────────────────────────────────
   const { t, locale, isRTL } = useTranslation();
   const setLocale             = useUIStore((s) => s.setLocale);
+  const theme                 = useUIStore((s) => s.theme);
+  const toggleTheme           = useUIStore((s) => s.toggleTheme);
 
   // ── Scroll detection ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -157,6 +159,19 @@ export default function Navbar() {
 
             {/* ── Right controls ────────────────────────────────────────── */}
             <div className="hidden md:flex items-center gap-1">
+
+              {/* Theme toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={t('common.theme.toggle')}
+                title={t('common.theme.toggle')}
+                className="flex items-center justify-center w-[44px] h-[44px] text-[#707070] hover:text-white rounded-lg hover:bg-white/[0.04] transition-all duration-200"
+              >
+                {theme === 'dark'
+                  ? <Sun className="w-4 h-4" aria-hidden="true" />
+                  : <Moon className="w-4 h-4" aria-hidden="true" />}
+              </button>
 
               {/* Locale toggle */}
               <button
@@ -407,6 +422,18 @@ export default function Navbar() {
                 className="px-4 py-5 space-y-2"
                 style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
               >
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  aria-label={t('common.theme.toggle')}
+                  className="w-full flex items-center gap-2 px-4 py-3 min-h-[44px] text-sm text-[#a0a0a0] hover:text-white rounded-xl hover:bg-white/5 transition-colors"
+                >
+                  {theme === 'dark'
+                    ? <Sun className="w-4 h-4" aria-hidden="true" />
+                    : <Moon className="w-4 h-4" aria-hidden="true" />}
+                  <span>{theme === 'dark' ? t('common.theme.light') : t('common.theme.dark')}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={toggleLocale}

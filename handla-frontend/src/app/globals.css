@@ -10,8 +10,9 @@
    CSS Custom Properties
    ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
-  :root {
-    /* Handla brand: always dark + gold */
+  /* ── Dark theme (default) ─────────────────────────────────────────────── */
+  :root,
+  html.dark {
     --page-bg:       #0a0a0a;
     --card-bg:       #141414;
     --card-bg-hover: #1a1a1a;
@@ -24,7 +25,7 @@
     --text-secondary:#a0a0a0;
     --text-muted:    #666666;
 
-    /* shadcn/ui tokens (dark everywhere) */
+    /* shadcn/ui tokens (dark) */
     --background:        0 0% 4%;
     --foreground:        0 0% 98%;
     --card:              0 0% 8%;
@@ -45,6 +46,104 @@
     --input:             0 0% 16%;
     --ring:              45 96% 55%;
     --radius:            0.75rem;
+
+    /* Neutral scale — resolves in the class-remap layer below.
+       These flip in light mode so the whole UI inverts cohesively. */
+    --surface-0:   #0a0a0a;  /* deepest page bg   */
+    --surface-1:   #0d0d0d;
+    --surface-2:   #0f0f0f;
+    --surface-3:   #111111;  /* raised panel      */
+    --surface-4:   #141414;  /* card              */
+    --surface-5:   #161616;
+    --surface-6:   #1a1a1a;  /* card hover        */
+    --surface-7:   #1e1e1e;
+    --surface-8:   #2a2a2a;  /* borders / chips   */
+
+    /* Neutral text ramp (light → dark reading contrast) */
+    --ink-1:  #ffffff;   /* strongest */
+    --ink-2:  #b0b0b0;
+    --ink-3:  #aaaaaa;
+    --ink-4:  #888888;
+    --ink-5:  #666666;
+    --ink-6:  #555555;
+    --ink-7:  #444444;
+    --ink-8:  #333333;
+
+    /* White-overlay tokens (used for bg-white/x, border-white/x) */
+    --ov-weak:    rgba(255,255,255,0.03);
+    --ov-soft:    rgba(255,255,255,0.05);
+    --ov-med:     rgba(255,255,255,0.08);
+    --ov-strong:  rgba(255,255,255,0.12);
+    --ov-border:  rgba(255,255,255,0.10);
+    --ov-border-2:rgba(255,255,255,0.06);
+    color-scheme: dark;
+  }
+
+  /* ── Light theme ──────────────────────────────────────────────────────── */
+  html.light {
+    --page-bg:       #f6f7f9;
+    --card-bg:       #ffffff;
+    --card-bg-hover: #f0f2f5;
+    --border-color:  #e3e6ea;
+    --border-hover:  #d0d5db;
+    --gold:          #b7791f;   /* darker gold reads on light bg */
+    --gold-dim:      rgba(183,121,31,0.12);
+    --gold-glow:     0 0 24px rgba(183,121,31,0.15);
+    --text-primary:  #0f1115;
+    --text-secondary:#4b5563;
+    --text-muted:    #6b7280;
+
+    /* shadcn/ui tokens (light) */
+    --background:        0 0% 98%;
+    --foreground:        222 20% 12%;
+    --card:              0 0% 100%;
+    --card-foreground:   222 20% 12%;
+    --popover:           0 0% 100%;
+    --popover-foreground:222 20% 12%;
+    --primary:           38 68% 42%;
+    --primary-foreground:0 0% 100%;
+    --secondary:         210 16% 93%;
+    --secondary-foreground:222 20% 12%;
+    --muted:             210 16% 93%;
+    --muted-foreground:  215 14% 40%;
+    --accent:            210 16% 93%;
+    --accent-foreground: 222 20% 12%;
+    --destructive:       0 72% 46%;
+    --destructive-foreground:0 0% 100%;
+    --border:            214 20% 90%;
+    --input:             214 20% 90%;
+    --ring:              38 68% 42%;
+    --radius:            0.75rem;
+
+    /* Neutral scale inverted for light surfaces */
+    --surface-0:   #f6f7f9;
+    --surface-1:   #ffffff;
+    --surface-2:   #ffffff;
+    --surface-3:   #ffffff;
+    --surface-4:   #ffffff;
+    --surface-5:   #f7f8fa;
+    --surface-6:   #f0f2f5;
+    --surface-7:   #e9ecf0;
+    --surface-8:   #e3e6ea;
+
+    /* Text ramp inverted: dark ink on light bg */
+    --ink-1:  #0f1115;
+    --ink-2:  #374151;
+    --ink-3:  #4b5563;
+    --ink-4:  #6b7280;
+    --ink-5:  #6b7280;
+    --ink-6:  #9ca3af;
+    --ink-7:  #9ca3af;
+    --ink-8:  #b8bec7;
+
+    /* Overlays become dark-on-light instead of white-on-dark */
+    --ov-weak:    rgba(17,20,26,0.02);
+    --ov-soft:    rgba(17,20,26,0.04);
+    --ov-med:     rgba(17,20,26,0.06);
+    --ov-strong:  rgba(17,20,26,0.10);
+    --ov-border:  rgba(17,20,26,0.12);
+    --ov-border-2:rgba(17,20,26,0.08);
+    color-scheme: light;
   }
 
   * {
@@ -60,6 +159,7 @@
     @apply font-sans;
     background-color: var(--page-bg);
     color: var(--text-primary);
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   /* ─── RTL support ──────────────────────────────────────────────────────── */
@@ -204,6 +304,122 @@
     color: #fff;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Light-theme class remap
+   ───────────────────────────────────────────────────────────────────────────
+   The codebase is built with hardcoded "dark" arbitrary-value utilities
+   (bg-[#0f0f0f], text-white/50, border-white/10, …). Rather than rewrite 80+
+   components with dark: variants, we override the generated classes ONLY under
+   `html.light`, mapping each to a light-theme token. Dark mode is untouched so
+   it renders exactly as before.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dark neutral backgrounds → light surfaces ─────────────────────────────── */
+html.light .bg-\[\#0a0a0a\],
+html.light .bg-\[\#080808\],
+html.light .bg-\[\#0c0c0c\],
+html.light .bg-\[\#0d0d0d\],
+html.light .bg-\[\#0d0a0a\],
+html.light .bg-\[\#0d0d0f\] { background-color: var(--surface-0) !important; }
+
+html.light .bg-\[\#0e0e0e\],
+html.light .bg-\[\#0f0f0f\] { background-color: var(--surface-2) !important; }
+
+html.light .bg-\[\#111\],
+html.light .bg-\[\#111111\],
+html.light .bg-\[\#131313\] { background-color: var(--surface-3) !important; }
+
+html.light .bg-\[\#141414\],
+html.light .bg-\[\#161616\],
+html.light .bg-\[\#181818\],
+html.light .bg-\[\#1a1a1a\],
+html.light .bg-\[\#1c1c1c\] { background-color: var(--surface-4) !important; }
+
+html.light .bg-\[\#1e1e1e\],
+html.light .bg-\[\#222\],
+html.light .bg-\[\#2a2a2a\] { background-color: var(--surface-7) !important; }
+
+html.light .bg-dark-900,
+html.light .bg-dark-800,
+html.light .bg-dark-750,
+html.light .bg-dark-700 { background-color: var(--surface-1) !important; }
+html.light .bg-dark-600,
+html.light .bg-dark-500 { background-color: var(--surface-4) !important; }
+
+/* ── Dark neutral text → dark ink ──────────────────────────────────────────── */
+html.light .text-\[\#aaa\],
+html.light .text-\[\#b0b0b0\],
+html.light .text-\[\#a0a0a0\] { color: var(--ink-3) !important; }
+html.light .text-\[\#999\],
+html.light .text-\[\#888\],
+html.light .text-\[\#707070\] { color: var(--ink-4) !important; }
+html.light .text-\[\#666\],
+html.light .text-\[\#555\] { color: var(--ink-5) !important; }
+html.light .text-\[\#444\],
+html.light .text-\[\#333\] { color: var(--ink-7) !important; }
+
+/* Pure white text stays readable: becomes near-black on light surfaces.
+   Excludes text on gold/colored buttons via the .on-accent opt-out. */
+html.light .text-white:not(.on-accent) { color: var(--ink-1) !important; }
+html.light .text-gray-300,
+html.light .text-gray-400,
+html.light .text-neutral-300,
+html.light .text-neutral-400 { color: var(--ink-4) !important; }
+
+/* ── White-opacity text → dark-ink opacity ─────────────────────────────────── */
+html.light .text-white\/20 { color: rgba(17,20,26,0.45) !important; }
+html.light .text-white\/25 { color: rgba(17,20,26,0.50) !important; }
+html.light .text-white\/30 { color: rgba(17,20,26,0.55) !important; }
+html.light .text-white\/40 { color: rgba(17,20,26,0.60) !important; }
+html.light .text-white\/50 { color: rgba(17,20,26,0.66) !important; }
+html.light .text-white\/60 { color: rgba(17,20,26,0.72) !important; }
+html.light .text-white\/70 { color: rgba(17,20,26,0.80) !important; }
+html.light .text-white\/80 { color: rgba(17,20,26,0.88) !important; }
+html.light .text-white\/90 { color: rgba(17,20,26,0.94) !important; }
+
+/* ── White-opacity backgrounds → dark-overlay on light ─────────────────────── */
+html.light .bg-white\/5,
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\] { background-color: var(--ov-weak) !important; }
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\] { background-color: var(--ov-soft) !important; }
+html.light .bg-white\/\[0\.08\],
+html.light .bg-white\/10 { background-color: var(--ov-med) !important; }
+
+/* ── White-opacity borders → dark-overlay borders ──────────────────────────── */
+html.light .border-white\/5,
+html.light .border-white\/\[0\.05\],
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\] { border-color: var(--ov-border-2) !important; }
+html.light .border-white\/10,
+html.light .border-white\/20 { border-color: var(--ov-border) !important; }
+
+/* ── Dark hex borders → light borders ──────────────────────────────────────── */
+html.light .border-\[\#1a1a1a\],
+html.light .border-\[\#1e1e1e\],
+html.light .border-\[\#2a2a2a\],
+html.light .border-\[\#3a3a3a\] { border-color: var(--surface-8) !important; }
+
+/* ── Divide colors ─────────────────────────────────────────────────────────── */
+html.light .divide-white\/10 > :not([hidden]) ~ :not([hidden]) { border-color: var(--ov-border) !important; }
+
+/* ── Ring / gradients that assume a dark canvas ────────────────────────────── */
+html.light .from-\[\#0a0a0a\],
+html.light .to-\[\#0a0a0a\] { --tw-gradient-from: var(--surface-0) !important; --tw-gradient-to: var(--surface-0) !important; }
+
+/* ── Component utilities already use variables; also flip the site grid ────── */
+html.light .bg-site-grid {
+  background-image:
+    linear-gradient(rgba(17,20,26,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,20,26,0.05) 1px, transparent 1px);
+}
+html.light .glass      { background: rgba(255,255,255,0.75); }
+html.light .glass-dark { background: rgba(246,247,249,0.85); }
+
+/* Keep gold accents legible: gold text/buttons keep their own tone (handled by
+   --gold token) — no override needed here since gold hexes are brand colors. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Utilities

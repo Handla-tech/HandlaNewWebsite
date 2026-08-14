@@ -36,6 +36,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ProfileMenu from '@/components/ui/ProfileMenu';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 
 // ─── Role badge colours ────────────────────────────────────────────────────────
@@ -381,6 +382,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
 
           {/* Right-side actions */}
           <div className="ms-auto flex items-center gap-2">
+            <ThemeSwitcher />
             <LanguageSwitcher />
             <NotificationBell />
             <ProfileMenu />

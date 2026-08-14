@@ -79,6 +79,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Anti-FOUC: apply persisted theme + locale before first paint so a
+            light-mode user never sees a dark flash (and vice-versa). Reads the
+            same `handla-ui` zustand-persist key the store uses. */}
+        <Script id="handla-theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t='dark',l='en';var raw=localStorage.getItem('handla-ui');if(raw){var s=JSON.parse(raw);if(s&&s.state){if(s.state.theme)t=s.state.theme;if(s.state.locale)l=s.state.locale;}}var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');r.lang=l;r.dir=l==='ar'?'rtl':'ltr';}catch(e){document.documentElement.classList.add('dark');}})();`}
+        </Script>
+
         {/* JSON-LD structured data — Organization + Services */}
         <JsonLd data={organizationSchema} />
         <JsonLd data={softwareServicesSchema} />

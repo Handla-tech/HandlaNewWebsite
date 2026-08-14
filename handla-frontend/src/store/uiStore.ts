@@ -6,6 +6,21 @@ import type { UIState, Theme, Locale } from '@/types';
 
 interface UIStore extends UIState {}
 
+/**
+ * Apply the active theme to the <html> element.
+ *
+ * Both an explicit `light` / `dark` class AND the `dark` toggle are set:
+ *   - `dark`  → drives Tailwind's `darkMode: ['class']` variants.
+ *   - `light` → drives the light-theme class-remap layer in globals.css that
+ *               inverts the codebase's hardcoded dark utilities.
+ */
+function applyThemeClass(theme: Theme): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.classList.toggle('dark', theme === 'dark');
+  root.classList.toggle('light', theme === 'light');
+}
+
 export const useUIStore = create<UIStore>()(
   persist(
     (set) => ({
@@ -20,17 +35,12 @@ export const useUIStore = create<UIStore>()(
       toggleTheme: () =>
         set((state) => {
           const next: Theme = state.theme === 'dark' ? 'light' : 'dark';
-          // Apply to <html> element for Tailwind dark-mode class strategy
-          if (typeof document !== 'undefined') {
-            document.documentElement.classList.toggle('dark', next === 'dark');
-          }
+          applyThemeClass(next);
           return { theme: next };
         }),
 
       setTheme: (theme: Theme) => {
-        if (typeof document !== 'undefined') {
-          document.documentElement.classList.toggle('dark', theme === 'dark');
-        }
+        applyThemeClass(theme);
         set({ theme });
       },
 
