@@ -10,6 +10,7 @@ import awsConfig from './config/aws.config';
 import emailConfig from './config/email.config';
 import socketConfig from './config/socket.config';
 import aiConfig from './config/ai.config';
+import saasConfig from './config/saas.config';
 import { winstonConfig } from './utils/logger';
 
 // ─── Entities ───────────────────────────────────────────────────────────────
@@ -38,6 +39,12 @@ import { ClientApiKey } from './modules/support/entities/client-api-key.entity';
 import { AnalyticsEvent } from './modules/analytics/entities/analytics-event.entity';
 import { KnowledgeEntry } from './modules/ai/entities/knowledge-entry.entity';
 import { ConversationAiState } from './modules/ai/entities/conversation-ai-state.entity';
+import { SaasProduct } from './modules/saas/entities/saas-product.entity';
+import { SaasPlan } from './modules/saas/entities/saas-plan.entity';
+import { SaasTenant } from './modules/saas/entities/saas-tenant.entity';
+import { SaasSubscription } from './modules/saas/entities/saas-subscription.entity';
+import { SaasTenantDomain } from './modules/saas/entities/saas-tenant-domain.entity';
+import { SaasProvisioningLog } from './modules/saas/entities/saas-provisioning-log.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -63,13 +70,14 @@ import { SupportModule } from './modules/support/support.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AiModule } from './modules/ai/ai.module';
+import { SaasModule } from './modules/saas/saas.module';
 
 @Module({
   imports: [
     // ─── Config ────────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig],
+      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig],
       envFilePath: '.env',
     }),
 
@@ -82,7 +90,7 @@ import { AiModule } from './modules/ai/ai.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
       }),
     }),
 
@@ -109,6 +117,7 @@ import { AiModule } from './modules/ai/ai.module';
     ReportsModule,
     AnalyticsModule,
     AiModule,
+    SaasModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────

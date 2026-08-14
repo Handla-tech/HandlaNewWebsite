@@ -259,3 +259,76 @@ export enum AiIntent {
   OUT_OF_SCOPE     = 'OUT_OF_SCOPE',     // unrelated / cannot help
   HANDOFF_REQUEST  = 'HANDOFF_REQUEST',  // explicitly wants a human
 }
+
+// ─── SAAS-1: SaaS Control Plane (Phase 11) ────────────────────────────────────
+
+/**
+ * Tenant provisioning lifecycle (finite-state machine).
+ *  PENDING      : created in Handla, not yet handed to the product
+ *  PROVISIONING : a provisioning job is in flight against the product
+ *  ACTIVE       : product confirmed the tenant is live (has external_tenant_id)
+ *  SUSPENDED    : temporarily disabled (non-destructive) — reactivatable
+ *  FAILED       : provisioning errored; inspect ProvisioningLogs, retry-safe
+ *  ARCHIVED     : retired (retention window) before any guarded hard-delete
+ */
+export enum TenantStatus {
+  PENDING      = 'PENDING',
+  PROVISIONING = 'PROVISIONING',
+  ACTIVE       = 'ACTIVE',
+  SUSPENDED    = 'SUSPENDED',
+  FAILED       = 'FAILED',
+  ARCHIVED     = 'ARCHIVED',
+}
+
+/**
+ * Subscription state — tracked SEPARATELY from the tenant lifecycle. A tenant
+ * can be ACTIVE while its subscription is PAST_DUE, etc.
+ */
+export enum SubscriptionStatus {
+  TRIAL     = 'TRIAL',
+  ACTIVE    = 'ACTIVE',
+  PAST_DUE  = 'PAST_DUE',
+  EXPIRED   = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}
+
+/**
+ * Billing cadence for a subscription.
+ */
+export enum BillingInterval {
+  MONTHLY = 'MONTHLY',
+  YEARLY  = 'YEARLY',
+}
+
+/**
+ * A single provisioning operation requested against a product adapter.
+ * Drives the idempotent, retry-safe ProductProvisioner interface.
+ */
+export enum ProvisioningAction {
+  PROVISION     = 'PROVISION',
+  SUSPEND       = 'SUSPEND',
+  REACTIVATE    = 'REACTIVATE',
+  UPDATE_PLAN   = 'UPDATE_PLAN',
+  UPDATE_LIMITS = 'UPDATE_LIMITS',
+  ARCHIVE       = 'ARCHIVE',
+}
+
+/**
+ * Outcome/state of a provisioning job (one row per attempt in the log).
+ */
+export enum ProvisioningStatus {
+  QUEUED     = 'QUEUED',
+  RUNNING    = 'RUNNING',
+  SUCCEEDED  = 'SUCCEEDED',
+  FAILED     = 'FAILED',
+}
+
+/**
+ * Known Handla products. The `code` is the stable key used by the provisioner
+ * registry and the subdomain strategy (*.<code>.handla.tech).
+ */
+export enum ProductCode {
+  MUDAR   = 'mudar',
+  MATJARI = 'matjari',
+  MANARA  = 'manara',
+}

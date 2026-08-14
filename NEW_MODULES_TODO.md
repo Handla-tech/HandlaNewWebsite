@@ -230,3 +230,33 @@ Analyze Handla + Mudar/Matjari/Manara FIRST. Handla = managed SaaS Control Plane
 - Database-per-tenant (product-owned, safe generated names); each product owns its migrations/seeders/initial-admin.
 - Adapter/strategy ProductProvisioner interface (provision/suspend/reactivate/updatePlan/updateLimits) — no product if/else scattered.
 - Subdomain strategy (*.mudar/matjari/manara.handla.tech), custom domains later. RBAC (saas.* perms). Admin UI: Clients/Products/Plans/Tenants/Subscriptions/Provisioning Logs + create/details/lifecycle actions. Lead→Client→Tenant conversion path. Tests.
+
+### ✅ Phase 11 — BACKEND COMPLETE (2026-08-14)
+Handla implemented as a **managed** SaaS Control Plane. Admin-only provisioning; NO public self-service.
+
+**Data model (6 entities + reuse of Client):**
+- `saas_products` (code, provisioner key, provisioning base URL, SHA-256 key hash — never raw creds)
+- `saas_plans` (limits/entitlements JSON, prices, trialDays; unique per (product, code))
+- `saas_tenants` (status FSM; stores **only** `external_tenant_id` + opaque metadata)
+- `saas_subscriptions` (separate lifecycle TRIAL/ACTIVE/PAST_DUE/EXPIRED/CANCELLED)
+- `saas_tenant_domains` (primary system subdomain + future custom domains)
+- `saas_provisioning_logs` (audit trail; `request_id` = idempotency key, retry counter)
+
+**Lifecycle & orchestration:**
+- Pure FSM `tenant-lifecycle.ts` (PENDING→PROVISIONING→ACTIVE↔SUSPENDED, FAILED→PROVISIONING retry, →ARCHIVED terminal). Illegal transitions → 400.
+- `TenantsService` = workflow controller: validates client/product/plan, seeds subdomain + subscription, **enqueues** idempotent QUEUED jobs (never blocks the request path).
+- `ProvisioningWorker` (plain setInterval, skips under NODE_ENV=test): claims QUEUED→RUNNING, retry-safe with the **same** requestId up to `SAAS_MAX_ATTEMPTS`, then FAILED + records error.
+
+**Provisioning (product-owned DBs):**
+- Adapter/strategy `ProductProvisioner` interface + `HttpProductProvisioner` (native fetch, `Authorization: Bearer <env outbound key>`, `Idempotency-Key: requestId`) + `MockProductProvisioner` (safe dev/test default) + `ProvisionerRegistry` (single place adapters are resolved).
+- Inbound callback: `POST /internal/tenants/callback` — `@Public()` + `InternalApiKeyGuard` (fail-closed, constant-time compare). Products report status keyed by requestId.
+
+**RBAC:** Handla RBAC is role-based (no fine-grained `saas.*` perms exist) → all management gated to `@Roles(UserRole.ADMIN)` per the admin-only spec. `SaasController` (products/plans/tenants/subscriptions/logs + suspend/reactivate/archive/retry/change-plan). `SaasInternalController` for the callback.
+
+**Lead→Client→Tenant:** `LeadConversionService` promotes a QUALIFIED AI lead (Phase 10 `ConversationAiState.leadData`): LEAD→CLIENT user upgrade, Client creation (owner = assigned employee), lead marked CONVERTED, then tenant provisioned. Mode B accepts an existing `clientId`.
+
+**Config/env:** `saas.config.ts` (`SAAS_INTERNAL_INBOUND_KEY`, `SAAS_OUTBOUND_KEY_*`, `SAAS_PROVISION_TIMEOUT_MS`, `SAAS_ROOT_ZONE`, `SAAS_WORKER_INTERVAL_MS`, `SAAS_MAX_ATTEMPTS`, `SAAS_USE_MOCK`) documented in `.env.example`.
+
+**Tests:** 38 new unit tests (FSM edges, provisioner registry + mock idempotency, product/plan CRUD, tenant create/lifecycle/callback idempotency, worker claim/retry/exhaust, internal-key guard, lead conversion). Full suite **834/834 green**; `nest build` clean.
+
+**Deferred:** Admin UI (web) for SaaS screens; custom domain verification flow; subscription billing (PAST_DUE/EXPIRED automation); mobile parity.
