@@ -19,45 +19,53 @@ import { cn } from '@/lib/utils';
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
 const supplierSchema = z.object({
-  name:    z.string().min(1, 'Name required').max(150),
-  company: z.string().max(150).optional().or(z.literal('')),
-  email:   z.string().email('Invalid email').optional().or(z.literal('')),
-  phone:   z.string().max(40).optional().or(z.literal('')),
-  taxId:   z.string().max(60).optional().or(z.literal('')),
-  address: z.string().optional().or(z.literal('')),
-  notes:   z.string().optional().or(z.literal('')),
-  isActive:z.boolean().optional(),
+  name:     z.string().min(1, 'Name required').max(150),
+  company:  z.string().max(150).optional().or(z.literal('')),
+  email:    z.string().email('Invalid email').optional().or(z.literal('')),
+  phone:    z.string().max(40).optional().or(z.literal('')),
+  taxId:    z.string().max(60).optional().or(z.literal('')),
+  address:  z.string().optional().or(z.literal('')),
+  notes:    z.string().optional().or(z.literal('')),
+  isActive: z.boolean().optional(),
 });
 type SupplierForm = z.infer<typeof supplierSchema>;
 
-const sharedInput = 'w-full rounded-xl border border-white/10 bg-[#0f0f0f] text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.04] transition-all';
+function fmtDate(d: string | null | undefined) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
-// ─── Supplier Card ────────────────────────────────────────────────────────────
+const sharedInput =
+  'w-full rounded-xl border border-white/10 bg-[#0f0f0f] text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.04] transition-all';
 
-function SupplierCard({ supplier, isAdmin, onEdit, onDelete }: {
+// ─── Supplier Row ─────────────────────────────────────────────────────────────
+
+function SupplierRow({ supplier, isAdmin, onEdit, onDelete }: {
   supplier: Supplier; isAdmin: boolean; onEdit: (s: Supplier) => void; onDelete: (s: Supplier) => void;
 }) {
   const menu = useDropdown('right');
   return (
     <div className="group flex items-start justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04]">
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04]">
-          <Truck className="w-4 h-4 text-white/50" />
+        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
+          <Building2 className="w-4 h-4 text-[#fbbf24]" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-white truncate">{supplier.name}</span>
-            {supplier.isActive
-              ? <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Active</span>
-              : <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border border-white/10 bg-white/5 text-white/40">Inactive</span>}
+            {supplier.company && <span className="text-[11px] text-white/35">· {supplier.company}</span>}
+            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border flex-shrink-0',
+              supplier.isActive
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-white/10 bg-white/5 text-white/40')}>
+              {supplier.isActive ? 'Active' : 'Inactive'}
+            </span>
           </div>
-          {supplier.company && (
-            <p className="mt-0.5 text-[11px] text-white/35 flex items-center gap-1"><Building2 className="w-2.5 h-2.5" /> {supplier.company}</p>
-          )}
-          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-white/25 flex-wrap">
-            {supplier.email && <span className="flex items-center gap-1"><Mail className="w-2.5 h-2.5" /> {supplier.email}</span>}
-            {supplier.phone && <span className="flex items-center gap-1"><Phone className="w-2.5 h-2.5" /> {supplier.phone}</span>}
+          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-white/30 flex-wrap">
+            {supplier.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{supplier.email}</span>}
+            {supplier.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{supplier.phone}</span>}
             {supplier.taxId && <span>Tax: {supplier.taxId}</span>}
+            <span>Added {fmtDate(supplier.createdAt)}</span>
           </div>
         </div>
       </div>
@@ -92,7 +100,7 @@ function SupplierCard({ supplier, isAdmin, onEdit, onDelete }: {
 // ─── Create / Edit Modal ──────────────────────────────────────────────────────
 
 function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onClose: () => void; editSupplier: Supplier | null }) {
-  const qc     = useQueryClient();
+  const qc = useQueryClient();
   const isEdit = editSupplier !== null;
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SupplierForm>({
@@ -114,8 +122,10 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
 
   const mutation = useMutation({
     mutationFn: (data: SupplierForm) => {
-      // strip empty strings so backend keeps null
-      const payload = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== ''));
+      // Convert empty strings to null so the backend stores clean values.
+      const payload = Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, v === '' ? null : v]),
+      );
       return isEdit ? suppliersApi.updateSupplier(editSupplier!.id, payload) : suppliersApi.createSupplier(payload);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-suppliers'] }); onClose(); },
@@ -135,49 +145,45 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
         </div>
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Name *</label>
-            <input {...register('name')} className={sharedInput} placeholder="Supplier name" />
-            {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">Name *</label>
+              <input {...register('name')} className={sharedInput} placeholder="Supplier name" />
+              {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
+            </div>
             <div>
               <label className="block text-xs font-medium text-white/50 mb-1.5">Company</label>
-              <input {...register('company')} className={sharedInput} placeholder="Company" />
+              <input {...register('company')} className={sharedInput} placeholder="Legal entity" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Tax ID</label>
-              <input {...register('taxId')} className={sharedInput} placeholder="Tax / VAT number" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-white/50 mb-1.5">Email</label>
-              <input {...register('email')} className={sharedInput} placeholder="name@company.com" />
+              <input {...register('email')} className={sharedInput} placeholder="billing@supplier.com" />
               {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-white/50 mb-1.5">Phone</label>
-              <input {...register('phone')} className={sharedInput} placeholder="+1 555 000 0000" />
+              <input {...register('phone')} className={sharedInput} placeholder="+1 555 0100" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">Tax ID</label>
+              <input {...register('taxId')} className={sharedInput} placeholder="VAT / EIN" />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+                <input type="checkbox" {...register('isActive')} className="h-4 w-4 rounded border-white/20 bg-[#0f0f0f] accent-[#fbbf24]" />
+                Active supplier
+              </label>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-white/50 mb-1.5">Address</label>
-            <textarea rows={2} {...register('address')} className={cn(sharedInput, 'resize-none')} placeholder="Address" />
+            <textarea rows={2} {...register('address')} className={cn(sharedInput, 'resize-none')} placeholder="Street, city, country" />
           </div>
-
           <div>
             <label className="block text-xs font-medium text-white/50 mb-1.5">Notes</label>
             <textarea rows={2} {...register('notes')} className={cn(sharedInput, 'resize-none')} placeholder="Internal notes" />
           </div>
-
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input type="checkbox" {...register('isActive')} className="h-4 w-4 rounded border-white/20 bg-[#0f0f0f] accent-[#fbbf24]" />
-            <span className="text-sm text-white/60">Active supplier</span>
-          </label>
 
           {mutation.isError && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
@@ -201,7 +207,7 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
   );
 }
 
-// ─── Delete Modal ─────────────────────────────────────────────────────────────
+// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
 
 function DeleteModal({ isOpen, supplier, onClose }: { isOpen: boolean; supplier: Supplier | null; onClose: () => void }) {
   const qc = useQueryClient();
@@ -228,7 +234,7 @@ function DeleteModal({ isOpen, supplier, onClose }: { isOpen: boolean; supplier:
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {(mutation.error as any)?.response?.data?.message ?? 'Failed to delete (supplier may have purchases)'}
+            {(mutation.error as any)?.response?.data?.message ?? 'Failed to delete. Supplier may have linked purchases.'}
           </div>
         )}
         <div className="flex gap-3">
@@ -256,32 +262,34 @@ export default function SuppliersPage() {
   const search = useDebounce(searchInput, 300);
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem]   = useState<Supplier | null>(null);
-  const [deleteItem, setDeleteItem] = useState<Supplier | null>(null);
+  const [editEntry, setEditEntry] = useState<Supplier | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<Supplier | null>(null);
 
   const params = { page, limit: 12, ...(search && { search }) };
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['erp-suppliers', params],
     queryFn:  () => suppliersApi.getSuppliers(params).then(r => r.data.data as PaginatedSuppliers),
-    staleTime: 15_000, enabled: mounted, placeholderData: (prev: any) => prev,
+    staleTime: 15_000, enabled: mounted,
+    placeholderData: (prev: any) => prev,
   });
 
   const suppliers  = data?.suppliers ?? [];
   const totalPages = data?.pages ?? 1;
 
-  function openCreate() { setEditItem(null); setShowModal(true); }
-  function openEdit(s: Supplier) { setEditItem(s); setShowModal(true); }
+  function openCreate() { setEditEntry(null); setShowModal(true); }
+  function openEdit(s: Supplier) { setEditEntry(s); setShowModal(true); }
 
   if (!mounted) return null;
 
   return (
     <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <Truck className="w-4.5 h-4.5 text-blue-400" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
+              <Truck className="w-4.5 h-4.5 text-[#fbbf24]" />
             </span>
             Suppliers
           </h1>
@@ -293,17 +301,17 @@ export default function SuppliersPage() {
         </button>
       </div>
 
-      <div className="flex justify-end">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
-          <input placeholder="Search suppliers…" value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
-            className="pl-8 pr-4 py-2 rounded-lg border border-white/10 bg-white/[0.04] text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/40 focus:bg-white/[0.06] w-56 transition-all" />
-        </div>
+      {/* Search */}
+      <div className="relative w-full sm:w-72">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
+        <input placeholder="Search suppliers…" value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
+          className="w-full pl-8 pr-4 py-2 rounded-lg border border-white/10 bg-white/[0.04] text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/40 focus:bg-white/[0.06] transition-all" />
       </div>
 
+      {/* List */}
       {isLoading && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 animate-pulse h-24" />)}
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 animate-pulse h-20" />)}
         </div>
       )}
 
@@ -332,11 +340,12 @@ export default function SuppliersPage() {
       )}
 
       {!isLoading && !isError && suppliers.length > 0 && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {suppliers.map(s => <SupplierCard key={s.id} supplier={s} isAdmin={isAdmin} onEdit={openEdit} onDelete={setDeleteItem} />)}
+        <div className="space-y-2">
+          {suppliers.map(s => <SupplierRow key={s.id} supplier={s} isAdmin={isAdmin} onEdit={openEdit} onDelete={setDeleteEntry} />)}
         </div>
       )}
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-white/30">{data?.total ?? 0} suppliers · page {page} of {totalPages}</p>
@@ -345,6 +354,7 @@ export default function SuppliersPage() {
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               <ChevronLeft className="w-4 h-4" />
             </button>
+            <span className="px-3 text-xs text-white/40">{page} / {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
               <ChevronRight className="w-4 h-4" />
@@ -353,8 +363,9 @@ export default function SuppliersPage() {
         </div>
       )}
 
-      <SupplierModal isOpen={showModal} onClose={() => { setShowModal(false); setEditItem(null); }} editSupplier={editItem} />
-      <DeleteModal isOpen={deleteItem !== null} supplier={deleteItem} onClose={() => setDeleteItem(null)} />
+      {/* Modals */}
+      <SupplierModal isOpen={showModal} onClose={() => { setShowModal(false); setEditEntry(null); }} editSupplier={editEntry} />
+      <DeleteModal isOpen={deleteEntry !== null} supplier={deleteEntry} onClose={() => setDeleteEntry(null)} />
     </div>
   );
 }
