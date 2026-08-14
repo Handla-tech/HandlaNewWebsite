@@ -15,20 +15,23 @@ import { useAuthStore } from '@/store/authStore';
 import { suppliersApi } from '@/lib/api';
 import type { Supplier, PaginatedSuppliers } from '@/types';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
-const supplierSchema = z.object({
-  name:     z.string().min(1, 'Name required').max(150),
+type TFn = (key: string, params?: Record<string, any>) => string;
+
+const makeSupplierSchema = (t: TFn) => z.object({
+  name:     z.string().min(1, t('erp.suppliers.modal.nameRequired')).max(150),
   company:  z.string().max(150).optional().or(z.literal('')),
-  email:    z.string().email('Invalid email').optional().or(z.literal('')),
+  email:    z.string().email(t('erp.suppliers.modal.invalidEmail')).optional().or(z.literal('')),
   phone:    z.string().max(40).optional().or(z.literal('')),
   taxId:    z.string().max(60).optional().or(z.literal('')),
   address:  z.string().optional().or(z.literal('')),
   notes:    z.string().optional().or(z.literal('')),
   isActive: z.boolean().optional(),
 });
-type SupplierForm = z.infer<typeof supplierSchema>;
+type SupplierForm = z.infer<ReturnType<typeof makeSupplierSchema>>;
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—';
@@ -42,10 +45,11 @@ const sharedInput =
 
 function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onClose: () => void; editSupplier: Supplier | null }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const isEdit = editSupplier !== null;
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SupplierForm>({
-    resolver: zodResolver(supplierSchema),
+    resolver: zodResolver(makeSupplierSchema(t)),
     defaultValues: { name: '', company: '', email: '', phone: '', taxId: '', address: '', notes: '', isActive: true },
   });
 
@@ -79,8 +83,8 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
       <div className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#111] shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4 sticky top-0 bg-[#111] z-10">
           <div>
-            <h2 className="text-base font-bold text-white">{isEdit ? 'Edit Supplier' : 'New Supplier'}</h2>
-            <p className="text-xs text-white/30">{isEdit ? 'Update supplier details.' : 'Add a managed supplier.'}</p>
+            <h2 className="text-base font-bold text-white">{isEdit ? t('erp.suppliers.modal.editTitle') : t('erp.suppliers.modal.newTitle')}</h2>
+            <p className="text-xs text-white/30">{isEdit ? t('erp.suppliers.modal.editSubtitle') : t('erp.suppliers.modal.newSubtitle')}</p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
         </div>
@@ -88,58 +92,58 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Name *</label>
-              <input {...register('name')} className={sharedInput} placeholder="Supplier name" />
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.name')}</label>
+              <input {...register('name')} className={sharedInput} placeholder={t('erp.suppliers.modal.namePlaceholder')} />
               {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Company</label>
-              <input {...register('company')} className={sharedInput} placeholder="Legal entity" />
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.company')}</label>
+              <input {...register('company')} className={sharedInput} placeholder={t('erp.suppliers.modal.companyPlaceholder')} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Email</label>
-              <input {...register('email')} className={sharedInput} placeholder="billing@supplier.com" />
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.email')}</label>
+              <input {...register('email')} className={sharedInput} placeholder={t('erp.suppliers.modal.emailPlaceholder')} />
               {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Phone</label>
-              <input {...register('phone')} className={sharedInput} placeholder="+1 555 0100" />
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.phone')}</label>
+              <input {...register('phone')} className={sharedInput} placeholder={t('erp.suppliers.modal.phonePlaceholder')} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Tax ID</label>
-              <input {...register('taxId')} className={sharedInput} placeholder="VAT / EIN" />
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.taxId')}</label>
+              <input {...register('taxId')} className={sharedInput} placeholder={t('erp.suppliers.modal.taxIdPlaceholder')} />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
                 <input type="checkbox" {...register('isActive')} className="h-4 w-4 rounded border-white/20 bg-[#0f0f0f] accent-[#fbbf24]" />
-                Active supplier
+                {t('erp.suppliers.modal.activeSupplier')}
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Address</label>
-            <textarea rows={2} {...register('address')} className={cn(sharedInput, 'resize-none')} placeholder="Street, city, country" />
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.address')}</label>
+            <textarea rows={2} {...register('address')} className={cn(sharedInput, 'resize-none')} placeholder={t('erp.suppliers.modal.addressPlaceholder')} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Notes</label>
-            <textarea rows={2} {...register('notes')} className={cn(sharedInput, 'resize-none')} placeholder="Internal notes" />
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.suppliers.modal.notes')}</label>
+            <textarea rows={2} {...register('notes')} className={cn(sharedInput, 'resize-none')} placeholder={t('erp.suppliers.modal.notesPlaceholder')} />
           </div>
 
           {mutation.isError && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {(mutation.error as any)?.response?.data?.message ?? 'Failed to save supplier'}
+              {(mutation.error as any)?.response?.data?.message ?? t('erp.suppliers.modal.saveFailed')}
             </div>
           )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.common.cancel')}</button>
             <button type="submit" disabled={mutation.isPending}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] text-sm disabled:opacity-50 min-h-[44px] transition-colors">
               {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              {mutation.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Supplier'}
+              {mutation.isPending ? t('erp.common.saving') : isEdit ? t('erp.suppliers.modal.saveChanges') : t('erp.suppliers.modal.add')}
             </button>
           </div>
         </form>
@@ -152,6 +156,7 @@ function SupplierModal({ isOpen, onClose, editSupplier }: { isOpen: boolean; onC
 
 function DeleteModal({ isOpen, supplier, onClose }: { isOpen: boolean; supplier: Supplier | null; onClose: () => void }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const mutation = useMutation({
     mutationFn: () => suppliersApi.deleteSupplier(supplier!.id),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-suppliers'] }); onClose(); },
@@ -167,22 +172,22 @@ function DeleteModal({ isOpen, supplier, onClose }: { isOpen: boolean; supplier:
             <Trash2 className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Delete Supplier</h2>
-            <p className="text-xs text-white/30">This cannot be undone.</p>
+            <h2 className="text-base font-bold text-white">{t('erp.suppliers.delete.title')}</h2>
+            <p className="text-xs text-white/30">{t('erp.suppliers.delete.subtitle')}</p>
           </div>
         </div>
-        <p className="text-sm text-white/60">Permanently delete <strong className="text-white">{supplier.name}</strong>?</p>
+        <p className="text-sm text-white/60">{t('erp.suppliers.delete.confirm', { name: supplier.name })}</p>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {(mutation.error as any)?.response?.data?.message ?? 'Failed to delete. Supplier may have linked purchases.'}
+            {(mutation.error as any)?.response?.data?.message ?? t('erp.suppliers.delete.failed')}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white text-sm min-h-[44px] transition-colors">{t('erp.common.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 text-sm disabled:opacity-50 min-h-[44px] transition-colors">
-            {mutation.isPending ? 'Deleting…' : 'Delete'}
+            {mutation.isPending ? t('erp.common.deleting') : t('erp.common.delete')}
           </button>
         </div>
       </div>
@@ -193,6 +198,7 @@ function DeleteModal({ isOpen, supplier, onClose }: { isOpen: boolean; supplier:
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SuppliersPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -224,7 +230,7 @@ export default function SuppliersPage() {
   const columns: Column<Supplier>[] = [
     {
       key: 'name',
-      header: 'Supplier',
+      header: t('erp.suppliers.col.name'),
       cell: (s) => (
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
@@ -239,7 +245,7 @@ export default function SuppliersPage() {
     },
     {
       key: 'email',
-      header: 'Email',
+      header: t('erp.suppliers.col.email'),
       hideOnMobile: true,
       cell: (s) => s.email
         ? <span className="flex items-center gap-1.5 text-white/60"><Mail className="w-3.5 h-3.5 text-white/30" />{s.email}</span>
@@ -247,7 +253,7 @@ export default function SuppliersPage() {
     },
     {
       key: 'phone',
-      header: 'Phone',
+      header: t('erp.suppliers.col.phone'),
       hideOnMobile: true,
       cell: (s) => s.phone
         ? <span className="flex items-center gap-1.5 text-white/60"><Phone className="w-3.5 h-3.5 text-white/30" />{s.phone}</span>
@@ -255,34 +261,34 @@ export default function SuppliersPage() {
     },
     {
       key: 'taxId',
-      header: 'Tax ID',
+      header: t('erp.suppliers.col.taxId'),
       hideOnMobile: true,
       cell: (s) => s.taxId ? <span className="text-white/60">{s.taxId}</span> : <span className="text-white/20">—</span>,
     },
     {
       key: 'added',
-      header: 'Added',
+      header: t('erp.suppliers.col.added'),
       hideOnMobile: true,
       cell: (s) => <span className="text-white/40 text-xs">{fmtDate(s.createdAt)}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('erp.suppliers.col.status'),
       align: 'center',
       cell: (s) => (
         <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block',
           s.isActive
             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
             : 'border-white/10 bg-white/5 text-white/40')}>
-          {s.isActive ? 'Active' : 'Inactive'}
+          {s.isActive ? t('erp.suppliers.status.active') : t('erp.suppliers.status.inactive')}
         </span>
       ),
     },
   ];
 
   const rowActions: RowAction<Supplier>[] = [
-    { label: 'Edit', icon: Edit2, onClick: (s) => openEdit(s) },
-    { label: 'Delete', icon: Trash2, danger: true, onClick: (s) => setDeleteEntry(s), show: () => isAdmin },
+    { label: t('erp.suppliers.actions.edit'), icon: Edit2, onClick: (s) => openEdit(s) },
+    { label: t('erp.suppliers.actions.delete'), icon: Trash2, danger: true, onClick: (s) => setDeleteEntry(s), show: () => isAdmin },
   ];
 
   if (!mounted) return null;
@@ -296,20 +302,20 @@ export default function SuppliersPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
               <Truck className="w-4.5 h-4.5 text-[#fbbf24]" />
             </span>
-            Suppliers
+            {t('erp.suppliers.title')}
           </h1>
-          <p className="text-sm text-white/30 mt-1 ml-11">Manage vendors for purchase orders and bills.</p>
+          <p className="text-sm text-white/30 mt-1 ml-11">{t('erp.suppliers.subtitle')}</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm min-h-[44px]">
-          <Plus className="w-4 h-4" /> New Supplier
+          <Plus className="w-4 h-4" /> {t('erp.suppliers.new')}
         </button>
       </div>
 
       {/* Search */}
       <div className="relative w-full sm:w-72">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
-        <input placeholder="Search suppliers…" value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
+        <input placeholder={t('erp.suppliers.searchPlaceholder')} value={searchInput} onChange={e => { setSearchInput(e.target.value); setPage(1); }}
           className="w-full pl-8 pr-4 py-2 rounded-lg border border-white/10 bg-white/[0.04] text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/40 focus:bg-white/[0.06] transition-all" />
       </div>
 
@@ -320,8 +326,8 @@ export default function SuppliersPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-3">
             <AlertCircle className="w-8 h-8 text-red-400/50 mx-auto" />
-            <p className="text-sm text-white/30">Failed to load suppliers.</p>
-            <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50 transition-colors">Retry</button>
+            <p className="text-sm text-white/30">{t('erp.suppliers.loadFailed')}</p>
+            <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50 transition-colors">{t('erp.common.retry')}</button>
           </div>
         </div>
       )}
@@ -332,9 +338,9 @@ export default function SuppliersPage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] mx-auto">
               <Truck className="w-7 h-7 text-white/15" />
             </div>
-            <p className="text-sm text-white/30">No suppliers yet.</p>
+            <p className="text-sm text-white/30">{t('erp.suppliers.empty')}</p>
             <button onClick={openCreate} className="px-4 py-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 text-[#fbbf24] text-xs font-semibold hover:bg-[#fbbf24]/20 transition-colors">
-              Add first supplier
+              {t('erp.suppliers.addFirst')}
             </button>
           </div>
         </div>
@@ -347,7 +353,7 @@ export default function SuppliersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-white/30">{data?.total ?? 0} suppliers · page {page} of {totalPages}</p>
+          <p className="text-xs text-white/30">{t('erp.suppliers.pageInfo', { total: data?.total ?? 0, page, totalPages })}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">

@@ -1929,6 +1929,64 @@
         "confirm": "Delete {{number}}?",
         "failed": "Failed to delete"
       }
+    },
+    "suppliers": {
+      "title": "Suppliers",
+      "subtitle": "Manage vendors for purchase orders and bills.",
+      "new": "New Supplier",
+      "searchPlaceholder": "Search suppliers…",
+      "loadFailed": "Failed to load suppliers.",
+      "empty": "No suppliers yet.",
+      "addFirst": "Add first supplier",
+      "pageInfo": "{{total}} suppliers · page {{page}} of {{totalPages}}",
+      "col": {
+        "name": "Supplier",
+        "email": "Email",
+        "phone": "Phone",
+        "taxId": "Tax ID",
+        "added": "Added",
+        "status": "Status"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "modal": {
+        "editTitle": "Edit Supplier",
+        "newTitle": "New Supplier",
+        "editSubtitle": "Update supplier details.",
+        "newSubtitle": "Add a managed supplier.",
+        "name": "Name *",
+        "company": "Company",
+        "email": "Email",
+        "phone": "Phone",
+        "taxId": "Tax ID",
+        "activeSupplier": "Active supplier",
+        "address": "Address",
+        "notes": "Notes",
+        "namePlaceholder": "Supplier name",
+        "companyPlaceholder": "Legal entity",
+        "emailPlaceholder": "billing@supplier.com",
+        "phonePlaceholder": "+1 555 0100",
+        "taxIdPlaceholder": "VAT / EIN",
+        "addressPlaceholder": "Street, city, country",
+        "notesPlaceholder": "Internal notes",
+        "saveFailed": "Failed to save supplier",
+        "saveChanges": "Save Changes",
+        "add": "Add Supplier",
+        "nameRequired": "Name required",
+        "invalidEmail": "Invalid email"
+      },
+      "delete": {
+        "title": "Delete Supplier",
+        "subtitle": "This cannot be undone.",
+        "confirm": "Permanently delete {{name}}?",
+        "failed": "Failed to delete. Supplier may have linked purchases."
+      }
     }
   },
   "footer": {

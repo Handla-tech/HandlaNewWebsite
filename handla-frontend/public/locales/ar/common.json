@@ -1929,6 +1929,64 @@
         "confirm": "حذف {{number}}؟",
         "failed": "تعذّر الحذف"
       }
+    },
+    "suppliers": {
+      "title": "الموردون",
+      "subtitle": "إدارة الموردين لأوامر الشراء والفواتير.",
+      "new": "مورد جديد",
+      "searchPlaceholder": "بحث عن الموردين…",
+      "loadFailed": "فشل تحميل الموردين.",
+      "empty": "لا يوجد موردون بعد.",
+      "addFirst": "إضافة أول مورد",
+      "pageInfo": "{{total}} مورد · صفحة {{page}} من {{totalPages}}",
+      "col": {
+        "name": "المورد",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "taxId": "الرقم الضريبي",
+        "added": "تاريخ الإضافة",
+        "status": "الحالة"
+      },
+      "status": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "modal": {
+        "editTitle": "تعديل المورد",
+        "newTitle": "مورد جديد",
+        "editSubtitle": "تحديث بيانات المورد.",
+        "newSubtitle": "إضافة مورد مُدار.",
+        "name": "الاسم *",
+        "company": "الشركة",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "taxId": "الرقم الضريبي",
+        "activeSupplier": "مورد نشط",
+        "address": "العنوان",
+        "notes": "ملاحظات",
+        "namePlaceholder": "اسم المورد",
+        "companyPlaceholder": "الكيان القانوني",
+        "emailPlaceholder": "billing@supplier.com",
+        "phonePlaceholder": "+1 555 0100",
+        "taxIdPlaceholder": "VAT / EIN",
+        "addressPlaceholder": "الشارع، المدينة، الدولة",
+        "notesPlaceholder": "ملاحظات داخلية",
+        "saveFailed": "فشل حفظ المورد",
+        "saveChanges": "حفظ التغييرات",
+        "add": "إضافة مورد",
+        "nameRequired": "الاسم مطلوب",
+        "invalidEmail": "بريد إلكتروني غير صالح"
+      },
+      "delete": {
+        "title": "حذف المورد",
+        "subtitle": "لا يمكن التراجع عن هذا الإجراء.",
+        "confirm": "حذف {{name}} نهائياً؟",
+        "failed": "فشل الحذف. قد يكون للمورد مشتريات مرتبطة."
+      }
     }
   },
   "footer": {

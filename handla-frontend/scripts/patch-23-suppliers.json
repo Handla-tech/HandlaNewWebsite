@@ -1,0 +1,126 @@
+{
+  "en": {
+    "erp": {
+      "suppliers": {
+        "title": "Suppliers",
+        "subtitle": "Manage vendors for purchase orders and bills.",
+        "new": "New Supplier",
+        "searchPlaceholder": "Search suppliers…",
+        "loadFailed": "Failed to load suppliers.",
+        "empty": "No suppliers yet.",
+        "addFirst": "Add first supplier",
+        "pageInfo": "{{total}} suppliers · page {{page}} of {{totalPages}}",
+        "col": {
+          "name": "Supplier",
+          "email": "Email",
+          "phone": "Phone",
+          "taxId": "Tax ID",
+          "added": "Added",
+          "status": "Status"
+        },
+        "status": {
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "actions": {
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "modal": {
+          "editTitle": "Edit Supplier",
+          "newTitle": "New Supplier",
+          "editSubtitle": "Update supplier details.",
+          "newSubtitle": "Add a managed supplier.",
+          "name": "Name *",
+          "company": "Company",
+          "email": "Email",
+          "phone": "Phone",
+          "taxId": "Tax ID",
+          "activeSupplier": "Active supplier",
+          "address": "Address",
+          "notes": "Notes",
+          "namePlaceholder": "Supplier name",
+          "companyPlaceholder": "Legal entity",
+          "emailPlaceholder": "billing@supplier.com",
+          "phonePlaceholder": "+1 555 0100",
+          "taxIdPlaceholder": "VAT / EIN",
+          "addressPlaceholder": "Street, city, country",
+          "notesPlaceholder": "Internal notes",
+          "saveFailed": "Failed to save supplier",
+          "saveChanges": "Save Changes",
+          "add": "Add Supplier",
+          "nameRequired": "Name required",
+          "invalidEmail": "Invalid email"
+        },
+        "delete": {
+          "title": "Delete Supplier",
+          "subtitle": "This cannot be undone.",
+          "confirm": "Permanently delete {{name}}?",
+          "failed": "Failed to delete. Supplier may have linked purchases."
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "suppliers": {
+        "title": "الموردون",
+        "subtitle": "إدارة الموردين لأوامر الشراء والفواتير.",
+        "new": "مورد جديد",
+        "searchPlaceholder": "بحث عن الموردين…",
+        "loadFailed": "فشل تحميل الموردين.",
+        "empty": "لا يوجد موردون بعد.",
+        "addFirst": "إضافة أول مورد",
+        "pageInfo": "{{total}} مورد · صفحة {{page}} من {{totalPages}}",
+        "col": {
+          "name": "المورد",
+          "email": "البريد الإلكتروني",
+          "phone": "الهاتف",
+          "taxId": "الرقم الضريبي",
+          "added": "تاريخ الإضافة",
+          "status": "الحالة"
+        },
+        "status": {
+          "active": "نشط",
+          "inactive": "غير نشط"
+        },
+        "actions": {
+          "edit": "تعديل",
+          "delete": "حذف"
+        },
+        "modal": {
+          "editTitle": "تعديل المورد",
+          "newTitle": "مورد جديد",
+          "editSubtitle": "تحديث بيانات المورد.",
+          "newSubtitle": "إضافة مورد مُدار.",
+          "name": "الاسم *",
+          "company": "الشركة",
+          "email": "البريد الإلكتروني",
+          "phone": "الهاتف",
+          "taxId": "الرقم الضريبي",
+          "activeSupplier": "مورد نشط",
+          "address": "العنوان",
+          "notes": "ملاحظات",
+          "namePlaceholder": "اسم المورد",
+          "companyPlaceholder": "الكيان القانوني",
+          "emailPlaceholder": "billing@supplier.com",
+          "phonePlaceholder": "+1 555 0100",
+          "taxIdPlaceholder": "VAT / EIN",
+          "addressPlaceholder": "الشارع، المدينة، الدولة",
+          "notesPlaceholder": "ملاحظات داخلية",
+          "saveFailed": "فشل حفظ المورد",
+          "saveChanges": "حفظ التغييرات",
+          "add": "إضافة مورد",
+          "nameRequired": "الاسم مطلوب",
+          "invalidEmail": "بريد إلكتروني غير صالح"
+        },
+        "delete": {
+          "title": "حذف المورد",
+          "subtitle": "لا يمكن التراجع عن هذا الإجراء.",
+          "confirm": "حذف {{name}} نهائياً؟",
+          "failed": "فشل الحذف. قد يكون للمورد مشتريات مرتبطة."
+        }
+      }
+    }
+  }
+}
