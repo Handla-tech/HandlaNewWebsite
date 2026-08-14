@@ -9,6 +9,7 @@ import jwtConfig from './config/jwt.config';
 import awsConfig from './config/aws.config';
 import emailConfig from './config/email.config';
 import socketConfig from './config/socket.config';
+import aiConfig from './config/ai.config';
 import { winstonConfig } from './utils/logger';
 
 // ─── Entities ───────────────────────────────────────────────────────────────
@@ -35,6 +36,8 @@ import { Ticket } from './modules/support/entities/ticket.entity';
 import { TicketReply } from './modules/support/entities/ticket-reply.entity';
 import { ClientApiKey } from './modules/support/entities/client-api-key.entity';
 import { AnalyticsEvent } from './modules/analytics/entities/analytics-event.entity';
+import { KnowledgeEntry } from './modules/ai/entities/knowledge-entry.entity';
+import { ConversationAiState } from './modules/ai/entities/conversation-ai-state.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -59,13 +62,14 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
 import { SupportModule } from './modules/support/support.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
     // ─── Config ────────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig],
+      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig],
       envFilePath: '.env',
     }),
 
@@ -78,7 +82,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent],
+        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState],
       }),
     }),
 
@@ -104,6 +108,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     SupportModule,
     ReportsModule,
     AnalyticsModule,
+    AiModule,
     HealthModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────

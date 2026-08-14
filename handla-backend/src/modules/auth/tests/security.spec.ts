@@ -108,6 +108,7 @@ const mockMessage: Message = {
   content: 'Private message',
   fileUrl: null,
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   conversation: mockConversation,
@@ -123,6 +124,7 @@ const mockNotification: Notification = {
   relatedMessageId: 'sec-msg-uuid',
   relatedEntityId: null,
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   user: clientUser as any,
 };

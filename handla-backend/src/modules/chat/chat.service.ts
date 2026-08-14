@@ -5,7 +5,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../auth/entities/user.entity';
-import { UserRole, ConversationStatus } from '../../common/enums';
+import { UserRole, ConversationStatus, MessageOrigin } from '../../common/enums';
 import {
   ResourceNotFoundException,
   ConversationAccessDeniedException,
@@ -256,6 +256,7 @@ export class ChatService {
     senderId: string,
     content?: string,
     fileUrl?: string,
+    origin?: MessageOrigin,
   ): Promise<Message> {
     if (!content && !fileUrl) {
       throw new Error('Message must have content or a file attachment');
@@ -267,6 +268,7 @@ export class ChatService {
       content: content ?? null,
       fileUrl: fileUrl ?? null,
       isRead: false,
+      origin: origin ?? null,
     });
 
     await this.messageRepo.save(message);

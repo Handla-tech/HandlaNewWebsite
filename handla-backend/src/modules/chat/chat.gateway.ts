@@ -10,7 +10,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { forwardRef, Inject, Logger, OnModuleInit, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,6 +25,7 @@ import { User } from '../auth/entities/user.entity';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { NotificationService } from '../notifications/notification.service';
 import { EmailService } from '../email/email.service';
+import { ChatbotService } from '../ai/services/chatbot.service';
 
 @WebSocketGateway({
   cors: {
@@ -35,7 +36,8 @@ import { EmailService } from '../email/email.service';
   },
   namespace: '/',
 })
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server: Server;
 
@@ -56,11 +58,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly emailService: EmailService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Inject(forwardRef(() => ChatbotService))
+    private readonly chatbotService: ChatbotService,
   ) {}
 
   // ─── Gateway Init ─────────────────────────────────────────────────────────────
   afterInit(server: Server) {
     this.logger.log('🔌 ChatGateway initialized');
+  }
+
+  // Register the AI reply delivery channel so the assistant pushes messages
+  // through the SAME broadcast path human messages use (no parallel pipeline).
+  onModuleInit() {
+    this.chatbotService.registerBroadcast((conversationId, message) => {
+      this.broadcastMessage(conversationId, message);
+    });
   }
 
   // ─── Handle Connection ────────────────────────────────────────────────────────
@@ -152,6 +164,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       senderUser: user,
       messageId: message.id,
       content: dto.content,
+    });
+
+    // AI-1: let the assistant react to this message (layered on top; never
+    // blocks or breaks the chat flow — it gates internally on takeover/role/config).
+    void this.chatbotService.handleIncomingMessage({
+      conversation,
+      senderUser: user,
+      message,
     });
 
     this.logger.log(`Message from ${user.email} in conv ${conversation.id}`);

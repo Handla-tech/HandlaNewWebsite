@@ -32,6 +32,7 @@ import { ChatService } from '../chat.service';
 import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
 import { AwsService } from '../../aws/aws.service';
+import { ChatbotService } from '../../ai/services/chatbot.service';
 import { User } from '../../auth/entities/user.entity';
 import { UserRole, ConversationStatus } from '../../../common/enums';
 
@@ -125,6 +126,13 @@ describe('Chat → Notification bell integration', () => {
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: getRepositoryToken(User), useValue: userRepo },
         { provide: AwsService, useValue: { generatePresignedUrl: jest.fn() } },
+        {
+          provide: ChatbotService,
+          useValue: {
+            registerBroadcast: jest.fn(),
+            handleIncomingMessage: jest.fn().mockResolvedValue({ handled: false }),
+          },
+        },
         ChatGateway,
       ],
     }).compile();

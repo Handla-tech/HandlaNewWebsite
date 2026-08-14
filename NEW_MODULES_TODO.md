@@ -205,17 +205,21 @@ Goal: **full feature parity with web**, role-gated. Shipped in slices — all sl
 
 ---
 
-## PHASE 10 — AI Handla Assistant (queued, after mobile)  🟡
-Analyze existing NestJS messaging/chat FIRST (do not rebuild). Layer an AI assistant on top of existing conversations/messages/WebSocket/auth.
-- AI = language understanding only; NestJS stays workflow controller.
-- Handla Knowledge Base (DB-managed, categories, public/internal visibility) + modular retrieval (upgradeable to RAG).
-- Lead qualification: natural NL requirement collection → structured extracted_data + missing_fields + lead_status.
-- Structured AI output {reply,intent,extracted_data,missing_fields,lead_status,needs_human,escalation_reason}; validate before use.
-- STRICT truth policy — never fabricate Handla facts (clients/gov projects/certs/prices/etc.); say "not confirmed" + record for team.
-- Business restrictions (no final quotes/discounts/delivery guarantees/contracts); escalation triggers.
-- Human takeover (bot_enabled/status, stops AI immediately) + safe return-to-AI.
-- Message origin: CLIENT/AI/STAFF/SYSTEM. Context strategy (summary + recent msgs + KB + lead state). Cost control (1 msg → 1 AI call). Prompt-injection defense. Concurrency/idempotency (no double replies). Graceful fallback on AI failure.
-- AiModule (AiService/ChatbotService/KnowledgeService/LeadExtractionService/ConversationContextService/PromptService) — adapt to existing conventions. Env: OPENAI_API_KEY, OPENAI_MODEL. Admin UI: KB CRUD, lead panel, AI state, takeover. Tests.
+## PHASE 10 — AI Handla Assistant  ✅ BACKEND COMPLETE
+Analyzed the existing NestJS chat FIRST (gateway/service/controller/entities) and layered the assistant ON TOP — reuses conversations/messages/WebSocket/auth, no parallel system.
+- [x] Analysis: ChatGateway.handleSendMessage → chatService.saveMessage → broadcast; public helpers broadcastMessage/emitToUser/notifyMessageRecipient. Conversation(adminId/clientId/assignedEmployeeId), Message(senderId/content/isRead).
+- [x] AI = language understanding only; NestJS is the workflow controller (all decisions post-validation).
+- [x] Knowledge Base (DB-managed): `ai_knowledge_entries` (title/content/category/tags/priority/isActive/product) + lexical retriever (dependency-free, upgradeable to RAG). ADMIN CRUD.
+- [x] Lead qualification: natural NL → structured extracted_data + missing_fields + authoritative lead_status derived in NestJS (LeadExtractionService, synonym mapping, never overwrite with empty).
+- [x] Structured AI output {reply,intent,extracted_data,missing_fields,lead_status,needs_human,escalation_reason}; STRICTLY validated (AiService.validate) before use — bad output → graceful fallback.
+- [x] STRICT truth policy in PromptService — answer ONLY from KB; never fabricate clients/gov projects/certs/prices; "not certain" + offer human otherwise.
+- [x] Business restrictions (no final quotes/discounts/delivery guarantees) + escalation triggers baked into the system prompt.
+- [x] Human takeover (ConversationAiState.controlMode AI/HUMAN — bot muted immediately) + safe return-to-AI. Admin endpoints POST /ai/conversations/:id/takeover and /return-to-ai.
+- [x] Message origin CLIENT/AI/STAFF/SYSTEM (Message.origin, additive nullable column). Context strategy = running summary + recent window + KB snippets + lead state. Cost control = exactly 1 msg → 1 AI call (deterministic summary, no extra LLM calls). Prompt-injection defense (fence/role neutralisation, data-vs-instruction framing). Concurrency (in-flight set) + idempotency (lastHandledMessageId) → no double replies. Graceful fallback on AI failure/timeout.
+- [x] AiModule: AiService / ChatbotService(orchestrator) / KnowledgeService / LeadExtractionService / ConversationContextService / PromptService / AiStateService. forwardRef wiring with ChatModule; ChatGateway.onModuleInit registers the AI broadcast channel.
+- [x] Env: OPENAI_API_KEY / OPENAI_MODEL (+ base URL, tokens, temperature, timeout, enable switch, windows) documented in .env.example. Disabled cleanly when no key.
+- [x] Tests: 31 AI unit tests (validation, extraction, prompt/injection defense, takeover, KB retrieval) + fixed chat specs; full suite 796/796 green. `nest build` clean.
+- [ ] Admin UI (web): KB CRUD screen, lead panel, AI-state/takeover toggle — FRONTEND PENDING (backend API ready).
 
 ## PHASE 11 — SaaS Control Plane (queued, after AI assistant)  🟡
 Analyze Handla + Mudar/Matjari/Manara FIRST. Handla = managed SaaS Control Plane (no public self-service tenant creation; admin-only provisioning).

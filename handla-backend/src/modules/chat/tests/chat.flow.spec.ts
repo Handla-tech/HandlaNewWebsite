@@ -80,6 +80,7 @@ const clientMessage: Message = {
   content: 'Hello, I need help with my order.',
   fileUrl: null,
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   conversation: newConversation,
@@ -93,6 +94,7 @@ const adminReply: Message = {
   content: 'Hi there! How can I assist you today?',
   fileUrl: null,
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   conversation: newConversation,
@@ -106,6 +108,7 @@ const fileMessage: Message = {
   content: null,
   fileUrl: 'https://s3.amazonaws.com/handla/uploads/invoice.pdf',
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   conversation: newConversation,
@@ -236,6 +239,7 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
           senderId: clientUser.id,
           content: 'Hello, I need help with my order.',
           isRead: false,
+    origin: null,
         }),
       );
       expect(result.isRead).toBe(false);

@@ -9,6 +9,7 @@ import { ChatService } from '../chat.service';
 import { User } from '../../auth/entities/user.entity';
 import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
+import { ChatbotService } from '../../ai/services/chatbot.service';
 import { UserRole, ConversationStatus } from '../../../common/enums';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -103,6 +104,12 @@ describe('ChatGateway', () => {
     };
     emailService = { queueMessageNotification: jest.fn().mockResolvedValue(undefined) };
     userRepo = { findOne: jest.fn() };
+    // AI-1: the gateway now depends on ChatbotService (assistant layered on top).
+    // A no-op double keeps these chat tests focused on chat behaviour.
+    const chatbotService = {
+      registerBroadcast: jest.fn(),
+      handleIncomingMessage: jest.fn().mockResolvedValue({ handled: false }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -113,6 +120,7 @@ describe('ChatGateway', () => {
         { provide: NotificationService,    useValue: notificationService },
         { provide: EmailService,           useValue: emailService        },
         { provide: getRepositoryToken(User), useValue: userRepo          },
+        { provide: ChatbotService,         useValue: chatbotService      },
       ],
     }).compile();
 

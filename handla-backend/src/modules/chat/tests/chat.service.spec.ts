@@ -68,6 +68,7 @@ const mockMessage: Message = {
   content: 'Hello!',
   fileUrl: null,
   isRead: false,
+    origin: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   conversation: mockConversation,
@@ -318,6 +319,7 @@ describe('ChatService', () => {
           senderId: adminUser.id,
           content: 'Hello World',
           isRead: false,
+    origin: null,
         }),
       );
       expect(result.sender).toEqual(adminUser);

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ChatController } from './chat.controller';
@@ -13,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
 import { AwsModule } from '../aws/aws.module';
 import { NotificationModule } from '../notifications/notification.module';
 import { EmailModule } from '../email/email.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
@@ -26,6 +27,8 @@ import { EmailModule } from '../email/email.module';
     NotificationModule,
     // EmailModule exports EmailService, used by ChatGateway for async email queuing
     EmailModule,
+    // AiModule exports ChatbotService — the assistant is layered on top of chat.
+    forwardRef(() => AiModule),
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

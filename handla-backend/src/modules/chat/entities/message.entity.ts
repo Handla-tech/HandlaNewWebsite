@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Conversation } from './conversation.entity';
+import { MessageOrigin } from '../../../common/enums';
 
 @Index('idx_message_conversation_created', ['conversationId', 'createdAt'])
 @Entity('messages')
@@ -31,6 +32,20 @@ export class Message {
 
   @Column({ name: 'is_read', type: 'boolean', default: false })
   isRead: boolean;
+
+  /**
+   * AI-1: Where this message came from. Additive column — legacy rows and all
+   * human-typed messages default to CLIENT/STAFF resolution at read time when
+   * null. The AI assistant stamps AI, and takeover notices stamp SYSTEM.
+   * Kept nullable so existing chat writes need no change.
+   */
+  @Column({
+    type: 'enum',
+    enum: MessageOrigin,
+    nullable: true,
+    default: null,
+  })
+  origin: MessageOrigin | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
