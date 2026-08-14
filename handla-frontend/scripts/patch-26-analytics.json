@@ -1,0 +1,74 @@
+{
+  "en": {
+    "erp": {
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "Self-hosted traffic insights",
+        "from": "From",
+        "to": "To",
+        "refresh": "Refresh",
+        "noData": "No data for this range.",
+        "direct": "Direct",
+        "unitSuffix": "u",
+        "kpi": {
+          "pageviews": "Pageviews",
+          "events": "Events",
+          "visitors": "Visitors",
+          "sessions": "Sessions",
+          "bounceRate": "Bounce Rate",
+          "viewsPerSession": "Views / Session"
+        },
+        "interval": {
+          "hour": "Hour",
+          "day": "Day",
+          "month": "Month"
+        },
+        "sections": {
+          "trafficOverTime": "Traffic over time",
+          "topPages": "Top pages",
+          "topReferrers": "Top referrers",
+          "devices": "Devices",
+          "browsers": "Browsers",
+          "countries": "Countries",
+          "topEvents": "Top events"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "analytics": {
+        "title": "التحليلات",
+        "subtitle": "رؤى حركة المرور المستضافة ذاتياً",
+        "from": "من",
+        "to": "إلى",
+        "refresh": "تحديث",
+        "noData": "لا توجد بيانات لهذه الفترة.",
+        "direct": "مباشر",
+        "unitSuffix": "زائر",
+        "kpi": {
+          "pageviews": "مشاهدات الصفحة",
+          "events": "الأحداث",
+          "visitors": "الزوار",
+          "sessions": "الجلسات",
+          "bounceRate": "معدل الارتداد",
+          "viewsPerSession": "مشاهدات / جلسة"
+        },
+        "interval": {
+          "hour": "ساعة",
+          "day": "يوم",
+          "month": "شهر"
+        },
+        "sections": {
+          "trafficOverTime": "حركة المرور عبر الزمن",
+          "topPages": "أهم الصفحات",
+          "topReferrers": "أهم المُحيلين",
+          "devices": "الأجهزة",
+          "browsers": "المتصفحات",
+          "countries": "الدول",
+          "topEvents": "أهم الأحداث"
+        }
+      }
+    }
+  }
+}

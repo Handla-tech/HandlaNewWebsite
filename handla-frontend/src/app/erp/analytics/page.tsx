@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { analyticsApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -64,11 +65,12 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon?: an
   );
 }
 
-function EmptyRow({ text = 'No data for this range.' }: { text?: string }) {
+function EmptyRow({ text }: { text?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <BarChart3 className="w-7 h-7 text-white/15 mb-2" />
-      <p className="text-sm text-white/40">{text}</p>
+      <p className="text-sm text-white/40">{text ?? t('erp.analytics.noData')}</p>
     </div>
   );
 }
@@ -78,6 +80,7 @@ function BarList({ rows, labelFmt }: {
   rows: { key: string; count: number; visitors: number }[];
   labelFmt?: (k: string) => string;
 }) {
+  const { t } = useTranslation();
   if (!rows?.length) return <EmptyRow />;
   const max = Math.max(...rows.map((r) => r.count), 1);
   return (
@@ -94,7 +97,7 @@ function BarList({ rows, labelFmt }: {
             </span>
             <span className="text-white/50 tabular-nums">
               {fmtNum(r.count)}
-              <span className="text-white/25 text-xs"> · {fmtNum(r.visitors)}u</span>
+              <span className="text-white/25 text-xs"> · {fmtNum(r.visitors)}{t('erp.analytics.unitSuffix')}</span>
             </span>
           </div>
         </div>
@@ -140,6 +143,7 @@ const DEVICE_ICON: Record<string, any> = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -217,8 +221,8 @@ export default function AnalyticsPage() {
             <LineChartIcon className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Analytics</h1>
-            <p className="text-xs text-white/40">Self-hosted traffic insights</p>
+            <h1 className="text-lg font-bold text-white">{t('erp.analytics.title')}</h1>
+            <p className="text-xs text-white/40">{t('erp.analytics.subtitle')}</p>
           </div>
         </div>
 
@@ -235,11 +239,11 @@ export default function AnalyticsPage() {
             ))}
           </div>
           <div>
-            <label className="block text-[10px] uppercase text-white/30 mb-1">From</label>
+            <label className="block text-[10px] uppercase text-white/30 mb-1">{t('erp.analytics.from')}</label>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={cn(inputCls, 'w-auto')} />
           </div>
           <div>
-            <label className="block text-[10px] uppercase text-white/30 mb-1">To</label>
+            <label className="block text-[10px] uppercase text-white/30 mb-1">{t('erp.analytics.to')}</label>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={cn(inputCls, 'w-auto')} />
           </div>
           <button
@@ -247,7 +251,7 @@ export default function AnalyticsPage() {
             className="flex h-[42px] min-h-[42px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white/70 transition hover:bg-white/[0.06]"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', anyFetching && 'animate-spin')} />
-            Refresh
+            {t('erp.analytics.refresh')}
           </button>
         </div>
       </div>
@@ -259,28 +263,28 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <KpiCard label="Pageviews" value={fmtNum(ov?.pageviews)} icon={Eye} />
-          <KpiCard label="Events" value={fmtNum(ov?.events)} icon={MousePointerClick} />
-          <KpiCard label="Visitors" value={fmtNum(ov?.uniqueVisitors)} icon={Users} />
-          <KpiCard label="Sessions" value={fmtNum(ov?.sessions)} icon={Layers} />
-          <KpiCard label="Bounce Rate" value={`${ov?.bounceRate ?? 0}`} suffix="%" icon={TrendingDown} />
-          <KpiCard label="Views / Session" value={`${ov?.viewsPerSession ?? 0}`} icon={Repeat} />
+          <KpiCard label={t('erp.analytics.kpi.pageviews')} value={fmtNum(ov?.pageviews)} icon={Eye} />
+          <KpiCard label={t('erp.analytics.kpi.events')} value={fmtNum(ov?.events)} icon={MousePointerClick} />
+          <KpiCard label={t('erp.analytics.kpi.visitors')} value={fmtNum(ov?.uniqueVisitors)} icon={Users} />
+          <KpiCard label={t('erp.analytics.kpi.sessions')} value={fmtNum(ov?.sessions)} icon={Layers} />
+          <KpiCard label={t('erp.analytics.kpi.bounceRate')} value={`${ov?.bounceRate ?? 0}`} suffix="%" icon={TrendingDown} />
+          <KpiCard label={t('erp.analytics.kpi.viewsPerSession')} value={`${ov?.viewsPerSession ?? 0}`} icon={Repeat} />
         </div>
       )}
 
       {/* Traffic over time */}
-      <SectionCard title="Traffic over time" icon={LineChartIcon}>
+      <SectionCard title={t('erp.analytics.sections.trafficOverTime')} icon={LineChartIcon}>
         <div className="flex items-center gap-1 px-4 pt-3">
           {(['hour', 'day', 'month'] as const).map((iv) => (
             <button
               key={iv}
               onClick={() => setInterval(iv)}
               className={cn(
-                'rounded-lg px-2.5 py-1 text-xs capitalize transition',
+                'rounded-lg px-2.5 py-1 text-xs transition',
                 interval === iv ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'text-white/40 hover:text-white/70',
               )}
             >
-              {iv}
+              {t(`erp.analytics.interval.${iv}`)}
             </button>
           ))}
         </div>
@@ -293,17 +297,17 @@ export default function AnalyticsPage() {
 
       {/* Pages + Referrers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <SectionCard title="Top pages" icon={FileText}>
+        <SectionCard title={t('erp.analytics.sections.topPages')} icon={FileText}>
           <BarList rows={topPages.data?.rows ?? []} />
         </SectionCard>
-        <SectionCard title="Top referrers" icon={ExternalLink}>
-          <BarList rows={topReferrers.data?.rows ?? []} labelFmt={(k) => k || 'Direct'} />
+        <SectionCard title={t('erp.analytics.sections.topReferrers')} icon={ExternalLink}>
+          <BarList rows={topReferrers.data?.rows ?? []} labelFmt={(k) => k || t('erp.analytics.direct')} />
         </SectionCard>
       </div>
 
       {/* Devices + Browsers + Countries */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <SectionCard title="Devices" icon={Monitor}>
+        <SectionCard title={t('erp.analytics.sections.devices')} icon={Monitor}>
           {dv.length === 0 ? <EmptyRow /> : (
             <div className="p-3 space-y-2">
               {dv.map((r: any) => {
@@ -328,16 +332,16 @@ export default function AnalyticsPage() {
             </div>
           )}
         </SectionCard>
-        <SectionCard title="Browsers" icon={Chrome}>
+        <SectionCard title={t('erp.analytics.sections.browsers')} icon={Chrome}>
           <BarList rows={browsers.data?.rows ?? []} />
         </SectionCard>
-        <SectionCard title="Countries" icon={Globe}>
+        <SectionCard title={t('erp.analytics.sections.countries')} icon={Globe}>
           <BarList rows={countries.data?.rows ?? []} />
         </SectionCard>
       </div>
 
       {/* Top events */}
-      <SectionCard title="Top events" icon={MousePointerClick}>
+      <SectionCard title={t('erp.analytics.sections.topEvents')} icon={MousePointerClick}>
         <BarList rows={topEvents.data?.rows ?? []} />
       </SectionCard>
     </div>

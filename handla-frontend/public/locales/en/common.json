@@ -2147,6 +2147,38 @@
         "byPriority": "By Priority",
         "byCategory": "By Category"
       }
+    },
+    "analytics": {
+      "title": "Analytics",
+      "subtitle": "Self-hosted traffic insights",
+      "from": "From",
+      "to": "To",
+      "refresh": "Refresh",
+      "noData": "No data for this range.",
+      "direct": "Direct",
+      "unitSuffix": "u",
+      "kpi": {
+        "pageviews": "Pageviews",
+        "events": "Events",
+        "visitors": "Visitors",
+        "sessions": "Sessions",
+        "bounceRate": "Bounce Rate",
+        "viewsPerSession": "Views / Session"
+      },
+      "interval": {
+        "hour": "Hour",
+        "day": "Day",
+        "month": "Month"
+      },
+      "sections": {
+        "trafficOverTime": "Traffic over time",
+        "topPages": "Top pages",
+        "topReferrers": "Top referrers",
+        "devices": "Devices",
+        "browsers": "Browsers",
+        "countries": "Countries",
+        "topEvents": "Top events"
+      }
     }
   },
   "footer": {

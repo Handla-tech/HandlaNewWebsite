@@ -2147,6 +2147,38 @@
         "byPriority": "حسب الأولوية",
         "byCategory": "حسب الفئة"
       }
+    },
+    "analytics": {
+      "title": "التحليلات",
+      "subtitle": "رؤى حركة المرور المستضافة ذاتياً",
+      "from": "من",
+      "to": "إلى",
+      "refresh": "تحديث",
+      "noData": "لا توجد بيانات لهذه الفترة.",
+      "direct": "مباشر",
+      "unitSuffix": "زائر",
+      "kpi": {
+        "pageviews": "مشاهدات الصفحة",
+        "events": "الأحداث",
+        "visitors": "الزوار",
+        "sessions": "الجلسات",
+        "bounceRate": "معدل الارتداد",
+        "viewsPerSession": "مشاهدات / جلسة"
+      },
+      "interval": {
+        "hour": "ساعة",
+        "day": "يوم",
+        "month": "شهر"
+      },
+      "sections": {
+        "trafficOverTime": "حركة المرور عبر الزمن",
+        "topPages": "أهم الصفحات",
+        "topReferrers": "أهم المُحيلين",
+        "devices": "الأجهزة",
+        "browsers": "المتصفحات",
+        "countries": "الدول",
+        "topEvents": "أهم الأحداث"
+      }
     }
   },
   "footer": {
