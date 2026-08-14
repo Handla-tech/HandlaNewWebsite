@@ -18,6 +18,7 @@ import {
 } from '@/components/forms';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedWebsiteProjects, WebsiteProject } from '@/types';
+import { useT } from '@/i18n';
 
 /**
  * Website Content → Projects (mirrors the ERP `/erp/website/projects` page).
@@ -55,6 +56,7 @@ const EMPTY: JForm = {
 const URL_RE = /^https?:\/\/.+/i;
 
 export default function WebsiteProjectsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const qc = useQueryClient();
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -125,7 +127,7 @@ export default function WebsiteProjectsScreen() {
       qc.invalidateQueries({ queryKey: ['website-projects-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save project')),
+    onError: (e) => setErr(apiError(e, t('websiteProjects.saveError'))),
   });
 
   const del = useMutation({
@@ -134,17 +136,17 @@ export default function WebsiteProjectsScreen() {
       qc.invalidateQueries({ queryKey: ['website-projects-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete project')),
+    onError: (e) => setDeleteErr(apiError(e, t('websiteProjects.deleteError'))),
   });
 
   const submit = () => {
-    if (form.title.trim().length < 2) return setErr('Title must be at least 2 characters.');
+    if (form.title.trim().length < 2) return setErr(t('websiteProjects.titleError'));
     if (form.description.trim().length < 10)
-      return setErr('Description must be at least 10 characters.');
+      return setErr(t('websiteProjects.descriptionError'));
     if (form.imageUrl.trim() && !URL_RE.test(form.imageUrl.trim()))
-      return setErr('Image URL must start with http:// or https://');
+      return setErr(t('websiteProjects.imageUrlError'));
     if (form.projectUrl.trim() && !URL_RE.test(form.projectUrl.trim()))
-      return setErr('Project URL must start with http:// or https://');
+      return setErr(t('websiteProjects.projectUrlError'));
     setErr(null);
     save.mutate();
   };
@@ -203,8 +205,8 @@ export default function WebsiteProjectsScreen() {
   return (
     <GlassScreen>
       <GradientHeader
-        title="Website Projects"
-        subtitle={`${projects.data?.total ?? rows.length} total`}
+        title={t('websiteProjects.title')}
+        subtitle={t('websiteProjects.totalCount', { count: projects.data?.total ?? rows.length })}
         icon="albums-outline"
       />
       {projects.isLoading ? (
@@ -225,7 +227,7 @@ export default function WebsiteProjectsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="albums-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No portfolio projects yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('websiteProjects.empty')}</Text>
             </View>
           }
         />
@@ -236,73 +238,73 @@ export default function WebsiteProjectsScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Project' : 'New Project'}
-        subtitle="Shown on the public website"
+        title={editing ? t('websiteProjects.editTitle') : t('websiteProjects.newTitle')}
+        subtitle={t('websiteProjects.modalSubtitle')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Title"
+          label={t('websiteProjects.titleField')}
           value={form.title}
-          onChangeText={(t) => setForm((f) => ({ ...f, title: t }))}
-          placeholder="Acme School Platform"
+          onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
+          placeholder={t('websiteProjects.titlePlaceholder')}
         />
         <Input
-          label="Client / Company"
+          label={t('websiteProjects.clientName')}
           value={form.clientName}
-          onChangeText={(t) => setForm((f) => ({ ...f, clientName: t }))}
-          placeholder="Optional"
+          onChangeText={(v) => setForm((f) => ({ ...f, clientName: v }))}
+          placeholder={t('common.optional')}
         />
         <Input
-          label="Summary"
+          label={t('websiteProjects.summary')}
           value={form.summary}
-          onChangeText={(t) => setForm((f) => ({ ...f, summary: t }))}
-          placeholder="Short one-line summary (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, summary: v }))}
+          placeholder={t('websiteProjects.summaryPlaceholder')}
         />
         <Textarea
-          label="Description"
+          label={t('websiteProjects.description')}
           value={form.description}
-          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
-          placeholder="Full project description (min 10 characters)"
+          onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder={t('websiteProjects.descriptionPlaceholder')}
         />
         <Input
-          label="Category"
+          label={t('websiteProjects.category')}
           value={form.category}
-          onChangeText={(t) => setForm((f) => ({ ...f, category: t }))}
-          placeholder="Web App, ERP, Mobile… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, category: v }))}
+          placeholder={t('websiteProjects.categoryPlaceholder')}
         />
         <Input
-          label="Tags (comma-separated)"
+          label={t('websiteProjects.tags')}
           value={form.tagsCsv}
-          onChangeText={(t) => setForm((f) => ({ ...f, tagsCsv: t }))}
-          placeholder="React, NestJS, PostgreSQL"
+          onChangeText={(v) => setForm((f) => ({ ...f, tagsCsv: v }))}
+          placeholder={t('websiteProjects.tagsPlaceholder')}
         />
         <Input
-          label="Live / Case-study URL"
+          label={t('websiteProjects.projectUrl')}
           value={form.projectUrl}
-          onChangeText={(t) => setForm((f) => ({ ...f, projectUrl: t }))}
-          placeholder="https://… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, projectUrl: v }))}
+          placeholder={t('websiteProjects.urlPlaceholder')}
           autoCapitalize="none"
           keyboardType="url"
         />
         <Input
-          label="Cover image URL"
+          label={t('websiteProjects.coverUrl')}
           value={form.imageUrl}
-          onChangeText={(t) => setForm((f) => ({ ...f, imageUrl: t }))}
-          placeholder="https://… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, imageUrl: v }))}
+          placeholder={t('websiteProjects.urlPlaceholder')}
           autoCapitalize="none"
           keyboardType="url"
         />
         <Input
-          label="Sort order"
+          label={t('websiteProjects.sortOrder')}
           value={form.sortOrder}
-          onChangeText={(t) => setForm((f) => ({ ...f, sortOrder: t.replace(/[^0-9]/g, '') }))}
+          onChangeText={(v) => setForm((f) => ({ ...f, sortOrder: v.replace(/[^0-9]/g, '') }))}
           placeholder="0"
           keyboardType="number-pad"
         />
         <SwitchRow
-          label="Featured on landing page"
+          label={t('websiteProjects.featuredToggle')}
           value={form.featured}
           onValueChange={(v) => setForm((f) => ({ ...f, featured: v }))}
         />
@@ -314,7 +316,7 @@ export default function WebsiteProjectsScreen() {
         title={sheetFor?.title}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
               const p = sheetFor;
@@ -323,7 +325,7 @@ export default function WebsiteProjectsScreen() {
             },
           },
           {
-            label: 'Delete',
+            label: t('common.delete'),
             icon: 'trash-outline',
             destructive: true,
             onPress: () => {
@@ -340,9 +342,9 @@ export default function WebsiteProjectsScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Project"
-        message={`Permanently remove "${deleteFor?.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('websiteProjects.deleteTitle')}
+        message={t('websiteProjects.deleteMsg', { name: deleteFor?.title ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}
@@ -380,6 +382,7 @@ function Chip({ label }: { label: string }) {
 
 function FeaturedBadge() {
   const { colors } = useTheme();
+  const { t } = useT();
   return (
     <View
       style={{
@@ -396,7 +399,7 @@ function FeaturedBadge() {
       }}
     >
       <Ionicons name="star" size={11} color={colors.accent} />
-      <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>Featured</Text>
+      <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>{t('common.featured')}</Text>
     </View>
   );
 }

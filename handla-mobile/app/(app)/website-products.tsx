@@ -18,6 +18,7 @@ import {
 } from '@/components/forms';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedWebsiteProducts, WebsiteProduct } from '@/types';
+import { useT } from '@/i18n';
 
 /**
  * Website Content → Products (mirrors the ERP `/erp/website/products` page).
@@ -56,6 +57,7 @@ const EMPTY: PForm = {
 const URL_RE = /^https?:\/\/.+/i;
 
 export default function WebsiteProductsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const qc = useQueryClient();
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -126,7 +128,7 @@ export default function WebsiteProductsScreen() {
       qc.invalidateQueries({ queryKey: ['website-products-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save product')),
+    onError: (e) => setErr(apiError(e, t('websiteProducts.saveError'))),
   });
 
   const del = useMutation({
@@ -135,17 +137,17 @@ export default function WebsiteProductsScreen() {
       qc.invalidateQueries({ queryKey: ['website-products-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete product')),
+    onError: (e) => setDeleteErr(apiError(e, t('websiteProducts.deleteError'))),
   });
 
   const submit = () => {
-    if (form.name.trim().length < 2) return setErr('Name must be at least 2 characters.');
+    if (form.name.trim().length < 2) return setErr(t('websiteProducts.nameError'));
     if (form.description.trim().length < 10)
-      return setErr('Description must be at least 10 characters.');
+      return setErr(t('websiteProducts.descriptionError'));
     if (form.imageUrl.trim() && !URL_RE.test(form.imageUrl.trim()))
-      return setErr('Image URL must start with http:// or https://');
+      return setErr(t('websiteProducts.imageUrlError'));
     if (form.productUrl.trim() && !URL_RE.test(form.productUrl.trim()))
-      return setErr('Product URL must start with http:// or https://');
+      return setErr(t('websiteProducts.productUrlError'));
     setErr(null);
     save.mutate();
   };
@@ -197,8 +199,8 @@ export default function WebsiteProductsScreen() {
   return (
     <GlassScreen>
       <GradientHeader
-        title="Website Products"
-        subtitle={`${products.data?.total ?? rows.length} total`}
+        title={t('websiteProducts.title')}
+        subtitle={t('websiteProducts.totalCount', { count: products.data?.total ?? rows.length })}
         icon="pricetags-outline"
       />
       {products.isLoading ? (
@@ -219,7 +221,7 @@ export default function WebsiteProductsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="pricetags-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No website products yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('websiteProducts.empty')}</Text>
             </View>
           }
         />
@@ -230,73 +232,73 @@ export default function WebsiteProductsScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Product' : 'New Product'}
-        subtitle="Shown on the public website"
+        title={editing ? t('websiteProducts.editTitle') : t('websiteProducts.newTitle')}
+        subtitle={t('websiteProducts.modalSubtitle')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Name"
+          label={t('websiteProducts.name')}
           value={form.name}
-          onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
-          placeholder="School ERP"
+          onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+          placeholder={t('websiteProducts.namePlaceholder')}
         />
         <Input
-          label="Price (display)"
+          label={t('websiteProducts.priceDisplay')}
           value={form.price}
-          onChangeText={(t) => setForm((f) => ({ ...f, price: t }))}
-          placeholder="From $499 / Contact us"
+          onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
+          placeholder={t('websiteProducts.pricePlaceholder')}
         />
         <Input
-          label="Tagline"
+          label={t('websiteProducts.tagline')}
           value={form.tagline}
-          onChangeText={(t) => setForm((f) => ({ ...f, tagline: t }))}
-          placeholder="Short one-line tagline (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, tagline: v }))}
+          placeholder={t('websiteProducts.taglinePlaceholder')}
         />
         <Textarea
-          label="Description"
+          label={t('websiteProducts.description')}
           value={form.description}
-          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
-          placeholder="Full product description (min 10 characters)"
+          onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder={t('websiteProducts.descriptionPlaceholder')}
         />
         <Input
-          label="Category"
+          label={t('websiteProducts.category')}
           value={form.category}
-          onChangeText={(t) => setForm((f) => ({ ...f, category: t }))}
-          placeholder="ERP, Mobile App… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, category: v }))}
+          placeholder={t('websiteProducts.categoryPlaceholder')}
         />
         <Input
-          label="Features (comma-separated)"
+          label={t('websiteProducts.features')}
           value={form.featuresCsv}
-          onChangeText={(t) => setForm((f) => ({ ...f, featuresCsv: t }))}
-          placeholder="Attendance, Grading, Billing"
+          onChangeText={(v) => setForm((f) => ({ ...f, featuresCsv: v }))}
+          placeholder={t('websiteProducts.featuresPlaceholder')}
         />
         <Input
-          label="Product / Demo URL"
+          label={t('websiteProducts.productUrl')}
           value={form.productUrl}
-          onChangeText={(t) => setForm((f) => ({ ...f, productUrl: t }))}
-          placeholder="https://… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, productUrl: v }))}
+          placeholder={t('websiteProducts.urlPlaceholder')}
           autoCapitalize="none"
           keyboardType="url"
         />
         <Input
-          label="Cover / Logo image URL"
+          label={t('websiteProducts.coverUrl')}
           value={form.imageUrl}
-          onChangeText={(t) => setForm((f) => ({ ...f, imageUrl: t }))}
-          placeholder="https://… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, imageUrl: v }))}
+          placeholder={t('websiteProducts.urlPlaceholder')}
           autoCapitalize="none"
           keyboardType="url"
         />
         <Input
-          label="Sort order"
+          label={t('websiteProducts.sortOrder')}
           value={form.sortOrder}
-          onChangeText={(t) => setForm((f) => ({ ...f, sortOrder: t.replace(/[^0-9]/g, '') }))}
+          onChangeText={(v) => setForm((f) => ({ ...f, sortOrder: v.replace(/[^0-9]/g, '') }))}
           placeholder="0"
           keyboardType="number-pad"
         />
         <SwitchRow
-          label="Featured on landing page"
+          label={t('websiteProducts.featuredToggle')}
           value={form.featured}
           onValueChange={(v) => setForm((f) => ({ ...f, featured: v }))}
         />
@@ -308,7 +310,7 @@ export default function WebsiteProductsScreen() {
         title={sheetFor?.name}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
               const p = sheetFor;
@@ -317,7 +319,7 @@ export default function WebsiteProductsScreen() {
             },
           },
           {
-            label: 'Delete',
+            label: t('common.delete'),
             icon: 'trash-outline',
             destructive: true,
             onPress: () => {
@@ -334,9 +336,9 @@ export default function WebsiteProductsScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Product"
-        message={`Permanently remove "${deleteFor?.name}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('websiteProducts.deleteTitle')}
+        message={t('websiteProducts.deleteMsg', { name: deleteFor?.name ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}
@@ -374,6 +376,7 @@ function Chip({ label }: { label: string }) {
 
 function FeaturedBadge() {
   const { colors } = useTheme();
+  const { t } = useT();
   return (
     <View
       style={{
@@ -390,7 +393,7 @@ function FeaturedBadge() {
       }}
     >
       <Ionicons name="star" size={11} color={colors.accent} />
-      <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>Featured</Text>
+      <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>{t('common.featured')}</Text>
     </View>
   );
 }

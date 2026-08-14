@@ -17,6 +17,7 @@ import {
 } from '@/components/forms';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedTestimonials, Testimonial } from '@/types';
+import { useT } from '@/i18n';
 
 function Stars({ rating, color }: { rating: number; color: string }) {
   const r = Math.max(0, Math.min(5, Math.round(rating)));
@@ -68,6 +69,7 @@ interface TForm {
 const EMPTY: TForm = { clientName: '', clientCompany: '', content: '', imageUrl: '', rating: 5 };
 
 export default function TestimonialsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const qc = useQueryClient();
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -94,14 +96,14 @@ export default function TestimonialsScreen() {
     setErr(null);
     setFormOpen(true);
   };
-  const openEdit = (t: Testimonial) => {
-    setEditing(t);
+  const openEdit = (row: Testimonial) => {
+    setEditing(row);
     setForm({
-      clientName: t.clientName,
-      clientCompany: t.clientCompany ?? '',
-      content: t.content,
-      imageUrl: t.imageUrl ?? '',
-      rating: t.rating,
+      clientName: row.clientName,
+      clientCompany: row.clientCompany ?? '',
+      content: row.content,
+      imageUrl: row.imageUrl ?? '',
+      rating: row.rating,
     });
     setErr(null);
     setFormOpen(true);
@@ -124,7 +126,7 @@ export default function TestimonialsScreen() {
       qc.invalidateQueries({ queryKey: ['testimonials-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save testimonial')),
+    onError: (e) => setErr(apiError(e, t('testimonials.saveError'))),
   });
   const del = useMutation({
     mutationFn: (id: string) => testimonialsApi.remove(id),
@@ -132,14 +134,14 @@ export default function TestimonialsScreen() {
       qc.invalidateQueries({ queryKey: ['testimonials-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete testimonial')),
+    onError: (e) => setDeleteErr(apiError(e, t('testimonials.deleteError'))),
   });
   const submit = () => {
-    if (form.clientName.trim().length < 2) return setErr('Client name must be at least 2 characters.');
-    if (form.content.trim().length < 10) return setErr('Testimonial must be at least 10 characters.');
+    if (form.clientName.trim().length < 2) return setErr(t('testimonials.nameError'));
+    if (form.content.trim().length < 10) return setErr(t('testimonials.contentError'));
     if (form.imageUrl.trim() && !/^https?:\/\/.+/i.test(form.imageUrl.trim()))
-      return setErr('Image URL must start with http:// or https://');
-    if (form.rating < 1 || form.rating > 5) return setErr('Pick a rating from 1 to 5.');
+      return setErr(t('testimonials.urlError'));
+    if (form.rating < 1 || form.rating > 5) return setErr(t('testimonials.ratingError'));
     setErr(null);
     save.mutate();
   };
@@ -174,7 +176,7 @@ export default function TestimonialsScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Testimonials" icon="chatbox-ellipses-outline" />
+      <GradientHeader title={t('testimonials.title')} icon="chatbox-ellipses-outline" />
       {testimonials.isLoading ? (
         <Loading />
       ) : (
@@ -193,7 +195,7 @@ export default function TestimonialsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="chatbox-ellipses-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No testimonials yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('testimonials.empty')}</Text>
             </View>
           }
         />
@@ -204,40 +206,40 @@ export default function TestimonialsScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Testimonial' : 'New Testimonial'}
+        title={editing ? t('testimonials.editTitle') : t('testimonials.newTitle')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Client name"
+          label={t('testimonials.clientName')}
           value={form.clientName}
-          onChangeText={(t) => setForm((f) => ({ ...f, clientName: t }))}
-          placeholder="Jane Smith"
+          onChangeText={(v) => setForm((f) => ({ ...f, clientName: v }))}
+          placeholder={t('testimonials.clientNamePlaceholder')}
           autoCapitalize="words"
         />
         <Input
-          label="Company"
+          label={t('testimonials.company')}
           value={form.clientCompany}
-          onChangeText={(t) => setForm((f) => ({ ...f, clientCompany: t }))}
-          placeholder="Optional"
+          onChangeText={(v) => setForm((f) => ({ ...f, clientCompany: v }))}
+          placeholder={t('common.optional')}
         />
         <Textarea
-          label="Testimonial"
+          label={t('testimonials.content')}
           value={form.content}
-          onChangeText={(t) => setForm((f) => ({ ...f, content: t }))}
-          placeholder="What did the client say? (min 10 characters)"
+          onChangeText={(v) => setForm((f) => ({ ...f, content: v }))}
+          placeholder={t('testimonials.contentPlaceholder')}
         />
         <Input
-          label="Avatar image URL"
+          label={t('testimonials.avatarUrl')}
           value={form.imageUrl}
-          onChangeText={(t) => setForm((f) => ({ ...f, imageUrl: t }))}
-          placeholder="https://… (optional)"
+          onChangeText={(v) => setForm((f) => ({ ...f, imageUrl: v }))}
+          placeholder={t('testimonials.urlPlaceholder')}
           autoCapitalize="none"
           keyboardType="url"
         />
         <View style={{ gap: spacing.sm }}>
-          <Label>Rating</Label>
+          <Label>{t('testimonials.rating')}</Label>
           <RatingPicker
             value={form.rating}
             onChange={(n) => setForm((f) => ({ ...f, rating: n }))}
@@ -252,23 +254,23 @@ export default function TestimonialsScreen() {
         title={sheetFor?.clientName}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
-              const t = sheetFor;
+              const row = sheetFor;
               setSheetFor(null);
-              if (t) openEdit(t);
+              if (row) openEdit(row);
             },
           },
           {
-            label: 'Delete',
+            label: t('common.delete'),
             icon: 'trash-outline',
             destructive: true,
             onPress: () => {
-              const t = sheetFor;
+              const row = sheetFor;
               setSheetFor(null);
               setDeleteErr(null);
-              if (t) setDeleteFor(t);
+              if (row) setDeleteFor(row);
             },
           },
         ] as SheetAction[]}
@@ -278,9 +280,9 @@ export default function TestimonialsScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Testimonial"
-        message={`Delete the testimonial from "${deleteFor?.clientName}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('testimonials.deleteTitle')}
+        message={t('testimonials.deleteMsg', { name: deleteFor?.clientName ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}

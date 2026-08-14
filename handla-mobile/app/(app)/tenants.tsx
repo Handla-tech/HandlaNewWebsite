@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { tenantsApi } from '@/lib/endpoints';
 import { Loading, Badge } from '@/components/ui';
 import { GlassScreen, GradientHeader, GlassListItem } from '@/components/glass';
-import { statusColor, prettyStatus } from '@/lib/statusMeta';
+import { statusColor, prettyStatusT } from '@/lib/statusMeta';
 import { spacing, radius, useTheme } from '@/theme';
 import type { PaginatedTenants, Tenant } from '@/types';
+import { useT } from '@/i18n';
 
 export default function TenantsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
 
   const tenants = useQuery({
@@ -41,14 +43,14 @@ export default function TenantsScreen() {
         title={item.name}
         subtitle={item.product?.name ?? null}
         meta={`/${item.slug}`}
-        right={<Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />}
+        right={<Badge label={prettyStatusT(item.status, t)} color={sc.color} soft={sc.soft} />}
       />
     );
   };
 
   return (
     <GlassScreen>
-      <GradientHeader title="Tenants" icon="cube-outline" />
+      <GradientHeader title={t('tenants.title')} icon="cube-outline" />
       {tenants.isLoading ? (
         <Loading />
       ) : (
@@ -67,7 +69,7 @@ export default function TenantsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="cube-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No tenants yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('tenants.empty')}</Text>
             </View>
           }
         />
