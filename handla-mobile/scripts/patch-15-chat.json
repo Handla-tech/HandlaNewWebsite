@@ -1,0 +1,40 @@
+{
+  "en": {
+    "chat": {
+      "title": "Messages",
+      "live": "Live",
+      "offline": "Offline",
+      "emptyStaff": "No conversations yet.",
+      "emptyClient": "Start a conversation with the Handla team.",
+      "startChat": "Start Chat",
+      "attachment": "📎 Attachment",
+      "noMessages": "No messages yet",
+      "conversationFallback": "Conversation",
+      "time": {
+        "now": "now",
+        "minutes": "{{n}}m",
+        "hours": "{{n}}h",
+        "days": "{{n}}d"
+      }
+    }
+  },
+  "ar": {
+    "chat": {
+      "title": "الرسائل",
+      "live": "مباشر",
+      "offline": "غير متصل",
+      "emptyStaff": "لا توجد محادثات بعد.",
+      "emptyClient": "ابدأ محادثة مع فريق Handla.",
+      "startChat": "بدء محادثة",
+      "attachment": "📎 مرفق",
+      "noMessages": "لا توجد رسائل بعد",
+      "conversationFallback": "محادثة",
+      "time": {
+        "now": "الآن",
+        "minutes": "{{n}} د",
+        "hours": "{{n}} س",
+        "days": "{{n}} ي"
+      }
+    }
+  }
+}

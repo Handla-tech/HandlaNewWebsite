@@ -10,17 +10,20 @@ import { useChatSocket } from '@/hooks/useChatSocket';
 import { Loading, Button } from '@/components/ui';
 import { GlassScreen, GradientHeader, GlassCard } from '@/components/glass';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { Conversation, PaginatedConversations } from '@/types';
 
-function timeAgo(iso?: string) {
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+function timeAgo(iso: string | undefined, t: TFn) {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'now';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return t('chat.time.now');
+  if (m < 60) return t('chat.time.minutes', { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return t('chat.time.hours', { n: h });
+  return t('chat.time.days', { n: Math.floor(h / 24) });
 }
 
 function Avatar({ name, uri }: { name?: string; uri?: string | null }) {
@@ -54,6 +57,7 @@ function Avatar({ name, uri }: { name?: string; uri?: string | null }) {
 
 export default function ChatListScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
@@ -87,7 +91,7 @@ export default function ChatListScreen() {
   return (
     <GlassScreen>
       <GradientHeader
-        title="Messages"
+        title={t('chat.title')}
         icon="chatbubbles-outline"
         right={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -100,7 +104,7 @@ export default function ChatListScreen() {
               }}
             />
             <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-              {connected ? 'Live' : 'Offline'}
+              {connected ? t('chat.live') : t('chat.offline')}
             </Text>
           </View>
         }
@@ -124,11 +128,11 @@ export default function ChatListScreen() {
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
               <Ionicons name="chatbubbles-outline" size={40} color={colors.textDim} />
               <Text style={{ color: colors.textFaint, marginTop: spacing.md, marginBottom: spacing.lg }}>
-                {isStaff ? 'No conversations yet.' : 'Start a conversation with the Handla team.'}
+                {isStaff ? t('chat.emptyStaff') : t('chat.emptyClient')}
               </Text>
               {!isStaff && (
                 <Button
-                  title="Start Chat"
+                  title={t('chat.startChat')}
                   onPress={() => startConversation.mutate()}
                   loading={startConversation.isPending}
                   style={{ paddingHorizontal: spacing.xl }}
@@ -141,8 +145,8 @@ export default function ChatListScreen() {
             const preview = item.lastMessage?.content
               ? item.lastMessage.content
               : item.lastMessage?.fileUrl
-              ? '📎 Attachment'
-              : 'No messages yet';
+              ? t('chat.attachment')
+              : t('chat.noMessages');
             const unread = item.unreadCount ?? 0;
             return (
               <GlassCard
@@ -158,10 +162,10 @@ export default function ChatListScreen() {
                       style={{ color: colors.text, fontSize: font.md, fontWeight: '700', flex: 1 }}
                       numberOfLines={1}
                     >
-                      {other?.name ?? 'Conversation'}
+                      {other?.name ?? t('chat.conversationFallback')}
                     </Text>
                     <Text style={{ color: colors.textDim, fontSize: font.xs, marginLeft: 8 }}>
-                      {timeAgo(item.lastMessageAt)}
+                      {timeAgo(item.lastMessageAt, t)}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>

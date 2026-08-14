@@ -127,7 +127,21 @@
     "subtitle": "Your messages",
     "empty": "No conversations yet",
     "typeMessage": "Type a message…",
-    "send": "Send"
+    "send": "Send",
+    "live": "Live",
+    "offline": "Offline",
+    "emptyStaff": "No conversations yet.",
+    "emptyClient": "Start a conversation with the Handla team.",
+    "startChat": "Start Chat",
+    "attachment": "📎 Attachment",
+    "noMessages": "No messages yet",
+    "conversationFallback": "Conversation",
+    "time": {
+      "now": "now",
+      "minutes": "{{n}}m",
+      "hours": "{{n}}h",
+      "days": "{{n}}d"
+    }
   },
   "sales": {
     "title": "Sales",

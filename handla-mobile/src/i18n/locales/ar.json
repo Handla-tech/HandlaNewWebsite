@@ -127,7 +127,21 @@
     "subtitle": "رسائلك",
     "empty": "لا توجد محادثات بعد",
     "typeMessage": "اكتب رسالة…",
-    "send": "إرسال"
+    "send": "إرسال",
+    "live": "مباشر",
+    "offline": "غير متصل",
+    "emptyStaff": "لا توجد محادثات بعد.",
+    "emptyClient": "ابدأ محادثة مع فريق Handla.",
+    "startChat": "بدء محادثة",
+    "attachment": "📎 مرفق",
+    "noMessages": "لا توجد رسائل بعد",
+    "conversationFallback": "محادثة",
+    "time": {
+      "now": "الآن",
+      "minutes": "{{n}} د",
+      "hours": "{{n}} س",
+      "days": "{{n}} ي"
+    }
   },
   "sales": {
     "title": "المبيعات",
