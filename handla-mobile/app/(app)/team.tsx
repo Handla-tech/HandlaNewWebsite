@@ -8,13 +8,14 @@ import type { UsersQuery } from '@/lib/endpoints';
 import { Loading, Badge, Chip } from '@/components/ui';
 import { GlassScreen, GlassListItem } from '@/components/glass';
 import { spacing, font, useTheme, colors as staticColors } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedUsers, TeamMember, UserRole } from '@/types';
 
-const ROLE_META: Record<UserRole, { label: string; color: string; soft: string }> = {
-  ADMIN: { label: 'Admin', color: staticColors.accent, soft: staticColors.accentSoft },
-  EMPLOYEE: { label: 'Employee', color: staticColors.info, soft: 'rgba(96,165,250,0.15)' },
-  CLIENT: { label: 'Client', color: staticColors.success, soft: staticColors.successSoft },
-  LEAD: { label: 'Lead', color: '#c084fc', soft: 'rgba(192,132,252,0.15)' },
+const ROLE_META: Record<UserRole, { color: string; soft: string }> = {
+  ADMIN: { color: staticColors.accent, soft: staticColors.accentSoft },
+  EMPLOYEE: { color: staticColors.info, soft: 'rgba(96,165,250,0.15)' },
+  CLIENT: { color: staticColors.success, soft: staticColors.successSoft },
+  LEAD: { color: '#c084fc', soft: 'rgba(192,132,252,0.15)' },
 };
 
 const ROLE_FILTERS: (UserRole | null)[] = [null, 'ADMIN', 'EMPLOYEE', 'CLIENT', 'LEAD'];
@@ -29,6 +30,7 @@ function initials(name: string) {
 }
 
 export default function TeamScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
@@ -63,9 +65,9 @@ export default function TeamScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '700' }}>Team</Text>
+          <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '700' }}>{t('team.title')}</Text>
           <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-            {users.data ? `${users.data.total} members` : 'Loading…'}
+            {users.data ? t('users.membersCount', { count: users.data.total }) : t('users.loading')}
           </Text>
         </View>
       </View>
@@ -86,7 +88,7 @@ export default function TeamScreen() {
             {ROLE_FILTERS.map((r) => (
               <Chip
                 key={r ?? 'all'}
-                label={r ? ROLE_META[r].label : 'All'}
+                label={r ? t(`role.${r}`) : t('users.all')}
                 active={role === r}
                 onPress={() => setRole(r)}
               />
@@ -101,7 +103,7 @@ export default function TeamScreen() {
           ) : (
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
               <Ionicons name="people-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint, marginTop: spacing.md }}>No members found.</Text>
+              <Text style={{ color: colors.textFaint, marginTop: spacing.md }}>{t('team.empty')}</Text>
             </View>
           )
         }
@@ -133,11 +135,11 @@ export default function TeamScreen() {
               subtitle={item.email}
               right={
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Badge label={m.label} color={m.color} soft={m.soft} />
+                  <Badge label={t(`role.${item.role}`)} color={m.color} soft={m.soft} />
                   {item.isDisabled ? (
-                    <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
+                    <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>{t('users.disabled')}</Text>
                   ) : item.isArchived ? (
-                    <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
+                    <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>{t('users.archived')}</Text>
                   ) : null}
                 </View>
               }

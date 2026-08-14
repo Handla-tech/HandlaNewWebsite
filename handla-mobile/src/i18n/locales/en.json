@@ -480,5 +480,9 @@
       "email": "A valid email is required.",
       "password": "Password: min 8 chars with uppercase, lowercase and a number."
     }
+  },
+  "team": {
+    "title": "Team",
+    "empty": "No members found."
   }
 }

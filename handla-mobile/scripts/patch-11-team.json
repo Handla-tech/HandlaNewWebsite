@@ -1,0 +1,14 @@
+{
+  "en": {
+    "team": {
+      "title": "Team",
+      "empty": "No members found."
+    }
+  },
+  "ar": {
+    "team": {
+      "title": "الفريق",
+      "empty": "لم يتم العثور على أعضاء."
+    }
+  }
+}
