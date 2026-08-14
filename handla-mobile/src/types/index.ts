@@ -335,6 +335,8 @@ export interface Supplier {
   email: string | null;
   phone: string | null;
   taxId?: string | null;
+  address?: string | null;
+  notes?: string | null;
   isActive?: boolean;
   createdAt?: string;
 }
