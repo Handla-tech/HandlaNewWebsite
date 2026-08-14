@@ -2269,6 +2269,162 @@
         "total": "{{total}} الإجمالي",
         "pageInfo": "صفحة {{page}} / {{pages}}"
       }
+    },
+    "saas": {
+      "adminOnly": "لوحة التحكم في نظام SaaS مقصورة على المسؤولين.",
+      "title": "لوحة تحكم SaaS",
+      "subtitle": "توفير مُدار لمنتجات Handla. للمسؤولين فقط — لا توجد خدمة ذاتية عامة.",
+      "tabs": {
+        "tenants": "المستأجرون",
+        "catalog": "المنتجات والخطط"
+      },
+      "tenantStatus": {
+        "PENDING": "قيد الانتظار",
+        "PROVISIONING": "قيد التوفير",
+        "ACTIVE": "نشط",
+        "SUSPENDED": "معلّق",
+        "FAILED": "فشل",
+        "ARCHIVED": "مؤرشف"
+      },
+      "provStatus": {
+        "QUEUED": "في قائمة الانتظار",
+        "RUNNING": "قيد التشغيل",
+        "SUCCEEDED": "نجح",
+        "FAILED": "فشل"
+      },
+      "subStatus": {
+        "TRIALING": "فترة تجريبية",
+        "ACTIVE": "نشط",
+        "PAST_DUE": "متأخر السداد",
+        "CANCELED": "ملغى",
+        "SUSPENDED": "معلّق"
+      },
+      "billingInterval": {
+        "MONTHLY": "شهري",
+        "YEARLY": "سنوي"
+      },
+      "tenants": {
+        "allStatuses": "كل الحالات",
+        "searchPlaceholder": "ابحث بالاسم أو المعرّف…",
+        "provisionTenant": "توفير مستأجر",
+        "loadError": "فشل تحميل المستأجرين.",
+        "empty": "لا يوجد مستأجرون بعد.",
+        "provisionFirst": "توفير أول مستأجر",
+        "pagination": "{{total}} مستأجر · صفحة {{page}} من {{totalPages}}",
+        "notProvisioned": "غير موفّر"
+      },
+      "create": {
+        "title": "توفير مستأجر",
+        "subtitle": "يضع مهمة توفير في الخلفية مقابل المنتج.",
+        "client": "العميل *",
+        "selectClient": "اختر عميلاً…",
+        "product": "المنتج *",
+        "selectProduct": "اختر منتجاً…",
+        "plan": "الخطة *",
+        "selectPlan": "اختر خطة…",
+        "pickProductFirst": "اختر منتجاً أولاً",
+        "trialSuffix": "(تجربة {{days}} يوم)",
+        "name": "اسم المستأجر *",
+        "namePlaceholder": "شركة أكمي",
+        "subdomain": "النطاق الفرعي (اختياري)",
+        "subdomainPlaceholder": "تلقائي من الاسم",
+        "billingInterval": "فترة الفوترة",
+        "error": "فشل توفير المستأجر",
+        "queuing": "جارٍ الإضافة للقائمة…",
+        "provision": "توفير"
+      },
+      "detail": {
+        "title": "تفاصيل المستأجر",
+        "externalId": "المعرّف الخارجي",
+        "client": "العميل",
+        "created": "أُنشئ",
+        "archived": "أُرشف",
+        "domains": "النطاقات",
+        "primary": "أساسي",
+        "subscription": "الاشتراك",
+        "trialEnds": "تنتهي التجربة في {{date}}",
+        "lifecycleActions": "إجراءات دورة الحياة",
+        "suspend": "تعليق",
+        "reactivate": "إعادة تفعيل",
+        "retry": "إعادة المحاولة",
+        "changePlan": "تغيير الخطة",
+        "archiveAction": "أرشفة",
+        "archivedTerminal": "مؤرشف (نهائي).",
+        "actionFailed": "فشل الإجراء",
+        "provisioningLogs": "سجلات التوفير",
+        "refresh": "تحديث",
+        "noLogs": "لا توجد سجلات بعد.",
+        "attempt": "محاولة {{count}}"
+      },
+      "changePlan": {
+        "title": "تغيير الخطة",
+        "subtitle": "يُدفع إلى المنتج بشكل غير متزامن.",
+        "newPlan": "الخطة الجديدة",
+        "selectPlan": "اختر خطة…",
+        "error": "فشل تغيير الخطة",
+        "saving": "جارٍ الحفظ…",
+        "submit": "تغيير الخطة"
+      },
+      "catalog": {
+        "subtitle": "المنتجات وخططها (الحدود والامتيازات).",
+        "newProduct": "منتج جديد",
+        "empty": "لا توجد منتجات بعد.",
+        "createFirst": "إنشاء أول منتج"
+      },
+      "product": {
+        "inactive": "غير نشط",
+        "managePlans": "إدارة الخطط",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "deleteConfirm": "حذف المنتج \"{{name}}\"؟ سيفشل إذا كان هناك مستأجرون.",
+        "deleteError": "فشل حذف المنتج",
+        "titleEdit": "تعديل المنتج",
+        "titleNew": "منتج جديد",
+        "code": "الرمز *",
+        "name": "الاسم *",
+        "description": "الوصف",
+        "subdomainZone": "منطقة النطاق الفرعي",
+        "provisioner": "المُوفِّر",
+        "provisionerMock": "mock (تطوير)",
+        "provisionerHttp": "http (فعلي)",
+        "baseUrl": "رابط توفير أساسي",
+        "key": "مفتاح التوفير",
+        "keyKeep": "(اتركه فارغاً للإبقاء)",
+        "keyPlaceholder": "يُخزَّن كتجزئة SHA-256",
+        "active": "نشط",
+        "error": "فشل حفظ المنتج",
+        "saving": "جارٍ الحفظ…",
+        "saveChanges": "حفظ التغييرات",
+        "createProduct": "إنشاء المنتج"
+      },
+      "plans": {
+        "title": "الخطط — {{name}}",
+        "subtitle": "الحدود والامتيازات هي بيانات JSON مبهمة تُمرَّر إلى المنتج.",
+        "addPlan": "إضافة خطة",
+        "empty": "لا توجد خطط بعد.",
+        "inactive": "غير نشط",
+        "trial": "تجربة {{days}} يوم",
+        "deleteConfirm": "حذف الخطة \"{{name}}\"؟"
+      },
+      "planForm": {
+        "titleEdit": "تعديل الخطة",
+        "titleNew": "خطة جديدة",
+        "code": "الرمز *",
+        "name": "الاسم *",
+        "priceMonthly": "السعر/شهر",
+        "priceYearly": "السعر/سنة",
+        "currency": "USD",
+        "trialDays": "أيام التجربة",
+        "limits": "الحدود (JSON)",
+        "entitlements": "الامتيازات (JSON)",
+        "active": "نشط",
+        "invalidLimits": "الحدود ليست JSON صالحة",
+        "invalidEntitlements": "الامتيازات ليست JSON صالحة",
+        "error": "فشل حفظ الخطة",
+        "saving": "جارٍ الحفظ…",
+        "save": "حفظ",
+        "addPlan": "إضافة خطة"
+      }
     }
   },
   "footer": {

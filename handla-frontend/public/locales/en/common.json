@@ -2269,6 +2269,162 @@
         "total": "{{total}} total",
         "pageInfo": "Page {{page}} / {{pages}}"
       }
+    },
+    "saas": {
+      "adminOnly": "The SaaS Control Plane is restricted to administrators.",
+      "title": "SaaS Control Plane",
+      "subtitle": "Managed provisioning for Handla products. Admin-only — no public self-service.",
+      "tabs": {
+        "tenants": "Tenants",
+        "catalog": "Products & Plans"
+      },
+      "tenantStatus": {
+        "PENDING": "Pending",
+        "PROVISIONING": "Provisioning",
+        "ACTIVE": "Active",
+        "SUSPENDED": "Suspended",
+        "FAILED": "Failed",
+        "ARCHIVED": "Archived"
+      },
+      "provStatus": {
+        "QUEUED": "Queued",
+        "RUNNING": "Running",
+        "SUCCEEDED": "Succeeded",
+        "FAILED": "Failed"
+      },
+      "subStatus": {
+        "TRIALING": "Trialing",
+        "ACTIVE": "Active",
+        "PAST_DUE": "Past Due",
+        "CANCELED": "Canceled",
+        "SUSPENDED": "Suspended"
+      },
+      "billingInterval": {
+        "MONTHLY": "Monthly",
+        "YEARLY": "Yearly"
+      },
+      "tenants": {
+        "allStatuses": "All statuses",
+        "searchPlaceholder": "Search name or slug…",
+        "provisionTenant": "Provision Tenant",
+        "loadError": "Failed to load tenants.",
+        "empty": "No tenants yet.",
+        "provisionFirst": "Provision first tenant",
+        "pagination": "{{total}} tenants · page {{page}} of {{totalPages}}",
+        "notProvisioned": "not provisioned"
+      },
+      "create": {
+        "title": "Provision Tenant",
+        "subtitle": "Queues a background provisioning job against the product.",
+        "client": "Client *",
+        "selectClient": "Select client…",
+        "product": "Product *",
+        "selectProduct": "Select product…",
+        "plan": "Plan *",
+        "selectPlan": "Select plan…",
+        "pickProductFirst": "Pick a product first",
+        "trialSuffix": "({{days}}d trial)",
+        "name": "Tenant Name *",
+        "namePlaceholder": "Acme Corp",
+        "subdomain": "Subdomain (optional)",
+        "subdomainPlaceholder": "auto from name",
+        "billingInterval": "Billing Interval",
+        "error": "Failed to provision tenant",
+        "queuing": "Queuing…",
+        "provision": "Provision"
+      },
+      "detail": {
+        "title": "Tenant Details",
+        "externalId": "External ID",
+        "client": "Client",
+        "created": "Created",
+        "archived": "Archived",
+        "domains": "Domains",
+        "primary": "primary",
+        "subscription": "Subscription",
+        "trialEnds": "trial ends {{date}}",
+        "lifecycleActions": "Lifecycle Actions",
+        "suspend": "Suspend",
+        "reactivate": "Reactivate",
+        "retry": "Retry",
+        "changePlan": "Change Plan",
+        "archiveAction": "Archive",
+        "archivedTerminal": "Archived (terminal).",
+        "actionFailed": "Action failed",
+        "provisioningLogs": "Provisioning Logs",
+        "refresh": "refresh",
+        "noLogs": "No logs yet.",
+        "attempt": "attempt {{count}}"
+      },
+      "changePlan": {
+        "title": "Change Plan",
+        "subtitle": "Pushed to the product asynchronously.",
+        "newPlan": "New Plan",
+        "selectPlan": "Select plan…",
+        "error": "Failed to change plan",
+        "saving": "Saving…",
+        "submit": "Change Plan"
+      },
+      "catalog": {
+        "subtitle": "Products and their plans (limits & entitlements).",
+        "newProduct": "New Product",
+        "empty": "No products yet.",
+        "createFirst": "Create first product"
+      },
+      "product": {
+        "inactive": "inactive",
+        "managePlans": "Manage Plans",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": "Delete product \"{{name}}\"? This fails if tenants exist.",
+        "deleteError": "Failed to delete product",
+        "titleEdit": "Edit Product",
+        "titleNew": "New Product",
+        "code": "Code *",
+        "name": "Name *",
+        "description": "Description",
+        "subdomainZone": "Subdomain Zone",
+        "provisioner": "Provisioner",
+        "provisionerMock": "mock (dev)",
+        "provisionerHttp": "http (real)",
+        "baseUrl": "Provisioning Base URL",
+        "key": "Provisioning Key",
+        "keyKeep": "(leave blank to keep)",
+        "keyPlaceholder": "stored as a SHA-256 hash",
+        "active": "Active",
+        "error": "Failed to save product",
+        "saving": "Saving…",
+        "saveChanges": "Save Changes",
+        "createProduct": "Create Product"
+      },
+      "plans": {
+        "title": "Plans — {{name}}",
+        "subtitle": "Limits & entitlements are opaque JSON forwarded to the product.",
+        "addPlan": "Add plan",
+        "empty": "No plans yet.",
+        "inactive": "inactive",
+        "trial": "{{days}}d trial",
+        "deleteConfirm": "Delete plan \"{{name}}\"?"
+      },
+      "planForm": {
+        "titleEdit": "Edit plan",
+        "titleNew": "New plan",
+        "code": "code *",
+        "name": "name *",
+        "priceMonthly": "price/mo",
+        "priceYearly": "price/yr",
+        "currency": "USD",
+        "trialDays": "trial days",
+        "limits": "Limits (JSON)",
+        "entitlements": "Entitlements (JSON)",
+        "active": "Active",
+        "invalidLimits": "Limits is not valid JSON",
+        "invalidEntitlements": "Entitlements is not valid JSON",
+        "error": "Failed to save plan",
+        "saving": "Saving…",
+        "save": "Save",
+        "addPlan": "Add Plan"
+      }
     }
   },
   "footer": {
