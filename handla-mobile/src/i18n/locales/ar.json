@@ -410,5 +410,29 @@
       "title": "يجب أن يكون العنوان حرفين على الأقل.",
       "project": "المشروع مطلوب."
     }
+  },
+  "suppliers": {
+    "title": "الموردون",
+    "empty": "لا يوجد موردون بعد.",
+    "newSupplier": "مورد جديد",
+    "editSupplier": "تعديل المورد",
+    "nameRequired": "الاسم *",
+    "namePlaceholder": "اسم المورد",
+    "companyPlaceholder": "الشركة",
+    "emailPlaceholder": "email@example.com",
+    "phone": "الهاتف",
+    "phonePlaceholder": "الهاتف",
+    "taxId": "الرقم الضريبي",
+    "taxIdPlaceholder": "الرقم الضريبي",
+    "address": "العنوان",
+    "addressPlaceholder": "العنوان",
+    "notesPlaceholder": "ملاحظات داخلية",
+    "deleteTitle": "حذف المورد",
+    "deleteMessage": "حذف \"{{name}}\" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+    "errors": {
+      "save": "فشل حفظ المورد",
+      "delete": "فشل حذف المورد",
+      "name": "الاسم مطلوب."
+    }
   }
 }

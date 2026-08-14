@@ -1,0 +1,54 @@
+{
+  "en": {
+    "suppliers": {
+      "title": "Suppliers",
+      "empty": "No suppliers yet.",
+      "newSupplier": "New Supplier",
+      "editSupplier": "Edit Supplier",
+      "nameRequired": "Name *",
+      "namePlaceholder": "Supplier name",
+      "companyPlaceholder": "Company",
+      "emailPlaceholder": "email@example.com",
+      "phone": "Phone",
+      "phonePlaceholder": "Phone",
+      "taxId": "Tax ID",
+      "taxIdPlaceholder": "Tax ID",
+      "address": "Address",
+      "addressPlaceholder": "Address",
+      "notesPlaceholder": "Internal notes",
+      "deleteTitle": "Delete Supplier",
+      "deleteMessage": "Permanently delete \"{{name}}\"? This cannot be undone.",
+      "errors": {
+        "save": "Failed to save supplier",
+        "delete": "Failed to delete supplier",
+        "name": "Name is required."
+      }
+    }
+  },
+  "ar": {
+    "suppliers": {
+      "title": "الموردون",
+      "empty": "لا يوجد موردون بعد.",
+      "newSupplier": "مورد جديد",
+      "editSupplier": "تعديل المورد",
+      "nameRequired": "الاسم *",
+      "namePlaceholder": "اسم المورد",
+      "companyPlaceholder": "الشركة",
+      "emailPlaceholder": "email@example.com",
+      "phone": "الهاتف",
+      "phonePlaceholder": "الهاتف",
+      "taxId": "الرقم الضريبي",
+      "taxIdPlaceholder": "الرقم الضريبي",
+      "address": "العنوان",
+      "addressPlaceholder": "العنوان",
+      "notesPlaceholder": "ملاحظات داخلية",
+      "deleteTitle": "حذف المورد",
+      "deleteMessage": "حذف \"{{name}}\" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+      "errors": {
+        "save": "فشل حفظ المورد",
+        "delete": "فشل حذف المورد",
+        "name": "الاسم مطلوب."
+      }
+    }
+  }
+}

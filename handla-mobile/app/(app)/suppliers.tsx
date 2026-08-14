@@ -9,6 +9,7 @@ import { Loading, Badge, Input } from '@/components/ui';
 import { GlassScreen, GradientHeader, GlassListItem } from '@/components/glass';
 import { FormModal, Textarea, SwitchRow, ConfirmModal, ActionSheet, Fab } from '@/components/forms';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedSuppliers, Supplier } from '@/types';
 
 const EMPTY: SupplierInput = {
@@ -23,6 +24,7 @@ const EMPTY: SupplierInput = {
 };
 
 export default function SuppliersScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const qc = useQueryClient();
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -86,7 +88,7 @@ export default function SuppliersScreen() {
       qc.invalidateQueries({ queryKey: ['suppliers-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save supplier')),
+    onError: (e) => setErr(apiError(e, t('suppliers.errors.save'))),
   });
 
   const del = useMutation({
@@ -95,12 +97,12 @@ export default function SuppliersScreen() {
       qc.invalidateQueries({ queryKey: ['suppliers-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete supplier')),
+    onError: (e) => setDeleteErr(apiError(e, t('suppliers.errors.delete'))),
   });
 
   const submit = () => {
     if (!form.name?.trim()) {
-      setErr('Name is required.');
+      setErr(t('suppliers.errors.name'));
       return;
     }
     setErr(null);
@@ -129,9 +131,9 @@ export default function SuppliersScreen() {
       meta={item.email ?? undefined}
       right={
         item.isActive === false ? (
-          <Badge label="Inactive" color="#9ca3af" soft="rgba(156,163,175,0.15)" />
+          <Badge label={t('common.inactive')} color="#9ca3af" soft="rgba(156,163,175,0.15)" />
         ) : (
-          <Badge label="Active" color="#22c55e" soft="rgba(34,197,94,0.15)" />
+          <Badge label={t('common.active')} color="#22c55e" soft="rgba(34,197,94,0.15)" />
         )
       }
     />
@@ -139,7 +141,7 @@ export default function SuppliersScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Suppliers" icon="business-outline" />
+      <GradientHeader title={t('suppliers.title')} icon="business-outline" />
       {suppliers.isLoading ? (
         <Loading />
       ) : (
@@ -158,7 +160,7 @@ export default function SuppliersScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="business-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No suppliers yet.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('suppliers.empty')}</Text>
             </View>
           }
         />
@@ -170,58 +172,58 @@ export default function SuppliersScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Supplier' : 'New Supplier'}
+        title={editing ? t('suppliers.editSupplier') : t('suppliers.newSupplier')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err}
       >
         <Input
-          label="Name *"
+          label={t('suppliers.nameRequired')}
           value={form.name ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-          placeholder="Supplier name"
+          placeholder={t('suppliers.namePlaceholder')}
         />
         <Input
-          label="Company"
+          label={t('clients.company')}
           value={form.company ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, company: v }))}
-          placeholder="Company"
+          placeholder={t('suppliers.companyPlaceholder')}
         />
         <Input
-          label="Email"
+          label={t('common.email')}
           value={form.email ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
-          placeholder="email@example.com"
+          placeholder={t('suppliers.emailPlaceholder')}
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <Input
-          label="Phone"
+          label={t('suppliers.phone')}
           value={form.phone ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
-          placeholder="Phone"
+          placeholder={t('suppliers.phonePlaceholder')}
           keyboardType="phone-pad"
         />
         <Input
-          label="Tax ID"
+          label={t('suppliers.taxId')}
           value={form.taxId ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, taxId: v }))}
-          placeholder="Tax ID"
+          placeholder={t('suppliers.taxIdPlaceholder')}
         />
         <Textarea
-          label="Address"
+          label={t('suppliers.address')}
           value={form.address ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
-          placeholder="Address"
+          placeholder={t('suppliers.addressPlaceholder')}
         />
         <Textarea
-          label="Notes"
+          label={t('common.notes')}
           value={form.notes ?? ''}
           onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
-          placeholder="Internal notes"
+          placeholder={t('suppliers.notesPlaceholder')}
         />
         <SwitchRow
-          label="Active"
+          label={t('common.active')}
           value={form.isActive !== false}
           onValueChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
         />
@@ -233,11 +235,11 @@ export default function SuppliersScreen() {
         onClose={() => setSheetFor(null)}
         title={sheetFor?.name}
         actions={[
-          { label: 'Edit', icon: 'create-outline', onPress: () => sheetFor && openEdit(sheetFor) },
+          { label: t('common.edit'), icon: 'create-outline', onPress: () => sheetFor && openEdit(sheetFor) },
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('common.delete'),
                   icon: 'trash-outline' as const,
                   destructive: true,
                   onPress: () => {
@@ -255,9 +257,9 @@ export default function SuppliersScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Supplier"
-        message={`Permanently delete "${deleteFor?.name}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('suppliers.deleteTitle')}
+        message={t('suppliers.deleteMessage', { name: deleteFor?.name ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr}
