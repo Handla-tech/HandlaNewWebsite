@@ -100,8 +100,15 @@ export const chatApi = {
   /** CLIENT: create-or-get the conversation with the default admin. */
   createConversation: () =>
     api.post<{ message: string; data: { conversation: Conversation } }>('/chat/conversations'),
-  markConversationRead: (id: string) =>
-    api.patch(`/chat/messages/${id}/read`),
+  /**
+   * Mark a single message as read.
+   * NOTE: `messageId` is a MESSAGE id (not a conversation id) — the backend
+   * route is `PATCH /chat/messages/:id/read`. Real-time read receipts are
+   * normally driven over the socket (`markAsRead`); this REST call is the
+   * per-message fallback.
+   */
+  markMessageRead: (messageId: string) =>
+    api.patch(`/chat/messages/${messageId}/read`),
 };
 
 // ─── Support / Ticketing (@Controller('erp/support')) ────────────────────────

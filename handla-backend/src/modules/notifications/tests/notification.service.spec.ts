@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForbiddenException } from '@nestjs/common';
 
 import { NotificationService } from '../notification.service';
+import { PushService } from '../push.service';
 import { Notification } from '../entities/notification.entity';
 import { NotificationType } from '../../../common/enums';
 import { ResourceNotFoundException } from '../../../utils/exceptions';
@@ -57,6 +58,15 @@ const mockNotificationRepository = {
   createQueryBuilder: jest.fn().mockReturnValue(mockQb),
 };
 
+// PushService is a fire-and-forget dependency (delivery failures never break
+// the notification flow), so a no-op mock is sufficient for these unit tests.
+const mockPushService = {
+  sendToUser: jest.fn().mockResolvedValue(undefined),
+  registerToken: jest.fn(),
+  unregisterToken: jest.fn(),
+  getUserTokens: jest.fn().mockResolvedValue([]),
+};
+
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('NotificationService', () => {
@@ -69,6 +79,10 @@ describe('NotificationService', () => {
         {
           provide: getRepositoryToken(Notification),
           useValue: mockNotificationRepository,
+        },
+        {
+          provide: PushService,
+          useValue: mockPushService,
         },
       ],
     }).compile();

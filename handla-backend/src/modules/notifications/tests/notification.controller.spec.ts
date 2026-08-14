@@ -3,6 +3,7 @@ import { ParseUUIDPipe, ArgumentMetadata, BadRequestException } from '@nestjs/co
 
 import { NotificationController } from '../notification.controller';
 import { NotificationService } from '../notification.service';
+import { PushService } from '../push.service';
 import { User } from '../../auth/entities/user.entity';
 import { UserRole } from '../../../common/enums';
 
@@ -39,6 +40,10 @@ describe('NotificationController', () => {
     getOne: jest.Mock;
     deleteNotification: jest.Mock;
   };
+  let pushService: {
+    registerToken: jest.Mock;
+    unregisterToken: jest.Mock;
+  };
 
   const validUuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 
@@ -52,10 +57,17 @@ describe('NotificationController', () => {
       getOne: jest.fn(),
       deleteNotification: jest.fn(),
     };
+    pushService = {
+      registerToken: jest.fn(),
+      unregisterToken: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationController],
-      providers: [{ provide: NotificationService, useValue: service }],
+      providers: [
+        { provide: NotificationService, useValue: service },
+        { provide: PushService, useValue: pushService },
+      ],
     }).compile();
 
     controller = module.get(NotificationController);

@@ -34,6 +34,7 @@ jest.mock('@aws-sdk/s3-request-presigner', () => ({
 import { TestimonialService } from '../../testimonials/testimonial.service';
 import { Testimonial } from '../../testimonials/entities/testimonial.entity';
 import { NotificationService } from '../../notifications/notification.service';
+import { PushService } from '../../notifications/push.service';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { ChatService } from '../../chat/chat.service';
 import { Conversation } from '../../chat/entities/conversation.entity';
@@ -403,11 +404,21 @@ describe('Phase 19.3.4 — Notification Ownership', () => {
     createQueryBuilder: jest.fn().mockReturnValue(mockQb),
   };
 
+  // Fire-and-forget push delivery; a no-op mock keeps these ownership tests
+  // focused on the NotificationService authorization logic.
+  const mockPushService = {
+    sendToUser: jest.fn().mockResolvedValue(undefined),
+    registerToken: jest.fn(),
+    unregisterToken: jest.fn(),
+    getUserTokens: jest.fn().mockResolvedValue([]),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationService,
         { provide: getRepositoryToken(Notification), useValue: mockNotificationRepo },
+        { provide: PushService, useValue: mockPushService },
       ],
     }).compile();
 
