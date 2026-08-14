@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
+import { useI18nStore } from '@/i18n';
 import { Loading } from '@/components/ui';
 import { colors } from '@/theme';
 
@@ -24,12 +25,16 @@ const queryClient = new QueryClient({
 function AuthGate({ children }: { children: React.ReactNode }) {
   const status = useAuthStore((s) => s.status);
   const bootstrap = useAuthStore((s) => s.bootstrap);
+  const hydrateI18n = useI18nStore((s) => s.hydrate);
+  const i18nHydrated = useI18nStore((s) => s.hydrated);
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    // Restore the persisted language + layout direction before anything renders.
+    hydrateI18n();
     bootstrap();
-  }, [bootstrap]);
+  }, [bootstrap, hydrateI18n]);
 
   useEffect(() => {
     if (status === 'idle' || status === 'loading') return;
@@ -41,7 +46,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [status, segments, router]);
 
-  if (status === 'idle' || status === 'loading') {
+  if (status === 'idle' || status === 'loading' || !i18nHydrated) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <Loading />

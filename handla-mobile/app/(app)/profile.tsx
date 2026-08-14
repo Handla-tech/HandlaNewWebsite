@@ -1,11 +1,81 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Screen, Title, Subtitle, Card, Button } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { useT, type Locale } from '@/i18n';
 import { colors, spacing, radius, font } from '@/theme';
+
+/** Segmented EN / AR language selector. */
+function LanguageSwitcher() {
+  const { t, locale, setLocale } = useT();
+  const options: { value: Locale; label: string }[] = [
+    { value: 'en', label: t('common.languageEn') },
+    { value: 'ar', label: t('common.languageAr') },
+  ];
+
+  const onSelect = async (value: Locale) => {
+    if (value === locale) return;
+    const directionChanged = await setLocale(value);
+    if (directionChanged) {
+      Alert.alert(t('rtl.restartTitle'), t('rtl.restartBody'));
+    }
+  };
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.md,
+      }}
+    >
+      <Ionicons name="language-outline" size={18} color={colors.accent} />
+      <Text style={{ color: colors.text, fontSize: font.md, flex: 1 }}>
+        {t('common.language')}
+      </Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: radius.pill,
+          padding: 2,
+        }}
+      >
+        {options.map((opt) => {
+          const active = opt.value === locale;
+          return (
+            <Pressable
+              key={opt.value}
+              onPress={() => onSelect(opt.value)}
+              style={{
+                paddingHorizontal: spacing.md,
+                paddingVertical: 4,
+                borderRadius: radius.pill,
+                backgroundColor: active ? colors.accent : 'transparent',
+              }}
+            >
+              <Text
+                style={{
+                  color: active ? colors.bg : colors.textDim,
+                  fontSize: font.sm,
+                  fontWeight: '700',
+                }}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 function LinkRow({
   icon,
@@ -63,6 +133,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const isAdmin = useAuthStore((s) => s.isAdmin());
   const signOut = useAuthStore((s) => s.signOut);
@@ -83,8 +154,8 @@ export default function ProfileScreen() {
 
   return (
     <Screen scroll>
-      <Title>Profile</Title>
-      <Subtitle>Your account details</Subtitle>
+      <Title>{t('profile.title')}</Title>
+      <Subtitle>{t('profile.subtitle')}</Subtitle>
 
       <Card style={{ marginTop: spacing.lg, alignItems: 'center' }}>
         {user?.avatarUrl ? (
@@ -132,13 +203,30 @@ export default function ProfileScreen() {
       </Card>
 
       <Card style={{ marginTop: spacing.lg, paddingVertical: 0 }}>
-        <Row icon="mail-outline" label="Email" value={user?.email} />
-        <Row icon="call-outline" label="Phone" value={user?.phoneNumber} />
-        <Row icon="briefcase-outline" label="Job title" value={user?.jobTitle} />
-        <Row icon="business-outline" label="Company" value={user?.company} />
+        <Row icon="mail-outline" label={t('profile.email')} value={user?.email} />
+        <Row icon="call-outline" label={t('profile.phone')} value={user?.phoneNumber} />
+        <Row icon="briefcase-outline" label={t('profile.jobTitle')} value={user?.jobTitle} />
+        <Row icon="business-outline" label={t('profile.company')} value={user?.company} />
         <View style={{ borderBottomWidth: 0 }}>
-          <Row icon="location-outline" label="Location" value={user?.location} />
+          <Row icon="location-outline" label={t('profile.location')} value={user?.location} />
         </View>
+      </Card>
+
+      <Text
+        style={{
+          color: colors.textDim,
+          fontSize: font.xs,
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+          marginTop: spacing.xl,
+          marginBottom: spacing.xs,
+        }}
+      >
+        {t('profile.preferences')}
+      </Text>
+      <Card style={{ paddingVertical: 0 }}>
+        <LanguageSwitcher />
       </Card>
 
       {isAdmin && (
@@ -154,16 +242,16 @@ export default function ProfileScreen() {
               marginBottom: spacing.xs,
             }}
           >
-            Admin
+            {t('profile.admin')}
           </Text>
           <Card style={{ paddingVertical: 0 }}>
-            <LinkRow icon="people-outline" label="Team" onPress={() => router.push('/(app)/team')} />
+            <LinkRow icon="people-outline" label={t('profile.team')} onPress={() => router.push('/(app)/team')} />
           </Card>
         </>
       )}
 
       <Button
-        title="Sign Out"
+        title={t('common.signOut')}
         variant="danger"
         onPress={onSignOut}
         loading={signingOut}

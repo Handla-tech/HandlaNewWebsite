@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "error": "حدث خطأ ما",
+    "retry": "حاول مرة أخرى",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "submit": "إرسال",
+    "search": "بحث",
+    "all": "الكل",
+    "none": "—",
+    "signOut": "تسجيل الخروج",
+    "language": "اللغة",
+    "languageEn": "English",
+    "languageAr": "العربية",
+    "changeLanguage": "تغيير اللغة"
+  },
+  "auth": {
+    "title": "مرحبًا بعودتك",
+    "subtitle": "سجّل الدخول إلى حساب Handla",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "signingIn": "جارٍ تسجيل الدخول…",
+    "failed": "فشل تسجيل الدخول. تحقق من بياناتك."
+  },
+  "tabs": {
+    "dashboard": "لوحة التحكم",
+    "chat": "المحادثات",
+    "sales": "المبيعات",
+    "finance": "المالية",
+    "support": "الدعم",
+    "notifications": "التنبيهات",
+    "profile": "الملف الشخصي",
+    "analytics": "التحليلات",
+    "team": "الفريق"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحبًا بعودتك، {{name}}",
+    "quickActions": "إجراءات سريعة",
+    "recentActivity": "النشاط الأخير",
+    "noActivity": "لا يوجد نشاط حديث"
+  },
+  "chat": {
+    "title": "المحادثات",
+    "subtitle": "رسائلك",
+    "empty": "لا توجد محادثات بعد",
+    "typeMessage": "اكتب رسالة…",
+    "send": "إرسال"
+  },
+  "sales": {
+    "title": "المبيعات",
+    "quotations": "عروض الأسعار",
+    "contracts": "العقود",
+    "invoices": "الفواتير",
+    "empty": "لا يوجد شيء هنا بعد"
+  },
+  "finance": {
+    "title": "المالية",
+    "purchases": "المشتريات",
+    "expenses": "المصروفات",
+    "ledger": "دفتر الأستاذ",
+    "empty": "لا يوجد شيء هنا بعد"
+  },
+  "support": {
+    "title": "الدعم",
+    "subtitle": "تذاكرك",
+    "newTicket": "تذكرة جديدة",
+    "empty": "لا توجد تذاكر بعد"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "لقد اطّلعت على كل شيء",
+    "markAllRead": "تعليم الكل كمقروء"
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "subtitle": "تفاصيل حسابك",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "jobTitle": "المسمى الوظيفي",
+    "company": "الشركة",
+    "location": "الموقع",
+    "admin": "مسؤول",
+    "team": "الفريق",
+    "preferences": "التفضيلات"
+  },
+  "rtl": {
+    "restartTitle": "يلزم إعادة التشغيل",
+    "restartBody": "يؤدي التبديل بين العربية والإنجليزية إلى تغيير اتجاه التخطيط. يرجى إغلاق التطبيق وإعادة فتحه لتطبيق الاتجاه الجديد بالكامل."
+  }
+}

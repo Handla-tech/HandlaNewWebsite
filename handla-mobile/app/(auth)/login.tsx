@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { Screen, Title, Subtitle, Input, Button, Card } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
+import { useT } from '@/i18n';
 import { colors, spacing, font } from '@/theme';
 
 export default function LoginScreen() {
+  const { t } = useT();
   const signIn = useAuthStore((s) => s.signIn);
   const storeError = useAuthStore((s) => s.error);
 
@@ -16,7 +18,7 @@ export default function LoginScreen() {
   const onSubmit = async () => {
     setLocalError(null);
     if (!email.trim() || !password) {
-      setLocalError('Enter your email and password.');
+      setLocalError(t('auth.failed'));
       return;
     }
     setSubmitting(true);
@@ -24,7 +26,7 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       // Redirect handled by the AuthGate in _layout.
     } catch (err: unknown) {
-      setLocalError(err instanceof Error ? err.message : 'Sign in failed.');
+      setLocalError(err instanceof Error ? err.message : t('auth.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -54,12 +56,12 @@ export default function LoginScreen() {
             <Text style={{ color: colors.accent, fontSize: font.xxl, fontWeight: '800' }}>H</Text>
           </View>
           <Title>Handla</Title>
-          <Subtitle>Sign in to your workspace</Subtitle>
+          <Subtitle>{t('auth.subtitle')}</Subtitle>
         </View>
 
         <Card>
           <Input
-            label="Email"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             placeholder="you@company.com"
@@ -69,7 +71,7 @@ export default function LoginScreen() {
             editable={!submitting}
           />
           <Input
-            label="Password"
+            label={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
@@ -86,7 +88,7 @@ export default function LoginScreen() {
             </Text>
           )}
 
-          <Button title="Sign In" onPress={onSubmit} loading={submitting} />
+          <Button title={submitting ? t('auth.signingIn') : t('auth.signIn')} onPress={onSubmit} loading={submitting} />
         </Card>
 
         <Text

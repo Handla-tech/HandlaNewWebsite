@@ -1007,6 +1007,42 @@
       },
       "thisMonth": "This month",
       "currency": "$"
+    },
+    "sidebar": {
+      "sections": {
+        "workspace": "Workspace",
+        "sales": "Sales",
+        "finance": "Finance",
+        "operations": "Operations",
+        "admin": "Admin"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "messages": "Messages",
+        "clients": "Clients",
+        "projects": "Projects",
+        "tasks": "Tasks",
+        "quotations": "Quotations",
+        "contracts": "Contracts",
+        "invoices": "Invoices",
+        "accounting": "Accounting",
+        "expenses": "Expenses",
+        "suppliers": "Suppliers",
+        "purchases": "Purchases",
+        "support": "Support",
+        "ai": "AI Assistant",
+        "reports": "Reports",
+        "analytics": "Analytics",
+        "saas": "SaaS Tenants",
+        "testimonials": "Testimonials",
+        "users": "Users"
+      },
+      "adminPortal": "Admin Portal",
+      "employeePortal": "Employee Portal",
+      "signOut": "Sign Out",
+      "backToWebsite": "Back to Website",
+      "loadingErp": "Loading ERP…",
+      "openMenu": "Open navigation menu"
     }
   },
   "footer": {

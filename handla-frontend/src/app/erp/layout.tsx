@@ -32,8 +32,10 @@ import {
   Bot,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ProfileMenu from '@/components/ui/ProfileMenu';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 
 // ─── Role badge colours ────────────────────────────────────────────────────────
@@ -48,58 +50,60 @@ const ROLE_COLOURS: Record<string, string> = {
 type NavItem = {
   href:       string;
   icon:       React.ComponentType<{ className?: string }>;
-  label:      string;
+  /** Translation key under erp.sidebar.items */
+  labelKey:   string;
   adminOnly?: boolean;
 };
 
 type NavSection = {
-  title: string;
-  items: NavItem[];
+  /** Translation key under erp.sidebar.sections */
+  titleKey: string;
+  items:    NavItem[];
 };
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'Workspace',
+    titleKey: 'workspace',
     items: [
-      { href: '/erp',            icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/erp/messages',   icon: MessageSquare,   label: 'Messages'  },
-      { href: '/erp/clients',    icon: Briefcase,       label: 'Clients'   },
-      { href: '/erp/projects',   icon: FolderOpen,      label: 'Projects'  },
-      { href: '/erp/tasks',      icon: CheckSquare,     label: 'Tasks'     },
+      { href: '/erp',            icon: LayoutDashboard, labelKey: 'dashboard' },
+      { href: '/erp/messages',   icon: MessageSquare,   labelKey: 'messages'  },
+      { href: '/erp/clients',    icon: Briefcase,       labelKey: 'clients'   },
+      { href: '/erp/projects',   icon: FolderOpen,      labelKey: 'projects'  },
+      { href: '/erp/tasks',      icon: CheckSquare,     labelKey: 'tasks'     },
     ],
   },
   {
-    title: 'Sales',
+    titleKey: 'sales',
     items: [
-      { href: '/erp/quotations', icon: FileSignature,   label: 'Quotations' },
-      { href: '/erp/contracts',  icon: FileText,        label: 'Contracts'  },
-      { href: '/erp/invoices',   icon: Receipt,         label: 'Invoices'   },
+      { href: '/erp/quotations', icon: FileSignature,   labelKey: 'quotations' },
+      { href: '/erp/contracts',  icon: FileText,        labelKey: 'contracts'  },
+      { href: '/erp/invoices',   icon: Receipt,         labelKey: 'invoices'   },
     ],
   },
   {
-    title: 'Finance',
+    titleKey: 'finance',
     items: [
-      { href: '/erp/accounting', icon: BookOpen,        label: 'Accounting' },
-      { href: '/erp/expenses',   icon: DollarSign,      label: 'Expenses'   },
-      { href: '/erp/suppliers',  icon: Truck,           label: 'Suppliers'  },
-      { href: '/erp/purchases',  icon: ShoppingCart,    label: 'Purchases'  },
+      { href: '/erp/accounting', icon: BookOpen,        labelKey: 'accounting' },
+      { href: '/erp/expenses',   icon: DollarSign,      labelKey: 'expenses'   },
+      { href: '/erp/suppliers',  icon: Truck,           labelKey: 'suppliers'  },
+      { href: '/erp/purchases',  icon: ShoppingCart,    labelKey: 'purchases'  },
     ],
   },
   {
-    title: 'Operations',
+    titleKey: 'operations',
     items: [
-      { href: '/erp/support',    icon: LifeBuoy,        label: 'Support'      },
-      { href: '/erp/ai',         icon: Bot,             label: 'AI Assistant' },
-      { href: '/erp/reports',    icon: BarChart3,       label: 'Reports'      },
-      { href: '/erp/analytics',  icon: LineChart,       label: 'Analytics'    },
+      { href: '/erp/support',    icon: LifeBuoy,        labelKey: 'support'   },
+      { href: '/erp/ai',         icon: Bot,             labelKey: 'ai'        },
+      { href: '/erp/reports',    icon: BarChart3,       labelKey: 'reports'   },
+      { href: '/erp/analytics',  icon: LineChart,       labelKey: 'analytics' },
     ],
   },
   {
-    title: 'Admin',
+    titleKey: 'admin',
     items: [
-      { href: '/erp/saas',         icon: Server, label: 'SaaS Tenants', adminOnly: true },
-      { href: '/erp/testimonials', icon: Star,  label: 'Testimonials', adminOnly: true },
-      { href: '/erp/users',        icon: Users, label: 'Users',        adminOnly: true },
+      { href: '/erp/saas',         icon: Server, labelKey: 'saas',         adminOnly: true },
+      { href: '/erp/testimonials', icon: Star,   labelKey: 'testimonials', adminOnly: true },
+      { href: '/erp/users',        icon: Users,  labelKey: 'users',        adminOnly: true },
     ],
   },
 ];
@@ -120,6 +124,7 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   const isAdmin = role === 'ADMIN';
+  const { t, isRTL } = useTranslation();
 
   return (
     <div className="flex h-full flex-col">
@@ -153,12 +158,12 @@ function SidebarContent({
           const items = section.items.filter(item => isAdmin || !item.adminOnly);
           if (items.length === 0) return null;
           return (
-            <div key={section.title}>
+            <div key={section.titleKey}>
               <p className="px-2 pb-2.5 text-[10px] font-semibold uppercase tracking-widest text-white/20">
-                {section.title}
+                {t(`erp.sidebar.sections.${section.titleKey}`)}
               </p>
               <div className="space-y-0.5">
-                {items.map(({ href, icon: Icon, label }) => {
+                {items.map(({ href, icon: Icon, labelKey }) => {
                   const isActive = href === '/erp' ? pathname === '/erp' : pathname.startsWith(href);
                   return (
                     <Link
@@ -180,9 +185,9 @@ function SidebarContent({
                       )}>
                         <Icon className="h-3.5 w-3.5" />
                       </span>
-                      {label}
+                      {t(`erp.sidebar.items.${labelKey}`)}
                       {isActive && (
-                        <ChevronRight className="ml-auto h-3 w-3 text-[#fbbf24]/60" />
+                        <ChevronRight className={cn('ml-auto h-3 w-3 text-[#fbbf24]/60', isRTL && 'rotate-180')} />
                       )}
                     </Link>
                   );
@@ -226,9 +231,9 @@ function SidebarContent({
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/40 transition-all hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20"
         >
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className={cn('h-3.5 w-3.5', isRTL && 'rotate-180')} />
           </span>
-          Sign Out
+          {t('erp.sidebar.signOut')}
         </button>
 
         <Link
@@ -239,7 +244,7 @@ function SidebarContent({
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
             <Home className="h-3.5 w-3.5" />
           </span>
-          Back to Website
+          {t('erp.sidebar.backToWebsite')}
         </Link>
       </div>
     </div>
@@ -252,6 +257,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
   const { user, isLoggedIn, isLoading, isAdmin, isEmployee, logout } = useAuth();
+  const { t, isRTL } = useTranslation();
   const [mounted,    setMounted]    = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -285,7 +291,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
             <div className="absolute inset-0 animate-spin rounded-full border-2 border-white/5 border-t-[#fbbf24]" />
             <div className="absolute inset-2 rounded-full bg-[#fbbf24]/10" />
           </div>
-          <p className="text-xs font-medium text-white/30">Loading ERP…</p>
+          <p className="text-xs font-medium text-white/30">{t('erp.sidebar.loadingErp')}</p>
         </div>
       </div>
     );
@@ -306,7 +312,10 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
       {/* ══════════════════════════════════════════════════
           DESKTOP SIDEBAR — w-64
       ══════════════════════════════════════════════════ */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#0c0c0c] lg:flex">
+      <aside className={cn(
+        'hidden w-64 flex-shrink-0 flex-col border-white/[0.06] bg-[#0c0c0c] lg:flex',
+        isRTL ? 'border-l' : 'border-r',
+      )}>
         <SidebarContent {...sidebarProps} />
       </aside>
 
@@ -326,11 +335,14 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
             />
             <motion.aside
               key="drawer"
-              initial={{ x: '-100%' }}
+              initial={{ x: isRTL ? '100%' : '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              exit={{ x: isRTL ? '100%' : '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 border-r border-white/[0.06] bg-[#0c0c0c] lg:hidden"
+              className={cn(
+                'fixed inset-y-0 z-50 w-64 border-white/[0.06] bg-[#0c0c0c] lg:hidden',
+                isRTL ? 'right-0 border-l' : 'left-0 border-r',
+              )}
             >
               <SidebarContent {...sidebarProps} onClose={() => setDrawerOpen(false)} />
             </motion.aside>
@@ -349,7 +361,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            aria-label="Open navigation menu"
+            aria-label={t('erp.sidebar.openMenu')}
             aria-expanded={drawerOpen}
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
           >
@@ -362,13 +374,14 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-[#fbbf24] shadow-sm shadow-[#fbbf24]/50" />
               <span className="text-sm font-semibold text-white/80">
-                {role === 'ADMIN' ? 'Admin Portal' : 'Employee Portal'}
+                {role === 'ADMIN' ? t('erp.sidebar.adminPortal') : t('erp.sidebar.employeePortal')}
               </span>
             </div>
           </div>
 
           {/* Right-side actions */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
+            <LanguageSwitcher />
             <NotificationBell />
             <ProfileMenu />
           </div>

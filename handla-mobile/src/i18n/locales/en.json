@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "submit": "Submit",
+    "search": "Search",
+    "all": "All",
+    "none": "—",
+    "signOut": "Sign Out",
+    "language": "Language",
+    "languageEn": "English",
+    "languageAr": "العربية",
+    "changeLanguage": "Change language"
+  },
+  "auth": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your Handla account",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in…",
+    "failed": "Sign in failed. Check your credentials."
+  },
+  "tabs": {
+    "dashboard": "Dashboard",
+    "chat": "Chat",
+    "sales": "Sales",
+    "finance": "Finance",
+    "support": "Support",
+    "notifications": "Alerts",
+    "profile": "Profile",
+    "analytics": "Analytics",
+    "team": "Team"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "quickActions": "Quick Actions",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity"
+  },
+  "chat": {
+    "title": "Conversations",
+    "subtitle": "Your messages",
+    "empty": "No conversations yet",
+    "typeMessage": "Type a message…",
+    "send": "Send"
+  },
+  "sales": {
+    "title": "Sales",
+    "quotations": "Quotations",
+    "contracts": "Contracts",
+    "invoices": "Invoices",
+    "empty": "Nothing here yet"
+  },
+  "finance": {
+    "title": "Finance",
+    "purchases": "Purchases",
+    "expenses": "Expenses",
+    "ledger": "Ledger",
+    "empty": "Nothing here yet"
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "Your tickets",
+    "newTicket": "New Ticket",
+    "empty": "No tickets yet"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You're all caught up",
+    "markAllRead": "Mark all as read"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your account details",
+    "email": "Email",
+    "phone": "Phone",
+    "jobTitle": "Job title",
+    "company": "Company",
+    "location": "Location",
+    "admin": "Admin",
+    "team": "Team",
+    "preferences": "Preferences"
+  },
+  "rtl": {
+    "restartTitle": "Restart required",
+    "restartBody": "Switching between Arabic and English changes the layout direction. Please close and reopen the app to fully apply the new direction."
+  }
+}

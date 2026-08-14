@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { useT } from '@/i18n';
 import { colors } from '@/theme';
 
 /**
@@ -13,6 +14,7 @@ import { colors } from '@/theme';
  */
 export default function AppLayout() {
   const isStaff = useAuthStore((s) => s.isStaff());
+  const { t } = useT();
 
   return (
     <Tabs
@@ -34,14 +36,14 @@ export default function AppLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Home',
+          title: t('tabs.dashboard'),
           tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Chat',
+          title: t('tabs.chat'),
           tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} />,
         }}
       />
@@ -50,7 +52,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="support"
         options={{
-          title: 'Support',
+          title: t('tabs.support'),
           tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
         }}
       />
@@ -60,7 +62,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="sales"
         options={{
-          title: 'Sales',
+          title: t('tabs.sales'),
           tabBarIcon: ({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
         }}
       />
@@ -71,7 +73,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="finance"
         options={{
-          title: 'Finance',
+          title: t('tabs.finance'),
           // Staff-only back-office area; hidden from the client tab bar.
           href: isStaff ? '/(app)/finance' : null,
           tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
@@ -82,7 +84,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: 'Analytics',
+          title: t('tabs.analytics'),
           // Staff-only web-traffic analytics; hidden from the client tab bar.
           href: isStaff ? '/(app)/analytics' : null,
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
@@ -93,14 +95,14 @@ export default function AppLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Alerts',
+          title: t('tabs.notifications'),
           tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />

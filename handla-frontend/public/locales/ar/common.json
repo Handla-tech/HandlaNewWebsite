@@ -1007,6 +1007,42 @@
       },
       "thisMonth": "هذا الشهر",
       "currency": "$"
+    },
+    "sidebar": {
+      "sections": {
+        "workspace": "مساحة العمل",
+        "sales": "المبيعات",
+        "finance": "المالية",
+        "operations": "العمليات",
+        "admin": "الإدارة"
+      },
+      "items": {
+        "dashboard": "لوحة التحكم",
+        "messages": "الرسائل",
+        "clients": "العملاء",
+        "projects": "المشاريع",
+        "tasks": "المهام",
+        "quotations": "عروض الأسعار",
+        "contracts": "العقود",
+        "invoices": "الفواتير",
+        "accounting": "المحاسبة",
+        "expenses": "المصروفات",
+        "suppliers": "الموردون",
+        "purchases": "المشتريات",
+        "support": "الدعم",
+        "ai": "المساعد الذكي",
+        "reports": "التقارير",
+        "analytics": "التحليلات",
+        "saas": "المستأجرون",
+        "testimonials": "آراء العملاء",
+        "users": "المستخدمون"
+      },
+      "adminPortal": "بوابة المدير",
+      "employeePortal": "بوابة الموظف",
+      "signOut": "تسجيل الخروج",
+      "backToWebsite": "العودة إلى الموقع",
+      "loadingErp": "جارٍ تحميل النظام…",
+      "openMenu": "فتح قائمة التنقل"
     }
   },
   "footer": {
