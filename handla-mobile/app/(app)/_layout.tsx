@@ -58,6 +58,17 @@ export default function AppLayout() {
       <Tabs.Screen name="ticket/[id]" options={{ href: null }} />
       <Tabs.Screen name="ticket/new" options={{ href: null }} />
       <Tabs.Screen
+        name="sales"
+        options={{
+          title: 'Sales',
+          tabBarIcon: ({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
+        }}
+      />
+      {/* Sales document details are pushed on top of the tabs, not tabs. */}
+      <Tabs.Screen name="quotation/[id]" options={{ href: null }} />
+      <Tabs.Screen name="contract/[id]" options={{ href: null }} />
+      <Tabs.Screen name="invoice/[id]" options={{ href: null }} />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',

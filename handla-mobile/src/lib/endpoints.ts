@@ -13,6 +13,15 @@ import type {
   TicketPriority,
   TicketCategory,
   PaginatedClients,
+  PaginatedQuotations,
+  Quotation,
+  QuotationStatus,
+  PaginatedContracts,
+  Contract,
+  ContractStatus,
+  PaginatedInvoices,
+  Invoice,
+  InvoicePaymentStatus,
 } from '@/types';
 
 /**
@@ -111,4 +120,72 @@ export const clientsApi = {
   /** GET /erp/clients — ADMIN/EMPLOYEE, role-scoped. */
   list: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get<{ message: string; data: PaginatedClients }>('/erp/clients', { params }),
+};
+
+// ─── Quotations (@Controller('erp/quotations')) ──────────────────────────────
+export interface QuotationsQuery {
+  page?: number;
+  limit?: number;
+  clientId?: string;
+  status?: QuotationStatus;
+  search?: string;
+}
+
+export const quotationsApi = {
+  list: (params?: QuotationsQuery) =>
+    api.get<{ message: string; data: PaginatedQuotations }>('/erp/quotations', { params }),
+  get: (id: string) =>
+    api.get<{ message: string; data: Quotation }>(`/erp/quotations/${id}`),
+  /** ADMIN/EMPLOYEE/CLIENT — accept a sent quotation. */
+  accept: (id: string) =>
+    api.post<{ message: string; data: Quotation }>(`/erp/quotations/${id}/accept`),
+  /** ADMIN/EMPLOYEE/CLIENT — reject a sent quotation. */
+  reject: (id: string, reason?: string) =>
+    api.post<{ message: string; data: Quotation }>(`/erp/quotations/${id}/reject`, { reason }),
+};
+
+// ─── Contracts (@Controller('erp/contracts')) ────────────────────────────────
+export interface ContractsQuery {
+  page?: number;
+  limit?: number;
+  clientId?: string;
+  status?: ContractStatus;
+  search?: string;
+}
+
+export const contractsApi = {
+  list: (params?: ContractsQuery) =>
+    api.get<{ message: string; data: PaginatedContracts }>('/erp/contracts', { params }),
+  get: (id: string) =>
+    api.get<{ message: string; data: Contract }>(`/erp/contracts/${id}`),
+  /** CLIENT — accept (sign) a sent contract. */
+  accept: (id: string) =>
+    api.post<{ message: string; data: Contract }>(`/erp/contracts/${id}/accept`),
+  /** CLIENT — reject a sent contract. */
+  reject: (id: string, reason?: string) =>
+    api.post<{ message: string; data: Contract }>(`/erp/contracts/${id}/reject`, { reason }),
+  /** Presigned document URL (all roles). */
+  pdfUrl: (id: string) =>
+    api.get<{ message: string; data: { url: string } }>(`/erp/contracts/${id}/pdf-url`),
+};
+
+// ─── Invoices (@Controller('erp/invoices')) ──────────────────────────────────
+export interface InvoicesQuery {
+  page?: number;
+  limit?: number;
+  clientId?: string;
+  paymentStatus?: InvoicePaymentStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export const invoicesApi = {
+  list: (params?: InvoicesQuery) =>
+    api.get<{ message: string; data: PaginatedInvoices }>('/erp/invoices', { params }),
+  get: (id: string) =>
+    api.get<{ message: string; data: Invoice }>(`/erp/invoices/${id}`),
+  /** ADMIN/EMPLOYEE — mark an invoice paid. */
+  markPaid: (id: string) =>
+    api.post<{ message: string; data: Invoice }>(`/erp/invoices/${id}/mark-paid`),
 };

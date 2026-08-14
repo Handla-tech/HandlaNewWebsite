@@ -207,3 +207,111 @@ export interface PaginatedClients {
   page: number;
   pages: number;
 }
+
+// ─── Sales: Quotations / Contracts / Invoices ────────────────────────────────
+export type QuotationStatus =
+  | 'DRAFT'
+  | 'SENT'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'EXPIRED'
+  | 'CONVERTED';
+
+export type ContractStatus = 'DRAFT' | 'SENT' | 'SIGNED' | 'REJECTED';
+
+export type InvoicePaymentStatus = 'UNPAID' | 'PAID' | 'OVERDUE';
+
+export interface LineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  sortOrder: number;
+}
+
+export interface Quotation {
+  id: string;
+  quoteNumber: string;
+  title: string;
+  clientId: string;
+  ownerId: string | null;
+  status: QuotationStatus;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  currency: string | null;
+  validUntil: string | null;
+  sentAt: string | null;
+  acceptedAt: string | null;
+  rejectedAt: string | null;
+  notes: string | null;
+  convertedContractId: string | null;
+  convertedInvoiceId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  client?: TicketClient;
+  owner?: ChatUser | null;
+  lineItems?: LineItem[];
+}
+
+export interface PaginatedQuotations {
+  quotations: Quotation[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface Contract {
+  id: string;
+  title: string;
+  body: string;
+  clientId: string;
+  ownerId: string | null;
+  status: ContractStatus;
+  sentAt: string | null;
+  signedAt: string | null;
+  s3Key: string | null;
+  pdfUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  client?: TicketClient;
+  owner?: ChatUser | null;
+}
+
+export interface PaginatedContracts {
+  contracts: Contract[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  clientId: string;
+  ownerId: string | null;
+  status?: string;
+  paymentStatus: InvoicePaymentStatus;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  currency: string;
+  dueDate: string | null;
+  paidAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  client?: TicketClient;
+  owner?: ChatUser | null;
+  lineItems?: LineItem[];
+}
+
+export interface PaginatedInvoices {
+  invoices: Invoice[];
+  total: number;
+  page: number;
+  pages: number;
+}

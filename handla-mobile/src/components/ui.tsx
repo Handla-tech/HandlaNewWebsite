@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, font } from '@/theme';
 
 // ─── Screen wrapper (safe area + dark bg) ──────────────────────────────────────
@@ -197,6 +198,68 @@ export function Chip({
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+// ─── Detail screen header (back button + title/subtitle) ────────────────────────
+export function DetailHeader({
+  title,
+  subtitle,
+  onBack,
+  right,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack: () => void;
+  right?: React.ReactNode;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderBottomColor: colors.border,
+        borderBottomWidth: 1,
+      }}
+    >
+      <Pressable onPress={onBack} hitSlop={10} style={{ padding: 4 }}>
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
+      </Pressable>
+      <View style={{ flex: 1 }}>
+        {subtitle ? (
+          <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>
+            {subtitle}
+          </Text>
+        ) : null}
+        <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
+          {title}
+        </Text>
+      </View>
+      {right}
+    </View>
+  );
+}
+
+// ─── Key/value row ──────────────────────────────────────────────────────────────
+export function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: spacing.sm,
+        borderBottomColor: colors.border,
+        borderBottomWidth: 1,
+      }}
+    >
+      <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{label}</Text>
+      <Text style={{ color: colors.text, fontSize: font.sm, fontWeight: '600', maxWidth: '60%', textAlign: 'right' }}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
