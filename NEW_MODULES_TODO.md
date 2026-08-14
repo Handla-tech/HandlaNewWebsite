@@ -202,3 +202,27 @@ Goal: **full feature parity with web**, role-gated. Shipped in slices.
 
 ## Status legend
 🔴 High · 🟡 Medium · 🟢 Later &nbsp;|&nbsp; `[ ]` todo · `[x]` done
+
+---
+
+## PHASE 10 — AI Handla Assistant (queued, after mobile)  🟡
+Analyze existing NestJS messaging/chat FIRST (do not rebuild). Layer an AI assistant on top of existing conversations/messages/WebSocket/auth.
+- AI = language understanding only; NestJS stays workflow controller.
+- Handla Knowledge Base (DB-managed, categories, public/internal visibility) + modular retrieval (upgradeable to RAG).
+- Lead qualification: natural NL requirement collection → structured extracted_data + missing_fields + lead_status.
+- Structured AI output {reply,intent,extracted_data,missing_fields,lead_status,needs_human,escalation_reason}; validate before use.
+- STRICT truth policy — never fabricate Handla facts (clients/gov projects/certs/prices/etc.); say "not confirmed" + record for team.
+- Business restrictions (no final quotes/discounts/delivery guarantees/contracts); escalation triggers.
+- Human takeover (bot_enabled/status, stops AI immediately) + safe return-to-AI.
+- Message origin: CLIENT/AI/STAFF/SYSTEM. Context strategy (summary + recent msgs + KB + lead state). Cost control (1 msg → 1 AI call). Prompt-injection defense. Concurrency/idempotency (no double replies). Graceful fallback on AI failure.
+- AiModule (AiService/ChatbotService/KnowledgeService/LeadExtractionService/ConversationContextService/PromptService) — adapt to existing conventions. Env: OPENAI_API_KEY, OPENAI_MODEL. Admin UI: KB CRUD, lead panel, AI state, takeover. Tests.
+
+## PHASE 11 — SaaS Control Plane (queued, after AI assistant)  🟡
+Analyze Handla + Mudar/Matjari/Manara FIRST. Handla = managed SaaS Control Plane (no public self-service tenant creation; admin-only provisioning).
+- Central models: Clients(reuse), Products, Plans(+limits/entitlements), Tenants, Subscriptions, TenantDomains, ProvisioningLogs.
+- Tenant lifecycle PENDING/PROVISIONING/ACTIVE/SUSPENDED/FAILED/ARCHIVED; subscription TRIAL/ACTIVE/PAST_DUE/EXPIRED/CANCELLED (separate).
+- Product-owned provisioning via secure service-to-service internal API (POST /internal/tenants); Handla stores external_tenant_id + metadata only, NOT raw DB creds.
+- Idempotent provisioning (provisioning_request_id); queued/background job; retry-safe; failure → FAILED + logs; non-destructive suspend/reactivate; archive w/ retention before any guarded permanent delete.
+- Database-per-tenant (product-owned, safe generated names); each product owns its migrations/seeders/initial-admin.
+- Adapter/strategy ProductProvisioner interface (provision/suspend/reactivate/updatePlan/updateLimits) — no product if/else scattered.
+- Subdomain strategy (*.mudar/matjari/manara.handla.tech), custom domains later. RBAC (saas.* perms). Admin UI: Clients/Products/Plans/Tenants/Subscriptions/Provisioning Logs + create/details/lifecycle actions. Lead→Client→Tenant conversion path. Tests.

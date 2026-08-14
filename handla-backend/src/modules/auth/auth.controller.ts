@@ -44,9 +44,16 @@ export class AuthController {
   async signUp(@Body() dto: SignUpDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.signUp(dto);
     this.setCookies(res, result.accessToken, result.refreshToken);
+    // Tokens are ALSO returned in the body for non-browser clients (mobile app),
+    // which cannot use httpOnly cookies. Browsers simply ignore these fields and
+    // keep relying on the cookies set above — fully backward compatible.
     return {
       message: 'Account created successfully',
-      data: { user: result.user },
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
     };
   }
 
@@ -61,9 +68,15 @@ export class AuthController {
   async signIn(@Body() dto: SignInDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.signIn(dto);
     this.setCookies(res, result.accessToken, result.refreshToken);
+    // Tokens ALSO returned in the body for the mobile app (Bearer auth). Browsers
+    // ignore them and keep using the httpOnly cookies. Backward compatible.
     return {
       message: 'Signed in successfully',
-      data: { user: result.user },
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
     };
   }
 
@@ -74,15 +87,32 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
   @ApiResponse({ status: 200, description: 'New access token set in cookie' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body: { refreshToken?: string },
+  ) {
+    // Cookie first (browser), then body / X-Refresh-Token header (mobile app).
+    const headerToken = req.headers['x-refresh-token'];
+    const refreshToken =
+      req.cookies?.[REFRESH_COOKIE_NAME] ||
+      body?.refreshToken ||
+      (typeof headerToken === 'string' ? headerToken : undefined);
+
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token provided');
     }
 
     const tokens = await this.authService.refresh(refreshToken);
     this.setCookies(res, tokens.accessToken, tokens.refreshToken);
-    return { message: 'Token refreshed successfully', data: {} };
+    // New tokens ALSO in the body for the mobile app. Backward compatible.
+    return {
+      message: 'Token refreshed successfully',
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      },
+    };
   }
 
   // ─── POST /api/auth/logout ────────────────────────────────────────────────
