@@ -1,0 +1,46 @@
+{
+  "en": {
+    "ticketNew": {
+      "title": "New Ticket",
+      "client": "Client",
+      "clientFallback": "Client",
+      "selectClient": "Select a client…",
+      "noClients": "No clients available.",
+      "subject": "Subject",
+      "subjectPlaceholder": "Brief summary of the issue",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the issue in detail…",
+      "priority": "Priority",
+      "category": "Category",
+      "createButton": "Create Ticket",
+      "errors": {
+        "create": "Could not create the ticket. Please try again.",
+        "subject": "Subject is required.",
+        "description": "Description is required.",
+        "client": "Please select a client."
+      }
+    }
+  },
+  "ar": {
+    "ticketNew": {
+      "title": "تذكرة جديدة",
+      "client": "العميل",
+      "clientFallback": "عميل",
+      "selectClient": "اختر عميلاً…",
+      "noClients": "لا يوجد عملاء متاحون.",
+      "subject": "الموضوع",
+      "subjectPlaceholder": "ملخص موجز للمشكلة",
+      "description": "الوصف",
+      "descriptionPlaceholder": "صف المشكلة بالتفصيل…",
+      "priority": "الأولوية",
+      "category": "الفئة",
+      "createButton": "إنشاء تذكرة",
+      "errors": {
+        "create": "تعذّر إنشاء التذكرة. يرجى المحاولة مرة أخرى.",
+        "subject": "الموضوع مطلوب.",
+        "description": "الوصف مطلوب.",
+        "client": "يرجى اختيار عميل."
+      }
+    }
+  }
+}

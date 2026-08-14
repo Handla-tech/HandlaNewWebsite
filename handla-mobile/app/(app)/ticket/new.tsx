@@ -17,11 +17,11 @@ import { useAuthStore } from '@/store/authStore';
 import { Input, Button, Label } from '@/components/ui';
 import {
   PRIORITY_META,
-  CATEGORY_LABEL,
   PRIORITY_ORDER,
   CATEGORY_ORDER,
 } from '@/lib/ticketMeta';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedClients, TicketPriority, TicketCategory, Client } from '@/types';
 
 function PillRow<T extends string>({
@@ -75,6 +75,7 @@ function PillRow<T extends string>({
 
 export default function NewTicketScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
   const qc = useQueryClient();
   const isStaff = useAuthStore((s) => s.isStaff());
@@ -112,14 +113,14 @@ export default function NewTicketScreen() {
       qc.invalidateQueries({ queryKey: ['supportStats'] });
       router.replace(`/(app)/ticket/${ticket.id}`);
     },
-    onError: () => setError('Could not create the ticket. Please try again.'),
+    onError: () => setError(t('ticketNew.errors.create')),
   });
 
   const submit = () => {
     setError(null);
-    if (subject.trim().length < 2) return setError('Subject is required.');
-    if (description.trim().length < 1) return setError('Description is required.');
-    if (isStaff && !clientId) return setError('Please select a client.');
+    if (subject.trim().length < 2) return setError(t('ticketNew.errors.subject'));
+    if (description.trim().length < 1) return setError(t('ticketNew.errors.description'));
+    if (isStaff && !clientId) return setError(t('ticketNew.errors.client'));
     create.mutate();
   };
 
@@ -143,7 +144,7 @@ export default function NewTicketScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '700' }}>New Ticket</Text>
+        <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '700' }}>{t('ticketNew.title')}</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -157,7 +158,7 @@ export default function NewTicketScreen() {
           {/* Client picker (staff only) */}
           {isStaff && (
             <View style={{ marginBottom: spacing.md }}>
-              <Label style={{ marginBottom: spacing.xs }}>Client</Label>
+              <Label style={{ marginBottom: spacing.xs }}>{t('ticketNew.client')}</Label>
               <Pressable
                 onPress={() => setClientPickerOpen((v) => !v)}
                 style={{
@@ -174,8 +175,8 @@ export default function NewTicketScreen() {
               >
                 <Text style={{ color: selectedClient ? colors.text : colors.textDim, fontSize: font.md }}>
                   {selectedClient
-                    ? selectedClient.company || selectedClient.user?.name || 'Client'
-                    : 'Select a client…'}
+                    ? selectedClient.company || selectedClient.user?.name || t('ticketNew.clientFallback')
+                    : t('ticketNew.selectClient')}
                 </Text>
                 <Ionicons
                   name={clientPickerOpen ? 'chevron-up' : 'chevron-down'}
@@ -210,7 +211,7 @@ export default function NewTicketScreen() {
                         }}
                       >
                         <Text style={{ color: colors.text, fontSize: font.md }}>
-                          {c.company || c.user?.name || 'Client'}
+                          {c.company || c.user?.name || t('ticketNew.clientFallback')}
                         </Text>
                         {c.user?.name && c.company ? (
                           <Text style={{ color: colors.textFaint, fontSize: font.xs }}>
@@ -221,7 +222,7 @@ export default function NewTicketScreen() {
                     ))}
                     {clients.data && clients.data.clients.length === 0 && (
                       <Text style={{ color: colors.textFaint, padding: spacing.md }}>
-                        No clients available.
+                        {t('ticketNew.noClients')}
                       </Text>
                     )}
                   </ScrollView>
@@ -231,44 +232,46 @@ export default function NewTicketScreen() {
           )}
 
           <Input
-            label="Subject"
+            label={t('ticketNew.subject')}
             value={subject}
             onChangeText={setSubject}
-            placeholder="Brief summary of the issue"
+            placeholder={t('ticketNew.subjectPlaceholder')}
             maxLength={255}
           />
 
-          <Label style={{ marginBottom: spacing.xs }}>Description</Label>
+          <Label style={{ marginBottom: spacing.xs }}>{t('ticketNew.description')}</Label>
           <View style={{ marginBottom: spacing.md }}>
             <Input
               value={description}
               onChangeText={setDescription}
-              placeholder="Describe the issue in detail…"
+              placeholder={t('ticketNew.descriptionPlaceholder')}
               multiline
               style={{ minHeight: 120, paddingTop: 12, textAlignVertical: 'top' }}
             />
           </View>
 
-          <Label style={{ marginBottom: spacing.xs }}>Priority</Label>
+          <Label style={{ marginBottom: spacing.xs }}>{t('ticketNew.priority')}</Label>
           <View style={{ marginBottom: spacing.md }}>
             <PillRow
               options={PRIORITY_ORDER}
               value={priority}
               onChange={setPriority}
               labels={Object.fromEntries(
-                PRIORITY_ORDER.map((p) => [p, PRIORITY_META[p].label]),
+                PRIORITY_ORDER.map((p) => [p, t(`status.${p}`)]),
               ) as Record<TicketPriority, string>}
               colorFor={(p) => ({ color: PRIORITY_META[p].color, soft: PRIORITY_META[p].soft })}
             />
           </View>
 
-          <Label style={{ marginBottom: spacing.xs }}>Category</Label>
+          <Label style={{ marginBottom: spacing.xs }}>{t('ticketNew.category')}</Label>
           <View style={{ marginBottom: spacing.lg }}>
             <PillRow
               options={CATEGORY_ORDER}
               value={category}
               onChange={setCategory}
-              labels={CATEGORY_LABEL}
+              labels={Object.fromEntries(
+                CATEGORY_ORDER.map((c) => [c, t(`category.${c}`)]),
+              ) as Record<TicketCategory, string>}
             />
           </View>
 
@@ -278,7 +281,7 @@ export default function NewTicketScreen() {
             </Text>
           ) : null}
 
-          <Button title="Create Ticket" onPress={submit} loading={create.isPending} />
+          <Button title={t('ticketNew.createButton')} onPress={submit} loading={create.isPending} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

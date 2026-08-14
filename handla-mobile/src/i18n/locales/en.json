@@ -514,5 +514,25 @@
     "closedNotice": "This ticket is closed. Reopen it from a new ticket if needed.",
     "internalPlaceholder": "Add an internal note…",
     "replyPlaceholder": "Write a reply…"
+  },
+  "ticketNew": {
+    "title": "New Ticket",
+    "client": "Client",
+    "clientFallback": "Client",
+    "selectClient": "Select a client…",
+    "noClients": "No clients available.",
+    "subject": "Subject",
+    "subjectPlaceholder": "Brief summary of the issue",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the issue in detail…",
+    "priority": "Priority",
+    "category": "Category",
+    "createButton": "Create Ticket",
+    "errors": {
+      "create": "Could not create the ticket. Please try again.",
+      "subject": "Subject is required.",
+      "description": "Description is required.",
+      "client": "Please select a client."
+    }
   }
 }

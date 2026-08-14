@@ -514,5 +514,25 @@
     "closedNotice": "هذه التذكرة مغلقة. أعد فتحها من خلال تذكرة جديدة إذا لزم الأمر.",
     "internalPlaceholder": "أضف ملاحظة داخلية…",
     "replyPlaceholder": "اكتب رداً…"
+  },
+  "ticketNew": {
+    "title": "تذكرة جديدة",
+    "client": "العميل",
+    "clientFallback": "عميل",
+    "selectClient": "اختر عميلاً…",
+    "noClients": "لا يوجد عملاء متاحون.",
+    "subject": "الموضوع",
+    "subjectPlaceholder": "ملخص موجز للمشكلة",
+    "description": "الوصف",
+    "descriptionPlaceholder": "صف المشكلة بالتفصيل…",
+    "priority": "الأولوية",
+    "category": "الفئة",
+    "createButton": "إنشاء تذكرة",
+    "errors": {
+      "create": "تعذّر إنشاء التذكرة. يرجى المحاولة مرة أخرى.",
+      "subject": "الموضوع مطلوب.",
+      "description": "الوصف مطلوب.",
+      "client": "يرجى اختيار عميل."
+    }
   }
 }
