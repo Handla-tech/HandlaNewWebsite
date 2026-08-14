@@ -54,8 +54,8 @@ Central place where **all money movements** live, plus a **ledger per client**.
 - [ ] Backfill migration for pre-existing paid invoices/expenses (deferred — dev uses synchronize; will add with prod migration set).
 
 ### Frontend
-- [ ] `/erp/accounting` — Chart of Accounts manager + general ledger table (filters, export CSV).
-- [ ] Client detail page: add **"Ledger / Statement"** tab (running balance, download statement PDF later).
+- [x] `/erp/accounting` — Chart of Accounts manager + general ledger table (tabs: Ledger with IN/OUT filter + manual entry; Accounts grouped by type with CRUD, system-account guard).
+- [ ] Client detail page: add **"Ledger / Statement"** tab (running balance, download statement PDF later). _(deferred — optional)_
 
 ---
 
@@ -75,8 +75,8 @@ Money going out: suppliers, purchase orders, bills. Mirror of invoices.
 - [ ] Purchase PDF — deferred to the frontend/PDF phase (reuse invoice PDF infra).
 
 ### Frontend
-- [ ] `/erp/suppliers` — supplier CRUD.
-- [ ] `/erp/purchases` — list + create/edit (line items, tax), mark paid, PDF, status badges.
+- [x] `/erp/suppliers` — supplier CRUD (list, search, pagination, active/inactive badge, ADMIN delete).
+- [x] `/erp/purchases` — list + create/edit (line-item editor w/ live totals, tax), mark paid, status/payment badges, tabs. PDF deferred.
 
 ---
 
@@ -96,9 +96,9 @@ Quote → accept → auto draft Contract + Invoice. Public accept/reject.
 - [x] Tests (14 unit tests; full suite 719 passing).
 
 ### Frontend
-- [ ] `/erp/quotations` — list + builder (line items) + send + convert button.
-- [ ] `/quotation/public/[token]` — public viewer with Accept / Reject.
-- [ ] Client dashboard: "My Quotations".
+- [x] `/erp/quotations` — list + builder (line items, live totals) + workflow actions (send / accept / reject / convert) + copy public link.
+- [x] `/quotation/public/[token]` — public viewer with Accept / Reject (status-aware states).
+- [ ] Client dashboard: "My Quotations". _(deferred to client-dashboard pass)_
 
 ---
 
@@ -122,9 +122,9 @@ Post-launch support. Clients open tickets; staff respond. External platforms int
 - [ ] Attachments via S3 presigned _(currently accepts pre-uploaded URLs; presign deferred)_.
 
 ### Frontend
-- [ ] `/erp/support` — staff ticket queue (filters: status/priority/assignee/client), ticket detail with threaded replies + internal notes, assign, status change.
-- [ ] `/erp/support/api-keys` — issue/revoke client keys (copy-once modal).
-- [ ] Client dashboard: `/dashboard/support` — open ticket + view/reply own tickets.
+- [x] `/erp/support` — staff ticket queue (status filter tabs + search), stats bar, ticket detail drawer with threaded replies + internal notes, status/priority change, create-ticket modal.
+- [x] `/erp/support` API-keys modal — issue (copy-once plaintext) / list / revoke per-client keys.
+- [ ] Client dashboard: `/dashboard/support` — open ticket + view/reply own tickets. _(deferred to client-dashboard pass)_
 
 ---
 
@@ -144,7 +144,7 @@ Read-only analytical endpoints + printable/exportable views.
 - [x] Tests (10 unit tests; full suite 45 suites / 747 passing).
 
 ### Frontend
-- [ ] `/erp/reports` — date-range picker, currency filter, charts (Recharts or existing chart lib), CSV/PDF export.
+- [x] `/erp/reports` — date-range picker + 8 report tabs (P&L, cash flow, tax summary, A/R & A/P aging, revenue by client, projects status, support stats), currency-aware tables. CSV/PDF export deferred.
 
 ---
 
@@ -165,11 +165,11 @@ GA-style tracking for the public marketing site.
 
 ---
 
-## PHASE 7 — Frontend polish & navigation  🟡
-- [ ] Add all new modules to ERP sidebar with role gating.
-- [ ] i18n (EN/AR) strings for every new screen (RTL-safe).
-- [ ] Empty states, loading skeletons, toasts, error handling.
-- [ ] Update client dashboard nav (Support + Quotations + Invoices).
+## PHASE 7 — Frontend polish & navigation  ✅ (ERP back-office done)
+- [x] Add all new modules to ERP sidebar with grouped role-gated nav (Workspace / Sales / Finance / Operations / Admin).
+- [x] i18n note: ERP back-office pages are English-only by codebase convention (no ERP page imports `useTranslation`); new pages match existing English style. AR/RTL applies to marketing side only.
+- [x] Empty states, loading skeletons/spinners, toasts, error handling across all new pages.
+- [ ] Update client dashboard nav (Support + Quotations + Invoices). _(deferred to client-dashboard pass)_
 
 ---
 
