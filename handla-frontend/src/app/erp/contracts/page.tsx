@@ -13,11 +13,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
-  FileText, Search, Plus, MoreVertical, Pencil, Trash2, X,
+  FileText, Search, Plus, Pencil, Trash2, X,
   ChevronLeft, ChevronRight, Send, CheckCircle2, XCircle,
-  FilePenLine, User, Briefcase, FileSignature, AlertCircle, ArrowUpRight,
+  FilePenLine, User, Briefcase, FileSignature, AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { contractsApi, clientsApi } from '@/lib/api';
@@ -81,155 +81,6 @@ function formatDate(d: string | null | undefined) {
 function apiErrMsg(err: unknown, fallback: string): string {
   const e = err as { response?: { data?: { message?: string } } };
   return e?.response?.data?.message ?? fallback;
-}
-
-// ─── Skeleton ───────────────────────────────────────────────────────────────
-
-function ContractSkeleton() {
-  return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#0f0f0f] p-4 animate-pulse">
-      <div className="flex items-start justify-between">
-        <div className="flex gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/[0.06]" />
-          <div className="space-y-2 pt-0.5">
-            <div className="h-4 w-40 rounded-lg bg-white/[0.06]" />
-            <div className="h-3 w-24 rounded-lg bg-white/[0.04]" />
-          </div>
-        </div>
-        <div className="h-6 w-20 rounded-full bg-white/[0.06]" />
-      </div>
-      <div className="mt-3 h-3 w-3/4 rounded-lg bg-white/[0.04]" />
-      <div className="mt-3 flex gap-4">
-        <div className="h-3 w-28 rounded-lg bg-white/[0.04]" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Contract Card ───────────────────────────────────────────────────────────
-
-interface ContractCardProps {
-  contract: Contract; isAdmin: boolean; isEmployee: boolean; isClient: boolean;
-  onEdit: (c: Contract) => void; onDelete: (c: Contract) => void;
-  onSend: (c: Contract) => void; onAccept: (c: Contract) => void; onReject: (c: Contract) => void;
-}
-
-function ContractCard({ contract, isAdmin, isEmployee, isClient, onEdit, onDelete, onSend, onAccept, onReject }: ContractCardProps) {
-  const menu       = useDropdown('right');
-  const StatusIcon = STATUS_ICON[contract.status] ?? FilePenLine;
-  const router     = useRouter();
-
-  const clientName = contract.client?.user?.name ?? 'Unknown Client';
-  const ownerName  = contract.owner?.name ?? 'Unassigned';
-  const canEdit    = (isAdmin || isEmployee) && contract.status === 'DRAFT';
-  const canSend    = (isAdmin || isEmployee) && contract.status === 'DRAFT';
-  const canDelete  = isAdmin && contract.status === 'DRAFT';
-  const canAccept  = isClient && contract.status === 'SENT';
-  const canReject  = isClient && contract.status === 'SENT';
-
-  return (
-    <motion.div
-      layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="group relative rounded-2xl border border-white/[0.06] bg-[#0f0f0f] hover:bg-[#131313] hover:border-white/[0.10] transition-all duration-200 cursor-pointer"
-      onClick={() => router.push(`/erp/contracts/${contract.id}`)}
-    >
-      <div className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={cn('flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ring-2 ring-black/20', getAvatarColor(contract.title))}>
-              {getInitials(contract.title)}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-white truncate text-sm">{contract.title}</p>
-                <ArrowUpRight className="h-3 w-3 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-              </div>
-              <p className="text-[11px] text-white/35 truncate mt-0.5 flex items-center gap-1">
-                <Briefcase className="inline w-3 h-3" />{clientName}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border', STATUS_BADGE[contract.status])}>
-              <StatusIcon className="w-3 h-3" />{contract.status}
-            </span>
-
-            {(isAdmin || isEmployee) && (
-              <div ref={menu.triggerRef} className="relative" onClick={(e) => { e.stopPropagation(); menu.toggle(); }}>
-                <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 min-h-[36px]">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-                <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close}>
-                  <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl overflow-hidden py-1.5" onClick={(e) => e.stopPropagation()}>
-                    {canEdit && (
-                      <button onClick={() => { menu.close(); onEdit(contract); }}
-                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors min-h-[40px]">
-                        <Pencil className="w-3.5 h-3.5" /> Edit Contract
-                      </button>
-                    )}
-                    {canSend && (
-                      <button onClick={() => { menu.close(); onSend(contract); }}
-                        className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-amber-400 hover:bg-amber-400/10 transition-colors min-h-[40px]">
-                        <Send className="w-3.5 h-3.5" /> Send to Client
-                      </button>
-                    )}
-                    {canDelete && (
-                      <>
-                        <div className="my-1 border-t border-white/[0.06]" />
-                        <button onClick={() => { menu.close(); onDelete(contract); }}
-                          className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors min-h-[40px]">
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </button>
-                      </>
-                    )}
-                    {!canEdit && !canSend && !canDelete && (
-                      <div className="px-3.5 py-3 text-xs text-white/25">No actions available</div>
-                    )}
-                  </div>
-                </DropdownPortal>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Body preview */}
-        <p className="mt-2.5 text-[11px] text-white/30 line-clamp-2 leading-relaxed">{contract.body}</p>
-
-        {/* Meta */}
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-white/25 pt-3 border-t border-white/[0.05]">
-          <span className="flex items-center gap-1"><User className="w-3 h-3" /> {ownerName}</span>
-          {contract.sentAt && (
-            <span className="flex items-center gap-1"><Send className="w-3 h-3" /> Sent {formatDate(contract.sentAt)}</span>
-          )}
-          {contract.signedAt && (
-            <span className="flex items-center gap-1 text-emerald-400/70">
-              <CheckCircle2 className="w-3 h-3" /> Signed {formatDate(contract.signedAt)}
-            </span>
-          )}
-        </div>
-
-        {/* CLIENT accept/reject */}
-        {(canAccept || canReject) && (
-          <div className="mt-3 flex gap-2 pt-3 border-t border-white/[0.05]" onClick={(e) => e.stopPropagation()}>
-            {canAccept && (
-              <button onClick={() => onAccept(contract)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors min-h-[36px]">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Accept
-              </button>
-            )}
-            {canReject && (
-              <button onClick={() => onReject(contract)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors min-h-[36px]">
-                <XCircle className="w-3.5 h-3.5" /> Reject
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
 }
 
 // ─── Modal wrapper ───────────────────────────────────────────────────────────
@@ -550,6 +401,7 @@ function RejectConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
 export default function ContractsPage() {
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
 
   const [searchInput,  setSearchInput]  = useState('');
   const [statusFilter, setStatusFilter] = useState<ContractStatus | 'ALL'>('ALL');
@@ -608,6 +460,97 @@ export default function ContractsPage() {
   const contracts = data?.contracts ?? [];
   const total     = data?.total ?? 0;
   const pages     = data?.pages ?? 1;
+
+  // ─── Table columns ─────────────────────────────────────────────────────────
+  const columns: Column<Contract>[] = [
+    {
+      key: 'title',
+      header: 'Contract',
+      cell: (c) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={cn('flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ring-2 ring-black/20', getAvatarColor(c.title))}>
+            {getInitials(c.title)}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-white truncate text-sm">{c.title}</p>
+            <p className="text-[11px] text-white/35 truncate mt-0.5 flex items-center gap-1">
+              <Briefcase className="inline w-3 h-3" />{c.client?.user?.name ?? 'Unknown Client'}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (c) => {
+        const StatusIcon = STATUS_ICON[c.status] ?? FilePenLine;
+        return (
+          <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border', STATUS_BADGE[c.status])}>
+            <StatusIcon className="w-3 h-3" />{c.status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'owner',
+      header: 'Owner',
+      hideOnMobile: true,
+      cell: (c) => (
+        <span className="flex items-center gap-1.5 text-white/50 text-xs whitespace-nowrap">
+          <User className="w-3 h-3" /> {c.owner?.name ?? 'Unassigned'}
+        </span>
+      ),
+    },
+    {
+      key: 'sentAt',
+      header: 'Sent',
+      hideOnMobile: true,
+      cell: (c) => (
+        c.sentAt
+          ? <span className="text-white/50 text-xs whitespace-nowrap">{formatDate(c.sentAt)}</span>
+          : <span className="text-white/20 text-xs">—</span>
+      ),
+    },
+    {
+      key: 'signedAt',
+      header: 'Signed',
+      hideOnMobile: true,
+      cell: (c) => (
+        c.signedAt
+          ? <span className="flex items-center gap-1 text-emerald-400/70 text-xs whitespace-nowrap"><CheckCircle2 className="w-3 h-3" />{formatDate(c.signedAt)}</span>
+          : <span className="text-white/20 text-xs">—</span>
+      ),
+    },
+  ];
+
+  const rowActions: RowAction<Contract>[] = [
+    {
+      label: 'Edit Contract', icon: Pencil,
+      onClick: (c) => setEditContract(c),
+      show: (c) => (isAdmin || isEmployee) && c.status === 'DRAFT',
+    },
+    {
+      label: 'Send to Client', icon: Send,
+      onClick: (c) => setSendContract(c),
+      show: (c) => (isAdmin || isEmployee) && c.status === 'DRAFT',
+    },
+    {
+      label: 'Accept', icon: CheckCircle2,
+      onClick: (c) => setAcceptContract(c),
+      show: (c) => isClient && c.status === 'SENT',
+    },
+    {
+      label: 'Reject', icon: XCircle,
+      onClick: (c) => setRejectContract(c),
+      show: (c) => isClient && c.status === 'SENT',
+    },
+    {
+      label: 'Delete', icon: Trash2, danger: true,
+      onClick: (c) => setDeleteContract(c),
+      show: (c) => isAdmin && c.status === 'DRAFT',
+    },
+  ];
 
   if (!mounted) return null;
 
@@ -671,9 +614,7 @@ export default function ContractsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => <ContractSkeleton key={i} />)}
-        </div>
+        <TableSkeleton cols={5} rows={6} />
       ) : isError ? (
         <div className="flex flex-col items-center py-20 gap-4">
           <AlertCircle className="w-10 h-10 text-red-400/40" />
@@ -699,16 +640,13 @@ export default function ContractsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {contracts.map(contract => (
-              <ContractCard
-                key={contract.id} contract={contract}
-                isAdmin={isAdmin} isEmployee={isEmployee} isClient={isClient}
-                onEdit={setEditContract} onDelete={setDeleteContract}
-                onSend={setSendContract} onAccept={setAcceptContract} onReject={setRejectContract}
-              />
-            ))}
-          </div>
+          <DataTable
+            columns={columns}
+            rows={contracts}
+            rowKey={(c) => c.id}
+            onRowClick={(c) => router.push(`/erp/contracts/${c.id}`)}
+            actions={rowActions}
+          />
           {pages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-sm text-white/30">{total} contracts · page {page} of {pages}</p>
