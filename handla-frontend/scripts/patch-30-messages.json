@@ -1,0 +1,66 @@
+{
+  "en": {
+    "erp": {
+      "messages": {
+        "title": "Messages",
+        "subtitle": "Client conversations",
+        "refreshTitle": "Refresh conversations",
+        "status": {
+          "ALL": "All",
+          "ACTIVE": "Active",
+          "ON_HOLD": "On Hold",
+          "COMPLETED": "Completed"
+        },
+        "stats": {
+          "total": "Total",
+          "active": "Active",
+          "onHold": "On Hold",
+          "unread": "Unread"
+        },
+        "searchPlaceholder": "Search clients…",
+        "loadError": "Failed to load conversations",
+        "unknownClient": "Unknown Client",
+        "attachment": "📎 Attachment",
+        "noMessages": "No messages yet",
+        "emptyFiltered": "No conversations match your filters",
+        "empty": "No conversations yet",
+        "emptyFilteredHint": "Try adjusting the search or status filter",
+        "selectTitle": "Select a conversation",
+        "selectHint": "Choose a conversation from the list to start messaging",
+        "backToConversations": "Back to conversations"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "messages": {
+        "title": "الرسائل",
+        "subtitle": "محادثات العملاء",
+        "refreshTitle": "تحديث المحادثات",
+        "status": {
+          "ALL": "الكل",
+          "ACTIVE": "نشطة",
+          "ON_HOLD": "معلّقة",
+          "COMPLETED": "مكتملة"
+        },
+        "stats": {
+          "total": "الإجمالي",
+          "active": "نشطة",
+          "onHold": "معلّقة",
+          "unread": "غير مقروءة"
+        },
+        "searchPlaceholder": "ابحث عن عملاء…",
+        "loadError": "فشل تحميل المحادثات",
+        "unknownClient": "عميل غير معروف",
+        "attachment": "📎 مرفق",
+        "noMessages": "لا توجد رسائل بعد",
+        "emptyFiltered": "لا توجد محادثات تطابق عوامل التصفية",
+        "empty": "لا توجد محادثات بعد",
+        "emptyFilteredHint": "جرّب تعديل البحث أو عامل تصفية الحالة",
+        "selectTitle": "اختر محادثة",
+        "selectHint": "اختر محادثة من القائمة لبدء المراسلة",
+        "backToConversations": "العودة إلى المحادثات"
+      }
+    }
+  }
+}

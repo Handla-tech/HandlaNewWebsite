@@ -2472,6 +2472,34 @@
         "editAria": "تعديل شهادة {{name}}",
         "deleteAria": "حذف شهادة {{name}}"
       }
+    },
+    "messages": {
+      "title": "الرسائل",
+      "subtitle": "محادثات العملاء",
+      "refreshTitle": "تحديث المحادثات",
+      "status": {
+        "ALL": "الكل",
+        "ACTIVE": "نشطة",
+        "ON_HOLD": "معلّقة",
+        "COMPLETED": "مكتملة"
+      },
+      "stats": {
+        "total": "الإجمالي",
+        "active": "نشطة",
+        "onHold": "معلّقة",
+        "unread": "غير مقروءة"
+      },
+      "searchPlaceholder": "ابحث عن عملاء…",
+      "loadError": "فشل تحميل المحادثات",
+      "unknownClient": "عميل غير معروف",
+      "attachment": "📎 مرفق",
+      "noMessages": "لا توجد رسائل بعد",
+      "emptyFiltered": "لا توجد محادثات تطابق عوامل التصفية",
+      "empty": "لا توجد محادثات بعد",
+      "emptyFilteredHint": "جرّب تعديل البحث أو عامل تصفية الحالة",
+      "selectTitle": "اختر محادثة",
+      "selectHint": "اختر محادثة من القائمة لبدء المراسلة",
+      "backToConversations": "العودة إلى المحادثات"
     }
   },
   "footer": {

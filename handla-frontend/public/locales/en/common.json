@@ -2472,6 +2472,34 @@
         "editAria": "Edit {{name}}'s testimonial",
         "deleteAria": "Delete {{name}}'s testimonial"
       }
+    },
+    "messages": {
+      "title": "Messages",
+      "subtitle": "Client conversations",
+      "refreshTitle": "Refresh conversations",
+      "status": {
+        "ALL": "All",
+        "ACTIVE": "Active",
+        "ON_HOLD": "On Hold",
+        "COMPLETED": "Completed"
+      },
+      "stats": {
+        "total": "Total",
+        "active": "Active",
+        "onHold": "On Hold",
+        "unread": "Unread"
+      },
+      "searchPlaceholder": "Search clients…",
+      "loadError": "Failed to load conversations",
+      "unknownClient": "Unknown Client",
+      "attachment": "📎 Attachment",
+      "noMessages": "No messages yet",
+      "emptyFiltered": "No conversations match your filters",
+      "empty": "No conversations yet",
+      "emptyFilteredHint": "Try adjusting the search or status filter",
+      "selectTitle": "Select a conversation",
+      "selectHint": "Choose a conversation from the list to start messaging",
+      "backToConversations": "Back to conversations"
     }
   },
   "footer": {

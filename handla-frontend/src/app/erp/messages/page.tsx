@@ -20,18 +20,14 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { useTranslation } from '@/hooks/useTranslation';
 import { chatApi } from '@/lib/api';
 import { getInitials, getAvatarColor, formatMessageTime, cn } from '@/lib/utils';
 import type { Conversation, ConversationStatus } from '@/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: ConversationStatus | 'ALL'; label: string }[] = [
-  { value: 'ALL',       label: 'All'       },
-  { value: 'ACTIVE',    label: 'Active'    },
-  { value: 'ON_HOLD',   label: 'On Hold'   },
-  { value: 'COMPLETED', label: 'Completed' },
-];
+const STATUS_OPTIONS: (ConversationStatus | 'ALL')[] = ['ALL', 'ACTIVE', 'ON_HOLD', 'COMPLETED'];
 
 const STATUS_COLORS: Record<ConversationStatus, string> = {
   ACTIVE:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
@@ -39,19 +35,16 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
   COMPLETED: 'text-[#666]     bg-[#1a1a1a]     border-[#2a2a2a]',
 };
 
-const STATUS_LABELS: Record<ConversationStatus, string> = {
-  ACTIVE: 'Active', ON_HOLD: 'On Hold', COMPLETED: 'Completed',
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: ConversationStatus }) {
+  const { t } = useTranslation();
   return (
     <span className={cn(
       'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
       STATUS_COLORS[status],
     )}>
-      {STATUS_LABELS[status]}
+      {t(`erp.messages.status.${status}`)}
     </span>
   );
 }
@@ -82,6 +75,7 @@ function ConversationItem({
   isActive: boolean;
   onClick:  () => void;
 }) {
+  const { t } = useTranslation();
   const client    = conv.client;
   const lastMsg   = conv.lastMessage ?? conv.messages?.[conv.messages.length - 1];
   const unread    = conv.unreadCount ?? 0;
@@ -116,7 +110,7 @@ function ConversationItem({
             'truncate text-sm font-semibold',
             hasUnread ? 'text-white' : 'text-[#ccc]',
           )}>
-            {client?.name ?? 'Unknown Client'}
+            {client?.name ?? t('erp.messages.unknownClient')}
           </span>
           {conv.lastMessageAt && (
             <span className="flex-shrink-0 text-[10px] text-[#555]">
@@ -133,8 +127,8 @@ function ConversationItem({
             {lastMsg?.content
               ? lastMsg.content.slice(0, 50) + (lastMsg.content.length > 50 ? '…' : '')
               : lastMsg?.fileUrl
-                ? '📎 Attachment'
-                : 'No messages yet'}
+                ? t('erp.messages.attachment')
+                : t('erp.messages.noMessages')}
           </p>
           <div className="flex flex-shrink-0 items-center gap-1.5">
             <UnreadBadge count={unread} />
@@ -149,16 +143,17 @@ function ConversationItem({
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState({ filtered }: { filtered: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#141414]">
         <Inbox className="h-6 w-6 text-[#555]" />
       </div>
       <p className="text-sm font-medium text-[#666]">
-        {filtered ? 'No conversations match your filters' : 'No conversations yet'}
+        {filtered ? t('erp.messages.emptyFiltered') : t('erp.messages.empty')}
       </p>
       {filtered && (
-        <p className="text-xs text-[#444]">Try adjusting the search or status filter</p>
+        <p className="text-xs text-[#444]">{t('erp.messages.emptyFilteredHint')}</p>
       )}
     </div>
   );
@@ -167,15 +162,16 @@ function EmptyState({ filtered }: { filtered: boolean }) {
 // ─── No conversation selected placeholder ────────────────────────────────────
 
 function SelectConversationPlaceholder() {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#fbbf24]/20 bg-[#fbbf24]/8">
         <MessageSquare className="h-7 w-7 text-[#fbbf24]" />
       </div>
       <div>
-        <p className="text-sm font-semibold text-white">Select a conversation</p>
+        <p className="text-sm font-semibold text-white">{t('erp.messages.selectTitle')}</p>
         <p className="mt-1 text-xs text-[#555]">
-          Choose a conversation from the list to start messaging
+          {t('erp.messages.selectHint')}
         </p>
       </div>
     </div>
@@ -185,6 +181,7 @@ function SelectConversationPlaceholder() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function ErpMessagesPageInner() {
+  const { t } = useTranslation();
   const queryClient  = useQueryClient();
   const searchParams = useSearchParams();
   const initialConvId = searchParams.get('conversationId');
@@ -305,8 +302,8 @@ function ErpMessagesPageInner() {
               <MessageSquare className="h-4 w-4 text-[#fbbf24]" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white">Messages</h1>
-              <p className="text-[11px] text-[#555]">Client conversations</p>
+              <h1 className="text-base font-bold text-white">{t('erp.messages.title')}</h1>
+              <p className="text-[11px] text-[#555]">{t('erp.messages.subtitle')}</p>
             </div>
           </div>
 
@@ -321,7 +318,7 @@ function ErpMessagesPageInner() {
               type="button"
               onClick={() => refetch()}
               className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#2a2a2a] bg-[#141414] text-[#666] transition-all hover:text-white"
-              title="Refresh conversations"
+              title={t('erp.messages.refreshTitle')}
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -331,14 +328,14 @@ function ErpMessagesPageInner() {
         {/* Stats strip */}
         <div className="mt-3 flex gap-4 text-[11px]">
           {[
-            { label: 'Total',    value: stats.total,  color: 'text-[#aaa]'        },
-            { label: 'Active',   value: stats.active,  color: 'text-emerald-400'  },
-            { label: 'On Hold',  value: stats.onHold,  color: 'text-amber-400'    },
-            { label: 'Unread',   value: stats.unread,  color: 'text-[#fbbf24]'    },
-          ].map(({ label, value, color }) => (
-            <span key={label} className="flex items-center gap-1">
+            { key: 'total',  value: stats.total,  color: 'text-[#aaa]'        },
+            { key: 'active', value: stats.active,  color: 'text-emerald-400'  },
+            { key: 'onHold', value: stats.onHold,  color: 'text-amber-400'    },
+            { key: 'unread', value: stats.unread,  color: 'text-[#fbbf24]'    },
+          ].map(({ key, value, color }) => (
+            <span key={key} className="flex items-center gap-1">
               <span className={cn('font-bold', color)}>{value}</span>
-              <span className="text-[#444]">{label}</span>
+              <span className="text-[#444]">{t(`erp.messages.stats.${key}`)}</span>
             </span>
           ))}
         </div>
@@ -368,7 +365,7 @@ function ErpMessagesPageInner() {
                 type="text"
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search clients…"
+                placeholder={t('erp.messages.searchPlaceholder')}
                 className="w-full rounded-xl border border-[#2a2a2a] bg-[#141414] py-2 pl-8 pr-8 text-xs text-white placeholder-[#555] outline-none focus:border-[#fbbf24]/40 focus:ring-1 focus:ring-[#fbbf24]/20 transition-colors"
               />
               {search && (
@@ -385,7 +382,7 @@ function ErpMessagesPageInner() {
             {/* Status filter pills */}
             <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
               <Filter className="h-3 w-3 flex-shrink-0 text-[#555]" />
-              {STATUS_OPTIONS.map(({ value, label }) => (
+              {STATUS_OPTIONS.map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -397,7 +394,7 @@ function ErpMessagesPageInner() {
                       : 'border-[#2a2a2a] bg-[#141414] text-[#666] hover:text-white',
                   )}
                 >
-                  {label}
+                  {t(`erp.messages.status.${value}`)}
                 </button>
               ))}
             </div>
@@ -416,13 +413,13 @@ function ErpMessagesPageInner() {
             {isError && (
               <div className="flex flex-col items-center gap-3 py-16 text-center">
                 <AlertCircle className="h-6 w-6 text-red-400" />
-                <p className="text-xs text-[#666]">Failed to load conversations</p>
+                <p className="text-xs text-[#666]">{t('erp.messages.loadError')}</p>
                 <button
                   type="button"
                   onClick={() => refetch()}
                   className="rounded-xl border border-[#2a2a2a] px-3 py-1.5 text-[11px] text-[#aaa] hover:text-white"
                 >
-                  Retry
+                  {t('erp.common.retry')}
                 </button>
               </div>
             )}
@@ -468,7 +465,7 @@ function ErpMessagesPageInner() {
                 className="flex items-center gap-2 text-sm text-[#aaa] hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to conversations
+                {t('erp.messages.backToConversations')}
               </button>
             </div>
           )}
