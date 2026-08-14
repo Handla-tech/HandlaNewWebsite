@@ -1,0 +1,37 @@
+{
+  "cli": {
+    "version": ">= 5.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:3001/api",
+        "EXPO_PUBLIC_SOCKET_URL": "http://localhost:3001"
+      },
+      "ios": { "simulator": true }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging-api.handla.tech/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://staging-api.handla.tech"
+      },
+      "ios": { "simulator": false }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.handla.tech/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.handla.tech"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

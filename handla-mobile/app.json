@@ -3,6 +3,7 @@
     "name": "Handla",
     "slug": "handla-mobile",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
     "orientation": "portrait",
     "scheme": "handla",
     "userInterfaceStyle": "dark",
