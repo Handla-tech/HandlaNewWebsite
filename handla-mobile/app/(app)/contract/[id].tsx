@@ -40,11 +40,38 @@ export default function ContractDetailScreen() {
     mutationFn: () => contractsApi.reject(contractId).then((r) => r.data.data),
     onSuccess: invalidate,
   });
+  const send = useMutation({
+    mutationFn: () => contractsApi.send(contractId).then((r) => r.data.data),
+    onSuccess: invalidate,
+    onError: (e: any) =>
+      Alert.alert('Could not send', e?.response?.data?.message ?? 'Please try again.'),
+  });
+  const del = useMutation({
+    mutationFn: () => contractsApi.remove(contractId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contracts'] });
+      router.back();
+    },
+    onError: (e: any) =>
+      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+  });
+
+  const isAdmin = useAuthStore((s) => s.isAdmin());
 
   const confirmReject = () =>
     Alert.alert('Reject contract?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reject', style: 'destructive', onPress: () => reject.mutate() },
+    ]);
+  const confirmSend = () =>
+    Alert.alert('Send contract?', 'The client will be able to view and sign it.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send', onPress: () => send.mutate() },
+    ]);
+  const confirmDelete = () =>
+    Alert.alert('Delete contract?', 'Only draft contracts can be deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
     ]);
 
   const openDocument = async () => {
@@ -62,6 +89,8 @@ export default function ContractDetailScreen() {
   };
 
   const canRespond = isClient && c?.status === 'SENT';
+  const canSend = isStaff && c?.status === 'DRAFT';
+  const canDelete = isAdmin && c?.status === 'DRAFT';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
@@ -119,6 +148,23 @@ export default function ContractDetailScreen() {
                   loading={reject.isPending}
                 />
               </View>
+            </View>
+          )}
+
+          {/* Staff workflow actions */}
+          {isStaff && (canSend || canDelete) && (
+            <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+              {canSend && (
+                <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
+              )}
+              {canDelete && (
+                <Button
+                  title="Delete contract"
+                  variant="danger"
+                  onPress={confirmDelete}
+                  loading={del.isPending}
+                />
+              )}
             </View>
           )}
         </ScrollView>

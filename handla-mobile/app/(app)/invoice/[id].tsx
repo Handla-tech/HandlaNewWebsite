@@ -25,6 +25,8 @@ export default function InvoiceDetailScreen() {
   });
   const inv: Invoice | undefined = detail.data;
 
+  const isAdmin = useAuthStore((s) => s.isAdmin());
+
   const markPaid = useMutation({
     mutationFn: () => invoicesApi.markPaid(invoiceId).then((r) => r.data.data),
     onSuccess: () => {
@@ -32,13 +34,28 @@ export default function InvoiceDetailScreen() {
       qc.invalidateQueries({ queryKey: ['invoices'] });
     },
   });
+  const del = useMutation({
+    mutationFn: () => invoicesApi.remove(invoiceId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      router.back();
+    },
+    onError: (e: any) =>
+      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+  });
 
   const confirmPaid = () =>
     Alert.alert('Mark as paid?', 'Record this invoice as fully paid.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Mark Paid', onPress: () => markPaid.mutate() },
     ]);
+  const confirmDelete = () =>
+    Alert.alert('Delete invoice?', 'Only unpaid invoices can be deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+    ]);
 
+  const canDelete = isAdmin && inv?.paymentStatus === 'UNPAID';
   const cur = inv?.currency;
 
   return (
@@ -116,9 +133,19 @@ export default function InvoiceDetailScreen() {
           ) : null}
 
           {/* Staff can record payment on an unpaid/overdue invoice. */}
-          {isStaff && inv.paymentStatus !== 'PAID' && (
-            <View style={{ marginTop: spacing.lg }}>
-              <Button title="Mark as Paid" onPress={confirmPaid} loading={markPaid.isPending} />
+          {isStaff && (inv.paymentStatus !== 'PAID' || canDelete) && (
+            <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+              {inv.paymentStatus !== 'PAID' && (
+                <Button title="Mark as Paid" onPress={confirmPaid} loading={markPaid.isPending} />
+              )}
+              {canDelete && (
+                <Button
+                  title="Delete invoice"
+                  variant="danger"
+                  onPress={confirmDelete}
+                  loading={del.isPending}
+                />
+              )}
             </View>
           )}
         </ScrollView>

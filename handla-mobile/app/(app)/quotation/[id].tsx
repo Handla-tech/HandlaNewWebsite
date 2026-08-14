@@ -38,14 +38,58 @@ export default function QuotationDetailScreen() {
     mutationFn: () => quotationsApi.reject(quotationId).then((r) => r.data.data),
     onSuccess: invalidate,
   });
+  const send = useMutation({
+    mutationFn: () => quotationsApi.send(quotationId).then((r) => r.data.data),
+    onSuccess: invalidate,
+    onError: (e: any) =>
+      Alert.alert('Could not send', e?.response?.data?.message ?? 'Please try again.'),
+  });
+  const convert = useMutation({
+    mutationFn: () => quotationsApi.convert(quotationId).then((r) => r.data.data),
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      Alert.alert('Converted', 'An invoice was created from this quotation.');
+    },
+    onError: (e: any) =>
+      Alert.alert('Could not convert', e?.response?.data?.message ?? 'Please try again.'),
+  });
+  const del = useMutation({
+    mutationFn: () => quotationsApi.remove(quotationId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['quotations'] });
+      router.back();
+    },
+    onError: (e: any) =>
+      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+  });
 
   const confirmReject = () =>
     Alert.alert('Reject quotation?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reject', style: 'destructive', onPress: () => reject.mutate() },
     ]);
+  const confirmSend = () =>
+    Alert.alert('Send quotation?', 'The client will be able to view and respond.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send', onPress: () => send.mutate() },
+    ]);
+  const confirmConvert = () =>
+    Alert.alert('Convert to invoice?', 'This creates an invoice from the accepted quotation.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Convert', onPress: () => convert.mutate() },
+    ]);
+  const confirmDelete = () =>
+    Alert.alert('Delete quotation?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+    ]);
 
   const canRespond = q?.status === 'SENT';
+  const isAdmin = useAuthStore.getState().isAdmin();
+  const canSend = isStaff && q?.status === 'DRAFT';
+  const canConvert = isStaff && q?.status === 'ACCEPTED' && !q?.convertedInvoiceId;
+  const canDelete = isAdmin && q?.status !== 'CONVERTED';
   const cur = q?.currency;
 
   return (
@@ -141,6 +185,30 @@ export default function QuotationDetailScreen() {
                   loading={reject.isPending}
                 />
               </View>
+            </View>
+          )}
+
+          {/* Staff workflow actions */}
+          {isStaff && (
+            <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+              {canSend && (
+                <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
+              )}
+              {canConvert && (
+                <Button
+                  title="Convert to invoice"
+                  onPress={confirmConvert}
+                  loading={convert.isPending}
+                />
+              )}
+              {canDelete && (
+                <Button
+                  title="Delete quotation"
+                  variant="danger"
+                  onPress={confirmDelete}
+                  loading={del.isPending}
+                />
+              )}
             </View>
           )}
         </ScrollView>
