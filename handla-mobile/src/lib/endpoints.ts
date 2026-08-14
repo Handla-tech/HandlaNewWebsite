@@ -39,6 +39,11 @@ import type {
   AnalyticsInterval,
   UserRole,
   PaginatedUsers,
+  PaginatedSuppliers,
+  PaginatedProjects,
+  ProjectStatus,
+  PaginatedTasks,
+  TaskStatus,
 } from '@/types';
 
 /**
@@ -142,6 +147,41 @@ export const clientsApi = {
   /** GET /erp/clients — ADMIN/EMPLOYEE, role-scoped. */
   list: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get<{ message: string; data: PaginatedClients }>('/erp/clients', { params }),
+};
+
+// ─── Suppliers (@Controller('suppliers')) ────────────────────────────────────
+export const suppliersApi = {
+  /** GET /suppliers — ADMIN/EMPLOYEE, paginated. */
+  list: (params?: { page?: number; limit?: number; search?: string; isActive?: string }) =>
+    api.get<{ message: string; data: PaginatedSuppliers }>('/suppliers', { params }),
+};
+
+// ─── Projects (@Controller('erp/projects')) ──────────────────────────────────
+export const projectsApi = {
+  /** GET /erp/projects — ADMIN/EMPLOYEE, role-scoped. */
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: ProjectStatus;
+    clientId?: string;
+  }) => api.get<{ message: string; data: PaginatedProjects }>('/erp/projects', { params }),
+  /** GET /erp/projects/my — CLIENT's own projects. */
+  mine: (params?: { page?: number; limit?: number }) =>
+    api.get<{ message: string; data: PaginatedProjects }>('/erp/projects/my', { params }),
+};
+
+// ─── Tasks (@Controller('erp/tasks')) ────────────────────────────────────────
+export const tasksApi = {
+  /** GET /erp/tasks — ADMIN/EMPLOYEE, role-scoped. */
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: TaskStatus;
+    projectId?: string;
+    assigneeId?: string;
+  }) => api.get<{ message: string; data: PaginatedTasks }>('/erp/tasks', { params }),
 };
 
 // ─── Quotations (@Controller('erp/quotations')) ──────────────────────────────

@@ -32,6 +32,10 @@ export function DrawerContent(props: DrawerContentComponentProps) {
     support: 'ticket-outline',
     sales: 'briefcase-outline',
     finance: 'wallet-outline',
+    clients: 'people-circle-outline',
+    projects: 'folder-open-outline',
+    tasks: 'checkbox-outline',
+    suppliers: 'business-outline',
     analytics: 'stats-chart-outline',
     team: 'people-outline',
   };

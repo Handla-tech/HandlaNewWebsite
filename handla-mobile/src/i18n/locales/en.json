@@ -38,7 +38,11 @@
     "notifications": "Alerts",
     "profile": "Profile",
     "analytics": "Analytics",
-    "team": "Team"
+    "team": "Team",
+    "clients": "Clients",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "suppliers": "Suppliers"
   },
   "dashboard": {
     "title": "Dashboard",

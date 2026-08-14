@@ -38,7 +38,11 @@
     "notifications": "التنبيهات",
     "profile": "الملف الشخصي",
     "analytics": "التحليلات",
-    "team": "الفريق"
+    "team": "الفريق",
+    "clients": "العملاء",
+    "projects": "المشاريع",
+    "tasks": "المهام",
+    "suppliers": "الموردون"
   },
   "dashboard": {
     "title": "لوحة التحكم",

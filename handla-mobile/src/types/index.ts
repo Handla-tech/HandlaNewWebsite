@@ -334,6 +334,72 @@ export interface Supplier {
   company: string | null;
   email: string | null;
   phone: string | null;
+  taxId?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface PaginatedSuppliers {
+  suppliers: Supplier[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+export type ProjectStatus =
+  | 'PLANNING'
+  | 'ACTIVE'
+  | 'ON_HOLD'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | string;
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  clientId: string;
+  ownerId: string | null;
+  status: ProjectStatus;
+  startDate: string | null;
+  endDate: string | null;
+  client?: { id: string; company: string | null; user?: ChatUser | null } | null;
+  owner?: ChatUser | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedProjects {
+  projects: Project[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' | string;
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  projectId: string;
+  assigneeId: string | null;
+  ownerId: string | null;
+  status: TaskStatus;
+  dueDate: string | null;
+  project?: { id: string; title: string } | null;
+  assignee?: ChatUser | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedTasks {
+  tasks: Task[];
+  total: number;
+  page: number;
+  pages: number;
 }
 
 export interface Purchase {

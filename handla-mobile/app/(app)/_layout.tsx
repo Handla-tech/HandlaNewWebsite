@@ -85,6 +85,38 @@ export default function AppLayout() {
         }}
       />
       <Drawer.Screen
+        name="clients"
+        options={{
+          title: t('tabs.clients'),
+          drawerItemStyle: isStaff ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => <Ionicons name="people-circle-outline" size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="projects"
+        options={{
+          title: t('tabs.projects'),
+          // Staff see all; clients see their own via projectsApi.mine.
+          drawerIcon: ({ color, size }) => <Ionicons name="folder-open-outline" size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="tasks"
+        options={{
+          title: t('tabs.tasks'),
+          drawerItemStyle: isStaff ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => <Ionicons name="checkbox-outline" size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="suppliers"
+        options={{
+          title: t('tabs.suppliers'),
+          drawerItemStyle: isStaff ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => <Ionicons name="business-outline" size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
         name="analytics"
         options={{
           title: t('tabs.analytics'),
