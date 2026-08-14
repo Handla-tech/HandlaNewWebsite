@@ -431,3 +431,57 @@ export interface PaginatedLedger {
   page: number;
   pages: number;
 }
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+export interface AnalyticsOverview {
+  pageviews: number;
+  events: number;
+  uniqueVisitors: number;
+  sessions: number;
+  bounceRate: number;
+  viewsPerSession: number;
+}
+
+export type AnalyticsInterval = 'hour' | 'day' | 'month';
+
+export interface TimeseriesPoint {
+  bucket: string;
+  pageviews: number;
+  visitors: number;
+  sessions: number;
+}
+
+export interface AnalyticsTimeseries {
+  interval: AnalyticsInterval;
+  series: TimeseriesPoint[];
+}
+
+export interface TopRow {
+  key: string;
+  count: number;
+  visitors: number;
+}
+
+export interface AnalyticsTopResult {
+  rows: TopRow[];
+}
+
+// ─── Admin: Team (users) ──────────────────────────────────────────────────────
+export interface TeamMember {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  isArchived?: boolean;
+  archivedAt?: string | null;
+  isDisabled?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedUsers {
+  users: TeamMember[];
+  total: number;
+  page: number;
+  pages: number;
+}

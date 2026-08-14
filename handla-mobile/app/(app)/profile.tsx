@@ -1,10 +1,40 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Screen, Title, Subtitle, Card, Button } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { colors, spacing, radius, font } from '@/theme';
+
+function LinkRow({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.md,
+          paddingVertical: spacing.md,
+        },
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={colors.accent} />
+      <Text style={{ color: colors.text, fontSize: font.md, flex: 1 }}>{label}</Text>
+      <Ionicons name="chevron-forward" size={18} color={colors.textDim} />
+    </Pressable>
+  );
+}
 
 function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value?: string | null }) {
   return (
@@ -32,7 +62,9 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const isAdmin = useAuthStore((s) => s.isAdmin());
   const signOut = useAuthStore((s) => s.signOut);
   const [signingOut, setSigningOut] = React.useState(false);
 
@@ -108,6 +140,27 @@ export default function ProfileScreen() {
           <Row icon="location-outline" label="Location" value={user?.location} />
         </View>
       </Card>
+
+      {isAdmin && (
+        <>
+          <Text
+            style={{
+              color: colors.textDim,
+              fontSize: font.xs,
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              marginTop: spacing.xl,
+              marginBottom: spacing.xs,
+            }}
+          >
+            Admin
+          </Text>
+          <Card style={{ paddingVertical: 0 }}>
+            <LinkRow icon="people-outline" label="Team" onPress={() => router.push('/(app)/team')} />
+          </Card>
+        </>
+      )}
 
       <Button
         title="Sign Out"

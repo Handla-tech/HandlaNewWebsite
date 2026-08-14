@@ -80,6 +80,17 @@ export default function AppLayout() {
       {/* Finance detail (purchase) pushed on top of the tabs, not a tab. */}
       <Tabs.Screen name="purchase/[id]" options={{ href: null }} />
       <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          // Staff-only web-traffic analytics; hidden from the client tab bar.
+          href: isStaff ? '/(app)/analytics' : null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
+        }}
+      />
+      {/* Admin Team roster is pushed from Profile (ADMIN only), not a tab. */}
+      <Tabs.Screen name="team" options={{ href: null }} />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',

@@ -33,6 +33,12 @@ import type {
   PaginatedLedger,
   LedgerDirection,
   LedgerSourceType,
+  AnalyticsOverview,
+  AnalyticsTimeseries,
+  AnalyticsTopResult,
+  AnalyticsInterval,
+  UserRole,
+  PaginatedUsers,
 } from '@/types';
 
 /**
@@ -257,4 +263,46 @@ export interface LedgerQuery {
 export const accountingApi = {
   ledger: (params?: LedgerQuery) =>
     api.get<{ message: string; data: PaginatedLedger }>('/accounting/ledger', { params }),
+};
+
+// ─── Analytics (@Controller('erp/analytics')) — ADMIN/EMPLOYEE ───────────────
+export interface AnalyticsQuery {
+  site?: string;
+  from?: string;
+  to?: string;
+  interval?: AnalyticsInterval;
+  limit?: number;
+}
+
+export const analyticsApi = {
+  overview: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsOverview }>('/erp/analytics/overview', { params }),
+  timeseries: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTimeseries }>('/erp/analytics/timeseries', { params }),
+  topPages: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/top-pages', { params }),
+  topReferrers: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/top-referrers', { params }),
+  devices: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/devices', { params }),
+  browsers: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/browsers', { params }),
+  countries: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/countries', { params }),
+  topEvents: (params?: AnalyticsQuery) =>
+    api.get<{ message: string; data: AnalyticsTopResult }>('/erp/analytics/top-events', { params }),
+};
+
+// ─── Users / Team (@Controller('users')) — ADMIN only ────────────────────────
+export interface UsersQuery {
+  page?: number;
+  limit?: number;
+  role?: UserRole;
+  search?: string;
+  isArchived?: boolean;
+}
+
+export const usersApi = {
+  list: (params?: UsersQuery) =>
+    api.get<{ message: string; data: PaginatedUsers }>('/users', { params }),
 };
