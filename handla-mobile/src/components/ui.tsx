@@ -130,6 +130,76 @@ export function Button({
   );
 }
 
+// ─── Badge (colored status/priority pill) ──────────────────────────────────────
+export function Badge({
+  label,
+  color,
+  soft,
+  style,
+}: {
+  label: string;
+  color: string;
+  soft: string;
+  style?: ViewStyle;
+}) {
+  return (
+    <View
+      style={[
+        {
+          alignSelf: 'flex-start',
+          backgroundColor: soft,
+          borderColor: color,
+          borderWidth: 1,
+          borderRadius: radius.pill,
+          paddingHorizontal: spacing.sm,
+          paddingVertical: 3,
+        },
+        style,
+      ]}
+    >
+      <Text style={{ color, fontSize: font.xs, fontWeight: '700' }}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Chip (toggleable filter pill) ──────────────────────────────────────────────
+export function Chip({
+  label,
+  active = false,
+  onPress,
+}: {
+  label: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          borderRadius: radius.pill,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm - 2,
+          borderWidth: 1,
+          borderColor: active ? colors.accent : colors.border,
+          backgroundColor: active ? colors.accentSoft : colors.cardAlt,
+        },
+        pressed && { opacity: 0.8 },
+      ]}
+    >
+      <Text
+        style={{
+          color: active ? colors.accent : colors.textMuted,
+          fontSize: font.sm,
+          fontWeight: active ? '700' : '500',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 // ─── Empty / error states ─────────────────────────────────────────────────────
 export function Centered({ children }: { children: React.ReactNode }) {
   return <View style={styles.centered}>{children}</View>;

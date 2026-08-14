@@ -105,3 +105,105 @@ export interface ConversationDetail {
   conversation: Conversation;
   messages: Message[];
 }
+
+// ─── Support / Ticketing ─────────────────────────────────────────────────────
+export type TicketStatus =
+  | 'OPEN'
+  | 'IN_PROGRESS'
+  | 'WAITING_CUSTOMER'
+  | 'RESOLVED'
+  | 'CLOSED';
+
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export type TicketCategory = 'BUG' | 'FEATURE' | 'QUESTION' | 'BILLING' | 'OTHER';
+
+export type TicketSource = 'WEB' | 'API' | 'EMAIL';
+
+export interface TicketAttachment {
+  url: string;
+  name?: string;
+}
+
+export interface TicketClient {
+  id: string;
+  company?: string | null;
+  userId?: string | null;
+  ownerId?: string | null;
+  user?: ChatUser | null;
+}
+
+export interface TicketReply {
+  id: string;
+  ticketId: string;
+  authorId: string | null;
+  authorName: string | null;
+  body: string;
+  isInternal: boolean;
+  attachments: TicketAttachment[] | null;
+  createdAt: string;
+  author?: ChatUser | null;
+}
+
+export interface Ticket {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  description: string;
+  clientId: string;
+  projectId: string | null;
+  assigneeId: string | null;
+  reporterId: string | null;
+  status: TicketStatus;
+  priority: TicketPriority;
+  category: TicketCategory;
+  source: TicketSource;
+  attachments: TicketAttachment[] | null;
+  firstResponseDueAt: string | null;
+  resolveDueAt: string | null;
+  firstRespondedAt: string | null;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Relations / derived
+  client?: TicketClient;
+  assignee?: ChatUser | null;
+  reporter?: ChatUser | null;
+  replies?: TicketReply[];
+  slaBreached?: boolean;
+}
+
+export interface PaginatedTickets {
+  tickets: Ticket[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface SupportStats {
+  total: number;
+  open: number;
+  slaBreached: number;
+  byStatus: Record<string, number>;
+  byPriority: Record<string, number>;
+}
+
+// ─── Clients (minimal — for pickers) ─────────────────────────────────────────
+export interface Client {
+  id: string;
+  userId: string;
+  ownerId: string | null;
+  company: string | null;
+  status?: string;
+  user?: ChatUser | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedClients {
+  clients: Client[];
+  total: number;
+  page: number;
+  pages: number;
+}

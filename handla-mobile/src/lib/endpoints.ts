@@ -6,6 +6,13 @@ import type {
   ConversationDetail,
   Conversation,
   Message,
+  PaginatedTickets,
+  Ticket,
+  SupportStats,
+  TicketStatus,
+  TicketPriority,
+  TicketCategory,
+  PaginatedClients,
 } from '@/types';
 
 /**
@@ -52,4 +59,56 @@ export const chatApi = {
     api.post<{ message: string; data: { conversation: Conversation } }>('/chat/conversations'),
   markConversationRead: (id: string) =>
     api.patch(`/chat/messages/${id}/read`),
+};
+
+// ─── Support / Ticketing (@Controller('erp/support')) ────────────────────────
+export interface TicketsQuery {
+  page?: number;
+  limit?: number;
+  status?: TicketStatus;
+  priority?: TicketPriority;
+  category?: TicketCategory;
+  clientId?: string;
+  assigneeId?: string;
+  search?: string;
+}
+
+export const supportApi = {
+  /** GET /erp/support/stats — ADMIN/EMPLOYEE ticket stats. */
+  getStats: () =>
+    api.get<{ message: string; data: SupportStats }>('/erp/support/stats'),
+  /** GET /erp/support — paginated, role-scoped. */
+  getTickets: (params?: TicketsQuery) =>
+    api.get<{ message: string; data: PaginatedTickets }>('/erp/support', { params }),
+  /** GET /erp/support/:id — ticket with visible replies. */
+  getTicket: (id: string) =>
+    api.get<{ message: string; data: Ticket }>(`/erp/support/${id}`),
+  /** POST /erp/support — create a ticket. */
+  createTicket: (data: {
+    subject: string;
+    description: string;
+    clientId?: string;
+    priority?: TicketPriority;
+    category?: TicketCategory;
+  }) => api.post<{ message: string; data: Ticket }>('/erp/support', data),
+  /** POST /erp/support/:id/replies — add a threaded reply. */
+  addReply: (id: string, data: { body: string; isInternal?: boolean }) =>
+    api.post<{ message: string; data: Ticket }>(`/erp/support/${id}/replies`, data),
+  /** PATCH /erp/support/:id — staff update (status/priority/assignee/category). */
+  updateTicket: (
+    id: string,
+    data: {
+      status?: TicketStatus;
+      priority?: TicketPriority;
+      category?: TicketCategory;
+      assigneeId?: string | null;
+    },
+  ) => api.patch<{ message: string; data: Ticket }>(`/erp/support/${id}`, data),
+};
+
+// ─── Clients (@Controller('erp/clients')) — used by staff pickers ────────────
+export const clientsApi = {
+  /** GET /erp/clients — ADMIN/EMPLOYEE, role-scoped. */
+  list: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get<{ message: string; data: PaginatedClients }>('/erp/clients', { params }),
 };

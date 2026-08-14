@@ -48,6 +48,16 @@ export default function AppLayout() {
       {/* Conversation detail is pushed on top of the tabs, not itself a tab. */}
       <Tabs.Screen name="conversation/[id]" options={{ href: null }} />
       <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
+        }}
+      />
+      {/* Ticket detail + new-ticket are pushed on top of the tabs, not tabs. */}
+      <Tabs.Screen name="ticket/[id]" options={{ href: null }} />
+      <Tabs.Screen name="ticket/new" options={{ href: null }} />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',
