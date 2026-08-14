@@ -16,6 +16,7 @@ import {
   Avatar,
 } from '@/components/glass';
 import { DonutChart, ProgressRing, GroupedBarChart } from '@/components/charts';
+import { useT } from '@/i18n';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { DashboardStats, FinancialChartMonth } from '@/types';
 
@@ -38,6 +39,7 @@ function monthShort(ym: string): string {
 // ═══════════════════════════════════════════════════════════════════════════
 function StaffDashboard() {
   const { colors } = useTheme();
+  const { t } = useT();
 
   const stats = useQuery({
     queryKey: ['dashboard-stats'],
@@ -66,21 +68,21 @@ function StaffDashboard() {
 
   const projectSlices = d
     ? [
-        { label: 'Active', value: d.projectsByStatus?.active ?? 0, color: colors.chart[2] },
-        { label: 'Planning', value: d.projectsByStatus?.planning ?? 0, color: colors.chart[1] },
-        { label: 'On hold', value: d.projectsByStatus?.onHold ?? 0, color: colors.chart[0] },
-        { label: 'Completed', value: d.projectsByStatus?.completed ?? 0, color: colors.chart[4] },
-        { label: 'Cancelled', value: d.projectsByStatus?.cancelled ?? 0, color: colors.chart[3] },
+        { label: t('dashboard.projectStatus.active'), value: d.projectsByStatus?.active ?? 0, color: colors.chart[2] },
+        { label: t('dashboard.projectStatus.planning'), value: d.projectsByStatus?.planning ?? 0, color: colors.chart[1] },
+        { label: t('dashboard.projectStatus.onHold'), value: d.projectsByStatus?.onHold ?? 0, color: colors.chart[0] },
+        { label: t('dashboard.projectStatus.completed'), value: d.projectsByStatus?.completed ?? 0, color: colors.chart[4] },
+        { label: t('dashboard.projectStatus.cancelled'), value: d.projectsByStatus?.cancelled ?? 0, color: colors.chart[3] },
       ]
     : [];
   const totalProjects = projectSlices.reduce((s, x) => s + x.value, 0);
 
   const contractSlices = d
     ? [
-        { label: 'Signed', value: d.contractsByStatus?.signed ?? 0, color: colors.chart[2] },
-        { label: 'Sent', value: d.contractsByStatus?.sent ?? 0, color: colors.chart[1] },
-        { label: 'Draft', value: d.contractsByStatus?.draft ?? 0, color: colors.chart[0] },
-        { label: 'Rejected', value: d.contractsByStatus?.rejected ?? 0, color: colors.chart[3] },
+        { label: t('dashboard.contractStatus.signed'), value: d.contractsByStatus?.signed ?? 0, color: colors.chart[2] },
+        { label: t('dashboard.contractStatus.sent'), value: d.contractsByStatus?.sent ?? 0, color: colors.chart[1] },
+        { label: t('dashboard.contractStatus.draft'), value: d.contractsByStatus?.draft ?? 0, color: colors.chart[0] },
+        { label: t('dashboard.contractStatus.rejected'), value: d.contractsByStatus?.rejected ?? 0, color: colors.chart[3] },
       ]
     : [];
 
@@ -98,7 +100,7 @@ function StaffDashboard() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
               <Text style={{ color: colors.textFaint, fontSize: font.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                Net balance · this month
+                {t('dashboard.netBalance')}
               </Text>
               <Text style={{ color: colors.text, fontSize: 34, fontWeight: '800', letterSpacing: -1, marginTop: 4 }}>
                 {money(d?.netBalance ?? 0)}
@@ -124,15 +126,15 @@ function StaffDashboard() {
           <View style={{ flexDirection: 'row', gap: spacing.xl, marginTop: spacing.md }}>
             <View>
               <Text style={{ color: colors.success, fontSize: font.md, fontWeight: '800' }}>{money(d?.totalIncome ?? 0)}</Text>
-              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>Income</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>{t('dashboard.income')}</Text>
             </View>
             <View>
               <Text style={{ color: colors.danger, fontSize: font.md, fontWeight: '800' }}>{money(d?.totalExpenses ?? 0)}</Text>
-              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>Expenses</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>{t('dashboard.expenses')}</Text>
             </View>
             <View>
               <Text style={{ color: colors.warning, fontSize: font.md, fontWeight: '800' }}>{money(d?.outstandingInvoices ?? 0)}</Text>
-              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>Outstanding</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.xs }}>{t('dashboard.outstanding')}</Text>
             </View>
           </View>
         </View>
@@ -140,17 +142,17 @@ function StaffDashboard() {
 
       {/* KPI grid */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg }}>
-        <StatCard label="Clients" value={String(d?.totalClients ?? 0)} icon="people-circle-outline" tint={colors.chart[1]} width="48%" caption={`+${d?.newClientsThisMonth ?? 0} this month`} />
-        <StatCard label="Leads" value={String(d?.totalLeads ?? 0)} icon="magnet-outline" tint={colors.chart[4]} width="48%" caption={`+${d?.newLeadsThisMonth ?? 0} this month`} />
-        <StatCard label="Active projects" value={String(d?.activeProjects ?? 0)} icon="folder-open-outline" tint={colors.chart[2]} width="48%" />
-        <StatCard label="Overdue invoices" value={String(d?.overdueInvoicesCount ?? 0)} icon="alert-circle-outline" tint={colors.danger} width="48%" />
+        <StatCard label={t('dashboard.clients')} value={String(d?.totalClients ?? 0)} icon="people-circle-outline" tint={colors.chart[1]} width="48%" caption={t('dashboard.thisMonthCount', { count: d?.newClientsThisMonth ?? 0 })} />
+        <StatCard label={t('dashboard.leads')} value={String(d?.totalLeads ?? 0)} icon="magnet-outline" tint={colors.chart[4]} width="48%" caption={t('dashboard.thisMonthCount', { count: d?.newLeadsThisMonth ?? 0 })} />
+        <StatCard label={t('dashboard.activeProjects')} value={String(d?.activeProjects ?? 0)} icon="folder-open-outline" tint={colors.chart[2]} width="48%" />
+        <StatCard label={t('dashboard.overdueInvoices')} value={String(d?.overdueInvoicesCount ?? 0)} icon="alert-circle-outline" tint={colors.danger} width="48%" />
       </View>
 
       {/* Income vs expenses trend */}
-      <SectionLabel>Income vs Expenses · 6 months</SectionLabel>
+      <SectionLabel>{t('dashboard.incomeVsExpenses')}</SectionLabel>
       <GlassCard style={{ marginBottom: spacing.lg }}>
         {months.length === 0 ? (
-          <Text style={{ color: colors.textFaint, fontSize: font.sm }}>No financial history yet.</Text>
+          <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('dashboard.noFinancialHistory')}</Text>
         ) : (
           <GroupedBarChart
             labels={months.map((m) => monthShort(m.month))}
@@ -158,8 +160,8 @@ function StaffDashboard() {
             seriesB={months.map((m) => m.expenses)}
             colorA={colors.success}
             colorB={colors.danger}
-            legendA="Income"
-            legendB="Expenses"
+            legendA={t('dashboard.income')}
+            legendB={t('dashboard.expenses')}
             height={190}
           />
         )}
@@ -168,29 +170,29 @@ function StaffDashboard() {
       {/* Task completion + projects donut */}
       <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
         <GlassCard style={{ flex: 1, alignItems: 'center' }}>
-          <SectionLabel style={{ alignSelf: 'flex-start' }}>Task completion</SectionLabel>
-          <ProgressRing percent={d?.completionRate ?? 0} label="done" />
+          <SectionLabel style={{ alignSelf: 'flex-start' }}>{t('dashboard.taskCompletion')}</SectionLabel>
+          <ProgressRing percent={d?.completionRate ?? 0} label={t('dashboard.done')} />
           <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-            <Mini label="Done" value={d?.completedTasks ?? 0} color={colors.success} />
-            <Mini label="Pending" value={d?.pendingTasks ?? 0} color={colors.warning} />
-            <Mini label="Delayed" value={d?.delayedTasks ?? 0} color={colors.danger} />
+            <Mini label={t('dashboard.doneLabel')} value={d?.completedTasks ?? 0} color={colors.success} />
+            <Mini label={t('dashboard.pending')} value={d?.pendingTasks ?? 0} color={colors.warning} />
+            <Mini label={t('dashboard.delayed')} value={d?.delayedTasks ?? 0} color={colors.danger} />
           </View>
         </GlassCard>
       </View>
 
       {/* Projects breakdown donut */}
-      <SectionLabel>Projects by status</SectionLabel>
+      <SectionLabel>{t('dashboard.projectsByStatus')}</SectionLabel>
       <GlassCard style={{ marginBottom: spacing.lg }}>
-        <DonutChart data={projectSlices} centerValue={String(totalProjects)} centerLabel="projects" />
+        <DonutChart data={projectSlices} centerValue={String(totalProjects)} centerLabel={t('dashboard.projectsCenter')} />
       </GlassCard>
 
       {/* Contracts breakdown donut */}
-      <SectionLabel>Contracts by status</SectionLabel>
+      <SectionLabel>{t('dashboard.contractsByStatus')}</SectionLabel>
       <GlassCard style={{ marginBottom: spacing.lg }}>
         <DonutChart
           data={contractSlices}
           centerValue={String(contractSlices.reduce((s, x) => s + x.value, 0))}
-          centerLabel="contracts"
+          centerLabel={t('dashboard.contractsCenter')}
         />
       </GlassCard>
     </ScrollView>
@@ -212,6 +214,7 @@ function Mini({ label, value, color }: { label: string; value: number; color: st
 // ═══════════════════════════════════════════════════════════════════════════
 function ClientDashboard() {
   const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
 
   const projects = useQuery({
@@ -224,10 +227,10 @@ function ClientDashboard() {
   const completed = rows.filter((p) => p.status === 'COMPLETED').length;
 
   const shortcuts: { label: string; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap; route: string; tint: string }[] = [
-    { label: 'Messages', icon: 'chatbubbles-outline', route: '/(app)/chat', tint: colors.chart[1] },
-    { label: 'Support', icon: 'ticket-outline', route: '/(app)/support', tint: colors.chart[0] },
-    { label: 'Projects', icon: 'folder-open-outline', route: '/(app)/projects', tint: colors.chart[2] },
-    { label: 'Documents', icon: 'briefcase-outline', route: '/(app)/sales', tint: colors.chart[4] },
+    { label: t('dashboard.shortcutMessages'), icon: 'chatbubbles-outline', route: '/(app)/chat', tint: colors.chart[1] },
+    { label: t('dashboard.shortcutSupport'), icon: 'ticket-outline', route: '/(app)/support', tint: colors.chart[0] },
+    { label: t('dashboard.shortcutProjects'), icon: 'folder-open-outline', route: '/(app)/projects', tint: colors.chart[2] },
+    { label: t('dashboard.shortcutDocuments'), icon: 'briefcase-outline', route: '/(app)/sales', tint: colors.chart[4] },
   ];
 
   return (
@@ -248,9 +251,9 @@ function ClientDashboard() {
             <Ionicons name="sparkles-outline" size={24} color="#0a0a0a" />
           </LinearGradient>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>Your Handla portal</Text>
+            <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>{t('dashboard.portalTitle')}</Text>
             <Text style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 2 }}>
-              Track projects, chat with your team and manage documents.
+              {t('dashboard.portalSubtitle')}
             </Text>
           </View>
         </View>
@@ -258,13 +261,13 @@ function ClientDashboard() {
 
       {/* Project summary */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg }}>
-        <StatCard label="Total projects" value={String(rows.length)} icon="folder-open-outline" tint={colors.chart[2]} width="48%" />
-        <StatCard label="Active" value={String(active)} icon="flash-outline" tint={colors.chart[0]} width="48%" />
-        <StatCard label="Completed" value={String(completed)} icon="checkmark-done-outline" tint={colors.chart[1]} width="100%" />
+        <StatCard label={t('dashboard.totalProjects')} value={String(rows.length)} icon="folder-open-outline" tint={colors.chart[2]} width="48%" />
+        <StatCard label={t('dashboard.active')} value={String(active)} icon="flash-outline" tint={colors.chart[0]} width="48%" />
+        <StatCard label={t('dashboard.completed')} value={String(completed)} icon="checkmark-done-outline" tint={colors.chart[1]} width="100%" />
       </View>
 
       {/* Shortcuts */}
-      <SectionLabel>Quick actions</SectionLabel>
+      <SectionLabel>{t('dashboard.quickActions')}</SectionLabel>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
         {shortcuts.map((s) => (
           <GlassCard key={s.label} onPress={() => router.push(s.route as never)} padded={false} style={{ width: '48%' }}>
@@ -284,6 +287,7 @@ function ClientDashboard() {
 // ═══════════════════════════════════════════════════════════════════════════
 export default function DashboardScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const isStaff = useAuthStore((s) => s.isStaff());
 
@@ -302,7 +306,7 @@ export default function DashboardScreen() {
       >
         <Avatar name={user?.name} size={48} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textFaint, fontSize: font.sm }}>Welcome back</Text>
+          <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('dashboard.welcomeBack')}</Text>
           <Text style={{ color: colors.text, fontSize: font.xl, fontWeight: '800', letterSpacing: -0.5 }} numberOfLines={1}>
             {user?.name ?? 'Handla'}
           </Text>

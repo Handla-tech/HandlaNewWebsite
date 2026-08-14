@@ -1,0 +1,98 @@
+{
+  "en": {
+    "dashboard": {
+      "welcomeBack": "Welcome back",
+      "netBalance": "Net balance · this month",
+      "income": "Income",
+      "expenses": "Expenses",
+      "outstanding": "Outstanding",
+      "clients": "Clients",
+      "leads": "Leads",
+      "activeProjects": "Active projects",
+      "overdueInvoices": "Overdue invoices",
+      "thisMonthCount": "+{{count}} this month",
+      "incomeVsExpenses": "Income vs Expenses · 6 months",
+      "noFinancialHistory": "No financial history yet.",
+      "taskCompletion": "Task completion",
+      "done": "done",
+      "doneLabel": "Done",
+      "pending": "Pending",
+      "delayed": "Delayed",
+      "projectsByStatus": "Projects by status",
+      "projectsCenter": "projects",
+      "contractsByStatus": "Contracts by status",
+      "contractsCenter": "contracts",
+      "portalTitle": "Your Handla portal",
+      "portalSubtitle": "Track projects, chat with your team and manage documents.",
+      "totalProjects": "Total projects",
+      "active": "Active",
+      "completed": "Completed",
+      "quickActions": "Quick actions",
+      "shortcutMessages": "Messages",
+      "shortcutSupport": "Support",
+      "shortcutProjects": "Projects",
+      "shortcutDocuments": "Documents",
+      "projectStatus": {
+        "active": "Active",
+        "planning": "Planning",
+        "onHold": "On hold",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "contractStatus": {
+        "signed": "Signed",
+        "sent": "Sent",
+        "draft": "Draft",
+        "rejected": "Rejected"
+      }
+    }
+  },
+  "ar": {
+    "dashboard": {
+      "welcomeBack": "مرحبًا بعودتك",
+      "netBalance": "الرصيد الصافي · هذا الشهر",
+      "income": "الإيرادات",
+      "expenses": "المصروفات",
+      "outstanding": "المستحقات",
+      "clients": "العملاء",
+      "leads": "العملاء المحتملون",
+      "activeProjects": "المشاريع النشطة",
+      "overdueInvoices": "الفواتير المتأخرة",
+      "thisMonthCount": "+{{count}} هذا الشهر",
+      "incomeVsExpenses": "الإيرادات مقابل المصروفات · 6 أشهر",
+      "noFinancialHistory": "لا يوجد سجل مالي بعد.",
+      "taskCompletion": "إنجاز المهام",
+      "done": "مكتمل",
+      "doneLabel": "مكتملة",
+      "pending": "قيد الانتظار",
+      "delayed": "متأخرة",
+      "projectsByStatus": "المشاريع حسب الحالة",
+      "projectsCenter": "مشاريع",
+      "contractsByStatus": "العقود حسب الحالة",
+      "contractsCenter": "عقود",
+      "portalTitle": "بوابة Handla الخاصة بك",
+      "portalSubtitle": "تابع مشاريعك، وتواصل مع فريقك، وأدِر مستنداتك.",
+      "totalProjects": "إجمالي المشاريع",
+      "active": "نشطة",
+      "completed": "مكتملة",
+      "quickActions": "إجراءات سريعة",
+      "shortcutMessages": "الرسائل",
+      "shortcutSupport": "الدعم",
+      "shortcutProjects": "المشاريع",
+      "shortcutDocuments": "المستندات",
+      "projectStatus": {
+        "active": "نشط",
+        "planning": "تخطيط",
+        "onHold": "معلّق",
+        "completed": "مكتمل",
+        "cancelled": "ملغى"
+      },
+      "contractStatus": {
+        "signed": "موقّع",
+        "sent": "مُرسل",
+        "draft": "مسودة",
+        "rejected": "مرفوض"
+      }
+    }
+  }
+}
