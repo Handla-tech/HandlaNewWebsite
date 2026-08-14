@@ -12,8 +12,10 @@ import { FormModal, Textarea } from '@/components/forms';
 import { CONTRACT_STATUS_META, statusMeta, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Contract } from '@/types';
+import { useT } from '@/i18n';
 
 export default function ContractDetailScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const sectionLabel = {
     color: colors.textDim,
@@ -62,7 +64,7 @@ export default function ContractDetailScreen() {
     mutationFn: () => contractsApi.send(contractId).then((r) => r.data.data),
     onSuccess: invalidate,
     onError: (e: any) =>
-      Alert.alert('Could not send', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('contract.sendError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
   const del = useMutation({
     mutationFn: () => contractsApi.remove(contractId),
@@ -71,7 +73,7 @@ export default function ContractDetailScreen() {
       router.back();
     },
     onError: (e: any) =>
-      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('contract.deleteError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
 
   const isAdmin = useAuthStore((s) => s.isAdmin());
@@ -99,30 +101,30 @@ export default function ContractDetailScreen() {
       invalidate();
       setEditOpen(false);
     },
-    onError: (e) => setEditErr(apiError(e, 'Failed to save changes')),
+    onError: (e) => setEditErr(apiError(e, t('detail.editSaveError'))),
   });
 
   const submitEdit = () => {
-    if (eTitle.trim().length < 2) return setEditErr('Title must be at least 2 characters.');
-    if (eBody.trim().length < 1) return setEditErr('Contract body is required.');
+    if (eTitle.trim().length < 2) return setEditErr(t('detail.titleError'));
+    if (eBody.trim().length < 1) return setEditErr(t('contract.bodyError'));
     setEditErr(null);
     edit.mutate();
   };
 
   const confirmReject = () =>
-    Alert.alert('Reject contract?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reject', style: 'destructive', onPress: () => reject.mutate() },
+    Alert.alert(t('contract.confirmRejectTitle'), t('contract.confirmRejectMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.reject'), style: 'destructive', onPress: () => reject.mutate() },
     ]);
   const confirmSend = () =>
-    Alert.alert('Send contract?', 'The client will be able to view and sign it.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Send', onPress: () => send.mutate() },
+    Alert.alert(t('contract.confirmSendTitle'), t('contract.confirmSendMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.send'), onPress: () => send.mutate() },
     ]);
   const confirmDelete = () =>
-    Alert.alert('Delete contract?', 'Only draft contracts can be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+    Alert.alert(t('contract.confirmDeleteTitle'), t('contract.confirmDeleteMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.delete'), style: 'destructive', onPress: () => del.mutate() },
     ]);
 
   const openDocument = async () => {
@@ -131,9 +133,9 @@ export default function ContractDetailScreen() {
       const { url } = (await contractsApi.pdfUrl(contractId)).data.data;
       const can = await Linking.canOpenURL(url);
       if (can) await Linking.openURL(url);
-      else Alert.alert('Unable to open', 'The document link could not be opened.');
+      else Alert.alert(t('contract.unableOpenTitle'), t('contract.unableOpenMsg'));
     } catch {
-      Alert.alert('Error', 'Could not fetch the document link.');
+      Alert.alert(t('contract.errorTitle'), t('contract.fetchDocError'));
     } finally {
       setOpeningDoc(false);
     }
@@ -148,7 +150,7 @@ export default function ContractDetailScreen() {
     <ScreenBackground>
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
-      <DetailHeader title={c?.title ?? 'Loading…'} subtitle="Contract" onBack={() => router.back()} />
+      <DetailHeader title={c?.title ?? t('detail.loading')} subtitle={t('contract.subtitle')} onBack={() => router.back()} />
 
       {detail.isLoading || !c ? (
         <Loading />
@@ -156,23 +158,23 @@ export default function ContractDetailScreen() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
             {(() => {
-              const m = statusMeta(CONTRACT_STATUS_META, c.status);
+              const m = statusMeta(CONTRACT_STATUS_META, c.status, t);
               return <Badge label={m.label} color={m.color} soft={m.soft} />;
             })()}
           </View>
 
           <View style={cardStyle}>
             {isStaff && c.client ? (
-              <Row label="Client" value={c.client.company || c.client.user?.name || '—'} />
+              <Row label={t('detail.client')} value={c.client.company || c.client.user?.name || '—'} />
             ) : null}
-            {c.sentAt ? <Row label="Sent" value={fmtDate(c.sentAt)} /> : null}
-            {c.signedAt ? <Row label="Signed" value={fmtDate(c.signedAt)} /> : null}
-            <Row label="Updated" value={fmtDate(c.updatedAt)} />
+            {c.sentAt ? <Row label={t('detail.sent')} value={fmtDate(c.sentAt)} /> : null}
+            {c.signedAt ? <Row label={t('detail.signed')} value={fmtDate(c.signedAt)} /> : null}
+            <Row label={t('detail.updated')} value={fmtDate(c.updatedAt)} />
           </View>
 
           <View style={{ marginTop: spacing.md }}>
             <Button
-              title="View Document"
+              title={t('contract.viewDocument')}
               variant="ghost"
               onPress={openDocument}
               loading={openingDoc}
@@ -180,7 +182,7 @@ export default function ContractDetailScreen() {
           </View>
 
           {/* Body preview */}
-          <Text style={[sectionLabel, { marginTop: spacing.lg }]}>Contract Body</Text>
+          <Text style={[sectionLabel, { marginTop: spacing.lg }]}>{t('contract.contractBody')}</Text>
           <View style={cardStyle}>
             <Text style={{ color: colors.textMuted, fontSize: font.sm, lineHeight: 20 }}>
               {c.body}
@@ -190,11 +192,11 @@ export default function ContractDetailScreen() {
           {canRespond && (
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg }}>
               <View style={{ flex: 1 }}>
-                <Button title="Accept & Sign" onPress={() => accept.mutate()} loading={accept.isPending} />
+                <Button title={t('contract.acceptSign')} onPress={() => accept.mutate()} loading={accept.isPending} />
               </View>
               <View style={{ flex: 1 }}>
                 <Button
-                  title="Reject"
+                  title={t('detail.reject')}
                   variant="danger"
                   onPress={confirmReject}
                   loading={reject.isPending}
@@ -207,14 +209,14 @@ export default function ContractDetailScreen() {
           {isStaff && (canSend || canDelete || canEdit) && (
             <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
               {canEdit && (
-                <Button title="Edit contract" variant="ghost" onPress={openEdit} />
+                <Button title={t('contract.editAction')} variant="ghost" onPress={openEdit} />
               )}
               {canSend && (
-                <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
+                <Button title={t('contract.sendToClient')} onPress={confirmSend} loading={send.isPending} />
               )}
               {canDelete && (
                 <Button
-                  title="Delete contract"
+                  title={t('contract.delete')}
                   variant="danger"
                   onPress={confirmDelete}
                   loading={del.isPending}
@@ -228,17 +230,17 @@ export default function ContractDetailScreen() {
       <FormModal
         visible={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit Contract"
+        title={t('contract.editModal')}
         onSubmit={submitEdit}
         submitting={edit.isPending}
         error={editErr ?? undefined}
       >
-        <Input label="Title" value={eTitle} onChangeText={setETitle} placeholder="Contract title" />
+        <Input label={t('detail.titleLabel')} value={eTitle} onChangeText={setETitle} placeholder={t('contract.titlePlaceholder')} />
         <Textarea
-          label="Contract body"
+          label={t('contract.bodyLabel')}
           value={eBody}
           onChangeText={setEBody}
-          placeholder="Terms and conditions…"
+          placeholder={t('contract.bodyPlaceholder')}
         />
       </FormModal>
     </SafeAreaView>
