@@ -41,8 +41,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:3001/api",
-      "socketUrl": "http://localhost:3001"
+      "apiUrl": "http://192.168.0.7:3001/api",
+      "socketUrl": "http://192.168.0.7:3001"
     }
   }
 }
