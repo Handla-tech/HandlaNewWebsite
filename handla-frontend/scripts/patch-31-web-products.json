@@ -1,0 +1,120 @@
+{
+  "en": {
+    "erp": {
+      "webProducts": {
+        "title": "Website Products",
+        "totalBadge": "{{count}} total",
+        "subtitle": "Ready-made products / solutions advertised on the public website.",
+        "addProduct": "Add Product",
+        "searchPlaceholder": "Search by name or category…",
+        "loadError": "Failed to load products",
+        "emptySearch": "No products match your search",
+        "empty": "No website products yet",
+        "addFirst": "Add your first product",
+        "featured": "Featured",
+        "toast": {
+          "deleted": "Product deleted.",
+          "updated": "Product updated.",
+          "added": "Product added."
+        },
+        "modal": {
+          "titleEdit": "Edit Product",
+          "titleAdd": "Add Product",
+          "name": "Name *",
+          "namePlaceholder": "School ERP",
+          "price": "Price (display)",
+          "pricePlaceholder": "From $499 / Contact us",
+          "tagline": "Tagline (one line)",
+          "taglinePlaceholder": "Short one-line tagline",
+          "description": "Description *",
+          "descriptionPlaceholder": "Full product description…",
+          "category": "Category",
+          "categoryPlaceholder": "ERP, Mobile App…",
+          "sortOrder": "Sort order",
+          "features": "Features (comma-separated)",
+          "featuresPlaceholder": "Attendance, Grading, Billing",
+          "productUrl": "Product / Demo URL",
+          "urlPlaceholder": "https://… (optional)",
+          "imageUrl": "Cover / Logo Image URL",
+          "preview": "preview",
+          "featuredOn": "Featured on landing page",
+          "notFeatured": "Not featured",
+          "genericError": "Something went wrong. Please try again.",
+          "saveChanges": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Product?",
+          "body": "This will permanently remove {{name}}. This action cannot be undone."
+        },
+        "card": {
+          "editAria": "Edit {{name}}",
+          "deleteAria": "Delete {{name}}"
+        },
+        "validation": {
+          "nameRequired": "Name is required",
+          "descriptionMin": "Description must be at least 10 characters",
+          "invalidUrl": "Must be a valid URL"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "webProducts": {
+        "title": "منتجات الموقع",
+        "totalBadge": "{{count}} إجمالاً",
+        "subtitle": "منتجات / حلول جاهزة معروضة على الموقع العام.",
+        "addProduct": "إضافة منتج",
+        "searchPlaceholder": "ابحث بالاسم أو الفئة…",
+        "loadError": "فشل تحميل المنتجات",
+        "emptySearch": "لا توجد منتجات تطابق بحثك",
+        "empty": "لا توجد منتجات موقع بعد",
+        "addFirst": "أضف أول منتج",
+        "featured": "مميّز",
+        "toast": {
+          "deleted": "تم حذف المنتج.",
+          "updated": "تم تحديث المنتج.",
+          "added": "تمت إضافة المنتج."
+        },
+        "modal": {
+          "titleEdit": "تعديل المنتج",
+          "titleAdd": "إضافة منتج",
+          "name": "الاسم *",
+          "namePlaceholder": "نظام إدارة مدرسي",
+          "price": "السعر (للعرض)",
+          "pricePlaceholder": "ابتداءً من 499$ / تواصل معنا",
+          "tagline": "الشعار (سطر واحد)",
+          "taglinePlaceholder": "شعار قصير من سطر واحد",
+          "description": "الوصف *",
+          "descriptionPlaceholder": "وصف كامل للمنتج…",
+          "category": "الفئة",
+          "categoryPlaceholder": "نظام ERP، تطبيق جوال…",
+          "sortOrder": "ترتيب العرض",
+          "features": "الميزات (مفصولة بفاصلة)",
+          "featuresPlaceholder": "الحضور، التقييم، الفوترة",
+          "productUrl": "رابط المنتج / العرض التجريبي",
+          "urlPlaceholder": "https://… (اختياري)",
+          "imageUrl": "رابط صورة الغلاف / الشعار",
+          "preview": "معاينة",
+          "featuredOn": "مميّز في الصفحة الرئيسية",
+          "notFeatured": "غير مميّز",
+          "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+          "saveChanges": "حفظ التغييرات"
+        },
+        "delete": {
+          "title": "حذف المنتج؟",
+          "body": "سيؤدي هذا إلى إزالة {{name}} نهائياً. لا يمكن التراجع عن هذا الإجراء."
+        },
+        "card": {
+          "editAria": "تعديل {{name}}",
+          "deleteAria": "حذف {{name}}"
+        },
+        "validation": {
+          "nameRequired": "الاسم مطلوب",
+          "descriptionMin": "يجب ألا يقل الوصف عن 10 أحرف",
+          "invalidUrl": "يجب أن يكون رابطاً صالحاً"
+        }
+      }
+    }
+  }
+}

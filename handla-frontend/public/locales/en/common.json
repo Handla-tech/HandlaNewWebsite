@@ -2500,6 +2500,61 @@
       "selectTitle": "Select a conversation",
       "selectHint": "Choose a conversation from the list to start messaging",
       "backToConversations": "Back to conversations"
+    },
+    "webProducts": {
+      "title": "Website Products",
+      "totalBadge": "{{count}} total",
+      "subtitle": "Ready-made products / solutions advertised on the public website.",
+      "addProduct": "Add Product",
+      "searchPlaceholder": "Search by name or category…",
+      "loadError": "Failed to load products",
+      "emptySearch": "No products match your search",
+      "empty": "No website products yet",
+      "addFirst": "Add your first product",
+      "featured": "Featured",
+      "toast": {
+        "deleted": "Product deleted.",
+        "updated": "Product updated.",
+        "added": "Product added."
+      },
+      "modal": {
+        "titleEdit": "Edit Product",
+        "titleAdd": "Add Product",
+        "name": "Name *",
+        "namePlaceholder": "School ERP",
+        "price": "Price (display)",
+        "pricePlaceholder": "From $499 / Contact us",
+        "tagline": "Tagline (one line)",
+        "taglinePlaceholder": "Short one-line tagline",
+        "description": "Description *",
+        "descriptionPlaceholder": "Full product description…",
+        "category": "Category",
+        "categoryPlaceholder": "ERP, Mobile App…",
+        "sortOrder": "Sort order",
+        "features": "Features (comma-separated)",
+        "featuresPlaceholder": "Attendance, Grading, Billing",
+        "productUrl": "Product / Demo URL",
+        "urlPlaceholder": "https://… (optional)",
+        "imageUrl": "Cover / Logo Image URL",
+        "preview": "preview",
+        "featuredOn": "Featured on landing page",
+        "notFeatured": "Not featured",
+        "genericError": "Something went wrong. Please try again.",
+        "saveChanges": "Save Changes"
+      },
+      "delete": {
+        "title": "Delete Product?",
+        "body": "This will permanently remove {{name}}. This action cannot be undone."
+      },
+      "card": {
+        "editAria": "Edit {{name}}",
+        "deleteAria": "Delete {{name}}"
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "descriptionMin": "Description must be at least 10 characters",
+        "invalidUrl": "Must be a valid URL"
+      }
     }
   },
   "footer": {

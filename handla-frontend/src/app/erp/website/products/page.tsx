@@ -17,24 +17,27 @@ import {
   RefreshCw, ImageIcon, CheckCircle2, Search, ChevronLeft, ChevronRight, Star,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { websiteProductApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { WebsiteProduct } from '@/types';
 
-const schema = z.object({
-  name:        z.string().min(2, 'Name is required'),
+type TFn = (key: string, params?: Record<string, any>) => string;
+
+const makeSchema = (t: TFn) => z.object({
+  name:        z.string().min(2, t('erp.webProducts.validation.nameRequired')),
   tagline:     z.string().optional(),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  description: z.string().min(10, t('erp.webProducts.validation.descriptionMin')),
   category:    z.string().optional(),
-  imageUrl:    z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  productUrl:  z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  imageUrl:    z.string().url(t('erp.webProducts.validation.invalidUrl')).optional().or(z.literal('')),
+  productUrl:  z.string().url(t('erp.webProducts.validation.invalidUrl')).optional().or(z.literal('')),
   price:       z.string().optional(),
   featuresCsv: z.string().optional(),
   featured:    z.boolean(),
   sortOrder:   z.number().min(0),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<ReturnType<typeof makeSchema>>;
 
 const PAGE_SIZE = 12;
 const QUERY_KEY = 'erp-website-products';
@@ -64,6 +67,7 @@ function ProductModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const isEdit = !!initial;
 
   useEffect(() => {
@@ -76,7 +80,7 @@ function ProductModal({
     register, handleSubmit, setValue, watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema(t)),
     defaultValues: {
       name:        initial?.name        ?? '',
       tagline:     initial?.tagline     ?? '',
@@ -118,7 +122,7 @@ function ProductModal({
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         (err instanceof Error ? err.message : null) ||
-        'Something went wrong. Please try again.';
+        t('erp.webProducts.modal.genericError');
       setSubmitError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
   };
@@ -134,9 +138,9 @@ function ProductModal({
         <div className="flex items-center justify-between border-b border-[#1e1e1e] px-5 py-4">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-[#fbbf24]" />
-            <h2 className="text-sm font-semibold text-white">{isEdit ? 'Edit Product' : 'Add Product'}</h2>
+            <h2 className="text-sm font-semibold text-white">{isEdit ? t('erp.webProducts.modal.titleEdit') : t('erp.webProducts.modal.titleAdd')}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog"
+          <button type="button" onClick={onClose} aria-label={t('erp.ui.closeDialog')}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-[#555] transition-colors hover:bg-[#1e1e1e] hover:text-white">
             <X className="h-4 w-4" />
           </button>
@@ -144,45 +148,45 @@ function ProductModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="max-h-[72vh] space-y-4 overflow-y-auto px-5 py-5">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Name *" error={errors.name?.message}>
-              <input {...register('name')} placeholder="School ERP" className={inputClass} />
+            <Field label={t('erp.webProducts.modal.name')} error={errors.name?.message}>
+              <input {...register('name')} placeholder={t('erp.webProducts.modal.namePlaceholder')} className={inputClass} />
             </Field>
-            <Field label="Price (display)" error={errors.price?.message}>
-              <input {...register('price')} placeholder="From $499 / Contact us" className={inputClass} />
+            <Field label={t('erp.webProducts.modal.price')} error={errors.price?.message}>
+              <input {...register('price')} placeholder={t('erp.webProducts.modal.pricePlaceholder')} className={inputClass} />
             </Field>
           </div>
 
-          <Field label="Tagline (one line)" error={errors.tagline?.message}>
-            <input {...register('tagline')} placeholder="Short one-line tagline" className={inputClass} />
+          <Field label={t('erp.webProducts.modal.tagline')} error={errors.tagline?.message}>
+            <input {...register('tagline')} placeholder={t('erp.webProducts.modal.taglinePlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label="Description *" error={errors.description?.message}>
-            <textarea {...register('description')} rows={4} placeholder="Full product description…" className={cn(inputClass, 'resize-none')} />
+          <Field label={t('erp.webProducts.modal.description')} error={errors.description?.message}>
+            <textarea {...register('description')} rows={4} placeholder={t('erp.webProducts.modal.descriptionPlaceholder')} className={cn(inputClass, 'resize-none')} />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Category" error={errors.category?.message}>
-              <input {...register('category')} placeholder="ERP, Mobile App…" className={inputClass} />
+            <Field label={t('erp.webProducts.modal.category')} error={errors.category?.message}>
+              <input {...register('category')} placeholder={t('erp.webProducts.modal.categoryPlaceholder')} className={inputClass} />
             </Field>
-            <Field label="Sort order" error={errors.sortOrder?.message}>
+            <Field label={t('erp.webProducts.modal.sortOrder')} error={errors.sortOrder?.message}>
               <input type="number" {...register('sortOrder', { valueAsNumber: true })} className={inputClass} />
             </Field>
           </div>
 
-          <Field label="Features (comma-separated)" error={errors.featuresCsv?.message}>
-            <input {...register('featuresCsv')} placeholder="Attendance, Grading, Billing" className={inputClass} />
+          <Field label={t('erp.webProducts.modal.features')} error={errors.featuresCsv?.message}>
+            <input {...register('featuresCsv')} placeholder={t('erp.webProducts.modal.featuresPlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label="Product / Demo URL" error={errors.productUrl?.message}>
-            <input {...register('productUrl')} placeholder="https://… (optional)" className={inputClass} />
+          <Field label={t('erp.webProducts.modal.productUrl')} error={errors.productUrl?.message}>
+            <input {...register('productUrl')} placeholder={t('erp.webProducts.modal.urlPlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label="Cover / Logo Image URL" error={errors.imageUrl?.message}>
+          <Field label={t('erp.webProducts.modal.imageUrl')} error={errors.imageUrl?.message}>
             <div className="flex gap-2">
-              <input {...register('imageUrl')} placeholder="https://… (optional)" className={cn(inputClass, 'flex-1')} />
+              <input {...register('imageUrl')} placeholder={t('erp.webProducts.modal.urlPlaceholder')} className={cn(inputClass, 'flex-1')} />
               {imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={imageUrl} alt="preview"
+                <img src={imageUrl} alt={t('erp.webProducts.modal.preview')}
                   className="h-10 w-10 flex-shrink-0 rounded-lg border border-[#2a2a2a] object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               ) : (
@@ -196,7 +200,7 @@ function ProductModal({
           <button type="button" onClick={() => setValue('featured', !featured, { shouldValidate: true })}
             className="flex items-center gap-2 rounded-xl border border-[#2a2a2a] bg-[#141414] px-3 py-2.5 text-xs font-medium text-[#aaa] transition-all hover:text-white">
             <Star className={cn('h-4 w-4', featured ? 'fill-[#fbbf24] text-[#fbbf24]' : 'text-[#555]')} />
-            {featured ? 'Featured on landing page' : 'Not featured'}
+            {featured ? t('erp.webProducts.modal.featuredOn') : t('erp.webProducts.modal.notFeatured')}
           </button>
 
           {submitError && (
@@ -209,12 +213,12 @@ function ProductModal({
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose}
               className="rounded-xl border border-[#2a2a2a] bg-[#141414] px-4 py-2 text-xs font-medium text-[#aaa] transition-all hover:text-white">
-              Cancel
+              {t('erp.common.cancel')}
             </button>
             <button type="submit" disabled={isSubmitting}
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20 disabled:cursor-wait disabled:opacity-60">
               {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {isEdit ? 'Save Changes' : 'Add Product'}
+              {isEdit ? t('erp.webProducts.modal.saveChanges') : t('erp.webProducts.addProduct')}
             </button>
           </div>
         </form>
@@ -226,6 +230,7 @@ function ProductModal({
 function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
   name: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
     document.addEventListener('keydown', onKey);
@@ -242,19 +247,19 @@ function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
           <Trash2 className="h-5 w-5 text-red-400" />
         </div>
-        <h3 className="mt-4 text-sm font-semibold text-white">Delete Product?</h3>
+        <h3 className="mt-4 text-sm font-semibold text-white">{t('erp.webProducts.delete.title')}</h3>
         <p className="mt-1.5 text-xs text-[#666]">
-          This will permanently remove <span className="text-white">{name}</span>. This action cannot be undone.
+          {t('erp.webProducts.delete.body', { name })}
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onCancel}
             className="rounded-xl border border-[#2a2a2a] bg-[#141414] px-4 py-2 text-xs font-medium text-[#aaa] hover:text-white">
-            Cancel
+            {t('erp.common.cancel')}
           </button>
           <button type="button" onClick={onConfirm} disabled={isDeleting}
             className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-60">
             {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Delete
+            {t('erp.common.delete')}
           </button>
         </div>
       </motion.div>
@@ -263,15 +268,16 @@ function DeleteDialog({ name, onConfirm, onCancel, isDeleting }: {
 }
 
 function ProductRow({ p, onEdit, onDelete }: { p: WebsiteProduct; onEdit: () => void; onDelete: () => void }) {
+  const { t } = useTranslation();
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0f0f0f] transition-all hover:border-white/[0.12] hover:bg-[#131313]">
       <div className="absolute right-3 top-3 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button type="button" onClick={onEdit} aria-label={`Edit ${p.name}`}
+        <button type="button" onClick={onEdit} aria-label={t('erp.webProducts.card.editAria', { name: p.name })}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]/90 text-[#666] transition-all hover:border-[#fbbf24]/30 hover:text-[#fbbf24]">
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button type="button" onClick={onDelete} aria-label={`Delete ${p.name}`}
+        <button type="button" onClick={onDelete} aria-label={t('erp.webProducts.card.deleteAria', { name: p.name })}
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]/90 text-[#666] transition-all hover:border-red-500/30 hover:text-red-400">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -289,7 +295,7 @@ function ProductRow({ p, onEdit, onDelete }: { p: WebsiteProduct; onEdit: () => 
         )}
         {p.featured && (
           <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-[#fbbf24] backdrop-blur-sm">
-            <Star className="h-2.5 w-2.5 fill-[#fbbf24]" /> Featured
+            <Star className="h-2.5 w-2.5 fill-[#fbbf24]" /> {t('erp.webProducts.featured')}
           </span>
         )}
       </div>
@@ -311,6 +317,7 @@ function ProductRow({ p, onEdit, onDelete }: { p: WebsiteProduct; onEdit: () => 
 }
 
 export default function WebsiteProductsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user: me, isAdmin, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -354,7 +361,7 @@ export default function WebsiteProductsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       setDeleteTarget(null);
-      showSuccess('Product deleted.');
+      showSuccess(t('erp.webProducts.toast.deleted'));
     },
   });
 
@@ -372,8 +379,8 @@ export default function WebsiteProductsPage() {
     setModalOpen(false);
     editTargetRef.current = null;
     setEditTarget(null);
-    showSuccess(wasEditing ? 'Product updated.' : 'Product added.');
-  }, [queryClient, showSuccess]);
+    showSuccess(wasEditing ? t('erp.webProducts.toast.updated') : t('erp.webProducts.toast.added'));
+  }, [queryClient, showSuccess, t]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -382,13 +389,13 @@ export default function WebsiteProductsPage() {
           <div>
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-[#fbbf24]" />
-              <h1 className="text-base font-semibold text-white">Website Products</h1>
+              <h1 className="text-base font-semibold text-white">{t('erp.webProducts.title')}</h1>
               <span className="rounded-full border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-2 py-0.5 text-[10px] text-[#fbbf24]">
-                {total} total
+                {t('erp.webProducts.totalBadge', { count: total })}
               </span>
             </div>
             <p className="mt-0.5 text-xs text-[#555]">
-              Ready-made products / solutions advertised on the public website.
+              {t('erp.webProducts.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -398,7 +405,7 @@ export default function WebsiteProductsPage() {
             </button>
             <button type="button" onClick={handleOpenCreate}
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20">
-              <Plus className="h-3.5 w-3.5" /> Add Product
+              <Plus className="h-3.5 w-3.5" /> {t('erp.webProducts.addProduct')}
             </button>
           </div>
         </div>
@@ -406,7 +413,7 @@ export default function WebsiteProductsPage() {
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#555]" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or category…"
+            placeholder={t('erp.webProducts.searchPlaceholder')}
             className="w-full rounded-xl border border-[#2a2a2a] bg-[#141414] py-2 pl-8 pr-8 text-xs text-white placeholder-[#555] outline-none focus:border-[#fbbf24]/40 focus:ring-1 focus:ring-[#fbbf24]/20" />
           {search && (
             <button type="button" onClick={() => setSearch('')}
@@ -434,9 +441,9 @@ export default function WebsiteProductsPage() {
         {isError && (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <AlertCircle className="h-8 w-8 text-red-400" />
-            <p className="text-sm text-[#666]">Failed to load products</p>
+            <p className="text-sm text-[#666]">{t('erp.webProducts.loadError')}</p>
             <button type="button" onClick={() => refetch()}
-              className="rounded-xl border border-[#2a2a2a] px-3 py-1.5 text-xs text-[#aaa] hover:text-white">Retry</button>
+              className="rounded-xl border border-[#2a2a2a] px-3 py-1.5 text-xs text-[#aaa] hover:text-white">{t('erp.common.retry')}</button>
           </div>
         )}
         {!isLoading && !isError && filtered.length === 0 && (
@@ -444,11 +451,11 @@ export default function WebsiteProductsPage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#141414]">
               <Package className="h-6 w-6 text-[#555]" />
             </div>
-            <p className="text-sm font-medium text-[#666]">{search ? 'No products match your search' : 'No website products yet'}</p>
+            <p className="text-sm font-medium text-[#666]">{search ? t('erp.webProducts.emptySearch') : t('erp.webProducts.empty')}</p>
             {!search && (
               <button type="button" onClick={handleOpenCreate}
                 className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-3 py-2 text-xs font-semibold text-[#fbbf24] hover:bg-[#fbbf24]/10">
-                <Plus className="h-3.5 w-3.5" /> Add your first product
+                <Plus className="h-3.5 w-3.5" /> {t('erp.webProducts.addFirst')}
               </button>
             )}
           </div>

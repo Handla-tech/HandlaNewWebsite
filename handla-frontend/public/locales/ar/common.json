@@ -2500,6 +2500,61 @@
       "selectTitle": "اختر محادثة",
       "selectHint": "اختر محادثة من القائمة لبدء المراسلة",
       "backToConversations": "العودة إلى المحادثات"
+    },
+    "webProducts": {
+      "title": "منتجات الموقع",
+      "totalBadge": "{{count}} إجمالاً",
+      "subtitle": "منتجات / حلول جاهزة معروضة على الموقع العام.",
+      "addProduct": "إضافة منتج",
+      "searchPlaceholder": "ابحث بالاسم أو الفئة…",
+      "loadError": "فشل تحميل المنتجات",
+      "emptySearch": "لا توجد منتجات تطابق بحثك",
+      "empty": "لا توجد منتجات موقع بعد",
+      "addFirst": "أضف أول منتج",
+      "featured": "مميّز",
+      "toast": {
+        "deleted": "تم حذف المنتج.",
+        "updated": "تم تحديث المنتج.",
+        "added": "تمت إضافة المنتج."
+      },
+      "modal": {
+        "titleEdit": "تعديل المنتج",
+        "titleAdd": "إضافة منتج",
+        "name": "الاسم *",
+        "namePlaceholder": "نظام إدارة مدرسي",
+        "price": "السعر (للعرض)",
+        "pricePlaceholder": "ابتداءً من 499$ / تواصل معنا",
+        "tagline": "الشعار (سطر واحد)",
+        "taglinePlaceholder": "شعار قصير من سطر واحد",
+        "description": "الوصف *",
+        "descriptionPlaceholder": "وصف كامل للمنتج…",
+        "category": "الفئة",
+        "categoryPlaceholder": "نظام ERP، تطبيق جوال…",
+        "sortOrder": "ترتيب العرض",
+        "features": "الميزات (مفصولة بفاصلة)",
+        "featuresPlaceholder": "الحضور، التقييم، الفوترة",
+        "productUrl": "رابط المنتج / العرض التجريبي",
+        "urlPlaceholder": "https://… (اختياري)",
+        "imageUrl": "رابط صورة الغلاف / الشعار",
+        "preview": "معاينة",
+        "featuredOn": "مميّز في الصفحة الرئيسية",
+        "notFeatured": "غير مميّز",
+        "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        "saveChanges": "حفظ التغييرات"
+      },
+      "delete": {
+        "title": "حذف المنتج؟",
+        "body": "سيؤدي هذا إلى إزالة {{name}} نهائياً. لا يمكن التراجع عن هذا الإجراء."
+      },
+      "card": {
+        "editAria": "تعديل {{name}}",
+        "deleteAria": "حذف {{name}}"
+      },
+      "validation": {
+        "nameRequired": "الاسم مطلوب",
+        "descriptionMin": "يجب ألا يقل الوصف عن 10 أحرف",
+        "invalidUrl": "يجب أن يكون رابطاً صالحاً"
+      }
     }
   },
   "footer": {
