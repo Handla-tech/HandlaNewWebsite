@@ -1,15 +1,38 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { View, Text, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { tasksApi } from '@/lib/endpoints';
-import { Title, Loading, Badge, Chip } from '@/components/ui';
+import { tasksApi, projectsApi, usersApi, type TaskInput } from '@/lib/endpoints';
+import { apiError } from '@/lib/apiError';
+import { useAuthStore } from '@/store/authStore';
+import { Title, Loading, Badge, Chip, Input } from '@/components/ui';
+import {
+  FormModal,
+  Textarea,
+  Select,
+  DateField,
+  ConfirmModal,
+  ActionSheet,
+  Fab,
+  type SelectOption,
+  type SheetAction,
+} from '@/components/forms';
 import { statusColor, prettyStatus } from '@/lib/statusMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedTasks, Task, TaskStatus } from '@/types';
 
 const STATUSES: TaskStatus[] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'];
+const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatus(s), value: s }));
+
+const EMPTY: TaskInput = {
+  title: '',
+  description: '',
+  projectId: '',
+  assigneeId: '',
+  status: 'PENDING',
+  dueDate: '',
+};
 
 function fmtDate(iso?: string | null) {
   if (!iso) return null;
@@ -18,6 +41,9 @@ function fmtDate(iso?: string | null) {
 
 export default function TasksScreen() {
   const { colors } = useTheme();
+  const qc = useQueryClient();
+  const isStaff = useAuthStore((s) => s.isStaff());
+  const isAdmin = useAuthStore((s) => s.isAdmin());
   const [status, setStatus] = useState<TaskStatus | null>(null);
 
   const query = useMemo(() => ({ limit: 50, ...(status ? { status } : {}) }), [status]);
@@ -27,7 +53,91 @@ export default function TasksScreen() {
     queryFn: (): Promise<PaginatedTasks> => tasksApi.list(query).then((r) => r.data.data),
   });
 
+  const projectList = useQuery({
+    queryKey: ['projects-for-task'],
+    enabled: isStaff,
+    queryFn: () => projectsApi.list({ limit: 100 }).then((r) => r.data.data.projects),
+  });
+  const projectOptions: SelectOption[] = (projectList.data ?? []).map((p) => ({
+    label: p.title,
+    value: p.id,
+  }));
+
+  const staffList = useQuery({
+    queryKey: ['staff-for-task'],
+    enabled: isStaff,
+    queryFn: () => usersApi.list({ limit: 100 }).then((r) => r.data.data.users),
+  });
+  const assigneeOptions: SelectOption[] = [
+    { label: 'Unassigned', value: '' },
+    ...(staffList.data ?? [])
+      .filter((u) => u.role === 'ADMIN' || u.role === 'EMPLOYEE')
+      .map((u) => ({ label: u.name || u.email, value: u.id })),
+  ];
+
   const rows = tasks.data?.tasks ?? [];
+
+  // form + actions state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Task | null>(null);
+  const [form, setForm] = useState<TaskInput>(EMPTY);
+  const [err, setErr] = useState<string | null>(null);
+  const [sheetFor, setSheetFor] = useState<Task | null>(null);
+  const [deleteFor, setDeleteFor] = useState<Task | null>(null);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setErr(null);
+    setFormOpen(true);
+  };
+  const openEdit = (t: Task) => {
+    setEditing(t);
+    setForm({
+      title: t.title,
+      description: t.description ?? '',
+      projectId: t.projectId,
+      assigneeId: t.assigneeId ?? '',
+      status: t.status,
+      dueDate: t.dueDate ? t.dueDate.slice(0, 10) : '',
+    });
+    setErr(null);
+    setFormOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: () => {
+      const payload: TaskInput = {
+        title: form.title?.trim(),
+        description: form.description?.trim() || undefined,
+        assigneeId: form.assigneeId?.trim() || undefined,
+        status: form.status,
+        dueDate: form.dueDate?.trim() || undefined,
+        ...(editing ? {} : { projectId: form.projectId }),
+      };
+      return editing ? tasksApi.update(editing.id, payload) : tasksApi.create(payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks-mobile'] });
+      setFormOpen(false);
+    },
+    onError: (e) => setErr(apiError(e, 'Failed to save task')),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => tasksApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks-mobile'] });
+      setDeleteFor(null);
+    },
+    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete task')),
+  });
+  const submit = () => {
+    if (!form.title?.trim() || form.title.trim().length < 2) return setErr('Title must be at least 2 characters.');
+    if (!editing && !form.projectId) return setErr('Project is required.');
+    setErr(null);
+    save.mutate();
+  };
 
   const renderItem = ({ item }: { item: Task }) => {
     const sc = statusColor(item.status);
@@ -38,7 +148,8 @@ export default function TasksScreen() {
       new Date(item.dueDate).getTime() < Date.now();
     const assignee = item.assignee?.name ?? null;
     return (
-      <View
+      <Pressable
+        onPress={() => isStaff && setSheetFor(item)}
         style={{
           backgroundColor: colors.card,
           borderColor: colors.border,
@@ -87,7 +198,7 @@ export default function TasksScreen() {
             </Text>
           ) : null}
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -132,6 +243,101 @@ export default function TasksScreen() {
           }
         />
       )}
+
+      {isStaff ? <Fab onPress={openCreate} /> : null}
+
+      <FormModal
+        visible={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={editing ? 'Edit Task' : 'New Task'}
+        onSubmit={submit}
+        submitting={save.isPending}
+        error={err ?? undefined}
+      >
+        <Input
+          label="Title"
+          value={form.title}
+          onChangeText={(t) => setForm((f) => ({ ...f, title: t }))}
+          placeholder="Task title"
+        />
+        <Textarea
+          label="Description"
+          value={form.description}
+          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
+          placeholder="Optional description"
+        />
+        {!editing ? (
+          <Select
+            label="Project"
+            value={form.projectId}
+            options={projectOptions}
+            onChange={(v) => setForm((f) => ({ ...f, projectId: v }))}
+            placeholder="Select a project"
+          />
+        ) : null}
+        <Select
+          label="Assignee"
+          value={form.assigneeId}
+          options={assigneeOptions}
+          onChange={(v) => setForm((f) => ({ ...f, assigneeId: v }))}
+          placeholder="Unassigned"
+        />
+        <Select
+          label="Status"
+          value={form.status}
+          options={STATUS_OPTIONS}
+          onChange={(v) => setForm((f) => ({ ...f, status: v as TaskStatus }))}
+        />
+        <DateField
+          label="Due date"
+          value={form.dueDate}
+          onChange={(v) => setForm((f) => ({ ...f, dueDate: v }))}
+        />
+      </FormModal>
+
+      <ActionSheet
+        visible={!!sheetFor}
+        onClose={() => setSheetFor(null)}
+        title={sheetFor?.title}
+        actions={[
+          {
+            label: 'Edit',
+            icon: 'create-outline',
+            onPress: () => {
+              const t = sheetFor;
+              setSheetFor(null);
+              if (t) openEdit(t);
+            },
+          },
+          ...(isAdmin
+            ? [
+                {
+                  label: 'Delete',
+                  icon: 'trash-outline',
+                  destructive: true,
+                  onPress: () => {
+                    const t = sheetFor;
+                    setSheetFor(null);
+                    setDeleteErr(null);
+                    if (t) setDeleteFor(t);
+                  },
+                },
+              ]
+            : []),
+        ] as SheetAction[]}
+      />
+
+      <ConfirmModal
+        visible={!!deleteFor}
+        onClose={() => setDeleteFor(null)}
+        onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
+        title="Delete Task"
+        message={`Delete "${deleteFor?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        submitting={del.isPending}
+        error={deleteErr ?? undefined}
+      />
     </SafeAreaView>
   );
 }
