@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '@/lib/endpoints';
 import { registerAuthFailureCallback } from '@/lib/api';
+import { API_URL } from '@/lib/config';
 import { tokenStorage } from '@/lib/storage';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 import type { User } from '@/types';
@@ -55,9 +56,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       connectSocket().catch(() => {/* best-effort */});
       return user;
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Sign in failed. Check your credentials.';
+      const axiosErr = err as {
+        response?: { data?: { message?: string } };
+        request?: unknown;
+        code?: string;
+      };
+      let message: string;
+      if (axiosErr?.response?.data?.message) {
+        // The server responded (e.g. 401 invalid credentials) — trust its message.
+        message = axiosErr.response.data.message;
+      } else if (axiosErr?.request || axiosErr?.code === 'ECONNABORTED') {
+        // Request was made but no response — network / unreachable backend.
+        // (On a phone, this usually means the API URL points at localhost or a
+        //  host the device can't reach. Set EXPO_PUBLIC_API_URL to your LAN IP.)
+        message = `Cannot reach the server at ${API_URL}. Check your connection and that the backend is running and reachable from this device.`;
+      } else {
+        message = 'Sign in failed. Please try again.';
+      }
       set({ status: 'unauthenticated', error: message });
       throw new Error(message);
     }
