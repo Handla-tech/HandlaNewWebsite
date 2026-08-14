@@ -1,0 +1,24 @@
+{
+  "en": {
+    "conversation": {
+      "fallback": "Conversation",
+      "typing": "typing…",
+      "online": "online",
+      "offline": "offline",
+      "attachment": "📎 Attachment",
+      "empty": "No messages yet. Say hello 👋",
+      "inputPlaceholder": "Type a message…"
+    }
+  },
+  "ar": {
+    "conversation": {
+      "fallback": "محادثة",
+      "typing": "يكتب…",
+      "online": "متصل",
+      "offline": "غير متصل",
+      "attachment": "📎 مرفق",
+      "empty": "لا توجد رسائل بعد. ألقِ التحية 👋",
+      "inputPlaceholder": "اكتب رسالة…"
+    }
+  }
+}

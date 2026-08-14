@@ -548,5 +548,14 @@
       "description": "Description is required.",
       "client": "Please select a client."
     }
+  },
+  "conversation": {
+    "fallback": "Conversation",
+    "typing": "typing…",
+    "online": "online",
+    "offline": "offline",
+    "attachment": "📎 Attachment",
+    "empty": "No messages yet. Say hello 👋",
+    "inputPlaceholder": "Type a message…"
   }
 }

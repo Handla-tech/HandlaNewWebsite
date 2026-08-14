@@ -548,5 +548,14 @@
       "description": "الوصف مطلوب.",
       "client": "يرجى اختيار عميل."
     }
+  },
+  "conversation": {
+    "fallback": "محادثة",
+    "typing": "يكتب…",
+    "online": "متصل",
+    "offline": "غير متصل",
+    "attachment": "📎 مرفق",
+    "empty": "لا توجد رسائل بعد. ألقِ التحية 👋",
+    "inputPlaceholder": "اكتب رسالة…"
   }
 }

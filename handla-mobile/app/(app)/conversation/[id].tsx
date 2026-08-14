@@ -26,6 +26,7 @@ import {
 } from '@/lib/socket';
 import { Loading } from '@/components/ui';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { ConversationDetail, Message } from '@/types';
 
 function fmtTime(iso: string) {
@@ -34,6 +35,7 @@ function fmtTime(iso: string) {
 
 export default function ConversationScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const conversationId = String(id);
   const router = useRouter();
@@ -160,7 +162,7 @@ export default function ConversationScreen() {
         >
           {item.fileUrl ? (
             <Text style={{ color: mine ? '#0a0a0a' : colors.info, fontSize: font.sm }}>
-              📎 Attachment
+              {t('conversation.attachment')}
             </Text>
           ) : null}
           {item.content ? (
@@ -205,10 +207,10 @@ export default function ConversationScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {otherParty?.name ?? 'Conversation'}
+            {otherParty?.name ?? t('conversation.fallback')}
           </Text>
           <Text style={{ color: otherTyping ? colors.accent : colors.textDim, fontSize: font.xs }}>
-            {otherTyping ? 'typing…' : connected ? 'online' : 'offline'}
+            {otherTyping ? t('conversation.typing') : connected ? t('conversation.online') : t('conversation.offline')}
           </Text>
         </View>
       </View>
@@ -230,7 +232,7 @@ export default function ConversationScreen() {
             onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
-                <Text style={{ color: colors.textFaint }}>No messages yet. Say hello 👋</Text>
+                <Text style={{ color: colors.textFaint }}>{t('conversation.empty')}</Text>
               </View>
             }
           />
@@ -251,7 +253,7 @@ export default function ConversationScreen() {
             <TextInput
               value={input}
               onChangeText={handleChange}
-              placeholder="Type a message…"
+              placeholder={t('conversation.inputPlaceholder')}
               placeholderTextColor={colors.textDim}
               multiline
               style={{
