@@ -1,0 +1,66 @@
+{
+  "en": {
+    "erp": {
+      "contracts": {
+        "unknownClient": "Unknown Client",
+        "loadFailed": "Failed to load contracts.",
+        "createSecond": "+ New Contract",
+        "fields": {
+          "contract": "Contract",
+          "status": "Status"
+        },
+        "errors": {
+          "create": "Failed to create contract",
+          "update": "Failed to update contract",
+          "send": "Failed to send contract",
+          "delete": "Failed to delete contract",
+          "accept": "Failed to accept contract",
+          "reject": "Failed to reject contract"
+        },
+        "busy": {
+          "creating": "Creating…",
+          "saving": "Saving…",
+          "sending": "Sending…",
+          "deleting": "Deleting…",
+          "accepting": "Accepting…",
+          "rejecting": "Rejecting…"
+        },
+        "pagination": {
+          "pageOf": "{{total}} contracts · page {{page}} of {{pages}}"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "contracts": {
+        "unknownClient": "عميل غير معروف",
+        "loadFailed": "فشل تحميل العقود.",
+        "createSecond": "+ عقد جديد",
+        "fields": {
+          "contract": "العقد",
+          "status": "الحالة"
+        },
+        "errors": {
+          "create": "فشل إنشاء العقد",
+          "update": "فشل تحديث العقد",
+          "send": "فشل إرسال العقد",
+          "delete": "فشل حذف العقد",
+          "accept": "فشل قبول العقد",
+          "reject": "فشل رفض العقد"
+        },
+        "busy": {
+          "creating": "جارٍ الإنشاء…",
+          "saving": "جارٍ الحفظ…",
+          "sending": "جارٍ الإرسال…",
+          "deleting": "جارٍ الحذف…",
+          "accepting": "جارٍ القبول…",
+          "rejecting": "جارٍ الرفض…"
+        },
+        "pagination": {
+          "pageOf": "{{total}} عقد · صفحة {{page}} من {{pages}}"
+        }
+      }
+    }
+  }
+}

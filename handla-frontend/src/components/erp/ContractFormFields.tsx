@@ -18,6 +18,7 @@ import {
 } from 'react-hook-form';
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import type { ContractType, OwnershipType, Client } from '@/types';
 
@@ -193,6 +194,7 @@ function PaymentMilestonesField({
   control: Control<ContractFormValues>;
   register: UseFormRegister<ContractFormValues>;
 }) {
+  const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'details.paymentMilestones',
@@ -201,7 +203,7 @@ function PaymentMilestonesField({
   return (
     <div className="space-y-2">
       {fields.length === 0 && (
-        <p className="text-[11px] text-white/30 italic">No milestones added yet.</p>
+        <p className="text-[11px] text-white/30 italic">{t('erp.contractForm.noMilestones')}</p>
       )}
       {fields.map((field, idx) => (
         <div
@@ -210,33 +212,33 @@ function PaymentMilestonesField({
         >
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
-              Milestone {idx + 1}
+              {t('erp.contractForm.milestone', { index: idx + 1 })}
             </p>
             <button
               type="button"
               onClick={() => remove(idx)}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-              aria-label={`Remove milestone ${idx + 1}`}
+              aria-label={t('erp.contractForm.removeMilestone', { index: idx + 1 })}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Field label="Name">
+            <Field label={t('erp.contractForm.fields.name')}>
               <input
                 {...register(`details.paymentMilestones.${idx}.name` as const)}
-                placeholder="e.g. Deposit"
+                placeholder={t('erp.contractForm.fields.namePlaceholder')}
                 className={inputCls()}
               />
             </Field>
-            <Field label="Due Date">
+            <Field label={t('erp.contractForm.fields.dueDate')}>
               <input
                 type="date"
                 {...register(`details.paymentMilestones.${idx}.dueDate` as const)}
                 className={inputCls()}
               />
             </Field>
-            <Field label="Percentage" hint="0–100 (optional)">
+            <Field label={t('erp.contractForm.fields.percentage')} hint={t('erp.contractForm.fields.percentageHint')}>
               <input
                 type="number"
                 step="0.01"
@@ -249,7 +251,7 @@ function PaymentMilestonesField({
                 className={inputCls()}
               />
             </Field>
-            <Field label="Amount" hint="Absolute value (optional)">
+            <Field label={t('erp.contractForm.fields.amount')} hint={t('erp.contractForm.fields.amountHint')}>
               <input
                 type="number"
                 step="0.01"
@@ -269,7 +271,7 @@ function PaymentMilestonesField({
         onClick={() => append({ name: '', percentage: '', amount: '', dueDate: '' })}
         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-white/15 text-white/50 hover:text-white hover:border-white/30 transition-colors text-xs font-medium min-h-[40px]"
       >
-        <Plus className="w-3.5 h-3.5" /> Add Milestone
+        <Plus className="w-3.5 h-3.5" /> {t('erp.contractForm.addMilestone')}
       </button>
     </div>
   );
@@ -297,6 +299,7 @@ export function ContractFormFields({
   register, control, errors, clients = [], clientsLoading = false,
   hideClientSelect = false, statusBadge, setValue, getValues,
 }: ContractFormFieldsProps) {
+  const { t } = useTranslation();
   // ── Client auto-fill ──────────────────────────────────────────────────────
   //
   // When the user picks a client from the dropdown, pre-populate the
@@ -360,21 +363,21 @@ export function ContractFormFields({
       <div className="rounded-xl border border-[#fbbf24]/20 bg-[#fbbf24]/[0.04] p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#fbbf24]">
-            Required
+            {t('erp.contractForm.required')}
           </p>
           {statusBadge}
         </div>
 
-        <Field label="Contract Title *" error={errors.title?.message}>
+        <Field label={t('erp.contractForm.titleLabel')} error={errors.title?.message}>
           <input
             {...register('title')}
-            placeholder="e.g. Website Development Agreement"
+            placeholder={t('erp.contractForm.titlePlaceholder')}
             className={inputCls(!!errors.title)}
           />
         </Field>
 
         {!hideClientSelect && (
-          <Field label="Client *" error={errors.clientId?.message}>
+          <Field label={t('erp.contractForm.clientLabel')} error={errors.clientId?.message}>
             <select
               {...register('clientId')}
               disabled={clientsLoading}
@@ -386,10 +389,10 @@ export function ContractFormFields({
             >
               <option value="">
                 {clientsLoading
-                  ? 'Loading clients…'
+                  ? t('erp.contractForm.clientLoading')
                   : clients.length === 0
-                    ? 'No clients found'
-                    : 'Select a client…'}
+                    ? t('erp.contractForm.clientNone')
+                    : t('erp.contractForm.clientSelect')}
               </option>
               {clients.map(c => (
                 <option key={c.id} value={c.id}>
@@ -404,36 +407,36 @@ export function ContractFormFields({
 
       {/* ── 1. CONTRACT INFORMATION ────────────────────────────────────────── */}
       <Section
-        title="Contract Information"
-        description="Basic identifiers for this agreement"
+        title={t('erp.contractForm.sections.contractInfo')}
+        description={t('erp.contractForm.sections.contractInfoDesc')}
         defaultOpen
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Contract Number">
+          <Field label={t('erp.contractForm.fields.contractNumber')}>
             <input
               {...register('details.contractNumber')}
               placeholder="CN-2026-001"
               className={inputCls()}
             />
           </Field>
-          <Field label="Contract Type">
+          <Field label={t('erp.contractForm.fields.contractType')}>
             <select
               {...register('details.contractType')}
               className={cn(inputCls(), 'bg-[#0f0f0f]')}
             >
-              <option value="">— Select —</option>
-              <option value="FIXED_PRICE">Fixed Price</option>
-              <option value="HOURLY">Hourly</option>
-              <option value="RETAINER">Retainer</option>
-              <option value="MILESTONE">Milestone</option>
-              <option value="MAINTENANCE">Maintenance</option>
-              <option value="CONSULTATION">Consultation</option>
+              <option value="">{t('erp.contractForm.select')}</option>
+              <option value="FIXED_PRICE">{t('erp.contractForm.contractType.FIXED_PRICE')}</option>
+              <option value="HOURLY">{t('erp.contractForm.contractType.HOURLY')}</option>
+              <option value="RETAINER">{t('erp.contractForm.contractType.RETAINER')}</option>
+              <option value="MILESTONE">{t('erp.contractForm.contractType.MILESTONE')}</option>
+              <option value="MAINTENANCE">{t('erp.contractForm.contractType.MAINTENANCE')}</option>
+              <option value="CONSULTATION">{t('erp.contractForm.contractType.CONSULTATION')}</option>
             </select>
           </Field>
-          <Field label="Project Name" className="sm:col-span-2">
+          <Field label={t('erp.contractForm.fields.projectName')} className="sm:col-span-2">
             <input
               {...register('details.projectName')}
-              placeholder="e.g. Acme Marketing Website"
+              placeholder={t('erp.contractForm.fields.projectNamePlaceholder')}
               className={inputCls()}
             />
           </Field>
@@ -441,34 +444,34 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 2. CLIENT INFORMATION ──────────────────────────────────────────── */}
-      <Section title="Client Information" description="Contact and address details">
+      <Section title={t('erp.contractForm.sections.clientInfo')} description={t('erp.contractForm.sections.clientInfoDesc')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Client Name">
+          <Field label={t('erp.contractForm.fields.clientName')}>
             <input {...register('details.clientName')} className={inputCls()} />
           </Field>
-          <Field label="Company">
+          <Field label={t('erp.contractForm.fields.company')}>
             <input {...register('details.clientCompany')} className={inputCls()} />
           </Field>
-          <Field label="Email">
+          <Field label={t('erp.contractForm.fields.email')}>
             <input
               type="email"
               {...register('details.clientEmail')}
-              placeholder="contact@example.com"
+              placeholder={t('erp.contractForm.fields.emailPlaceholder')}
               className={inputCls()}
             />
           </Field>
-          <Field label="Phone">
+          <Field label={t('erp.contractForm.fields.phone')}>
             <input
               {...register('details.clientPhone')}
-              placeholder="+1 555 123 4567"
+              placeholder={t('erp.contractForm.fields.phonePlaceholder')}
               className={inputCls()}
             />
           </Field>
-          <Field label="Address" className="sm:col-span-2">
+          <Field label={t('erp.contractForm.fields.address')} className="sm:col-span-2">
             <textarea
               {...register('details.clientAddress')}
               rows={2}
-              placeholder="Street, City, Country"
+              placeholder={t('erp.contractForm.fields.addressPlaceholder')}
               className={cn(inputCls(), 'resize-y min-h-[60px] h-auto py-2')}
             />
           </Field>
@@ -476,24 +479,24 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 3. PROJECT DETAILS ─────────────────────────────────────────────── */}
-      <Section title="Project Details" description="Description, scope, deliverables, exclusions">
-        <Field label="Project Description">
+      <Section title={t('erp.contractForm.sections.projectDetails')} description={t('erp.contractForm.sections.projectDetailsDesc')}>
+        <Field label={t('erp.contractForm.fields.projectDescription')}>
           <textarea
             {...register('details.projectDescription')}
             rows={3}
-            placeholder="Brief overview of the project"
+            placeholder={t('erp.contractForm.fields.projectDescriptionPlaceholder')}
             className={cn(inputCls(), 'resize-y min-h-[80px] h-auto py-2')}
           />
         </Field>
-        <Field label="Scope of Work">
+        <Field label={t('erp.contractForm.fields.scopeOfWork')}>
           <textarea
             {...register('details.scopeOfWork')}
             rows={4}
-            placeholder="Detailed scope, methodology, and approach"
+            placeholder={t('erp.contractForm.fields.scopeOfWorkPlaceholder')}
             className={cn(inputCls(), 'resize-y min-h-[100px] h-auto py-2')}
           />
         </Field>
-        <Field label="Deliverables" hint="One per line">
+        <Field label={t('erp.contractForm.fields.deliverables')} hint={t('erp.contractForm.fields.onePerLine')}>
           <textarea
             {...register('details.deliverablesText')}
             rows={4}
@@ -501,7 +504,7 @@ export function ContractFormFields({
             className={cn(inputCls(), 'resize-y min-h-[100px] h-auto py-2')}
           />
         </Field>
-        <Field label="Excluded Services" hint="One per line">
+        <Field label={t('erp.contractForm.fields.excludedServices')} hint={t('erp.contractForm.fields.onePerLine')}>
           <textarea
             {...register('details.excludedServicesText')}
             rows={3}
@@ -512,18 +515,18 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 4. TIMELINE ────────────────────────────────────────────────────── */}
-      <Section title="Timeline" description="Start, end, and estimated duration">
+      <Section title={t('erp.contractForm.sections.timeline')} description={t('erp.contractForm.sections.timelineDesc')}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="Start Date">
+          <Field label={t('erp.contractForm.fields.startDate')}>
             <input type="date" {...register('details.startDate')} className={inputCls()} />
           </Field>
-          <Field label="End Date">
+          <Field label={t('erp.contractForm.fields.endDate')}>
             <input type="date" {...register('details.endDate')} className={inputCls()} />
           </Field>
-          <Field label="Estimated Duration">
+          <Field label={t('erp.contractForm.fields.estimatedDuration')}>
             <input
               {...register('details.estimatedDuration')}
-              placeholder="e.g. 3 months"
+              placeholder={t('erp.contractForm.fields.estimatedDurationPlaceholder')}
               className={inputCls()}
             />
           </Field>
@@ -531,16 +534,16 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 5. FINANCIAL DETAILS ───────────────────────────────────────────── */}
-      <Section title="Financial Details" description="Currency and total contract value">
+      <Section title={t('erp.contractForm.sections.financial')} description={t('erp.contractForm.sections.financialDesc')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Currency">
+          <Field label={t('erp.contractForm.fields.currency')}>
             <input
               {...register('details.currency')}
               placeholder="USD"
               className={inputCls()}
             />
           </Field>
-          <Field label="Total Value">
+          <Field label={t('erp.contractForm.fields.totalValue')}>
             <input
               type="number"
               step="0.01"
@@ -556,14 +559,14 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 6. PAYMENT SCHEDULE ────────────────────────────────────────────── */}
-      <Section title="Payment Schedule" description="Milestones, percentages, amounts">
+      <Section title={t('erp.contractForm.sections.payment')} description={t('erp.contractForm.sections.paymentDesc')}>
         <PaymentMilestonesField control={control} register={register} />
       </Section>
 
       {/* ── 7. REVISION POLICY ─────────────────────────────────────────────── */}
-      <Section title="Revision Policy" description="Free revisions and additional cost">
+      <Section title={t('erp.contractForm.sections.revision')} description={t('erp.contractForm.sections.revisionDesc')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Free Revisions">
+          <Field label={t('erp.contractForm.fields.freeRevisions')}>
             <input
               type="number"
               min="0"
@@ -574,7 +577,7 @@ export function ContractFormFields({
               className={inputCls()}
             />
           </Field>
-          <Field label="Additional Revision Cost">
+          <Field label={t('erp.contractForm.fields.additionalRevisionCost')}>
             <input
               type="number"
               step="0.01"
@@ -590,19 +593,19 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 8. WARRANTY & SUPPORT ──────────────────────────────────────────── */}
-      <Section title="Warranty & Support">
+      <Section title={t('erp.contractForm.sections.warranty')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Warranty Period">
+          <Field label={t('erp.contractForm.fields.warrantyPeriod')}>
             <input
               {...register('details.warrantyPeriod')}
-              placeholder="e.g. 30 days"
+              placeholder={t('erp.contractForm.fields.warrantyPeriodPlaceholder')}
               className={inputCls()}
             />
           </Field>
-          <Field label="Support Period">
+          <Field label={t('erp.contractForm.fields.supportPeriod')}>
             <input
               {...register('details.supportPeriod')}
-              placeholder="e.g. 90 days"
+              placeholder={t('erp.contractForm.fields.supportPeriodPlaceholder')}
               className={inputCls()}
             />
           </Field>
@@ -610,31 +613,31 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 9. INTELLECTUAL PROPERTY ───────────────────────────────────────── */}
-      <Section title="Intellectual Property" description="Ownership of deliverables">
-        <Field label="Ownership Type">
+      <Section title={t('erp.contractForm.sections.ip')} description={t('erp.contractForm.sections.ipDesc')}>
+        <Field label={t('erp.contractForm.fields.ownershipType')}>
           <select
             {...register('details.ownershipType')}
             className={cn(inputCls(), 'bg-[#0f0f0f]')}
           >
-            <option value="">— Select —</option>
-            <option value="CLIENT_OWNS_EVERYTHING">Client Owns Everything</option>
+            <option value="">{t('erp.contractForm.select')}</option>
+            <option value="CLIENT_OWNS_EVERYTHING">{t('erp.contractForm.ownership.CLIENT_OWNS_EVERYTHING')}</option>
             <option value="OWNERSHIP_TRANSFERS_AFTER_PAYMENT">
-              Ownership Transfers After Final Payment
+              {t('erp.contractForm.ownership.OWNERSHIP_TRANSFERS_AFTER_PAYMENT')}
             </option>
-            <option value="SHARED_OWNERSHIP">Shared Ownership</option>
+            <option value="SHARED_OWNERSHIP">{t('erp.contractForm.ownership.SHARED_OWNERSHIP')}</option>
           </select>
         </Field>
       </Section>
 
       {/* ── 10. CONFIDENTIALITY ────────────────────────────────────────────── */}
-      <Section title="Confidentiality">
+      <Section title={t('erp.contractForm.sections.confidentiality')}>
         <Controller
           name="details.ndaIncluded"
           control={control}
           render={({ field }) => (
             <Toggle
-              label="Non-Disclosure Agreement (NDA)"
-              description="Both parties agree to keep project information confidential"
+              label={t('erp.contractForm.toggles.nda')}
+              description={t('erp.contractForm.toggles.ndaDesc')}
               checked={!!field.value}
               onChange={field.onChange}
             />
@@ -643,21 +646,21 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 11. HOSTING & DEPLOYMENT ───────────────────────────────────────── */}
-      <Section title="Hosting & Deployment" description="What's included in the package">
+      <Section title={t('erp.contractForm.sections.hosting')} description={t('erp.contractForm.sections.hostingDesc')}>
         <div className="space-y-2">
           {([
-            ['hostingIncluded',    'Hosting Included'],
-            ['domainIncluded',     'Domain Included'],
-            ['sslIncluded',        'SSL Certificate Included'],
-            ['deploymentIncluded', 'Deployment Included'],
-          ] as const).map(([name, label]) => (
+            ['hostingIncluded',    'erp.contractForm.toggles.hosting'],
+            ['domainIncluded',     'erp.contractForm.toggles.domain'],
+            ['sslIncluded',        'erp.contractForm.toggles.ssl'],
+            ['deploymentIncluded', 'erp.contractForm.toggles.deployment'],
+          ] as const).map(([name, labelKey]) => (
             <Controller
               key={name}
               name={`details.${name}` as const}
               control={control}
               render={({ field }) => (
                 <Toggle
-                  label={label}
+                  label={t(labelKey)}
                   checked={!!field.value}
                   onChange={field.onChange}
                 />
@@ -668,33 +671,33 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 12. LATE PAYMENT TERMS ─────────────────────────────────────────── */}
-      <Section title="Late Payment Terms">
-        <Field label="Late Payment Penalty">
+      <Section title={t('erp.contractForm.sections.latePayment')}>
+        <Field label={t('erp.contractForm.fields.latePaymentPenalty')}>
           <input
             {...register('details.latePaymentPenalty')}
-            placeholder="e.g. 1.5% per month"
+            placeholder={t('erp.contractForm.fields.latePaymentPenaltyPlaceholder')}
             className={inputCls()}
           />
         </Field>
       </Section>
 
       {/* ── 13. TERMINATION ────────────────────────────────────────────────── */}
-      <Section title="Termination Clause">
-        <Field label="Termination Terms">
+      <Section title={t('erp.contractForm.sections.termination')}>
+        <Field label={t('erp.contractForm.fields.terminationTerms')}>
           <textarea
             {...register('details.terminationTerms')}
             rows={3}
-            placeholder="Conditions under which either party may terminate"
+            placeholder={t('erp.contractForm.fields.terminationTermsPlaceholder')}
             className={cn(inputCls(), 'resize-y min-h-[80px] h-auto py-2')}
           />
         </Field>
       </Section>
 
       {/* ── 14. ACCEPTANCE ─────────────────────────────────────────────────── */}
-      <Section title="Acceptance Terms">
+      <Section title={t('erp.contractForm.sections.acceptance')}>
         <Field
-          label="Acceptance Period (days)"
-          hint="Time client has to formally accept deliverables"
+          label={t('erp.contractForm.fields.acceptancePeriod')}
+          hint={t('erp.contractForm.fields.acceptancePeriodHint')}
         >
           <input
             type="number"
@@ -709,12 +712,12 @@ export function ContractFormFields({
       </Section>
 
       {/* ── 15. GENERAL TERMS & CONDITIONS ─────────────────────────────────── */}
-      <Section title="Terms & Conditions" description="General contractual terms">
-        <Field label="Terms & Conditions">
+      <Section title={t('erp.contractForm.sections.terms')} description={t('erp.contractForm.sections.termsDesc')}>
+        <Field label={t('erp.contractForm.fields.termsAndConditions')}>
           <textarea
             {...register('details.termsAndConditions')}
             rows={6}
-            placeholder="Add any general terms, governing law, dispute resolution, etc."
+            placeholder={t('erp.contractForm.fields.termsAndConditionsPlaceholder')}
             className={cn(inputCls(), 'resize-y min-h-[140px] h-auto py-2')}
           />
         </Field>

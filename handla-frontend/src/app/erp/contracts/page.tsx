@@ -20,6 +20,7 @@ import {
   FilePenLine, User, Briefcase, FileSignature, AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { contractsApi, clientsApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 import type { Contract, PaginatedContracts, ContractStatus, Client } from '@/types';
@@ -30,12 +31,12 @@ import {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: { label: string; value: ContractStatus | 'ALL' }[] = [
-  { label: 'All',      value: 'ALL'      },
-  { label: 'Draft',    value: 'DRAFT'    },
-  { label: 'Sent',     value: 'SENT'     },
-  { label: 'Signed',   value: 'SIGNED'   },
-  { label: 'Rejected', value: 'REJECTED' },
+const STATUS_FILTERS: { labelKey: string; value: ContractStatus | 'ALL' }[] = [
+  { labelKey: 'erp.contracts.filters.all',      value: 'ALL'      },
+  { labelKey: 'erp.contracts.filters.draft',    value: 'DRAFT'    },
+  { labelKey: 'erp.contracts.filters.sent',     value: 'SENT'     },
+  { labelKey: 'erp.contracts.filters.signed',   value: 'SIGNED'   },
+  { labelKey: 'erp.contracts.filters.rejected', value: 'REJECTED' },
 ];
 
 const STATUS_BADGE: Record<ContractStatus, string> = {
@@ -89,6 +90,7 @@ function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
   isOpen: boolean; onClose: () => void; title: string; subtitle?: string;
   children: React.ReactNode; size?: 'sm' | 'xl';
 }) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {isOpen && (
@@ -112,7 +114,7 @@ function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
                   <h2 className="text-base font-bold text-white">{title}</h2>
                   {subtitle && <p className="text-xs text-white/30 mt-0.5">{subtitle}</p>}
                 </div>
-                <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close">
+                <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors" aria-label={t('erp.ui.close')}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -128,6 +130,7 @@ function Modal({ isOpen, onClose, title, subtitle, children, size = 'sm' }: {
 // ─── Create Contract Modal ───────────────────────────────────────────────────
 
 function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isOpen: boolean; onClose: () => void; clients: Client[]; clientsLoading: boolean }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { register, handleSubmit, control, reset, setValue, getValues, formState: { errors } } =
     useForm<ContractFormValues>({
@@ -156,8 +159,8 @@ function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isO
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl"
-      title="New Contract"
-      subtitle="Build a comprehensive contract by filling in the sections below.">
+      title={t('erp.contracts.modals.create.title')}
+      subtitle={t('erp.contracts.modals.create.subtitle')}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <ContractFormFields
           register={register}
@@ -170,14 +173,14 @@ function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isO
         />
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to create contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.create'))}
           </div>
         )}
         <div className="flex gap-3 pt-1 sticky bottom-0 -mx-5 -mb-5 px-5 py-3 bg-[#111] border-t border-white/[0.06]">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button type="submit" disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            {mutation.isPending ? 'Creating…' : 'Create Draft'}
+            {mutation.isPending ? t('erp.contracts.busy.creating') : t('erp.contracts.modals.create.submit')}
           </button>
         </div>
       </form>
@@ -188,6 +191,7 @@ function CreateContractModal({ isOpen, onClose, clients, clientsLoading }: { isO
 // ─── Edit Contract Modal ─────────────────────────────────────────────────────
 
 function EditContractModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { register, handleSubmit, control, reset, formState: { errors } } =
     useForm<ContractFormValues>({
@@ -225,8 +229,8 @@ function EditContractModal({ isOpen, onClose, contract }: { isOpen: boolean; onC
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl"
-      title="Edit Contract"
-      subtitle="Update this draft contract.">
+      title={t('erp.contracts.modals.edit.title')}
+      subtitle={t('erp.contracts.modals.edit.subtitle')}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <ContractFormFields
           register={register}
@@ -236,14 +240,14 @@ function EditContractModal({ isOpen, onClose, contract }: { isOpen: boolean; onC
         />
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to update contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.update'))}
           </div>
         )}
         <div className="flex gap-3 pt-1 sticky bottom-0 -mx-5 -mb-5 px-5 py-3 bg-[#111] border-t border-white/[0.06]">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button type="submit" disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            {mutation.isPending ? t('erp.contracts.busy.saving') : t('erp.contracts.modals.edit.submit')}
           </button>
         </div>
       </form>
@@ -254,6 +258,7 @@ function EditContractModal({ isOpen, onClose, contract }: { isOpen: boolean; onC
 // ─── Send Confirm Modal ──────────────────────────────────────────────────────
 
 function SendConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => contractsApi.sendContract(contract!.id),
@@ -263,25 +268,24 @@ function SendConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onCl
   if (!contract) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send Contract to Client">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('erp.contracts.modals.send.title')}>
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3">
           <Send className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-white/60">
-            Send <strong className="text-white">&ldquo;{contract.title}&rdquo;</strong> to the client for review?
-            The client will receive a notification and can accept or reject.
+            {t('erp.contracts.modals.send.message', { title: contract.title })}
           </p>
         </div>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to send contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.send'))}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            <Send className="w-3.5 h-3.5" />{mutation.isPending ? 'Sending…' : 'Send to Client'}
+            <Send className="w-3.5 h-3.5" />{mutation.isPending ? t('erp.contracts.busy.sending') : t('erp.contracts.modals.send.submit')}
           </button>
         </div>
       </div>
@@ -292,6 +296,7 @@ function SendConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onCl
 // ─── Delete Confirm Modal ────────────────────────────────────────────────────
 
 function DeleteConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => contractsApi.deleteContract(contract!.id),
@@ -301,24 +306,24 @@ function DeleteConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
   if (!contract) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Delete Contract">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('erp.contracts.modals.delete.title')}>
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/8 p-3">
           <Trash2 className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-white/60">
-            Permanently delete <strong className="text-white">&ldquo;{contract.title}&rdquo;</strong>? This action cannot be undone.
+            {t('erp.contracts.modals.delete.message', { title: contract.title })}
           </p>
         </div>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to delete contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.delete'))}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            {mutation.isPending ? 'Deleting…' : 'Delete Contract'}
+            {mutation.isPending ? t('erp.contracts.busy.deleting') : t('erp.contracts.modals.delete.submit')}
           </button>
         </div>
       </div>
@@ -329,6 +334,7 @@ function DeleteConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
 // ─── Accept / Reject Confirm Modals ─────────────────────────────────────────
 
 function AcceptConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => contractsApi.acceptContract(contract!.id),
@@ -338,24 +344,23 @@ function AcceptConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
   if (!contract) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Accept Contract" subtitle="Digitally sign this agreement.">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('erp.contracts.modals.accept.title')} subtitle={t('erp.contracts.modals.accept.subtitle')}>
       <div className="space-y-4">
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3">
           <p className="text-sm text-emerald-300">
-            By accepting, you agree to the terms in <strong>&ldquo;{contract.title}&rdquo;</strong>.
-            A signed copy will be stored securely.
+            {t('erp.contracts.modals.accept.notice', { title: contract.title })}
           </p>
         </div>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to accept contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.accept'))}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            <FileSignature className="w-4 h-4" />{mutation.isPending ? 'Accepting…' : 'Accept Contract'}
+            <FileSignature className="w-4 h-4" />{mutation.isPending ? t('erp.contracts.busy.accepting') : t('erp.contracts.modals.accept.submit')}
           </button>
         </div>
       </div>
@@ -364,6 +369,7 @@ function AcceptConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
 }
 
 function RejectConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract | null }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => contractsApi.rejectContract(contract!.id),
@@ -373,22 +379,21 @@ function RejectConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
   if (!contract) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Reject Contract">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('erp.contracts.modals.reject.title')}>
       <div className="space-y-4">
         <p className="text-sm text-white/60">
-          Reject <strong className="text-white">&ldquo;{contract.title}&rdquo;</strong>?
-          The account team will be notified and can send a revised version.
+          {t('erp.contracts.modals.reject.message', { title: contract.title })}
         </p>
         {mutation.isError && (
           <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, 'Failed to reject contract')}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{apiErrMsg(mutation.error, t('erp.contracts.errors.reject'))}
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm min-h-[44px]">{t('erp.ui.cancel')}</button>
           <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors text-sm disabled:opacity-50 min-h-[44px]">
-            {mutation.isPending ? 'Rejecting…' : 'Reject Contract'}
+            {mutation.isPending ? t('erp.contracts.busy.rejecting') : t('erp.contracts.modals.reject.submit')}
           </button>
         </div>
       </div>
@@ -399,6 +404,7 @@ function RejectConfirmModal({ isOpen, onClose, contract }: { isOpen: boolean; on
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function ContractsPage() {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
@@ -465,7 +471,7 @@ export default function ContractsPage() {
   const columns: Column<Contract>[] = [
     {
       key: 'title',
-      header: 'Contract',
+      header: t('erp.contracts.fields.contract'),
       cell: (c) => (
         <div className="flex items-center gap-3 min-w-0">
           <div className={cn('flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ring-2 ring-black/20', getAvatarColor(c.title))}>
@@ -474,7 +480,7 @@ export default function ContractsPage() {
           <div className="min-w-0">
             <p className="font-semibold text-white truncate text-sm">{c.title}</p>
             <p className="text-[11px] text-white/35 truncate mt-0.5 flex items-center gap-1">
-              <Briefcase className="inline w-3 h-3" />{c.client?.user?.name ?? 'Unknown Client'}
+              <Briefcase className="inline w-3 h-3" />{c.client?.user?.name ?? t('erp.contracts.unknownClient')}
             </p>
           </div>
         </div>
@@ -482,29 +488,29 @@ export default function ContractsPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('erp.contracts.fields.status'),
       cell: (c) => {
         const StatusIcon = STATUS_ICON[c.status] ?? FilePenLine;
         return (
           <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border', STATUS_BADGE[c.status])}>
-            <StatusIcon className="w-3 h-3" />{c.status}
+            <StatusIcon className="w-3 h-3" />{t(`erp.contractStatus.${c.status}`)}
           </span>
         );
       },
     },
     {
       key: 'owner',
-      header: 'Owner',
+      header: t('erp.contracts.fields.owner'),
       hideOnMobile: true,
       cell: (c) => (
         <span className="flex items-center gap-1.5 text-white/50 text-xs whitespace-nowrap">
-          <User className="w-3 h-3" /> {c.owner?.name ?? 'Unassigned'}
+          <User className="w-3 h-3" /> {c.owner?.name ?? t('erp.ui.unassigned')}
         </span>
       ),
     },
     {
       key: 'sentAt',
-      header: 'Sent',
+      header: t('erp.contracts.fields.sentAt'),
       hideOnMobile: true,
       cell: (c) => (
         c.sentAt
@@ -514,7 +520,7 @@ export default function ContractsPage() {
     },
     {
       key: 'signedAt',
-      header: 'Signed',
+      header: t('erp.contracts.fields.signedAt'),
       hideOnMobile: true,
       cell: (c) => (
         c.signedAt
@@ -526,27 +532,27 @@ export default function ContractsPage() {
 
   const rowActions: RowAction<Contract>[] = [
     {
-      label: 'Edit Contract', icon: Pencil,
+      label: t('erp.contracts.actions.edit'), icon: Pencil,
       onClick: (c) => setEditContract(c),
       show: (c) => (isAdmin || isEmployee) && c.status === 'DRAFT',
     },
     {
-      label: 'Send to Client', icon: Send,
+      label: t('erp.contracts.actions.send'), icon: Send,
       onClick: (c) => setSendContract(c),
       show: (c) => (isAdmin || isEmployee) && c.status === 'DRAFT',
     },
     {
-      label: 'Accept', icon: CheckCircle2,
+      label: t('erp.contracts.actions.accept'), icon: CheckCircle2,
       onClick: (c) => setAcceptContract(c),
       show: (c) => isClient && c.status === 'SENT',
     },
     {
-      label: 'Reject', icon: XCircle,
+      label: t('erp.contracts.actions.reject'), icon: XCircle,
       onClick: (c) => setRejectContract(c),
       show: (c) => isClient && c.status === 'SENT',
     },
     {
-      label: 'Delete', icon: Trash2, danger: true,
+      label: t('erp.ui.delete'), icon: Trash2, danger: true,
       onClick: (c) => setDeleteContract(c),
       show: (c) => isAdmin && c.status === 'DRAFT',
     },
@@ -563,16 +569,16 @@ export default function ContractsPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
               <FileText className="w-4.5 h-4.5 text-blue-400" />
             </span>
-            Contracts
+            {t('erp.contracts.title')}
           </h1>
           <p className="text-sm text-white/30 mt-1 ml-11">
-            {isClient ? 'View and sign your contracts.' : 'Manage client contracts and agreements.'}
+            {isClient ? t('erp.contracts.subtitleClient') : t('erp.contracts.subtitle')}
           </p>
         </div>
         {(isAdmin || isEmployee) && (
           <button onClick={() => setCreateOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm min-h-[44px]">
-            <Plus className="w-4 h-4" /> New Contract
+            <Plus className="w-4 h-4" /> {t('erp.contracts.newContract')}
           </button>
         )}
       </div>
@@ -580,13 +586,13 @@ export default function ContractsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {[
-          { label: 'Total',    value: stats.total,    color: 'text-white',        border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
-          { label: 'Draft',    value: stats.draft,    color: 'text-white/50',     border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
-          { label: 'Sent',     value: stats.sent,     color: 'text-amber-400',    border: 'border-amber-500/20',   bg: 'bg-amber-500/5'   },
-          { label: 'Signed',   value: stats.signed,   color: 'text-emerald-400',  border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
-          { label: 'Rejected', value: stats.rejected, color: 'text-red-400',      border: 'border-red-500/20',     bg: 'bg-red-500/5'     },
+          { key: 'total',    label: t('erp.contracts.stats.total'),    value: stats.total,    color: 'text-white',        border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
+          { key: 'draft',    label: t('erp.contracts.stats.draft'),    value: stats.draft,    color: 'text-white/50',     border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
+          { key: 'sent',     label: t('erp.contracts.stats.sent'),     value: stats.sent,     color: 'text-amber-400',    border: 'border-amber-500/20',   bg: 'bg-amber-500/5'   },
+          { key: 'signed',   label: t('erp.contracts.stats.signed'),   value: stats.signed,   color: 'text-emerald-400',  border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+          { key: 'rejected', label: t('erp.contracts.stats.rejected'), value: stats.rejected, color: 'text-red-400',      border: 'border-red-500/20',     bg: 'bg-red-500/5'     },
         ].map(s => (
-          <div key={s.label} className={cn('rounded-xl border p-3 text-center', s.border, s.bg)}>
+          <div key={s.key} className={cn('rounded-xl border p-3 text-center', s.border, s.bg)}>
             <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
             <p className="text-[10px] text-white/25 mt-0.5">{s.label}</p>
           </div>
@@ -597,7 +603,7 @@ export default function ContractsPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input type="text" placeholder="Search contracts…" value={searchInput}
+          <input type="text" placeholder={t('erp.contracts.searchPlaceholder')} value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-white placeholder-white/20 outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.06] transition-all min-h-[44px]" />
         </div>
@@ -606,7 +612,7 @@ export default function ContractsPage() {
             <button key={f.value} onClick={() => { setStatusFilter(f.value); setPage(1); }}
               className={cn('px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all min-h-[44px] sm:min-h-0',
                 statusFilter === f.value ? 'bg-[#fbbf24] border-[#fbbf24] text-black' : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white hover:border-white/20')}>
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>
@@ -618,8 +624,8 @@ export default function ContractsPage() {
       ) : isError ? (
         <div className="flex flex-col items-center py-20 gap-4">
           <AlertCircle className="w-10 h-10 text-red-400/40" />
-          <p className="text-white/30 text-sm">Failed to load contracts.</p>
-          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-sm text-white/50 transition-colors">Retry</button>
+          <p className="text-white/30 text-sm">{t('erp.contracts.loadFailed')}</p>
+          <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-sm text-white/50 transition-colors">{t('erp.ui.retry')}</button>
         </div>
       ) : contracts.length === 0 ? (
         <div className="flex flex-col items-center py-20 gap-4">
@@ -628,13 +634,13 @@ export default function ContractsPage() {
           </div>
           <div className="text-center">
             <p className="text-white/40 text-sm font-medium">
-              {isClient ? 'No contracts found for your account.' : 'No contracts found. Create your first contract.'}
+              {isClient ? t('erp.contracts.emptyClient') : t('erp.contracts.empty')}
             </p>
           </div>
           {(isAdmin || isEmployee) && (
             <button onClick={() => setCreateOpen(true)}
               className="px-4 py-2 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 text-[#fbbf24] text-sm font-semibold hover:bg-[#fbbf24]/20 transition-colors">
-              + New Contract
+              {t('erp.contracts.createSecond')}
             </button>
           )}
         </div>
@@ -649,10 +655,10 @@ export default function ContractsPage() {
           />
           {pages > 1 && (
             <div className="flex items-center justify-between pt-2">
-              <p className="text-sm text-white/30">{total} contracts · page {page} of {pages}</p>
+              <p className="text-sm text-white/30">{t('erp.contracts.pagination.pageOf', { total, page, pages })}</p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Previous page">
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label={t('erp.ui.prev')}>
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 {Array.from({ length: Math.min(5, pages) }, (_, i) => {
@@ -670,7 +676,7 @@ export default function ContractsPage() {
                   );
                 })}
                 <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label="Next page">
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all" aria-label={t('erp.ui.next')}>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
