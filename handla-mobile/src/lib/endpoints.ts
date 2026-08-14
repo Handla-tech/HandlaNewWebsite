@@ -22,6 +22,17 @@ import type {
   PaginatedInvoices,
   Invoice,
   InvoicePaymentStatus,
+  PaginatedPurchases,
+  Purchase,
+  PurchaseStatus,
+  PurchasePaymentStatus,
+  PaginatedExpenses,
+  Expense,
+  ExpenseType,
+  FinancialSummary,
+  PaginatedLedger,
+  LedgerDirection,
+  LedgerSourceType,
 } from '@/types';
 
 /**
@@ -188,4 +199,62 @@ export const invoicesApi = {
   /** ADMIN/EMPLOYEE — mark an invoice paid. */
   markPaid: (id: string) =>
     api.post<{ message: string; data: Invoice }>(`/erp/invoices/${id}/mark-paid`),
+};
+
+// ─── Purchases (@Controller('purchases')) — ADMIN/EMPLOYEE ───────────────────
+export interface PurchasesQuery {
+  page?: number;
+  limit?: number;
+  supplierId?: string;
+  status?: PurchaseStatus;
+  paymentStatus?: PurchasePaymentStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export const purchasesApi = {
+  list: (params?: PurchasesQuery) =>
+    api.get<{ message: string; data: PaginatedPurchases }>('/purchases', { params }),
+  get: (id: string) => api.get<{ message: string; data: Purchase }>(`/purchases/${id}`),
+  markPaid: (id: string) =>
+    api.post<{ message: string; data: Purchase }>(`/purchases/${id}/mark-paid`),
+};
+
+// ─── Expenses (@Controller('erp/expenses')) — ADMIN/EMPLOYEE ─────────────────
+export interface ExpensesQuery {
+  page?: number;
+  limit?: number;
+  type?: ExpenseType;
+  category?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  excludeInvoiceLinked?: boolean;
+}
+
+export const expensesApi = {
+  /** GET /erp/expenses/summary — income/expense/net financial summary. */
+  summary: (params?: { dateFrom?: string; dateTo?: string }) =>
+    api.get<{ message: string; data: FinancialSummary }>('/erp/expenses/summary', { params }),
+  list: (params?: ExpensesQuery) =>
+    api.get<{ message: string; data: PaginatedExpenses }>('/erp/expenses', { params }),
+  get: (id: string) => api.get<{ message: string; data: Expense }>(`/erp/expenses/${id}`),
+};
+
+// ─── Accounting ledger (@Controller('accounting')) — ADMIN/EMPLOYEE ──────────
+export interface LedgerQuery {
+  page?: number;
+  limit?: number;
+  accountId?: string;
+  clientId?: string;
+  direction?: LedgerDirection;
+  sourceType?: LedgerSourceType;
+  currency?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export const accountingApi = {
+  ledger: (params?: LedgerQuery) =>
+    api.get<{ message: string; data: PaginatedLedger }>('/accounting/ledger', { params }),
 };

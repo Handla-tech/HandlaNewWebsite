@@ -315,3 +315,119 @@ export interface PaginatedInvoices {
   page: number;
   pages: number;
 }
+
+// ─── Finance: Purchases / Expenses / Accounting ──────────────────────────────
+export type PurchaseStatus = 'DRAFT' | 'ORDERED' | 'RECEIVED' | 'CANCELLED';
+export type PurchasePaymentStatus = 'UNPAID' | 'PAID' | 'OVERDUE';
+export type ExpenseType = 'INCOME' | 'EXPENSE';
+export type LedgerDirection = 'IN' | 'OUT';
+export type LedgerSourceType =
+  | 'INVOICE'
+  | 'EXPENSE'
+  | 'PURCHASE'
+  | 'QUOTATION'
+  | 'MANUAL';
+
+export interface Supplier {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface Purchase {
+  id: string;
+  purchaseNumber: string;
+  supplierId: string;
+  ownerId: string | null;
+  status: PurchaseStatus;
+  paymentStatus: PurchasePaymentStatus;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  currency: string | null;
+  accountCode: string | null;
+  orderDate: string | null;
+  dueDate: string | null;
+  paidAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  supplier?: Supplier;
+  owner?: ChatUser | null;
+  lineItems?: LineItem[];
+}
+
+export interface PaginatedPurchases {
+  purchases: Purchase[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface Expense {
+  id: string;
+  type: ExpenseType;
+  category: string;
+  amount: number;
+  currency: string;
+  description: string | null;
+  expenseDate: string;
+  invoiceId: string | null;
+  purchaseId: string | null;
+  ownerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  owner?: ChatUser | null;
+}
+
+export interface PaginatedExpenses {
+  expenses: Expense[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+export interface FinancialSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  netBalance: number;
+  paidInvoicesIncome: number;
+  manualIncome: number;
+  outstandingInvoices: number;
+  periodFrom?: string;
+  periodTo?: string;
+}
+
+export interface LedgerAccount {
+  id: string;
+  code: string;
+  name: string;
+  currency: string | null;
+}
+
+export interface LedgerEntry {
+  id: string;
+  entryDate: string;
+  accountId: string;
+  clientId: string | null;
+  direction: LedgerDirection;
+  amount: number;
+  currency: string | null;
+  sourceType: LedgerSourceType;
+  sourceId: string;
+  description: string | null;
+  ownerId: string | null;
+  createdAt: string;
+  account?: LedgerAccount;
+  client?: TicketClient;
+}
+
+export interface PaginatedLedger {
+  entries: LedgerEntry[];
+  total: number;
+  page: number;
+  pages: number;
+}

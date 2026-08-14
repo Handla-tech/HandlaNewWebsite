@@ -69,6 +69,17 @@ export default function AppLayout() {
       <Tabs.Screen name="contract/[id]" options={{ href: null }} />
       <Tabs.Screen name="invoice/[id]" options={{ href: null }} />
       <Tabs.Screen
+        name="finance"
+        options={{
+          title: 'Finance',
+          // Staff-only back-office area; hidden from the client tab bar.
+          href: isStaff ? '/(app)/finance' : null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
+        }}
+      />
+      {/* Finance detail (purchase) pushed on top of the tabs, not a tab. */}
+      <Tabs.Screen name="purchase/[id]" options={{ href: null }} />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',
