@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
   TrendingUp, TrendingDown, DollarSign, AlertCircle,
-  Plus, Loader2, MoreVertical, Search, X, Edit2, Trash2,
+  Plus, Loader2, Search, X, Edit2, Trash2,
   ChevronLeft, ChevronRight, FileText, ArrowUpCircle, ArrowDownCircle,
   Wallet,
 } from 'lucide-react';
@@ -99,84 +99,6 @@ function SummaryCards({ summary }: { summary: FinancialSummary }) {
         </div>
         <p className="text-xl font-bold text-amber-400">{fmt(summary.outstandingInvoices)}</p>
         <p className="text-[11px] text-white/25 mt-1">Unpaid + Overdue invoices</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Expense Row ──────────────────────────────────────────────────────────────
-
-function ExpenseRow({ expense, isAdmin, onEdit, onDelete }: {
-  expense: Expense; isAdmin: boolean; onEdit: (e: Expense) => void; onDelete: (e: Expense) => void;
-}) {
-  const menu           = useDropdown('right');
-  const isInvoiceLinked = expense.invoiceId !== null;
-  const isIncome        = expense.type === 'INCOME';
-
-  return (
-    <div className={cn(
-      'group flex items-start justify-between gap-3 rounded-xl border p-4 transition-all',
-      isIncome
-        ? 'border-emerald-500/10 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.05]'
-        : 'border-red-500/10 bg-red-500/[0.03] hover:bg-red-500/[0.05]',
-    )}>
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className={cn('mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
-          isIncome ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-red-500/20 bg-red-500/10')}>
-          {isIncome
-            ? <ArrowUpCircle className="w-4 h-4 text-emerald-400" />
-            : <ArrowDownCircle className="w-4 h-4 text-red-400" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-semibold border flex-shrink-0', TYPE_BADGE[expense.type])}>
-              {expense.type}
-            </span>
-            <span className="text-sm font-semibold text-white truncate">{expense.category}</span>
-            {isInvoiceLinked && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border border-blue-500/30 bg-blue-500/10 text-blue-400 flex-shrink-0">
-                <FileText className="w-2.5 h-2.5" /> Auto-Invoice
-              </span>
-            )}
-          </div>
-          {expense.description && <p className="mt-0.5 text-[11px] text-white/35 line-clamp-1">{expense.description}</p>}
-          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-white/25">
-            <span>{fmtDate(expense.expenseDate)}</span>
-            {expense.owner && <span>· {expense.owner.name}</span>}
-            {expense.invoice && <span className="text-blue-400">· {expense.invoice.invoiceNumber}</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={cn('text-base font-bold', isIncome ? 'text-emerald-400' : 'text-red-400')}>
-          {isIncome ? '+' : '-'}{fmt(expense.amount, expense.currency)}
-        </span>
-        {!isInvoiceLinked && (
-          <div ref={menu.triggerRef} className="relative">
-            <button onClick={menu.toggle}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={160}>
-              <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-                <button onClick={() => { onEdit(expense); menu.close(); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
-                  <Edit2 className="w-3.5 h-3.5" /> Edit
-                </button>
-                {isAdmin && (
-                  <>
-                    <div className="my-1 border-t border-white/[0.06]" />
-                    <button onClick={() => { onDelete(expense); menu.close(); }}
-                      className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </DropdownPortal>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -384,6 +306,78 @@ export default function ExpensesPage() {
   function openCreate() { setEditEntry(null); setShowModal(true); }
   function openEdit(e: Expense) { setEditEntry(e); setShowModal(true); }
 
+  const columns: Column<Expense>[] = [
+    {
+      key: 'category',
+      header: 'Entry',
+      cell: (e) => {
+        const isIncome = e.type === 'INCOME';
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={cn('flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+              isIncome ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-red-500/20 bg-red-500/10')}>
+              {isIncome ? <ArrowUpCircle className="w-4 h-4 text-emerald-400" /> : <ArrowDownCircle className="w-4 h-4 text-red-400" />}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white truncate">{e.category}</span>
+                {e.invoiceId !== null && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] border border-blue-500/30 bg-blue-500/10 text-blue-400 flex-shrink-0">
+                    <FileText className="w-2.5 h-2.5" /> Auto
+                  </span>
+                )}
+              </div>
+              {e.description && <div className="text-[11px] text-white/35 line-clamp-1">{e.description}</div>}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      align: 'center',
+      cell: (e) => (
+        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block', TYPE_BADGE[e.type])}>{e.type}</span>
+      ),
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      hideOnMobile: true,
+      cell: (e) => <span className="text-white/40 text-xs">{fmtDate(e.expenseDate)}</span>,
+    },
+    {
+      key: 'owner',
+      header: 'Owner',
+      hideOnMobile: true,
+      cell: (e) => (
+        <span className="text-white/50 text-xs">
+          {e.owner?.name ?? '—'}
+          {e.invoice && <span className="text-blue-400"> · {e.invoice.invoiceNumber}</span>}
+        </span>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      cell: (e) => {
+        const isIncome = e.type === 'INCOME';
+        return (
+          <span className={cn('text-sm font-bold whitespace-nowrap', isIncome ? 'text-emerald-400' : 'text-red-400')}>
+            {isIncome ? '+' : '-'}{fmt(e.amount, e.currency)}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const rowActions: RowAction<Expense>[] = [
+    { label: 'Edit', icon: Edit2, onClick: (e) => openEdit(e), show: (e) => e.invoiceId === null },
+    { label: 'Delete', icon: Trash2, danger: true, onClick: (e) => setDeleteEntry(e), show: (e) => e.invoiceId === null && isAdmin },
+  ];
+
   if (!mounted) return null;
 
   return (
@@ -452,11 +446,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* List */}
-      {isLoading && (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 animate-pulse h-20" />)}
-        </div>
-      )}
+      {isLoading && <TableSkeleton cols={5} rows={6} />}
 
       {isError && (
         <div className="flex items-center justify-center py-12">
@@ -485,9 +475,7 @@ export default function ExpensesPage() {
       )}
 
       {!isLoading && !isError && expenses.length > 0 && (
-        <div className="space-y-2">
-          {expenses.map(e => <ExpenseRow key={e.id} expense={e} isAdmin={isAdmin} onEdit={openEdit} onDelete={setDeleteEntry} />)}
-        </div>
+        <DataTable columns={columns} rows={expenses} rowKey={(e) => e.id} actions={rowActions} />
       )}
 
       {/* Pagination */}

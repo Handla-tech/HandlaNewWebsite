@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
-  ShoppingCart, Plus, Loader2, MoreVertical, Search, X, Edit2, Trash2,
+  ShoppingCart, Plus, Loader2, Search, X, Edit2, Trash2,
   ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, CreditCard, Trash,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -43,73 +43,6 @@ function fmt(n: number | undefined, currency?: string | null) {
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-// ─── Purchase Row ─────────────────────────────────────────────────────────────
-
-function PurchaseRow({ purchase, isAdmin, onEdit, onDelete, onMarkPaid }: {
-  purchase: Purchase; isAdmin: boolean;
-  onEdit: (p: Purchase) => void; onDelete: (p: Purchase) => void; onMarkPaid: (p: Purchase) => void;
-}) {
-  const menu = useDropdown('right');
-  const isPaid = purchase.paymentStatus === 'PAID';
-  return (
-    <div className="group flex items-start justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04]">
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
-          <ShoppingCart className="w-4 h-4 text-[#fbbf24]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white">{purchase.purchaseNumber}</span>
-            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border', STATUS_BADGE[purchase.status])}>{purchase.status}</span>
-            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border', PAY_BADGE[purchase.paymentStatus])}>{purchase.paymentStatus}</span>
-          </div>
-          <div className="mt-1 text-xs text-white/50 truncate">{purchase.supplier?.name ?? 'Unknown supplier'}</div>
-          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-white/25 flex-wrap">
-            {purchase.orderDate && <span>Ordered {fmtDate(purchase.orderDate)}</span>}
-            {purchase.dueDate && <span>· Due {fmtDate(purchase.dueDate)}</span>}
-            {purchase.accountCode && <span>· Acct {purchase.accountCode}</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-base font-bold text-white">{fmt(purchase.total, purchase.currency)}</span>
-        <div ref={menu.triggerRef} className="relative">
-          <button onClick={menu.toggle}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
-            <MoreVertical className="w-4 h-4" />
-          </button>
-          <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={180}>
-            <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-              {!isPaid && (
-                <button onClick={() => { onMarkPaid(purchase); menu.close(); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-emerald-400 hover:bg-emerald-400/10 transition-colors">
-                  <CreditCard className="w-3.5 h-3.5" /> Mark Paid (→ Expense)
-                </button>
-              )}
-              {purchase.paymentStatus !== 'PAID' && (
-                <button onClick={() => { onEdit(purchase); menu.close(); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors">
-                  <Edit2 className="w-3.5 h-3.5" /> Edit
-                </button>
-              )}
-              {isAdmin && (
-                <>
-                  <div className="my-1 border-t border-white/[0.06]" />
-                  <button onClick={() => { onDelete(purchase); menu.close(); }}
-                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </button>
-                </>
-              )}
-            </div>
-          </DropdownPortal>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── Create / Edit Modal (with line items) ────────────────────────────────────
@@ -428,6 +361,64 @@ export default function PurchasesPage() {
   const totalPages = data?.pages ?? 1;
 
   function openCreate() { setEditEntry(null); setShowModal(true); }
+  function openEdit(p: Purchase) { setEditEntry(p); setShowModal(true); }
+
+  const columns: Column<Purchase>[] = [
+    {
+      key: 'po',
+      header: 'PO #',
+      cell: (p) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
+            <ShoppingCart className="w-4 h-4 text-[#fbbf24]" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-white truncate">{p.purchaseNumber}</div>
+            <div className="text-[11px] text-white/35 truncate">{p.supplier?.name ?? 'Unknown supplier'}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'dates',
+      header: 'Dates',
+      hideOnMobile: true,
+      cell: (p) => (
+        <div className="text-xs text-white/40 space-y-0.5">
+          {p.orderDate && <div>Ordered {fmtDate(p.orderDate)}</div>}
+          {p.dueDate && <div>Due {fmtDate(p.dueDate)}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      cell: (p) => (
+        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block', STATUS_BADGE[p.status])}>{p.status}</span>
+      ),
+    },
+    {
+      key: 'payment',
+      header: 'Payment',
+      align: 'center',
+      cell: (p) => (
+        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block', PAY_BADGE[p.paymentStatus])}>{p.paymentStatus}</span>
+      ),
+    },
+    {
+      key: 'total',
+      header: 'Total',
+      align: 'right',
+      cell: (p) => <span className="text-sm font-bold text-white whitespace-nowrap">{fmt(p.total, p.currency)}</span>,
+    },
+  ];
+
+  const rowActions: RowAction<Purchase>[] = [
+    { label: 'Mark Paid (→ Expense)', icon: CreditCard, onClick: (p) => setPayEntry(p), show: (p) => p.paymentStatus !== 'PAID' },
+    { label: 'Edit', icon: Edit2, onClick: (p) => openEdit(p), show: (p) => p.paymentStatus !== 'PAID' },
+    { label: 'Delete', icon: Trash2, danger: true, onClick: (p) => setDeleteEntry(p), show: () => isAdmin },
+  ];
 
   if (!mounted) return null;
 
@@ -469,9 +460,7 @@ export default function PurchasesPage() {
       </div>
 
       {/* List */}
-      {isLoading && (
-        <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 animate-pulse h-20" />)}</div>
-      )}
+      {isLoading && <TableSkeleton cols={5} rows={6} />}
       {isError && (
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-3">
@@ -491,9 +480,7 @@ export default function PurchasesPage() {
         </div>
       )}
       {!isLoading && !isError && purchases.length > 0 && (
-        <div className="space-y-2">
-          {purchases.map(p => <PurchaseRow key={p.id} purchase={p} isAdmin={isAdmin} onEdit={(x) => { setEditEntry(x); setShowModal(true); }} onDelete={setDeleteEntry} onMarkPaid={setPayEntry} />)}
-        </div>
+        <DataTable columns={columns} rows={purchases} rowKey={(p) => p.id} actions={rowActions} />
       )}
 
       {/* Pagination */}

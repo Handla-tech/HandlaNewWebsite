@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
-  Receipt, Plus, ChevronLeft, ChevronRight, MoreVertical,
+  Receipt, Plus, ChevronLeft, ChevronRight,
   Search, DollarSign, AlertCircle, CheckCircle, Clock,
   Trash2, Edit2, CreditCard, X, Loader2, PlusCircle, MinusCircle,
-  ArrowUpRight,
 } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,96 +56,6 @@ function computeTotals(items: { quantity: number; unitPrice: number }[], taxRate
   const taxAmount = (subtotal * taxRate) / 100;
   const total     = subtotal + taxAmount;
   return { subtotal: +subtotal.toFixed(2), taxAmount: +taxAmount.toFixed(2), total: +total.toFixed(2) };
-}
-
-// ─── InvoiceRow ──────────────────────────────────────────────────────────────
-
-function InvoiceRow({ invoice, isAdmin, isEmployee, onEdit, onMarkPaid, onDelete }: {
-  invoice: Invoice; isAdmin: boolean; isEmployee: boolean;
-  onEdit: (inv: Invoice) => void; onMarkPaid: (inv: Invoice) => void; onDelete: (inv: Invoice) => void;
-}) {
-  const menu        = useDropdown('right');
-  const canMarkPaid = (isAdmin || isEmployee) && invoice.paymentStatus !== 'PAID';
-  const canEdit     = (isAdmin || isEmployee) && invoice.paymentStatus === 'UNPAID';
-  const canDelete   = isAdmin && invoice.paymentStatus === 'UNPAID';
-  const isOverdue   = invoice.paymentStatus === 'OVERDUE';
-
-  return (
-    <div className="group relative flex items-center justify-between gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.10] transition-all">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center flex-shrink-0">
-          <Receipt className="w-4.5 h-4.5 text-[#fbbf24]" />
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Link href={`/erp/invoices/${invoice.id}`} className="font-semibold text-white hover:text-[#fbbf24] transition-colors text-sm truncate" onClick={(e) => e.stopPropagation()}>
-              {invoice.invoiceNumber}
-            </Link>
-            <ArrowUpRight className="w-3 h-3 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-          </div>
-          <p className="text-xs text-white/30 truncate">
-            {invoice.client?.user?.name ?? invoice.clientId}
-            {invoice.client?.company ? ` · ${invoice.client.company}` : ''}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="text-right">
-          <p className="font-bold text-white text-sm">${Number(invoice.total).toFixed(2)}</p>
-          <p className="text-[10px] text-white/25">{invoice.currency}</p>
-        </div>
-
-        <span className={cn('px-2.5 py-1 rounded-full text-[11px] font-semibold border', STATUS_BADGE[invoice.paymentStatus])}>
-          {STATUS_LABEL[invoice.paymentStatus]}
-        </span>
-
-        {invoice.dueDate && (
-          <p className={cn('text-[11px] hidden sm:block', isOverdue ? 'text-red-400' : 'text-white/30')}>
-            Due {new Date(invoice.dueDate).toLocaleDateString()}
-          </p>
-        )}
-
-        {invoice.owner && (
-          <p className="text-[11px] text-white/25 hidden lg:block">{invoice.owner.name}</p>
-        )}
-
-        {(canMarkPaid || canEdit || canDelete) && (
-          <div ref={menu.triggerRef} className="relative">
-            <button onClick={menu.toggle}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close}>
-              <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl overflow-hidden py-1.5">
-                {canMarkPaid && (
-                  <button onClick={() => { onMarkPaid(invoice); menu.close(); }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-emerald-400 hover:bg-emerald-400/10 transition-colors min-h-[40px]">
-                    <CreditCard className="w-3.5 h-3.5" /> Mark as Paid
-                  </button>
-                )}
-                {canEdit && (
-                  <button onClick={() => { onEdit(invoice); menu.close(); }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors min-h-[40px]">
-                    <Edit2 className="w-3.5 h-3.5" /> Edit
-                  </button>
-                )}
-                {canDelete && (
-                  <>
-                    <div className="my-1 border-t border-white/[0.06]" />
-                    <button onClick={() => { onDelete(invoice); menu.close(); }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors min-h-[40px]">
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </DropdownPortal>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
 // ─── CreateInvoiceModal ───────────────────────────────────────────────────────
@@ -364,6 +273,7 @@ export default function InvoicesPage() {
 
   const { user } = useAuthStore();
   const qc = useQueryClient();
+  const router = useRouter();
   const isAdmin    = user?.role === 'ADMIN';
   const isEmployee = user?.role === 'EMPLOYEE';
 
@@ -414,6 +324,68 @@ export default function InvoicesPage() {
   const totalRevenue = invoices.filter(i => i.paymentStatus === 'PAID').reduce((s, i) => s + Number(i.total), 0);
 
   const invalidate = () => { qc.invalidateQueries({ queryKey: ['erp-invoices'] }); qc.invalidateQueries({ queryKey: ['erp-invoices-stat'] }); };
+
+  const columns: Column<Invoice>[] = [
+    {
+      key: 'invoice',
+      header: 'Invoice',
+      cell: (inv) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center flex-shrink-0">
+            <Receipt className="w-4 h-4 text-[#fbbf24]" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-white truncate">{inv.invoiceNumber}</div>
+            <div className="text-[11px] text-white/35 truncate">
+              {inv.client?.user?.name ?? inv.clientId}
+              {inv.client?.company ? ` · ${inv.client.company}` : ''}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'due',
+      header: 'Due Date',
+      hideOnMobile: true,
+      cell: (inv) => inv.dueDate
+        ? <span className={cn('text-xs', inv.paymentStatus === 'OVERDUE' ? 'text-red-400' : 'text-white/40')}>{new Date(inv.dueDate).toLocaleDateString()}</span>
+        : <span className="text-white/20">—</span>,
+    },
+    {
+      key: 'owner',
+      header: 'Owner',
+      hideOnMobile: true,
+      cell: (inv) => <span className="text-white/50 text-xs">{inv.owner?.name ?? '—'}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      cell: (inv) => (
+        <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-semibold border inline-block', STATUS_BADGE[inv.paymentStatus])}>
+          {STATUS_LABEL[inv.paymentStatus]}
+        </span>
+      ),
+    },
+    {
+      key: 'total',
+      header: 'Total',
+      align: 'right',
+      cell: (inv) => (
+        <div className="text-right whitespace-nowrap">
+          <div className="text-sm font-bold text-white">${Number(inv.total).toFixed(2)}</div>
+          <div className="text-[10px] text-white/25">{inv.currency}</div>
+        </div>
+      ),
+    },
+  ];
+
+  const rowActions: RowAction<Invoice>[] = [
+    { label: 'Mark as Paid', icon: CreditCard, onClick: (inv) => setMarkPaidInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus !== 'PAID' },
+    { label: 'Edit', icon: Edit2, onClick: (inv) => setEditInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus === 'UNPAID' },
+    { label: 'Delete', icon: Trash2, danger: true, onClick: (inv) => setDeleteInvoice(inv), show: (inv) => isAdmin && inv.paymentStatus === 'UNPAID' },
+  ];
 
   if (!mounted) return null;
 
@@ -491,9 +463,7 @@ export default function InvoicesPage() {
 
       {/* Invoice list */}
       {isLoading ? (
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-white/[0.04] animate-pulse" />)}
-        </div>
+        <TableSkeleton cols={5} rows={6} />
       ) : invoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] mb-4">
@@ -505,12 +475,8 @@ export default function InvoicesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {invoices.map(inv => (
-            <InvoiceRow key={inv.id} invoice={inv} isAdmin={isAdmin} isEmployee={isEmployee}
-              onEdit={setEditInvoice} onMarkPaid={setMarkPaidInvoice} onDelete={setDeleteInvoice} />
-          ))}
-        </div>
+        <DataTable columns={columns} rows={invoices} rowKey={(inv) => inv.id}
+          onRowClick={(inv) => router.push(`/erp/invoices/${inv.id}`)} actions={rowActions} />
       )}
 
       {/* Pagination */}

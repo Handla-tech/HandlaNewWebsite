@@ -13,12 +13,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
   CheckSquare,
   Search,
   Plus,
-  MoreVertical,
   Pencil,
   Trash2,
   X,
@@ -29,9 +28,7 @@ import {
   AlertTriangle,
   Loader2,
   Calendar,
-  User,
   FolderOpen,
-  ArrowUpRight,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { tasksApi, projectsApi } from '@/lib/api';
@@ -94,22 +91,6 @@ function isOverdue(dueDate: string | null, status: TaskStatus): boolean {
   return new Date(dueDate) < new Date();
 }
 
-// ─── Loading Skeleton ─────────────────────────────────────────────────────────
-
-function TaskRowSkeleton() {
-  return (
-    <div className="animate-pulse flex items-center gap-4 px-4 py-3.5 rounded-xl border border-white/[0.05] bg-white/[0.02]">
-      <div className="h-8 w-8 rounded-lg bg-white/[0.06] flex-shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 w-48 rounded-lg bg-white/[0.06]" />
-        <div className="h-3 w-32 rounded-lg bg-white/[0.04]" />
-      </div>
-      <div className="h-6 w-20 rounded-full bg-white/[0.06]" />
-      <div className="h-4 w-24 rounded-lg bg-white/[0.06]" />
-    </div>
-  );
-}
-
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, status }: { label: string; value: number; status: TaskStatus }) {
@@ -128,103 +109,6 @@ function StatCard({ label, value, status }: { label: string; value: number; stat
         <Icon className={cn('w-3.5 h-3.5', STATUS_COLOR[status], status === 'IN_PROGRESS' && 'animate-spin')} />
       </div>
       <p className={cn('text-2xl font-bold', cfg.color)}>{value}</p>
-    </div>
-  );
-}
-
-// ─── Task Row ─────────────────────────────────────────────────────────────────
-
-function TaskRow({ task, role, onEdit, onDelete }: {
-  task: Task; role: string; onEdit: (t: Task) => void; onDelete: (t: Task) => void;
-}) {
-  const menu   = useDropdown('right');
-  const router  = useRouter();
-  const StatusIcon = STATUS_ICON[task.status];
-  const overdue = isOverdue(task.dueDate, task.status);
-
-  return (
-    <div
-      className="group flex items-center gap-4 px-4 py-3.5 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.04] hover:border-[#fbbf24]/20 transition-all cursor-pointer"
-      onClick={() => router.push(`/erp/tasks/${task.id}`)}
-    >
-      {/* Status icon */}
-      <div className={cn(
-        'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
-        task.status === 'PENDING'     && 'border-white/10 bg-white/5',
-        task.status === 'IN_PROGRESS' && 'border-blue-400/20 bg-blue-400/10',
-        task.status === 'COMPLETED'   && 'border-emerald-400/20 bg-emerald-400/10',
-        task.status === 'DELAYED'     && 'border-red-400/20 bg-red-400/10',
-      )}>
-        <StatusIcon className={cn('h-3.5 w-3.5', STATUS_COLOR[task.status], task.status === 'IN_PROGRESS' && 'animate-spin')} />
-      </div>
-
-      {/* Title + project */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold text-white truncate text-sm">{task.title}</p>
-          <ArrowUpRight className="h-3 w-3 text-white/20 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </div>
-        {task.project && (
-          <p className="text-[11px] text-white/30 truncate mt-0.5 flex items-center gap-1">
-            <FolderOpen className="inline h-3 w-3" />
-            {task.project.title}
-          </p>
-        )}
-      </div>
-
-      {/* Status badge */}
-      <span className={cn('hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-semibold flex-shrink-0', STATUS_BADGE[task.status])}>
-        {task.status.replace('_', ' ')}
-      </span>
-
-      {/* Due date */}
-      <div className={cn('hidden md:flex items-center gap-1.5 text-[11px] min-w-[100px] flex-shrink-0', overdue ? 'text-red-400' : 'text-white/30')}>
-        <Calendar className="h-3 w-3" />
-        {task.dueDate ? formatDate(task.dueDate) : '—'}
-        {overdue && <AlertTriangle className="h-3 w-3 text-red-400" />}
-      </div>
-
-      {/* Assignee */}
-      {task.assignee && (
-        <div className="hidden lg:flex items-center gap-1.5 flex-shrink-0">
-          <span className={cn('h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white', getAvatarColor(task.assignee.name))}>
-            {getInitials(task.assignee.name)}
-          </span>
-          <span className="text-[11px] text-white/30">{task.assignee.name}</span>
-        </div>
-      )}
-
-      {/* Actions — portal-rendered to escape overflow containers */}
-      <div ref={menu.triggerRef} className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={menu.toggle}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
-          aria-label="Task actions"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </button>
-        <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={152}>
-          <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-            <button
-              onClick={() => { onEdit(task); menu.close(); }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" /> Edit
-            </button>
-            {role === 'ADMIN' && (
-              <>
-                <div className="my-1 border-t border-white/[0.06]" />
-                <button
-                  onClick={() => { onDelete(task); menu.close(); }}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                </button>
-              </>
-            )}
-          </div>
-        </DropdownPortal>
-      </div>
     </div>
   );
 }
@@ -372,6 +256,7 @@ function DeleteDialog({ task, onConfirm, onClose, isLoading }: {
 export default function TasksPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   const [page,         setPage]         = useState(1);
@@ -438,6 +323,79 @@ export default function TasksPage() {
   const tasks      = data?.tasks ?? [];
   const totalPages = data?.pages ?? 1;
 
+  const columns: Column<Task>[] = [
+    {
+      key: 'title',
+      header: 'Task',
+      cell: (task) => {
+        const StatusIcon = STATUS_ICON[task.status];
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={cn(
+              'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+              task.status === 'PENDING'     && 'border-white/10 bg-white/5',
+              task.status === 'IN_PROGRESS' && 'border-blue-400/20 bg-blue-400/10',
+              task.status === 'COMPLETED'   && 'border-emerald-400/20 bg-emerald-400/10',
+              task.status === 'DELAYED'     && 'border-red-400/20 bg-red-400/10',
+            )}>
+              <StatusIcon className={cn('h-3.5 w-3.5', STATUS_COLOR[task.status], task.status === 'IN_PROGRESS' && 'animate-spin')} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white truncate">{task.title}</div>
+              {task.project && (
+                <div className="text-[11px] text-white/35 truncate flex items-center gap-1">
+                  <FolderOpen className="inline h-3 w-3" />{task.project.title}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'assignee',
+      header: 'Assignee',
+      hideOnMobile: true,
+      cell: (task) => task.assignee ? (
+        <div className="flex items-center gap-1.5">
+          <span className={cn('h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white', getAvatarColor(task.assignee.name))}>
+            {getInitials(task.assignee.name)}
+          </span>
+          <span className="text-xs text-white/50">{task.assignee.name}</span>
+        </div>
+      ) : <span className="text-white/20">—</span>,
+    },
+    {
+      key: 'due',
+      header: 'Due Date',
+      hideOnMobile: true,
+      cell: (task) => {
+        const overdue = isOverdue(task.dueDate, task.status);
+        return (
+          <span className={cn('flex items-center gap-1.5 text-xs', overdue ? 'text-red-400' : 'text-white/40')}>
+            <Calendar className="h-3 w-3" />{task.dueDate ? formatDate(task.dueDate) : '—'}
+            {overdue && <AlertTriangle className="h-3 w-3 text-red-400" />}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      cell: (task) => (
+        <span className={cn('px-2 py-0.5 rounded-full border text-[10px] font-semibold inline-block', STATUS_BADGE[task.status])}>
+          {task.status.replace('_', ' ')}
+        </span>
+      ),
+    },
+  ];
+
+  const rowActions: RowAction<Task>[] = [
+    { label: 'Edit', icon: Pencil, onClick: (t) => setEditTask(t) },
+    { label: 'Delete', icon: Trash2, danger: true, onClick: (t) => setDeleteTask(t), show: () => user?.role === 'ADMIN' },
+  ];
+
   return (
     <div className="space-y-5">
       {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -496,9 +454,9 @@ export default function TasksPage() {
       </div>
 
       {/* ── Task List ──────────────────────────────────────────────────── */}
-      <div className="space-y-2" role="list" aria-label="Task list" aria-busy={isLoading}>
+      <div role="list" aria-label="Task list" aria-busy={isLoading}>
         {isLoading ? (
-          Array(6).fill(0).map((_, i) => <TaskRowSkeleton key={i} />)
+          <TableSkeleton cols={4} rows={6} />
         ) : isError ? (
           <div className="flex flex-col items-center py-20 gap-4">
             <AlertTriangle className="h-10 w-10 text-red-400/40" />
@@ -515,9 +473,8 @@ export default function TasksPage() {
             </p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <TaskRow key={task.id} task={task} role={user?.role ?? ''} onEdit={setEditTask} onDelete={setDeleteTask} />
-          ))
+          <DataTable columns={columns} rows={tasks} rowKey={(t) => t.id}
+            onRowClick={(t) => router.push(`/erp/tasks/${t.id}`)} actions={rowActions} />
         )}
       </div>
 

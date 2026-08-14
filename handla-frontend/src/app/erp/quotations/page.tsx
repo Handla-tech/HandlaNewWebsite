@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useDropdown, DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DropdownPortal } from '@/components/ui/DropdownPortal';
+import { DataTable, TableSkeleton, type Column, type RowAction } from '@/components/ui/DataTable';
 import {
-  FileSignature, Plus, Loader2, MoreVertical, Search, X, Edit2, Trash2, Trash,
+  FileSignature, Plus, Loader2, Search, X, Edit2, Trash2, Trash,
   ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, Send, Check, Ban,
   ArrowRightLeft, Link2, Copy,
 } from 'lucide-react';
@@ -42,73 +43,10 @@ function clientLabel(c: { company?: string | null; user?: { name?: string } } | 
   return c.user?.name || c.company || 'Unnamed client';
 }
 
-// ─── Row ──────────────────────────────────────────────────────────────────────
+// ─── Status badge ───────────────────────────────────────────────────────────
 
-function QuotationRow({ q, isAdmin, onEdit, onDelete, onSend, onAccept, onReject, onConvert, onCopyLink }: {
-  q: Quotation; isAdmin: boolean;
-  onEdit: (q: Quotation) => void; onDelete: (q: Quotation) => void;
-  onSend: (q: Quotation) => void; onAccept: (q: Quotation) => void;
-  onReject: (q: Quotation) => void; onConvert: (q: Quotation) => void; onCopyLink: (q: Quotation) => void;
-}) {
-  const menu = useDropdown('right');
-  const isDraft = q.status === 'DRAFT';
-  const isSent  = q.status === 'SENT';
-  const isAccepted = q.status === 'ACCEPTED';
-  return (
-    <div className="group flex items-start justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:bg-white/[0.04]">
-      <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
-          <FileSignature className="w-4 h-4 text-[#fbbf24]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white">{q.quoteNumber}</span>
-            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-semibold border', STATUS_BADGE[q.status])}>{q.status}</span>
-          </div>
-          <div className="mt-1 text-sm text-white/70 truncate">{q.title}</div>
-          <div className="mt-1 text-xs text-white/40 truncate">{clientLabel(q.client)}</div>
-          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-white/25 flex-wrap">
-            <span>Created {fmtDate(q.createdAt)}</span>
-            {q.validUntil && <span>· Valid until {fmtDate(q.validUntil)}</span>}
-            {q.convertedInvoiceId && <span className="text-purple-400">· Converted</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-base font-bold text-white">{fmt(q.total, q.currency)}</span>
-        <div ref={menu.triggerRef} className="relative">
-          <button onClick={menu.toggle} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"><MoreVertical className="w-4 h-4" /></button>
-          <DropdownPortal isOpen={menu.isOpen} style={menu.dropdownStyle} onClose={menu.close} width={200}>
-            <div className="rounded-xl border border-white/10 bg-[#161616] shadow-2xl py-1.5">
-              {isDraft && (
-                <>
-                  <button onClick={() => { onEdit(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"><Edit2 className="w-3.5 h-3.5" /> Edit</button>
-                  <button onClick={() => { onSend(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-blue-400 hover:bg-blue-400/10 transition-colors"><Send className="w-3.5 h-3.5" /> Send to client</button>
-                </>
-              )}
-              {isSent && (
-                <>
-                  <button onClick={() => { onAccept(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-emerald-400 hover:bg-emerald-400/10 transition-colors"><Check className="w-3.5 h-3.5" /> Mark accepted</button>
-                  <button onClick={() => { onReject(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors"><Ban className="w-3.5 h-3.5" /> Mark rejected</button>
-                </>
-              )}
-              {isAccepted && (
-                <button onClick={() => { onConvert(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-purple-400 hover:bg-purple-400/10 transition-colors"><ArrowRightLeft className="w-3.5 h-3.5" /> Convert (Contract + Invoice)</button>
-              )}
-              <button onClick={() => { onCopyLink(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"><Link2 className="w-3.5 h-3.5" /> Copy public link</button>
-              {isAdmin && isDraft && (
-                <>
-                  <div className="my-1 border-t border-white/[0.06]" />
-                  <button onClick={() => { onDelete(q); menu.close(); }} className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
-                </>
-              )}
-            </div>
-          </DropdownPortal>
-        </div>
-      </div>
-    </div>
-  );
+function QStatus({ status }: { status: QuotationStatus }) {
+  return <span className={cn('inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border', STATUS_BADGE[status])}>{status}</span>;
 }
 
 // ─── Create / Edit Modal ──────────────────────────────────────────────────────
@@ -344,6 +282,49 @@ export default function QuotationsPage() {
 
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 2500); return () => clearTimeout(t); } }, [toast]);
 
+  // ─── Table columns & row actions ────────────────────────────────────────────
+  const columns: Column<Quotation>[] = [
+    {
+      key: 'quote',
+      header: 'Quotation',
+      cell: (q) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-[#fbbf24]/20 bg-[#fbbf24]/10">
+            <FileSignature className="w-4 h-4 text-[#fbbf24]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{q.quoteNumber}</p>
+            <p className="text-xs text-white/50 truncate max-w-[240px]">{q.title}</p>
+          </div>
+        </div>
+      ),
+    },
+    { key: 'client', header: 'Client', hideOnMobile: true, cell: (q) => <span className="text-white/60">{clientLabel(q.client)}</span> },
+    {
+      key: 'created',
+      header: 'Created',
+      hideOnMobile: true,
+      cell: (q) => (
+        <div className="text-[12px] text-white/45 whitespace-nowrap">
+          {fmtDate(q.createdAt)}
+          {q.validUntil && <div className="text-white/25">Valid: {fmtDate(q.validUntil)}</div>}
+        </div>
+      ),
+    },
+    { key: 'status', header: 'Status', align: 'center', cell: (q) => <QStatus status={q.status} /> },
+    { key: 'total', header: 'Total', align: 'right', cell: (q) => <span className="font-bold text-white whitespace-nowrap">{fmt(q.total, q.currency)}</span> },
+  ];
+
+  const rowActions: RowAction<Quotation>[] = [
+    { label: 'Edit', icon: Edit2, onClick: (q) => { setEditEntry(q); setShowModal(true); }, show: (q) => q.status === 'DRAFT' },
+    { label: 'Send to client', icon: Send, onClick: (q) => action.mutate({ id: q.id, type: 'send' }), show: (q) => q.status === 'DRAFT' },
+    { label: 'Mark accepted', icon: Check, onClick: (q) => action.mutate({ id: q.id, type: 'accept' }), show: (q) => q.status === 'SENT' },
+    { label: 'Mark rejected', icon: Ban, onClick: (q) => action.mutate({ id: q.id, type: 'reject' }), show: (q) => q.status === 'SENT' },
+    { label: 'Convert (Contract + Invoice)', icon: ArrowRightLeft, onClick: (q) => action.mutate({ id: q.id, type: 'convert' }), show: (q) => q.status === 'ACCEPTED' },
+    { label: 'Copy public link', icon: Link2, onClick: (q) => copyLink(q) },
+    { label: 'Delete', icon: Trash2, danger: true, onClick: (q) => setDeleteEntry(q), show: (q) => isAdmin && q.status === 'DRAFT' },
+  ];
+
   if (!mounted) return null;
 
   return (
@@ -381,7 +362,7 @@ export default function QuotationsPage() {
         </div>
       </div>
 
-      {isLoading && <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-4 animate-pulse h-24" />)}</div>}
+      {isLoading && <TableSkeleton cols={5} rows={6} />}
       {isError && (
         <div className="text-center py-12 space-y-3"><AlertCircle className="w-8 h-8 text-red-400/50 mx-auto" /><p className="text-sm text-white/30">Failed to load quotations.</p>
           <button onClick={() => refetch()} className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs text-white/50">Retry</button></div>
@@ -390,18 +371,7 @@ export default function QuotationsPage() {
         <div className="text-center py-16 space-y-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] mx-auto"><FileSignature className="w-7 h-7 text-white/15" /></div><p className="text-sm text-white/30">No quotations found.</p></div>
       )}
       {!isLoading && !isError && quotations.length > 0 && (
-        <div className="space-y-2">
-          {quotations.map(q => (
-            <QuotationRow key={q.id} q={q} isAdmin={isAdmin}
-              onEdit={(x) => { setEditEntry(x); setShowModal(true); }}
-              onDelete={setDeleteEntry}
-              onSend={(x) => action.mutate({ id: x.id, type: 'send' })}
-              onAccept={(x) => action.mutate({ id: x.id, type: 'accept' })}
-              onReject={(x) => action.mutate({ id: x.id, type: 'reject' })}
-              onConvert={(x) => action.mutate({ id: x.id, type: 'convert' })}
-              onCopyLink={copyLink} />
-          ))}
-        </div>
+        <DataTable columns={columns} rows={quotations} rowKey={(q) => q.id} actions={rowActions} />
       )}
 
       {totalPages > 1 && (
