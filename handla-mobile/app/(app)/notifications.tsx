@@ -6,20 +6,24 @@ import { notificationsApi } from '@/lib/endpoints';
 import { Loading } from '@/components/ui';
 import { GlassScreen, GradientHeader, GlassCard, withAlpha } from '@/components/glass';
 import { spacing, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { Notification } from '@/types';
 
-function timeAgo(iso: string) {
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+function timeAgo(iso: string, t: TFn) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return t('notifications.time.now');
+  if (m < 60) return t('notifications.time.minutes', { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return t('notifications.time.hours', { n: h });
+  return t('notifications.time.days', { n: Math.floor(h / 24) });
 }
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const qc = useQueryClient();
 
   const list = useQuery({
@@ -46,13 +50,13 @@ export default function NotificationsScreen() {
   return (
     <GlassScreen>
       <GradientHeader
-        title="Notifications"
+        title={t('notifications.title')}
         icon="notifications-outline"
         right={
           hasUnread ? (
             <Pressable onPress={() => markAll.mutate()} hitSlop={8}>
               <Text style={{ color: colors.accent, fontSize: font.sm, fontWeight: '700' }}>
-                Mark all read
+                {t('notifications.markAllRead')}
               </Text>
             </Pressable>
           ) : undefined
@@ -77,7 +81,7 @@ export default function NotificationsScreen() {
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
               <Ionicons name="notifications-off-outline" size={36} color={colors.textDim} />
               <Text style={{ color: colors.textFaint, marginTop: spacing.md }}>
-                No notifications yet.
+                {t('notifications.empty')}
               </Text>
             </View>
           }
@@ -111,7 +115,7 @@ export default function NotificationsScreen() {
                       {item.title}
                     </Text>
                     <Text style={{ color: colors.textDim, fontSize: font.xs, marginLeft: spacing.sm }}>
-                      {timeAgo(item.createdAt)}
+                      {timeAgo(item.createdAt, t)}
                     </Text>
                   </View>
                   {item.body ? (

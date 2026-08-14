@@ -1,0 +1,28 @@
+{
+  "en": {
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications yet.",
+      "time": {
+        "now": "just now",
+        "minutes": "{{n}}m ago",
+        "hours": "{{n}}h ago",
+        "days": "{{n}}d ago"
+      }
+    }
+  },
+  "ar": {
+    "notifications": {
+      "title": "الإشعارات",
+      "markAllRead": "تعليم الكل كمقروء",
+      "empty": "لا توجد إشعارات بعد.",
+      "time": {
+        "now": "الآن",
+        "minutes": "منذ {{n}} د",
+        "hours": "منذ {{n}} س",
+        "days": "منذ {{n}} ي"
+      }
+    }
+  }
+}

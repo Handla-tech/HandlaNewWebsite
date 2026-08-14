@@ -284,7 +284,13 @@
   "notifications": {
     "title": "الإشعارات",
     "empty": "لقد اطّلعت على كل شيء",
-    "markAllRead": "تعليم الكل كمقروء"
+    "markAllRead": "تعليم الكل كمقروء",
+    "time": {
+      "now": "الآن",
+      "minutes": "منذ {{n}} د",
+      "hours": "منذ {{n}} س",
+      "days": "منذ {{n}} ي"
+    }
   },
   "profile": {
     "title": "الملف الشخصي",

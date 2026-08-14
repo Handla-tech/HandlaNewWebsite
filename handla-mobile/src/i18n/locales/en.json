@@ -284,7 +284,13 @@
   "notifications": {
     "title": "Notifications",
     "empty": "You're all caught up",
-    "markAllRead": "Mark all as read"
+    "markAllRead": "Mark all as read",
+    "time": {
+      "now": "just now",
+      "minutes": "{{n}}m ago",
+      "hours": "{{n}}h ago",
+      "days": "{{n}}d ago"
+    }
   },
   "profile": {
     "title": "Profile",
