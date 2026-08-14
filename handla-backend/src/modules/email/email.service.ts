@@ -368,21 +368,25 @@ export class EmailService {
     const t = isAr
       ? {
           title: 'رمز التحقق — Handla',
-          greeting: name ? `مرحباً ${name}،` : 'مرحباً،',
+          preheader: `رمز التحقق الخاص بك هو ${payload.code}. ينتهي خلال ${payload.expiresInMinutes} دقائق.`,
+          greeting: name ? `مرحباً ${name}` : 'مرحباً',
           purpose: purposeTextAr[payload.purpose],
           expiry: `ينتهي هذا الرمز خلال ${payload.expiresInMinutes} دقائق.`,
           security:
-            'لأمانك، لا تشارك هذا الرمز مع أي شخص. إذا لم تطلب هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.',
+            'لأمانك، لا تشارك هذا الرمز مع أي شخص. لن يطلب منك فريق Handla هذا الرمز أبداً. إذا لم تطلب هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.',
           rights: 'جميع الحقوق محفوظة.',
+          autoNote: 'هذه رسالة تلقائية، يرجى عدم الرد عليها مباشرة.',
         }
       : {
           title: 'Your verification code — Handla',
-          greeting: name ? `Hi ${name},` : 'Hi there,',
+          preheader: `Your verification code is ${payload.code}. It expires in ${payload.expiresInMinutes} minutes.`,
+          greeting: name ? `Hi ${name}` : 'Hi there',
           purpose: purposeTextEn[payload.purpose],
           expiry: `This code expires in ${payload.expiresInMinutes} minutes.`,
           security:
-            'For your security, never share this code with anyone. If you did not request it, you can safely ignore this email.',
+            'For your security, never share this code with anyone. The Handla team will never ask you for it. If you did not request this code, you can safely ignore this email.',
           rights: 'All rights reserved.',
+          autoNote: 'This is an automated message — please do not reply directly.',
         };
 
     const html = await this.renderTemplate('verification-code', {
