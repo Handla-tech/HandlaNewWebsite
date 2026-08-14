@@ -18,12 +18,12 @@ import {
   type SelectOption,
   type SheetAction,
 } from '@/components/forms';
-import { statusColor, prettyStatus } from '@/lib/statusMeta';
+import { statusColor, prettyStatusT } from '@/lib/statusMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedProjects, Project, ProjectStatus } from '@/types';
 
 const STATUSES: ProjectStatus[] = ['PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
-const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatus(s), value: s }));
 
 const EMPTY: ProjectInput = { title: '', description: '', clientId: '', status: 'PLANNING', startDate: '', endDate: '' };
 
@@ -33,7 +33,9 @@ function fmtDate(iso?: string | null) {
 }
 
 export default function ProjectsScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
+  const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatusT(s, t), value: s }));
   const qc = useQueryClient();
   const isClient = useAuthStore((s) => s.isClient());
   const isStaff = useAuthStore((s) => s.isStaff());
@@ -107,7 +109,7 @@ export default function ProjectsScreen() {
       qc.invalidateQueries({ queryKey: ['projects-mobile'] });
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save project')),
+    onError: (e) => setErr(apiError(e, t('projects.errors.save'))),
   });
   const del = useMutation({
     mutationFn: (id: string) => projectsApi.remove(id),
@@ -115,11 +117,11 @@ export default function ProjectsScreen() {
       qc.invalidateQueries({ queryKey: ['projects-mobile'] });
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete project')),
+    onError: (e) => setDeleteErr(apiError(e, t('projects.errors.delete'))),
   });
   const submit = () => {
-    if (!form.title?.trim() || form.title.trim().length < 2) return setErr('Title must be at least 2 characters.');
-    if (!editing && !form.clientId) return setErr('Client is required.');
+    if (!form.title?.trim() || form.title.trim().length < 2) return setErr(t('projects.errors.title'));
+    if (!editing && !form.clientId) return setErr(t('projects.errors.client'));
     setErr(null);
     save.mutate();
   };
@@ -142,7 +144,7 @@ export default function ProjectsScreen() {
             >
               {item.title}
             </Text>
-            <Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />
+            <Badge label={prettyStatusT(item.status, t)} color={sc.color} soft={sc.soft} />
           </View>
           {clientName ? (
             <Text style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 4 }} numberOfLines={1}>
@@ -151,10 +153,10 @@ export default function ProjectsScreen() {
           ) : null}
           <View style={{ flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm }}>
             <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-              Start: {fmtDate(item.startDate)}
+              {t('projects.start', { date: fmtDate(item.startDate) })}
             </Text>
             <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-              End: {fmtDate(item.endDate)}
+              {t('projects.end', { date: fmtDate(item.endDate) })}
             </Text>
           </View>
         </View>
@@ -164,7 +166,7 @@ export default function ProjectsScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Projects" icon="folder-open-outline" />
+      <GradientHeader title={t('projects.title')} icon="folder-open-outline" />
 
       <ScrollView
         horizontal
@@ -172,11 +174,11 @@ export default function ProjectsScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}
         style={{ maxHeight: 44, flexGrow: 0 }}
       >
-        <Chip label="All" active={status === null} onPress={() => setStatus(null)} />
+        <Chip label={t('projects.all')} active={status === null} onPress={() => setStatus(null)} />
         {STATUSES.map((s) => (
           <Chip
             key={s}
-            label={prettyStatus(s)}
+            label={prettyStatusT(s, t)}
             active={status === s}
             onPress={() => setStatus(s)}
           />
@@ -201,7 +203,7 @@ export default function ProjectsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="folder-open-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No projects found.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('projects.empty')}</Text>
             </View>
           }
         />
@@ -212,45 +214,45 @@ export default function ProjectsScreen() {
       <FormModal
         visible={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Project' : 'New Project'}
+        title={editing ? t('projects.editProject') : t('projects.newProject')}
         onSubmit={submit}
         submitting={save.isPending}
         error={err ?? undefined}
       >
         <Input
-          label="Title"
+          label={t('projects.titleLabel')}
           value={form.title}
-          onChangeText={(t) => setForm((f) => ({ ...f, title: t }))}
-          placeholder="Project title"
+          onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
+          placeholder={t('projects.titlePlaceholder')}
         />
         <Textarea
-          label="Description"
+          label={t('common.description')}
           value={form.description}
-          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
-          placeholder="Optional description"
+          onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder={t('projects.descPlaceholder')}
         />
         {!editing ? (
           <Select
-            label="Client"
+            label={t('projects.client')}
             value={form.clientId}
             options={clientOptions}
             onChange={(v) => setForm((f) => ({ ...f, clientId: v }))}
-            placeholder="Select a client"
+            placeholder={t('projects.selectClient')}
           />
         ) : null}
         <Select
-          label="Status"
+          label={t('common.status')}
           value={form.status}
           options={STATUS_OPTIONS}
           onChange={(v) => setForm((f) => ({ ...f, status: v as ProjectStatus }))}
         />
         <DateField
-          label="Start date"
+          label={t('projects.startDate')}
           value={form.startDate}
           onChange={(v) => setForm((f) => ({ ...f, startDate: v }))}
         />
         <DateField
-          label="End date"
+          label={t('projects.endDate')}
           value={form.endDate}
           onChange={(v) => setForm((f) => ({ ...f, endDate: v }))}
         />
@@ -262,7 +264,7 @@ export default function ProjectsScreen() {
         title={sheetFor?.title}
         actions={[
           {
-            label: 'Edit',
+            label: t('common.edit'),
             icon: 'create-outline',
             onPress: () => {
               const p = sheetFor;
@@ -273,7 +275,7 @@ export default function ProjectsScreen() {
           ...(isAdmin
             ? [
                 {
-                  label: 'Delete',
+                  label: t('common.delete'),
                   icon: 'trash-outline',
                   destructive: true,
                   onPress: () => {
@@ -292,9 +294,9 @@ export default function ProjectsScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete Project"
-        message={`Delete "${deleteFor?.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('projects.deleteTitle')}
+        message={t('projects.deleteMessage', { name: deleteFor?.title ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}

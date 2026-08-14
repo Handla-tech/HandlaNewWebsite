@@ -361,5 +361,29 @@
       "email": "A valid email is required.",
       "password": "Password: min 8 chars with uppercase, lowercase and a number."
     }
+  },
+  "projects": {
+    "title": "Projects",
+    "all": "All",
+    "empty": "No projects found.",
+    "start": "Start: {{date}}",
+    "end": "End: {{date}}",
+    "newProject": "New Project",
+    "editProject": "Edit Project",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Project title",
+    "descPlaceholder": "Optional description",
+    "client": "Client",
+    "selectClient": "Select a client",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "deleteTitle": "Delete Project",
+    "deleteMessage": "Delete \"{{name}}\"? This cannot be undone.",
+    "errors": {
+      "save": "Failed to save project",
+      "delete": "Failed to delete project",
+      "title": "Title must be at least 2 characters.",
+      "client": "Client is required."
+    }
   }
 }
