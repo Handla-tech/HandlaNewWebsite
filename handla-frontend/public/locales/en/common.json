@@ -5,6 +5,7 @@
     "services": "Services",
     "solutions": "Solutions",
     "process": "Process",
+    "projects": "Projects",
     "testimonials": "Testimonials",
     "contact": "Contact",
     "signIn": "Sign In",
@@ -1014,7 +1015,8 @@
         "sales": "Sales",
         "finance": "Finance",
         "operations": "Operations",
-        "admin": "Admin"
+        "admin": "Admin",
+        "website": "Website Content"
       },
       "items": {
         "dashboard": "Dashboard",
@@ -1035,7 +1037,9 @@
         "analytics": "Analytics",
         "saas": "SaaS Tenants",
         "testimonials": "Testimonials",
-        "users": "Users"
+        "users": "Users",
+        "websiteProjects": "Website Projects",
+        "websiteProducts": "Website Products"
       },
       "adminPortal": "Admin Portal",
       "employeePortal": "Employee Portal",
@@ -1066,5 +1070,19 @@
       "github": "GitHub",
       "linkedin": "LinkedIn"
     }
+  },
+  "projects": {
+    "label": "Our Work",
+    "title": "Featured Projects",
+    "subtitle": "A selection of products and platforms we have designed, built, and shipped for our clients.",
+    "viewAll": "View all projects",
+    "pageTitle": "Projects & Case Studies",
+    "pageSubtitle": "Explore the full portfolio of work we have delivered — from SaaS platforms to enterprise ERP systems.",
+    "all": "All",
+    "empty": "No projects to show yet. Check back soon.",
+    "loadError": "Failed to load projects.",
+    "retry": "Retry",
+    "prev": "Previous",
+    "next": "Next"
   }
 }

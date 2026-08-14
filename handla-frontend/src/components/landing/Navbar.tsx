@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, LogIn, Globe, MessageSquare, LayoutDashboard, LogOut, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useUIStore } from '@/store/uiStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/store/authStore';
@@ -14,12 +14,21 @@ import { getInitials, getAvatarColor, cn } from '@/lib/utils';
 
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
-const NAV_KEYS: { href: string; key: string }[] = [
-  { href: '#about',     key: 'nav.about'    },
-  { href: '#services',  key: 'nav.services' },
-  { href: '#solutions', key: 'nav.solutions'},
-  { href: '#process',   key: 'nav.process'  },
-  { href: '#contact',   key: 'nav.contact'  },
+// `type` distinguishes cross-page routes (Home, Projects) that use real
+// <Link> navigation from same-page smooth-scroll anchors. Anchors carry both
+// a `hash` (for scrolling when already on the landing page) and an `href`
+// (`/#hash`) so they still work from other routes like /projects.
+type NavLink =
+  | { type: 'page';   href: string; key: string }
+  | { type: 'anchor'; href: string; hash: string; key: string };
+
+const NAV_KEYS: NavLink[] = [
+  { type: 'page',   href: '/',           key: 'nav.home'      },
+  { type: 'anchor', href: '/#about',     hash: '#about',      key: 'nav.about'     },
+  { type: 'anchor', href: '/#services',  hash: '#services',   key: 'nav.services'  },
+  { type: 'anchor', href: '/#solutions', hash: '#solutions',  key: 'nav.solutions' },
+  { type: 'page',   href: '/projects',   key: 'nav.projects'  },
+  { type: 'anchor', href: '/#contact',   hash: '#contact',    key: 'nav.contact'   },
 ];
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -30,6 +39,8 @@ export default function Navbar() {
   const [activeLink, setActiveLink] = useState<string>('');
 
   const router = useRouter();
+  const pathname = usePathname();
+  const onLanding = pathname === '/';
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   const { isLoggedIn, user, logout } = useAuthStore();
@@ -57,16 +68,25 @@ export default function Navbar() {
     return () => document.removeEventListener('keydown', onKey);
   }, [mobileOpen]);
 
-  // ── Smooth-scroll handler ─────────────────────────────────────────────────
-  const handleNavClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  // ── Smooth-scroll handler for same-page anchors ───────────────────────────
+  //
+  // When already on the landing page ("/"), intercept the click and smooth
+  // scroll. When on another route (e.g. /projects), let the browser follow
+  // the `/#hash` href so Next.js navigates home and the browser jumps to the
+  // section — no preventDefault in that case.
+  const handleAnchorClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
+      if (!onLanding) {
+        setMobileOpen(false);
+        return; // allow default navigation to /#hash
+      }
       e.preventDefault();
       setMobileOpen(false);
-      setActiveLink(href);
-      const el = document.querySelector(href);
+      setActiveLink(hash);
+      const el = document.querySelector(hash);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
-    [],
+    [onLanding],
   );
 
   // ── Locale toggle ────────────────────────────────────────────────────────
@@ -127,34 +147,53 @@ export default function Navbar() {
 
             {/* ── Desktop nav ───────────────────────────────────────────── */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Primary navigation">
-              {NAV_KEYS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleNavClick(e, link.href)}
-                  className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
-                    isRTL ? 'font-[family-name:var(--font-space-grotesk)]' : ''
-                  } ${activeLink === link.href ? 'text-white' : 'text-[#707070] hover:text-white'}`}
-                >
-                  {/* Hover/active bg */}
-                  <span
-                    className={`absolute inset-0 rounded-lg transition-all duration-200 ${
-                      activeLink === link.href
-                        ? 'bg-white/[0.06]'
-                        : 'opacity-0 group-hover:opacity-100 bg-white/[0.04]'
-                    }`}
-                  />
-                  <span className="relative">{t(link.key)}</span>
-                  {/* Active gold underline dot */}
-                  {activeLink === link.href && (
-                    <motion.span
-                      layoutId="nav-active-dot"
-                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                      style={{ background: '#fbbf24', boxShadow: '0 0 6px #fbbf24' }}
+              {NAV_KEYS.map((link) => {
+                // Active state: pages match the current pathname; anchors match
+                // the last-clicked hash (only meaningful on the landing page).
+                const isActive =
+                  link.type === 'page'
+                    ? pathname === link.href
+                    : onLanding && activeLink === link.hash;
+
+                const className = `relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
+                  isRTL ? 'font-[family-name:var(--font-space-grotesk)]' : ''
+                } ${isActive ? 'text-white' : 'text-[#707070] hover:text-white'}`;
+
+                const inner = (
+                  <>
+                    <span
+                      className={`absolute inset-0 rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? 'bg-white/[0.06]'
+                          : 'opacity-0 group-hover:opacity-100 bg-white/[0.04]'
+                      }`}
                     />
-                  )}
-                </a>
-              ))}
+                    <span className="relative">{t(link.key)}</span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="nav-active-dot"
+                        className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                        style={{ background: '#fbbf24', boxShadow: '0 0 6px #fbbf24' }}
+                      />
+                    )}
+                  </>
+                );
+
+                return link.type === 'page' ? (
+                  <Link key={link.href} href={link.href} className={className}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleAnchorClick(e, link.hash)}
+                    className={className}
+                  >
+                    {inner}
+                  </a>
+                );
+              })}
             </nav>
 
             {/* ── Right controls ────────────────────────────────────────── */}
@@ -350,35 +389,66 @@ export default function Navbar() {
 
               {/* Nav links */}
               <div className="flex-1 px-4 py-5 space-y-0.5 overflow-y-auto">
-                {NAV_KEYS.map((link, i) => (
-                  <motion.a
-                    key={link.href}
-                    href={link.href}
-                    onClick={(e) => handleNavClick(e, link.href)}
-                    initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center px-4 py-3 min-h-[44px] text-sm font-medium rounded-xl transition-all duration-200"
-                    style={{
-                      color: activeLink === link.href ? '#fbbf24' : 'var(--ink-3)',
-                      background: activeLink === link.href ? 'rgba(251,191,36,0.06)' : 'transparent',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (activeLink !== link.href) {
-                        (e.currentTarget as HTMLElement).style.color = 'var(--ink-1)';
-                        (e.currentTarget as HTMLElement).style.background = 'var(--ov-soft)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (activeLink !== link.href) {
-                        (e.currentTarget as HTMLElement).style.color = 'var(--ink-3)';
-                        (e.currentTarget as HTMLElement).style.background = 'transparent';
-                      }
-                    }}
-                  >
-                    {t(link.key)}
-                  </motion.a>
-                ))}
+                {NAV_KEYS.map((link, i) => {
+                  const isActive =
+                    link.type === 'page'
+                      ? pathname === link.href
+                      : onLanding && activeLink === link.hash;
+
+                  const style = {
+                    color: isActive ? '#fbbf24' : 'var(--ink-3)',
+                    background: isActive ? 'rgba(251,191,36,0.06)' : 'transparent',
+                  };
+                  const onEnter = (e: React.MouseEvent<HTMLElement>) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--ink-1)';
+                      (e.currentTarget as HTMLElement).style.background = 'var(--ov-soft)';
+                    }
+                  };
+                  const onLeave = (e: React.MouseEvent<HTMLElement>) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.color = 'var(--ink-3)';
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                    }
+                  };
+                  const cls =
+                    'flex items-center px-4 py-3 min-h-[44px] text-sm font-medium rounded-xl transition-all duration-200';
+
+                  return link.type === 'page' ? (
+                    <motion.div
+                      key={link.href}
+                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <Link
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cls}
+                        style={style}
+                        onMouseEnter={onEnter}
+                        onMouseLeave={onLeave}
+                      >
+                        {t(link.key)}
+                      </Link>
+                    </motion.div>
+                  ) : (
+                    <motion.a
+                      key={link.href}
+                      href={link.href}
+                      onClick={(e) => handleAnchorClick(e, link.hash)}
+                      initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={cls}
+                      style={style}
+                      onMouseEnter={onEnter}
+                      onMouseLeave={onLeave}
+                    >
+                      {t(link.key)}
+                    </motion.a>
+                  );
+                })}
 
                 {/* ── Authenticated: dashboard + sign-out ── */}
                 {isLoggedIn && (

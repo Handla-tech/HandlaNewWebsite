@@ -117,6 +117,42 @@ export interface Testimonial {
   updatedAt: string;
 }
 
+// ─── Website Content ──────────────────────────────────────────────────────────
+// Public marketing content managed by admins. NOTE: WebsiteProject is entirely
+// separate from the ERP `Project` entity above — it is showcase/portfolio only.
+
+export interface WebsiteProject {
+  id: string;
+  title: string;
+  clientName: string | null;
+  summary: string | null;
+  description: string;
+  category: string | null;
+  imageUrl: string | null;
+  projectUrl: string | null;
+  tags: string[] | null;
+  featured: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebsiteProduct {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string;
+  category: string | null;
+  imageUrl: string | null;
+  productUrl: string | null;
+  price: string | null;
+  features: string[] | null;
+  featured: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── ERP-3: Client Entity ─────────────────────────────────────────────────────
 
 export interface Client {

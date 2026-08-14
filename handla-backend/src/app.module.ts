@@ -20,6 +20,8 @@ import { Conversation } from './modules/chat/entities/conversation.entity';
 import { Message } from './modules/chat/entities/message.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
 import { Testimonial } from './modules/testimonials/entities/testimonial.entity';
+import { WebsiteProject } from './modules/website/entities/website-project.entity';
+import { WebsiteProduct } from './modules/website/entities/website-product.entity';
 import { Client } from './modules/clients/entities/client.entity';
 import { Project } from './modules/projects/entities/project.entity';
 import { Task } from './modules/tasks/entities/task.entity';
@@ -52,6 +54,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { TestimonialModule } from './modules/testimonials/testimonial.module';
+import { WebsiteModule } from './modules/website/website.module';
 import { EmailModule } from './modules/email/email.module';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './modules/users/users.module';
@@ -91,7 +94,7 @@ import { SaasModule } from './modules/saas/saas.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
+        entities: [User, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
       }),
     }),
 
@@ -100,6 +103,7 @@ import { SaasModule } from './modules/saas/saas.module';
     ChatModule,
     NotificationModule,
     TestimonialModule,
+    WebsiteModule,
     EmailModule,
     UsersModule,
     ClientsModule,

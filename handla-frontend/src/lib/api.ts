@@ -185,6 +185,39 @@ export const testimonialApi = {
   remove:  (id: string)      => api.delete(`/testimonials/${id}`),
 };
 
+// ─── Website Content — Projects (public showcase, NOT ERP projects) ──────────
+// Backend: @Controller('website/projects') → /api/website/projects/*
+// Public GET (list + featured filter + :id); ADMIN-only create/update/delete.
+
+export const websiteProjectApi = {
+  /** GET /website/projects — public, paginated. params: { page, limit, featured, category } */
+  getAll:  (params?: object)          => api.get('/website/projects', { params }),
+  /** GET /website/projects/:id — public */
+  getOne:  (id: string)               => api.get(`/website/projects/${id}`),
+  /** POST /website/projects — ADMIN */
+  create:  (data: object)             => api.post('/website/projects', data),
+  /** PATCH /website/projects/:id — ADMIN */
+  update:  (id: string, data: object) => api.patch(`/website/projects/${id}`, data),
+  /** DELETE /website/projects/:id — ADMIN */
+  remove:  (id: string)               => api.delete(`/website/projects/${id}`),
+};
+
+// ─── Website Content — Products (public showcase) ────────────────────────────
+// Backend: @Controller('website/products') → /api/website/products/*
+
+export const websiteProductApi = {
+  /** GET /website/products — public, paginated. params: { page, limit, featured, category } */
+  getAll:  (params?: object)          => api.get('/website/products', { params }),
+  /** GET /website/products/:id — public */
+  getOne:  (id: string)               => api.get(`/website/products/${id}`),
+  /** POST /website/products — ADMIN */
+  create:  (data: object)             => api.post('/website/products', data),
+  /** PATCH /website/products/:id — ADMIN */
+  update:  (id: string, data: object) => api.patch(`/website/products/${id}`, data),
+  /** DELETE /website/products/:id — ADMIN */
+  remove:  (id: string)               => api.delete(`/website/products/${id}`),
+};
+
 // ─── ERP — Users API (ADMIN only) ────────────────────────────────────────────
 
 export const usersApi = {

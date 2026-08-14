@@ -30,6 +30,8 @@ import {
   LineChart,
   Server,
   Bot,
+  FolderGit2,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -100,10 +102,17 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    titleKey: 'website',
+    items: [
+      { href: '/erp/website/projects', icon: FolderGit2, labelKey: 'websiteProjects', adminOnly: true },
+      { href: '/erp/website/products', icon: Package,    labelKey: 'websiteProducts', adminOnly: true },
+      { href: '/erp/testimonials',     icon: Star,       labelKey: 'testimonials',    adminOnly: true },
+    ],
+  },
+  {
     titleKey: 'admin',
     items: [
       { href: '/erp/saas',         icon: Server, labelKey: 'saas',         adminOnly: true },
-      { href: '/erp/testimonials', icon: Star,   labelKey: 'testimonials', adminOnly: true },
       { href: '/erp/users',        icon: Users,  labelKey: 'users',        adminOnly: true },
     ],
   },
