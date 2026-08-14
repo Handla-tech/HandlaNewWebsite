@@ -1,16 +1,31 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { View, Text, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { projectsApi } from '@/lib/endpoints';
+import { projectsApi, clientsApi, type ProjectInput } from '@/lib/endpoints';
+import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Chip } from '@/components/ui';
+import { Title, Loading, Badge, Chip, Input } from '@/components/ui';
+import {
+  FormModal,
+  Textarea,
+  Select,
+  DateField,
+  ConfirmModal,
+  ActionSheet,
+  Fab,
+  type SelectOption,
+  type SheetAction,
+} from '@/components/forms';
 import { statusColor, prettyStatus } from '@/lib/statusMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedProjects, Project, ProjectStatus } from '@/types';
 
 const STATUSES: ProjectStatus[] = ['PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const STATUS_OPTIONS: SelectOption[] = STATUSES.map((s) => ({ label: prettyStatus(s), value: s }));
+
+const EMPTY: ProjectInput = { title: '', description: '', clientId: '', status: 'PLANNING', startDate: '', endDate: '' };
 
 function fmtDate(iso?: string | null) {
   if (!iso) return '—';
@@ -19,7 +34,10 @@ function fmtDate(iso?: string | null) {
 
 export default function ProjectsScreen() {
   const { colors } = useTheme();
+  const qc = useQueryClient();
   const isClient = useAuthStore((s) => s.isClient());
+  const isStaff = useAuthStore((s) => s.isStaff());
+  const isAdmin = useAuthStore((s) => s.isAdmin());
   const [status, setStatus] = useState<ProjectStatus | null>(null);
 
   const query = useMemo(() => ({ limit: 50, ...(status ? { status } : {}) }), [status]);
@@ -32,13 +50,86 @@ export default function ProjectsScreen() {
     },
   });
 
+  const clientList = useQuery({
+    queryKey: ['clients-for-project'],
+    enabled: isStaff,
+    queryFn: () => clientsApi.list({ limit: 100 }).then((r) => r.data.data.clients),
+  });
+  const clientOptions: SelectOption[] = (clientList.data ?? []).map((c) => ({
+    label: c.user?.name || c.company || c.user?.email || c.id.slice(0, 8),
+    value: c.id,
+  }));
+
   const rows = projects.data?.projects ?? [];
+
+  // form + actions state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [form, setForm] = useState<ProjectInput>(EMPTY);
+  const [err, setErr] = useState<string | null>(null);
+  const [sheetFor, setSheetFor] = useState<Project | null>(null);
+  const [deleteFor, setDeleteFor] = useState<Project | null>(null);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setErr(null);
+    setFormOpen(true);
+  };
+  const openEdit = (p: Project) => {
+    setEditing(p);
+    setForm({
+      title: p.title,
+      description: p.description ?? '',
+      clientId: p.clientId,
+      status: p.status as ProjectStatus,
+      startDate: p.startDate ? p.startDate.slice(0, 10) : '',
+      endDate: p.endDate ? p.endDate.slice(0, 10) : '',
+    });
+    setErr(null);
+    setFormOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: () => {
+      const payload: ProjectInput = {
+        title: form.title?.trim(),
+        description: form.description?.trim() || undefined,
+        status: form.status,
+        startDate: form.startDate?.trim() || undefined,
+        endDate: form.endDate?.trim() || undefined,
+        ...(editing ? {} : { clientId: form.clientId }),
+      };
+      return editing ? projectsApi.update(editing.id, payload) : projectsApi.create(payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects-mobile'] });
+      setFormOpen(false);
+    },
+    onError: (e) => setErr(apiError(e, 'Failed to save project')),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => projectsApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects-mobile'] });
+      setDeleteFor(null);
+    },
+    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete project')),
+  });
+  const submit = () => {
+    if (!form.title?.trim() || form.title.trim().length < 2) return setErr('Title must be at least 2 characters.');
+    if (!editing && !form.clientId) return setErr('Client is required.');
+    setErr(null);
+    save.mutate();
+  };
 
   const renderItem = ({ item }: { item: Project }) => {
     const sc = statusColor(item.status);
     const clientName = item.client?.user?.name ?? item.client?.company ?? '';
     return (
-      <View
+      <Pressable
+        onPress={() => isStaff && setSheetFor(item)}
         style={{
           backgroundColor: colors.card,
           borderColor: colors.border,
@@ -71,7 +162,7 @@ export default function ProjectsScreen() {
             End: {fmtDate(item.endDate)}
           </Text>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -121,6 +212,99 @@ export default function ProjectsScreen() {
           }
         />
       )}
+
+      {isStaff ? <Fab onPress={openCreate} /> : null}
+
+      <FormModal
+        visible={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={editing ? 'Edit Project' : 'New Project'}
+        onSubmit={submit}
+        submitting={save.isPending}
+        error={err ?? undefined}
+      >
+        <Input
+          label="Title"
+          value={form.title}
+          onChangeText={(t) => setForm((f) => ({ ...f, title: t }))}
+          placeholder="Project title"
+        />
+        <Textarea
+          label="Description"
+          value={form.description}
+          onChangeText={(t) => setForm((f) => ({ ...f, description: t }))}
+          placeholder="Optional description"
+        />
+        {!editing ? (
+          <Select
+            label="Client"
+            value={form.clientId}
+            options={clientOptions}
+            onChange={(v) => setForm((f) => ({ ...f, clientId: v }))}
+            placeholder="Select a client"
+          />
+        ) : null}
+        <Select
+          label="Status"
+          value={form.status}
+          options={STATUS_OPTIONS}
+          onChange={(v) => setForm((f) => ({ ...f, status: v as ProjectStatus }))}
+        />
+        <DateField
+          label="Start date"
+          value={form.startDate}
+          onChange={(v) => setForm((f) => ({ ...f, startDate: v }))}
+        />
+        <DateField
+          label="End date"
+          value={form.endDate}
+          onChange={(v) => setForm((f) => ({ ...f, endDate: v }))}
+        />
+      </FormModal>
+
+      <ActionSheet
+        visible={!!sheetFor}
+        onClose={() => setSheetFor(null)}
+        title={sheetFor?.title}
+        actions={[
+          {
+            label: 'Edit',
+            icon: 'create-outline',
+            onPress: () => {
+              const p = sheetFor;
+              setSheetFor(null);
+              if (p) openEdit(p);
+            },
+          },
+          ...(isAdmin
+            ? [
+                {
+                  label: 'Delete',
+                  icon: 'trash-outline',
+                  destructive: true,
+                  onPress: () => {
+                    const p = sheetFor;
+                    setSheetFor(null);
+                    setDeleteErr(null);
+                    if (p) setDeleteFor(p);
+                  },
+                },
+              ]
+            : []),
+        ] as SheetAction[]}
+      />
+
+      <ConfirmModal
+        visible={!!deleteFor}
+        onClose={() => setDeleteFor(null)}
+        onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
+        title="Delete Project"
+        message={`Delete "${deleteFor?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        submitting={del.isPending}
+        error={deleteErr ?? undefined}
+      />
     </SafeAreaView>
   );
 }
