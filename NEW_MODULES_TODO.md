@@ -148,7 +148,7 @@ Read-only analytical endpoints + printable/exportable views.
 
 ---
 
-## PHASE 6 — Analytics (self-hosted)  ✅ (backend done)
+## PHASE 6 — Analytics (self-hosted)  ✅ (backend + web frontend done)
 GA-style tracking for the public marketing site.
 
 ### Backend  ✅
@@ -161,7 +161,7 @@ GA-style tracking for the public marketing site.
 ### Frontend
 - [x] `public/analytics.js` — tiny (~5.7kb) tracker: first-party anon id cookie, auto pageviews on load + SPA route change (History API + popstate), `handla('event', name, meta)`, sendBeacon→fetch→pixel fallback, honours Do-Not-Track. Config via `data-endpoint`/`data-site`.
 - [x] Wire tracker into the marketing site: `<Script>` in root `layout.tsx` (endpoint derived from `NEXT_PUBLIC_API_URL`); `lib/track.ts` helper + CTA events on Hero primary/secondary and Contact start-chat/admin-panel.
-- [ ] `/erp/analytics` — GA-style dashboard (visitors, pageviews, sessions, top pages/referrers, device charts, top events). _(pending — analyticsApi + endpoints ready)_
+- [x] `/erp/analytics` — GA-style dashboard: KPI cards (pageviews, events, visitors, sessions, bounce rate, views/session), traffic-over-time sparkline (hour/day/month), top pages/referrers bar lists, device/browser/country breakdowns, top events. Date-range presets (7/30/90d) + custom picker. Dependency-free inline SVG charts.
 
 ---
 
