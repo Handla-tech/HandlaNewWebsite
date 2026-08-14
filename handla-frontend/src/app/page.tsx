@@ -63,7 +63,7 @@ const Contact = dynamic(
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0a0a0a', color: '#fff' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)', color: 'var(--ink-1)' }}>
       {/* ── Navigation ───────────────────────────────────────────────── */}
       <Navbar />
 
