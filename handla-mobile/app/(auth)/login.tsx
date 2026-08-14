@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Title, Subtitle, Input, Button } from '@/components/ui';
 import { ScreenBackground, GlassCard } from '@/components/glass';
 import { useAuthStore } from '@/store/authStore';
@@ -11,6 +12,7 @@ import { spacing, font, useTheme } from '@/theme';
 export default function LoginScreen() {
   const { t } = useT();
   const { colors } = useTheme();
+  const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
   const storeError = useAuthStore((s) => s.error);
 
@@ -27,8 +29,17 @@ export default function LoginScreen() {
     }
     setSubmitting(true);
     try {
-      await signIn(email.trim(), password);
-      // Redirect handled by the AuthGate in _layout.
+      const outcome = await signIn(email.trim(), password);
+      if (!outcome.verified) {
+        // Unverified account: the backend emailed a code. Go to the OTP screen
+        // to finish verification. (AuthGate handles redirect once verified.)
+        router.push({
+          pathname: '/(auth)/verify',
+          params: { email: outcome.email, purpose: outcome.purpose },
+        });
+        return;
+      }
+      // Verified: redirect handled by the AuthGate in _layout.
     } catch (err: unknown) {
       setLocalError(err instanceof Error ? err.message : t('auth.failed'));
     } finally {

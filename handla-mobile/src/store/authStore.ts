@@ -5,7 +5,7 @@ import { API_URL } from '@/lib/config';
 import { tokenStorage } from '@/lib/storage';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 import { registerForPushNotifications, unregisterPushNotifications } from '@/lib/push';
-import type { User } from '@/types';
+import type { User, AuthResult, SignInOutcome, VerificationPurpose } from '@/types';
 
 interface AuthState {
   user: User | null;
@@ -13,7 +13,18 @@ interface AuthState {
   error: string | null;
 
   bootstrap: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<User>;
+  /**
+   * Sign in. Returns a discriminated outcome instead of throwing on the
+   * "email not verified" path:
+   *  - { verified: true, user }               → session established
+   *  - { verified: false, email, purpose }    → OTP emailed; go to verify screen
+   * Genuine failures (bad credentials, network) still throw.
+   */
+  signIn: (email: string, password: string) => Promise<SignInOutcome>;
+  /** Complete a pending verification by submitting the emailed code. */
+  verifyOtp: (email: string, code: string, purpose: VerificationPurpose) => Promise<User>;
+  /** Request a fresh verification code (server enforces the cooldown). */
+  resendOtp: (email: string, purpose: VerificationPurpose, locale?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshMe: () => Promise<void>;
 
@@ -22,6 +33,43 @@ interface AuthState {
   isEmployee: () => boolean;
   isStaff: () => boolean;
   isClient: () => boolean;
+}
+
+/**
+ * Persist tokens and wire up post-login side effects (socket + push). Shared by
+ * both the direct sign-in path and the OTP-verification path so a session is
+ * always established identically. Returns the authenticated user.
+ */
+async function establishSession(data: AuthResult): Promise<User> {
+  const { user, accessToken, refreshToken } = data;
+  await tokenStorage.save(accessToken, refreshToken);
+  connectSocket().catch(() => {/* best-effort; chat screens retry */});
+  // Register this device for native push (best-effort, non-blocking).
+  void registerForPushNotifications();
+  return user;
+}
+
+/** Normalize an axios/unknown error into a user-facing message. */
+function errorMessage(err: unknown, fallback: string): string {
+  const axiosErr = err as {
+    response?: { data?: { message?: string | string[] } };
+    request?: unknown;
+    code?: string;
+  };
+  const serverMsg = axiosErr?.response?.data?.message;
+  if (serverMsg) {
+    // The server responded (bad credentials, invalid/expired code, cooldown,
+    // email-delivery failure, …) — trust its message. class-validator may send
+    // an array of messages; show the first.
+    return Array.isArray(serverMsg) ? serverMsg[0] : serverMsg;
+  }
+  if (axiosErr?.request || axiosErr?.code === 'ECONNABORTED') {
+    // Request made but no response — network / unreachable backend. (On a
+    // phone this usually means the API URL points at a host the device can't
+    // reach. Set EXPO_PUBLIC_API_URL to your LAN IP.)
+    return `Cannot reach the server at ${API_URL}. Check your connection and that the backend is running and reachable from this device.`;
+  }
+  return fallback;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -55,52 +103,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await authApi.signIn(email, password);
       const data = res.data.data as {
         status?: string;
+        purpose?: VerificationPurpose;
         user?: User;
         accessToken?: string;
         refreshToken?: string;
       };
 
-      // Verified accounts sign in directly. An account whose email was never
-      // verified comes back as { status: 'verification_required' } with no
-      // tokens — the mobile app has no OTP screen, so guide the user to the web.
+      // Unverified account: no tokens, backend emailed a code. Return a pending
+      // outcome so the UI can route to the OTP verification screen (rather than
+      // throwing — this is an expected branch, not an error).
       if (data?.status === 'verification_required' || !data?.accessToken) {
-        const message =
-          'Please verify your email before signing in. Check your inbox for the verification code, or complete verification on the web app.';
-        set({ status: 'unauthenticated', error: message });
-        throw new Error(message);
+        set({ status: 'unauthenticated' });
+        return {
+          verified: false,
+          email: email.trim().toLowerCase(),
+          purpose: data?.purpose ?? 'SIGNUP',
+        };
       }
 
-      const { user, accessToken, refreshToken } = data as {
-        user: User;
-        accessToken: string;
-        refreshToken: string;
-      };
-      await tokenStorage.save(accessToken, refreshToken);
+      // Verified account: establish the session directly.
+      const user = await establishSession({
+        user: data.user as User,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken as string,
+      });
       set({ user, status: 'authenticated' });
-      connectSocket().catch(() => {/* best-effort */});
-      // Register this device for native push (best-effort, non-blocking).
-      void registerForPushNotifications();
-      return user;
+      return { verified: true, user };
     } catch (err: unknown) {
-      const axiosErr = err as {
-        response?: { data?: { message?: string } };
-        request?: unknown;
-        code?: string;
-      };
-      let message: string;
-      if (axiosErr?.response?.data?.message) {
-        // The server responded (e.g. 401 invalid credentials) — trust its message.
-        message = axiosErr.response.data.message;
-      } else if (axiosErr?.request || axiosErr?.code === 'ECONNABORTED') {
-        // Request was made but no response — network / unreachable backend.
-        // (On a phone, this usually means the API URL points at localhost or a
-        //  host the device can't reach. Set EXPO_PUBLIC_API_URL to your LAN IP.)
-        message = `Cannot reach the server at ${API_URL}. Check your connection and that the backend is running and reachable from this device.`;
-      } else {
-        message = 'Sign in failed. Please try again.';
-      }
+      const message = errorMessage(err, 'Sign in failed. Please try again.');
       set({ status: 'unauthenticated', error: message });
       throw new Error(message);
+    }
+  },
+
+  verifyOtp: async (email, code, purpose) => {
+    set({ status: 'loading', error: null });
+    try {
+      const res = await authApi.verifyOtp({ email: email.trim().toLowerCase(), code, purpose });
+      const user = await establishSession(res.data.data);
+      set({ user, status: 'authenticated' });
+      return user;
+    } catch (err: unknown) {
+      const message = errorMessage(err, 'Verification failed. Please try again.');
+      set({ status: 'unauthenticated', error: message });
+      throw new Error(message);
+    }
+  },
+
+  resendOtp: async (email, purpose, locale) => {
+    try {
+      await authApi.resendOtp({ email: email.trim().toLowerCase(), purpose, locale });
+    } catch (err: unknown) {
+      throw new Error(errorMessage(err, 'Could not resend the code. Please try again.'));
     }
   },
 

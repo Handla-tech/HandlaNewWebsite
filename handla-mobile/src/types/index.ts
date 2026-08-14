@@ -33,6 +33,28 @@ export interface AuthResult {
   refreshToken: string;
 }
 
+/** Purposes for a one-time verification code (mirrors the backend enum). */
+export type VerificationPurpose = 'SIGNUP' | 'LOGIN' | 'GOOGLE';
+
+/**
+ * Returned by the backend when an unverified account attempts to sign in: no
+ * session is issued, and a code has been emailed. The mobile app routes to the
+ * OTP screen to complete verification.
+ */
+export interface PendingVerification {
+  status: 'verification_required';
+  email: string;
+  purpose: VerificationPurpose;
+}
+
+/**
+ * Discriminated result of a mobile sign-in attempt. Either a full session was
+ * created (verified account) or email verification is required first.
+ */
+export type SignInOutcome =
+  | { verified: true; user: User }
+  | { verified: false; email: string; purpose: VerificationPurpose };
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export interface ProjectsByStatus {
   planning: number;

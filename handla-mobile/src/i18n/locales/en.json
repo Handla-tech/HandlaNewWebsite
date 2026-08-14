@@ -52,7 +52,22 @@
     "password": "Password",
     "signIn": "Sign In",
     "signingIn": "Signing in…",
-    "failed": "Sign in failed. Check your credentials."
+    "failed": "Sign in failed. Check your credentials.",
+    "notVerified": "Your email isn't verified yet. We've sent you a verification code.",
+    "verify": {
+      "title": "Verify your email",
+      "subtitle": "Enter the 6-digit code we sent to {{email}}",
+      "code": "Verification code",
+      "codePlaceholder": "000000",
+      "submit": "Verify",
+      "verifying": "Verifying…",
+      "resend": "Resend code",
+      "resendIn": "Resend code in {{seconds}}s",
+      "resent": "A new code has been sent to your email.",
+      "back": "Back to sign in",
+      "invalidCode": "Please enter the 6-digit code.",
+      "checkSpam": "Didn't get it? Check your spam folder."
+    }
   },
   "tabs": {
     "dashboard": "Dashboard",

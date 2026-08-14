@@ -1,6 +1,8 @@
 import { api } from './api';
 import type {
   AuthResult,
+  PendingVerification,
+  VerificationPurpose,
   User,
   PaginatedConversations,
   ConversationDetail,
@@ -65,10 +67,21 @@ import type {
  */
 
 export const authApi = {
+  // signin can return EITHER a full session (verified account) OR
+  // { status: 'verification_required', email, purpose } (unverified account).
   signIn: (email: string, password: string) =>
-    api.post<{ message: string; data: AuthResult }>('/auth/signin', { email, password }),
+    api.post<{ message: string; data: AuthResult | PendingVerification }>('/auth/signin', {
+      email,
+      password,
+    }),
   signUp: (payload: { name: string; email: string; password: string }) =>
-    api.post<{ message: string; data: AuthResult }>('/auth/signup', payload),
+    api.post<{ message: string; data: AuthResult | PendingVerification }>('/auth/signup', payload),
+  /** Step 2 of 2: submit the emailed code to complete authentication. */
+  verifyOtp: (payload: { email: string; code: string; purpose: VerificationPurpose }) =>
+    api.post<{ message: string; data: AuthResult }>('/auth/verify-otp', payload),
+  /** Request a fresh code (rate-limited + server-side cooldown). */
+  resendOtp: (payload: { email: string; purpose: VerificationPurpose; locale?: string }) =>
+    api.post<{ message: string; data: unknown }>('/auth/resend-otp', payload),
   me: () => api.get<{ message: string; data: { user: User } }>('/auth/me'),
   logout: () => api.post<{ message: string; data: unknown }>('/auth/logout'),
 };
