@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, radius, font, useTheme } from '@/theme';
 import { Label } from '@/components/ui';
+import { useT } from '@/i18n';
 
 /**
  * Reusable write-form primitives for the mobile ERP.
@@ -36,7 +37,7 @@ export function FormModal({
   title,
   subtitle,
   onSubmit,
-  submitLabel = 'Save',
+  submitLabel,
   submitting = false,
   error,
   children,
@@ -52,6 +53,8 @@ export function FormModal({
   children: React.ReactNode;
 }) {
   const { colors } = useTheme();
+  const { t } = useT();
+  const resolvedSubmitLabel = submitLabel ?? t('common.save');
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -141,7 +144,7 @@ export function FormModal({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: colors.text, fontWeight: '700', fontSize: font.md }}>Cancel</Text>
+              <Text style={{ color: colors.text, fontWeight: '700', fontSize: font.md }}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={onSubmit}
@@ -159,7 +162,7 @@ export function FormModal({
               {submitting ? (
                 <ActivityIndicator color="#0a0a0a" />
               ) : (
-                <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.md }}>{submitLabel}</Text>
+                <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.md }}>{resolvedSubmitLabel}</Text>
               )}
             </Pressable>
           </View>
@@ -217,7 +220,7 @@ export function Select({
   value,
   options,
   onChange,
-  placeholder = 'Select…',
+  placeholder,
   error,
 }: {
   label?: string;
@@ -228,8 +231,10 @@ export function Select({
   error?: string;
 }) {
   const { colors } = useTheme();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
+  const resolvedPlaceholder = placeholder ?? t('common.select');
 
   return (
     <View style={{ marginBottom: spacing.md }}>
@@ -249,7 +254,7 @@ export function Select({
         }}
       >
         <Text style={{ color: selected ? colors.text : colors.textDim, fontSize: font.md }} numberOfLines={1}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : resolvedPlaceholder}
         </Text>
         <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
@@ -415,7 +420,7 @@ export function ConfirmModal({
   onConfirm,
   title,
   message,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   destructive = false,
   submitting = false,
   error,
@@ -431,7 +436,9 @@ export function ConfirmModal({
   error?: string | null;
 }) {
   const { colors } = useTheme();
+  const { t } = useT();
   const accent = destructive ? colors.danger : colors.accent;
+  const resolvedConfirmLabel = confirmLabel ?? t('common.confirm');
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <Pressable
@@ -465,7 +472,7 @@ export function ConfirmModal({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: colors.text, fontWeight: '700' }}>Cancel</Text>
+              <Text style={{ color: colors.text, fontWeight: '700' }}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={onConfirm}
@@ -486,7 +493,7 @@ export function ConfirmModal({
                 <ActivityIndicator color={destructive ? colors.danger : '#0a0a0a'} />
               ) : (
                 <Text style={{ color: destructive ? colors.danger : '#0a0a0a', fontWeight: '800' }}>
-                  {confirmLabel}
+                  {resolvedConfirmLabel}
                 </Text>
               )}
             </Pressable>

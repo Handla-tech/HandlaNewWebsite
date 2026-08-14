@@ -18,7 +18,30 @@
     "changeLanguage": "Change language",
     "theme": "Theme",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "confirm": "Confirm",
+    "select": "Select…",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "update": "Update",
+    "saving": "Saving…",
+    "empty": "Nothing here yet",
+    "loadError": "Failed to load",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "date": "Date",
+    "amount": "Amount",
+    "name": "Name",
+    "email": "Email",
+    "notes": "Notes",
+    "description": "Description",
+    "optional": "optional",
+    "required": "required"
   },
   "auth": {
     "title": "Welcome back",
@@ -103,5 +126,14 @@
   "rtl": {
     "restartTitle": "Restart required",
     "restartBody": "Switching between Arabic and English changes the layout direction. Please close and reopen the app to fully apply the new direction."
+  },
+  "lineItems": {
+    "title": "Line Items *",
+    "description": "Description",
+    "qty": "QTY",
+    "unitPrice": "UNIT PRICE",
+    "total": "TOTAL",
+    "add": "Add line item",
+    "subtotal": "Subtotal"
   }
 }

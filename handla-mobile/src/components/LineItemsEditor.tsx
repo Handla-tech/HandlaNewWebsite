@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, radius, font, useTheme } from '@/theme';
 import { Label } from '@/components/ui';
+import { useT } from '@/i18n';
 import type { LineItemInput } from '@/lib/endpoints';
 
 /**
@@ -17,6 +18,7 @@ export function LineItemsEditor({
   onChange: (items: LineItemInput[]) => void;
 }) {
   const { colors } = useTheme();
+  const { t } = useT();
 
   const update = (i: number, patch: Partial<LineItemInput>) => {
     const next = items.map((it, idx) => (idx === i ? { ...it, ...patch } : it));
@@ -40,7 +42,7 @@ export function LineItemsEditor({
 
   return (
     <View style={{ marginBottom: spacing.md }}>
-      <Label style={{ marginBottom: spacing.xs }}>Line Items *</Label>
+      <Label style={{ marginBottom: spacing.xs }}>{t('lineItems.title')}</Label>
       {items.map((it, i) => (
         <View
           key={i}
@@ -58,7 +60,7 @@ export function LineItemsEditor({
             <TextInput
               value={it.description}
               onChangeText={(v) => update(i, { description: v })}
-              placeholder="Description"
+              placeholder={t('lineItems.description')}
               placeholderTextColor={colors.textDim}
               style={[cell, { flex: 1 }]}
             />
@@ -68,7 +70,7 @@ export function LineItemsEditor({
           </View>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>QTY</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>{t('lineItems.qty')}</Text>
               <TextInput
                 value={String(it.quantity ?? '')}
                 onChangeText={(v) => update(i, { quantity: Number(v.replace(/[^0-9.]/g, '')) || 0 })}
@@ -79,7 +81,7 @@ export function LineItemsEditor({
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>UNIT PRICE</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>{t('lineItems.unitPrice')}</Text>
               <TextInput
                 value={String(it.unitPrice ?? '')}
                 onChangeText={(v) => update(i, { unitPrice: Number(v.replace(/[^0-9.]/g, '')) || 0 })}
@@ -90,7 +92,7 @@ export function LineItemsEditor({
               />
             </View>
             <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>TOTAL</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 10, marginBottom: 2 }}>{t('lineItems.total')}</Text>
               <Text
                 style={{
                   color: colors.text,
@@ -122,11 +124,11 @@ export function LineItemsEditor({
         }}
       >
         <Ionicons name="add" size={18} color={colors.accent} />
-        <Text style={{ color: colors.accent, fontWeight: '700', fontSize: font.sm }}>Add line item</Text>
+        <Text style={{ color: colors.accent, fontWeight: '700', fontSize: font.sm }}>{t('lineItems.add')}</Text>
       </Pressable>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
-        <Text style={{ color: colors.textFaint, fontSize: font.sm }}>Subtotal</Text>
+        <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('lineItems.subtotal')}</Text>
         <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>
           {subtotal.toFixed(2)}
         </Text>

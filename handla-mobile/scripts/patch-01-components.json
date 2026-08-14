@@ -1,0 +1,74 @@
+{
+  "en": {
+    "common": {
+      "confirm": "Confirm",
+      "select": "Select…",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "add": "Add",
+      "update": "Update",
+      "saving": "Saving…",
+      "empty": "Nothing here yet",
+      "loadError": "Failed to load",
+      "yes": "Yes",
+      "no": "No",
+      "active": "Active",
+      "inactive": "Inactive",
+      "status": "Status",
+      "date": "Date",
+      "amount": "Amount",
+      "name": "Name",
+      "email": "Email",
+      "notes": "Notes",
+      "description": "Description",
+      "optional": "optional",
+      "required": "required"
+    },
+    "lineItems": {
+      "title": "Line Items *",
+      "description": "Description",
+      "qty": "QTY",
+      "unitPrice": "UNIT PRICE",
+      "total": "TOTAL",
+      "add": "Add line item",
+      "subtotal": "Subtotal"
+    }
+  },
+  "ar": {
+    "common": {
+      "confirm": "تأكيد",
+      "select": "اختر…",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "create": "إنشاء",
+      "add": "إضافة",
+      "update": "تحديث",
+      "saving": "جارٍ الحفظ…",
+      "empty": "لا يوجد شيء هنا بعد",
+      "loadError": "فشل التحميل",
+      "yes": "نعم",
+      "no": "لا",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "status": "الحالة",
+      "date": "التاريخ",
+      "amount": "المبلغ",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "notes": "ملاحظات",
+      "description": "الوصف",
+      "optional": "اختياري",
+      "required": "مطلوب"
+    },
+    "lineItems": {
+      "title": "بنود القائمة *",
+      "description": "الوصف",
+      "qty": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "total": "الإجمالي",
+      "add": "إضافة بند",
+      "subtotal": "المجموع الفرعي"
+    }
+  }
+}
