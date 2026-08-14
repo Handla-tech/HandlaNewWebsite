@@ -557,5 +557,40 @@
     "attachment": "📎 Attachment",
     "empty": "No messages yet. Say hello 👋",
     "inputPlaceholder": "Type a message…"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "range": {
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d"
+    },
+    "kpi": {
+      "pageviews": "Pageviews",
+      "visitors": "Visitors",
+      "sessions": "Sessions",
+      "events": "Events",
+      "bounce": "Bounce",
+      "viewsPerSession": "Views/Sess"
+    },
+    "pageviewsOverTime": "Pageviews over time",
+    "noTraffic": "No traffic in this range.",
+    "none": "(none)",
+    "sections": {
+      "topPages": "Top Pages",
+      "topReferrers": "Top Referrers",
+      "devices": "Devices",
+      "browsers": "Browsers",
+      "countries": "Countries",
+      "topEvents": "Top Events"
+    },
+    "empty": {
+      "pages": "No page data.",
+      "referrers": "No referrer data.",
+      "devices": "No device data.",
+      "browsers": "No browser data.",
+      "countries": "No country data.",
+      "events": "No event data."
+    }
   }
 }

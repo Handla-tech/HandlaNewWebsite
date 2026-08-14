@@ -7,6 +7,7 @@ import { Loading, Chip } from '@/components/ui';
 import { GlassScreen, GlassScrollView, GradientHeader, GlassCard, StatCard, SectionLabel } from '@/components/glass';
 import { AreaChart, BarList } from '@/components/charts';
 import { spacing, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type {
   AnalyticsOverview,
   AnalyticsTimeseries,
@@ -33,14 +34,15 @@ function pct(n: number): string {
 }
 
 const RANGE_PRESETS = [
-  { key: '7', label: '7d', days: 7, interval: 'day' as AnalyticsInterval },
-  { key: '30', label: '30d', days: 30, interval: 'day' as AnalyticsInterval },
-  { key: '90', label: '90d', days: 90, interval: 'month' as AnalyticsInterval },
+  { key: '7', labelKey: 'analytics.range.7d', days: 7, interval: 'day' as AnalyticsInterval },
+  { key: '30', labelKey: 'analytics.range.30d', days: 30, interval: 'day' as AnalyticsInterval },
+  { key: '90', labelKey: 'analytics.range.90d', days: 90, interval: 'month' as AnalyticsInterval },
 ];
 
 // ─── Top-N list section — chart-kit BarList wrapped in a glass card ───────────
 function TopSection({ title, data, emptyLabel }: { title: string; data?: AnalyticsTopResult; emptyLabel: string }) {
-  const rows = (data?.rows ?? []).map((r) => ({ key: r.key || '(none)', count: r.count }));
+  const { t } = useT();
+  const rows = (data?.rows ?? []).map((r) => ({ key: r.key || t('analytics.none'), count: r.count }));
   return (
     <View style={{ marginTop: spacing.lg }}>
       <SectionLabel style={{ marginBottom: spacing.xs }}>{title}</SectionLabel>
@@ -53,6 +55,7 @@ function TopSection({ title, data, emptyLabel }: { title: string; data?: Analyti
 
 export default function AnalyticsScreen() {
   const { colors } = useTheme();
+  const { t } = useT();
   const [rangeKey, setRangeKey] = useState('30');
   const preset = RANGE_PRESETS.find((r) => r.key === rangeKey) ?? RANGE_PRESETS[1];
 
@@ -108,7 +111,7 @@ export default function AnalyticsScreen() {
 
   return (
     <GlassScreen>
-      <GradientHeader title="Analytics" icon="bar-chart-outline" />
+      <GradientHeader title={t('analytics.title')} icon="bar-chart-outline" />
 
       {overview.isLoading ? (
         <Loading />
@@ -119,40 +122,40 @@ export default function AnalyticsScreen() {
           {/* Range presets */}
           <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
             {RANGE_PRESETS.map((r) => (
-              <Chip key={r.key} label={r.label} active={rangeKey === r.key} onPress={() => setRangeKey(r.key)} />
+              <Chip key={r.key} label={t(r.labelKey)} active={rangeKey === r.key} onPress={() => setRangeKey(r.key)} />
             ))}
           </View>
 
           {/* KPI grid */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            <StatCard label="Pageviews" value={compact(o?.pageviews ?? 0)} icon="eye-outline" width="31%" />
-            <StatCard label="Visitors" value={compact(o?.uniqueVisitors ?? 0)} icon="people-outline" width="31%" />
-            <StatCard label="Sessions" value={compact(o?.sessions ?? 0)} icon="time-outline" width="31%" />
-            <StatCard label="Events" value={compact(o?.events ?? 0)} icon="flash-outline" width="31%" />
-            <StatCard label="Bounce" value={pct(o?.bounceRate ?? 0)} icon="exit-outline" width="31%" />
-            <StatCard label="Views/Sess" value={(o?.viewsPerSession ?? 0).toFixed(1)} icon="layers-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.pageviews')} value={compact(o?.pageviews ?? 0)} icon="eye-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.visitors')} value={compact(o?.uniqueVisitors ?? 0)} icon="people-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.sessions')} value={compact(o?.sessions ?? 0)} icon="time-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.events')} value={compact(o?.events ?? 0)} icon="flash-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.bounce')} value={pct(o?.bounceRate ?? 0)} icon="exit-outline" width="31%" />
+            <StatCard label={t('analytics.kpi.viewsPerSession')} value={(o?.viewsPerSession ?? 0).toFixed(1)} icon="layers-outline" width="31%" />
           </View>
 
           {/* Pageviews over time */}
           <View style={{ marginTop: spacing.lg }}>
-            <SectionLabel style={{ marginBottom: spacing.xs }}>Pageviews over time</SectionLabel>
+            <SectionLabel style={{ marginBottom: spacing.xs }}>{t('analytics.pageviewsOverTime')}</SectionLabel>
             <GlassCard>
               {pvValues.length > 0 ? (
                 <AreaChart values={pvValues} labels={pvLabels} height={160} />
               ) : (
                 <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: colors.textFaint, fontSize: 13 }}>No traffic in this range.</Text>
+                  <Text style={{ color: colors.textFaint, fontSize: 13 }}>{t('analytics.noTraffic')}</Text>
                 </View>
               )}
             </GlassCard>
           </View>
 
-          <TopSection title="Top Pages" data={topPages.data} emptyLabel="No page data." />
-          <TopSection title="Top Referrers" data={topReferrers.data} emptyLabel="No referrer data." />
-          <TopSection title="Devices" data={devices.data} emptyLabel="No device data." />
-          <TopSection title="Browsers" data={browsers.data} emptyLabel="No browser data." />
-          <TopSection title="Countries" data={countries.data} emptyLabel="No country data." />
-          <TopSection title="Top Events" data={topEvents.data} emptyLabel="No event data." />
+          <TopSection title={t('analytics.sections.topPages')} data={topPages.data} emptyLabel={t('analytics.empty.pages')} />
+          <TopSection title={t('analytics.sections.topReferrers')} data={topReferrers.data} emptyLabel={t('analytics.empty.referrers')} />
+          <TopSection title={t('analytics.sections.devices')} data={devices.data} emptyLabel={t('analytics.empty.devices')} />
+          <TopSection title={t('analytics.sections.browsers')} data={browsers.data} emptyLabel={t('analytics.empty.browsers')} />
+          <TopSection title={t('analytics.sections.countries')} data={countries.data} emptyLabel={t('analytics.empty.countries')} />
+          <TopSection title={t('analytics.sections.topEvents')} data={topEvents.data} emptyLabel={t('analytics.empty.events')} />
         </GlassScrollView>
       )}
     </GlassScreen>
