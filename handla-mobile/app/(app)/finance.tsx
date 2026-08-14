@@ -3,7 +3,6 @@ import { View, Text, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   purchasesApi,
   expensesApi,
@@ -15,7 +14,9 @@ import {
 } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Input } from '@/components/ui';
+import { Loading, Badge, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard, StatCard, SectionLabel } from '@/components/glass';
+import { DonutChart } from '@/components/charts';
 import {
   FormModal,
   Textarea,
@@ -35,7 +36,7 @@ import {
   LEDGER_DIRECTION_META,
   LEDGER_SOURCE_LABEL,
 } from '@/lib/financeMeta';
-import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type {
   PaginatedPurchases,
   PaginatedExpenses,
@@ -57,36 +58,35 @@ const SEGMENTS: { key: Segment; label: string }[] = [
 function SummaryHeader({ s }: { s?: FinancialSummary }) {
   const { colors } = useTheme();
   if (!s) return null;
+  const hasFlow = s.totalIncome > 0 || s.totalExpenses > 0;
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-      <SummaryTile label="Income" value={money(s.totalIncome)} tone={colors.success} />
-      <SummaryTile label="Expenses" value={money(s.totalExpenses)} tone={colors.danger} />
-      <SummaryTile
-        label="Net"
-        value={money(s.netBalance)}
-        tone={s.netBalance >= 0 ? colors.success : colors.danger}
-      />
-    </View>
-  );
-}
-
-function SummaryTile({ label, value, tone }: { label: string; value: string; tone: string }) {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.md,
-        padding: spacing.md,
-      }}
-    >
-      <Text style={{ color: tone, fontSize: font.md, fontWeight: '800' }} numberOfLines={1}>
-        {value}
-      </Text>
-      <Text style={{ color: colors.textFaint, fontSize: font.xs, marginTop: 2 }}>{label}</Text>
+    <View style={{ marginBottom: spacing.md, gap: spacing.md }}>
+      {hasFlow ? (
+        <GlassCard raised>
+          <SectionLabel style={{ marginBottom: spacing.md }}>Income vs Expenses</SectionLabel>
+          <DonutChart
+            data={[
+              { label: 'Income', value: s.totalIncome, color: colors.success },
+              { label: 'Expenses', value: s.totalExpenses, color: colors.danger },
+            ]}
+            size={140}
+            thickness={22}
+            centerLabel="Net"
+            centerValue={money(s.netBalance)}
+          />
+        </GlassCard>
+      ) : null}
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <StatCard label="Income" value={money(s.totalIncome)} icon="arrow-down-outline" tint={colors.success} width="31%" />
+        <StatCard label="Expenses" value={money(s.totalExpenses)} icon="arrow-up-outline" tint={colors.danger} width="31%" />
+        <StatCard
+          label="Net"
+          value={money(s.netBalance)}
+          icon="wallet-outline"
+          tint={s.netBalance >= 0 ? colors.success : colors.danger}
+          width="31%"
+        />
+      </View>
     </View>
   );
 }
@@ -280,10 +280,8 @@ export default function FinanceScreen() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Finance</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Finance" icon="wallet-outline" />
 
       {/* Segmented control */}
       <View
@@ -335,10 +333,9 @@ export default function FinanceScreen() {
           refreshControl={<RefreshControl refreshing={purchases.isFetching} onRefresh={refreshAll} tintColor={colors.accent} />}
           ListEmptyComponent={<Empty icon="cart-outline" label="No purchases yet." />}
           renderItem={({ item }: { item: Purchase }) => (
-            <Pressable
+            <FinanceRow
               onPress={() => router.push(`/(app)/purchase/${item.id}`)}
               onLongPress={() => isStaff && setPurSheet(item)}
-              style={({ pressed }) => [rowCard, pressed && { opacity: 0.85 }]}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>
@@ -363,7 +360,7 @@ export default function FinanceScreen() {
                   );
                 })()}
               </View>
-            </Pressable>
+            </FinanceRow>
           )}
         />
       ) : segment === 'expenses' ? (
@@ -377,10 +374,7 @@ export default function FinanceScreen() {
           renderItem={({ item }: { item: Expense }) => {
             const m = EXPENSE_TYPE_META[item.type];
             return (
-              <Pressable
-                onPress={() => isStaff && setExpSheet(item)}
-                style={({ pressed }) => [rowCard, pressed && { opacity: 0.85 }]}
-              >
+              <FinanceRow onPress={() => isStaff && setExpSheet(item)}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
                     {item.category}
@@ -401,7 +395,7 @@ export default function FinanceScreen() {
                     {item.description}
                   </Text>
                 ) : null}
-              </Pressable>
+              </FinanceRow>
             );
           }}
         />
@@ -416,7 +410,7 @@ export default function FinanceScreen() {
           renderItem={({ item }: { item: LedgerEntry }) => {
             const m = LEDGER_DIRECTION_META[item.direction];
             return (
-              <View style={rowCard}>
+              <FinanceRow>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ color: colors.text, fontSize: font.sm, fontWeight: '700', flex: 1 }} numberOfLines={1}>
                     {item.account?.name || item.account?.code || LEDGER_SOURCE_LABEL[item.sourceType]}
@@ -442,7 +436,7 @@ export default function FinanceScreen() {
                     {item.description}
                   </Text>
                 ) : null}
-              </View>
+              </FinanceRow>
             );
           }}
         />
@@ -627,7 +621,25 @@ export default function FinanceScreen() {
         submitting={delPurchase.isPending}
         error={purActionErr}
       />
-    </SafeAreaView>
+    </GlassScreen>
+  );
+}
+
+function FinanceRow({
+  children,
+  onPress,
+  onLongPress,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  onLongPress?: () => void;
+}) {
+  return (
+    <GlassCard onPress={onPress} padded={false} style={{ marginBottom: spacing.sm }}>
+      <Pressable onLongPress={onLongPress} style={{ padding: spacing.md }}>
+        {children}
+      </Pressable>
+    </GlassCard>
   );
 }
 
@@ -640,12 +652,3 @@ function Empty({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: s
     </View>
   );
 }
-
-const rowCard = {
-  backgroundColor: staticColors.card,
-  borderColor: staticColors.border,
-  borderWidth: 1,
-  borderRadius: radius.md,
-  padding: spacing.md,
-  marginBottom: spacing.sm,
-};

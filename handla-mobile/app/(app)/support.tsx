@@ -3,11 +3,11 @@ import { View, Text, FlatList, Pressable, RefreshControl, ScrollView } from 'rea
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { supportApi } from '@/lib/endpoints';
 import type { TicketsQuery } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Chip } from '@/components/ui';
+import { Loading, Badge, Chip } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard, StatCard } from '@/components/glass';
 import { STATUS_META, PRIORITY_META, STATUS_ORDER } from '@/lib/ticketMeta';
 import { statusMeta } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
@@ -24,27 +24,6 @@ function timeAgo(iso?: string) {
   const d = Math.floor(h / 24);
   if (d < 30) return `${d}d`;
   return new Date(iso).toLocaleDateString();
-}
-
-function StatTile({ label, value, tone }: { label: string; value: number; tone?: string }) {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.md,
-        padding: spacing.md,
-      }}
-    >
-      <Text style={{ color: tone ?? colors.text, fontSize: font.xl, fontWeight: '800' }}>
-        {value}
-      </Text>
-      <Text style={{ color: colors.textFaint, fontSize: font.xs, marginTop: 2 }}>{label}</Text>
-    </View>
-  );
 }
 
 export default function SupportListScreen() {
@@ -73,36 +52,31 @@ export default function SupportListScreen() {
   const rows = tickets.data?.tickets ?? [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: spacing.lg,
-          paddingBottom: spacing.sm,
-        }}
-      >
-        <Title>Support</Title>
-        <Pressable
-          onPress={() => router.push('/(app)/ticket/new')}
-          style={({ pressed }) => [
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-              backgroundColor: colors.accent,
-              borderRadius: radius.pill,
-              paddingHorizontal: spacing.md,
-              paddingVertical: spacing.sm - 2,
-            },
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          <Ionicons name="add" size={16} color="#0a0a0a" />
-          <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.sm }}>New</Text>
-        </Pressable>
-      </View>
+    <GlassScreen>
+      <GradientHeader
+        title="Support"
+        icon="headset-outline"
+        right={
+          <Pressable
+            onPress={() => router.push('/(app)/ticket/new')}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                backgroundColor: colors.accent,
+                borderRadius: radius.pill,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm - 2,
+              },
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Ionicons name="add" size={16} color="#0a0a0a" />
+            <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.sm }}>New</Text>
+          </Pressable>
+        }
+      />
 
       <FlatList
         data={rows}
@@ -122,12 +96,14 @@ export default function SupportListScreen() {
           <View style={{ marginBottom: spacing.md }}>
             {isStaff && stats.data && (
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-                <StatTile label="Total" value={stats.data.total} />
-                <StatTile label="Open" value={stats.data.open} tone={colors.info} />
-                <StatTile
+                <StatCard label="Total" value={String(stats.data.total)} icon="albums-outline" width="31%" />
+                <StatCard label="Open" value={String(stats.data.open)} icon="radio-outline" tint={colors.info} width="31%" />
+                <StatCard
                   label="SLA Breach"
-                  value={stats.data.slaBreached}
-                  tone={stats.data.slaBreached > 0 ? colors.danger : colors.text}
+                  value={String(stats.data.slaBreached)}
+                  icon="alert-circle-outline"
+                  tint={stats.data.slaBreached > 0 ? colors.danger : colors.text}
+                  width="31%"
                 />
               </View>
             )}
@@ -167,20 +143,15 @@ export default function SupportListScreen() {
           const pr = statusMeta(PRIORITY_META, item.priority);
           const clientName = item.client?.company || item.client?.user?.name;
           return (
-            <Pressable
+            <GlassCard
               onPress={() => router.push(`/(app)/ticket/${item.id}`)}
-              style={({ pressed }) => [
-                {
-                  backgroundColor: colors.card,
-                  borderColor: item.slaBreached ? colors.danger : colors.border,
-                  borderWidth: 1,
-                  borderRadius: radius.md,
-                  padding: spacing.md,
-                  marginBottom: spacing.sm,
-                },
-                pressed && { opacity: 0.85 },
-              ]}
+              padded={false}
+              style={{
+                marginBottom: spacing.sm,
+                borderColor: item.slaBreached ? colors.danger : undefined,
+              }}
             >
+              <View style={{ padding: spacing.md }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>
                   {item.ticketNumber}
@@ -220,10 +191,11 @@ export default function SupportListScreen() {
                   </View>
                 )}
               </View>
-            </Pressable>
+              </View>
+            </GlassCard>
           );
         }}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

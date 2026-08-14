@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { usersApi } from '@/lib/endpoints';
 import type { UsersQuery } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Chip, Input } from '@/components/ui';
+import { Loading, Badge, Chip, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassListItem } from '@/components/glass';
 import {
   FormModal,
   Select,
@@ -256,61 +256,47 @@ export default function UsersScreen() {
     const m = ROLE_META[item.role];
     const inactive = item.isArchived || item.isDisabled;
     return (
-      <Pressable
-        onPress={() => isAdmin && setSheetFor(item)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.sm,
-          opacity: inactive ? 0.5 : 1,
-        }}
-      >
-        <View
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
-            backgroundColor: m.soft,
-            borderWidth: 1,
-            borderColor: m.color,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: m.color, fontWeight: '800', fontSize: font.sm }}>
-            {initials(item.name)}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={{ color: colors.textFaint, fontSize: font.sm }} numberOfLines={1}>
-            {item.email}
-          </Text>
-        </View>
-        <View style={{ alignItems: 'flex-end', gap: 4 }}>
-          <Badge label={m.label} color={m.color} soft={m.soft} />
-          {item.isDisabled ? (
-            <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
-          ) : item.isArchived ? (
-            <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
-          ) : null}
-        </View>
-      </Pressable>
+      <GlassListItem
+        onPress={() => (isAdmin ? setSheetFor(item) : undefined)}
+        style={{ opacity: inactive ? 0.55 : 1 }}
+        leading={
+          <View
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 21,
+              backgroundColor: m.soft,
+              borderWidth: 1,
+              borderColor: m.color,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: m.color, fontWeight: '800', fontSize: font.sm }}>
+              {initials(item.name)}
+            </Text>
+          </View>
+        }
+        title={item.name}
+        subtitle={item.email}
+        right={
+          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <Badge label={m.label} color={m.color} soft={m.soft} />
+            {item.isDisabled ? (
+              <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
+            ) : item.isArchived ? (
+              <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
+            ) : null}
+          </View>
+        }
+      />
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Users</Title>
+    <GlassScreen>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
+        <GradientHeader title="Users" icon="people-outline" style={{ paddingHorizontal: 0, paddingTop: 0 }} />
         <Text style={{ color: colors.textDim, fontSize: font.xs, marginTop: 2 }}>
           {users.data ? `${users.data.total} members` : 'Loading…'}
         </Text>
@@ -423,6 +409,6 @@ export default function UsersScreen() {
         submitting={del.isPending}
         error={deleteErr ?? undefined}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

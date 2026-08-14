@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { analyticsApi } from '@/lib/endpoints';
 import type { AnalyticsQuery } from '@/lib/endpoints';
-import { Title, Loading, Chip } from '@/components/ui';
-import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { Loading, Chip } from '@/components/ui';
+import { GlassScreen, GlassScrollView, GradientHeader, GlassCard, StatCard, SectionLabel } from '@/components/glass';
+import { AreaChart, BarList } from '@/components/charts';
+import { spacing, useTheme } from '@/theme';
 import type {
   AnalyticsOverview,
   AnalyticsTimeseries,
@@ -37,109 +38,15 @@ const RANGE_PRESETS = [
   { key: '90', label: '90d', days: 90, interval: 'month' as AnalyticsInterval },
 ];
 
-// ─── KPI card ──────────────────────────────────────────────────────────────────
-function Kpi({ label, value }: { label: string; value: string }) {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        width: '31%',
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.md,
-        padding: spacing.md,
-      }}
-    >
-      <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '800' }} numberOfLines={1}>
-        {value}
-      </Text>
-      <Text style={{ color: colors.textFaint, fontSize: font.xs, marginTop: 2 }} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-// ─── View-based bar chart (dependency-free) ──────────────────────────────────
-function BarChart({ ts }: { ts?: AnalyticsTimeseries }) {
-  const { colors } = useTheme();
-  const series = ts?.series ?? [];
-  const max = Math.max(1, ...series.map((p) => p.pageviews));
-  if (series.length === 0) {
-    return (
-      <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.textFaint, fontSize: font.sm }}>No traffic in this range.</Text>
-      </View>
-    );
-  }
-  // Show at most the last ~30 buckets to keep bars legible.
-  const shown = series.slice(-30);
-  return (
-    <View style={{ height: 150 }}>
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
-        {shown.map((p, i) => {
-          const h = Math.max(2, Math.round((p.pageviews / max) * 120));
-          return (
-            <View key={`${p.bucket}-${i}`} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
-              <View
-                style={{
-                  width: '78%',
-                  height: h,
-                  backgroundColor: colors.accent,
-                  borderTopLeftRadius: 3,
-                  borderTopRightRadius: 3,
-                  opacity: 0.85,
-                }}
-              />
-            </View>
-          );
-        })}
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs }}>
-        <Text style={{ color: colors.textDim, fontSize: 10 }}>{shown[0]?.bucket}</Text>
-        <Text style={{ color: colors.textDim, fontSize: 10 }}>{shown[shown.length - 1]?.bucket}</Text>
-      </View>
-    </View>
-  );
-}
-
-// ─── Top-N list with proportional bars ────────────────────────────────────────
-function BarList({ title, data, emptyLabel }: { title: string; data?: AnalyticsTopResult; emptyLabel: string }) {
-  const { colors } = useTheme();
-  const rows = data?.rows ?? [];
-  const max = Math.max(1, ...rows.map((r) => r.count));
+// ─── Top-N list section — chart-kit BarList wrapped in a glass card ───────────
+function TopSection({ title, data, emptyLabel }: { title: string; data?: AnalyticsTopResult; emptyLabel: string }) {
+  const rows = (data?.rows ?? []).map((r) => ({ key: r.key || '(none)', count: r.count }));
   return (
     <View style={{ marginTop: spacing.lg }}>
-      <Text style={sectionLabel}>{title}</Text>
-      <View style={cardStyle}>
-        {rows.length === 0 ? (
-          <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{emptyLabel}</Text>
-        ) : (
-          rows.map((r, i) => (
-            <View key={`${r.key}-${i}`} style={{ marginBottom: i === rows.length - 1 ? 0 : spacing.sm }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
-                <Text style={{ color: colors.text, fontSize: font.sm, flex: 1 }} numberOfLines={1}>
-                  {r.key || '(none)'}
-                </Text>
-                <Text style={{ color: colors.textMuted, fontSize: font.sm, fontWeight: '700', marginLeft: 8 }}>
-                  {compact(r.count)}
-                </Text>
-              </View>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.cardAlt, overflow: 'hidden' }}>
-                <View
-                  style={{
-                    width: `${Math.round((r.count / max) * 100)}%`,
-                    height: '100%',
-                    backgroundColor: colors.accent,
-                    opacity: 0.8,
-                  }}
-                />
-              </View>
-            </View>
-          ))
-        )}
-      </View>
+      <SectionLabel style={{ marginBottom: spacing.xs }}>{title}</SectionLabel>
+      <GlassCard>
+        <BarList rows={rows} emptyLabel={emptyLabel} formatValue={compact} />
+      </GlassCard>
     </View>
   );
 }
@@ -195,20 +102,19 @@ export default function AnalyticsScreen() {
 
   const o = overview.data;
   const anyFetching = overview.isFetching || timeseries.isFetching;
+  const series = timeseries.data?.series ?? [];
+  const pvValues = series.map((p) => p.pageviews);
+  const pvLabels = series.map((p) => p.bucket);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Analytics</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Analytics" icon="bar-chart-outline" />
 
       {overview.isLoading ? (
         <Loading />
       ) : (
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
+        <GlassScrollView
           refreshControl={<RefreshControl refreshing={anyFetching} onRefresh={refreshAll} tintColor={colors.accent} />}
-          showsVerticalScrollIndicator={false}
         >
           {/* Range presets */}
           <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
@@ -219,47 +125,36 @@ export default function AnalyticsScreen() {
 
           {/* KPI grid */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            <Kpi label="Pageviews" value={compact(o?.pageviews ?? 0)} />
-            <Kpi label="Visitors" value={compact(o?.uniqueVisitors ?? 0)} />
-            <Kpi label="Sessions" value={compact(o?.sessions ?? 0)} />
-            <Kpi label="Events" value={compact(o?.events ?? 0)} />
-            <Kpi label="Bounce" value={pct(o?.bounceRate ?? 0)} />
-            <Kpi label="Views/Sess" value={(o?.viewsPerSession ?? 0).toFixed(1)} />
+            <StatCard label="Pageviews" value={compact(o?.pageviews ?? 0)} icon="eye-outline" width="31%" />
+            <StatCard label="Visitors" value={compact(o?.uniqueVisitors ?? 0)} icon="people-outline" width="31%" />
+            <StatCard label="Sessions" value={compact(o?.sessions ?? 0)} icon="time-outline" width="31%" />
+            <StatCard label="Events" value={compact(o?.events ?? 0)} icon="flash-outline" width="31%" />
+            <StatCard label="Bounce" value={pct(o?.bounceRate ?? 0)} icon="exit-outline" width="31%" />
+            <StatCard label="Views/Sess" value={(o?.viewsPerSession ?? 0).toFixed(1)} icon="layers-outline" width="31%" />
           </View>
 
           {/* Pageviews over time */}
           <View style={{ marginTop: spacing.lg }}>
-            <Text style={sectionLabel}>Pageviews over time</Text>
-            <View style={cardStyle}>
-              <BarChart ts={timeseries.data} />
-            </View>
+            <SectionLabel style={{ marginBottom: spacing.xs }}>Pageviews over time</SectionLabel>
+            <GlassCard>
+              {pvValues.length > 0 ? (
+                <AreaChart values={pvValues} labels={pvLabels} height={160} />
+              ) : (
+                <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: colors.textFaint, fontSize: 13 }}>No traffic in this range.</Text>
+                </View>
+              )}
+            </GlassCard>
           </View>
 
-          <BarList title="Top Pages" data={topPages.data} emptyLabel="No page data." />
-          <BarList title="Top Referrers" data={topReferrers.data} emptyLabel="No referrer data." />
-          <BarList title="Devices" data={devices.data} emptyLabel="No device data." />
-          <BarList title="Browsers" data={browsers.data} emptyLabel="No browser data." />
-          <BarList title="Countries" data={countries.data} emptyLabel="No country data." />
-          <BarList title="Top Events" data={topEvents.data} emptyLabel="No event data." />
-        </ScrollView>
+          <TopSection title="Top Pages" data={topPages.data} emptyLabel="No page data." />
+          <TopSection title="Top Referrers" data={topReferrers.data} emptyLabel="No referrer data." />
+          <TopSection title="Devices" data={devices.data} emptyLabel="No device data." />
+          <TopSection title="Browsers" data={browsers.data} emptyLabel="No browser data." />
+          <TopSection title="Countries" data={countries.data} emptyLabel="No country data." />
+          <TopSection title="Top Events" data={topEvents.data} emptyLabel="No event data." />
+        </GlassScrollView>
       )}
-    </SafeAreaView>
+    </GlassScreen>
   );
 }
-
-const sectionLabel = {
-  color: staticColors.textDim,
-  fontSize: font.xs,
-  fontWeight: '600' as const,
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0.5,
-  marginBottom: spacing.xs,
-};
-
-const cardStyle = {
-  backgroundColor: staticColors.card,
-  borderColor: staticColors.border,
-  borderWidth: 1,
-  borderRadius: radius.md,
-  padding: spacing.md,
-};

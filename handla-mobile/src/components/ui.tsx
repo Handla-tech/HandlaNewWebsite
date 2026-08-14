@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { radius, spacing, font, useTheme, type Palette } from '@/theme';
 
 
@@ -33,7 +34,7 @@ function makeStyles(colors: Palette) {
       letterSpacing: 0.5,
     },
     card: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.glass,
       borderColor: colors.border,
       borderWidth: 1,
       borderRadius: radius.lg,
@@ -280,23 +281,38 @@ export function DetailHeader({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
+        gap: spacing.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         borderBottomColor: colors.border,
         borderBottomWidth: 1,
       }}
     >
-      <Pressable onPress={onBack} hitSlop={10} style={{ padding: 4 }}>
-        <Ionicons name="chevron-back" size={24} color={colors.text} />
+      <Pressable onPress={onBack} hitSlop={10}>
+        <LinearGradient
+          colors={colors.accentGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="chevron-back" size={22} color="#0a0a0a" />
+        </LinearGradient>
       </Pressable>
       <View style={{ flex: 1 }}>
         {subtitle ? (
-          <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>
+          <Text
+            style={{
+              color: colors.textFaint,
+              fontSize: font.xs,
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: 0.6,
+            }}
+          >
             {subtitle}
           </Text>
         ) : null}
-        <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
+        <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '800' }} numberOfLines={1}>
           {title}
         </Text>
       </View>

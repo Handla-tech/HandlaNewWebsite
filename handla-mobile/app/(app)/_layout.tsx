@@ -32,7 +32,7 @@ export default function AppLayout() {
       drawerContent={(props) => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: colors.bgGradient[0] },
         headerTintColor: colors.text,
         // Screens render their own large <Title>; the header bar only carries
         // the hamburger (left) + notifications/profile (right), so keep it blank.

@@ -34,8 +34,48 @@ export interface AuthResult {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+export interface ProjectsByStatus {
+  planning: number;
+  active: number;
+  onHold: number;
+  completed: number;
+  cancelled: number;
+}
+export interface ContractsByStatus {
+  draft: number;
+  sent: number;
+  signed: number;
+  rejected: number;
+}
+/**
+ * Structured staff dashboard stats (backend DashboardStats). Kept as an index
+ * type too so legacy code that iterates arbitrary keys still compiles.
+ */
 export interface DashboardStats {
-  [key: string]: number | string | null | undefined;
+  totalLeads: number;
+  totalClients: number;
+  newLeadsThisMonth: number;
+  newClientsThisMonth: number;
+  activeProjects: number;
+  projectsByStatus: ProjectsByStatus;
+  totalTasks: number;
+  completedTasks: number;
+  completionRate: number;
+  delayedTasks: number;
+  pendingTasks: number;
+  totalIncome: number;
+  totalExpenses: number;
+  netBalance: number;
+  outstandingInvoices: number;
+  overdueInvoicesCount: number;
+  contractsByStatus: ContractsByStatus;
+  [key: string]: unknown;
+}
+
+export interface FinancialChartMonth {
+  month: string; // 'YYYY-MM'
+  income: number;
+  expenses: number;
 }
 
 // ─── Notifications ─────────────────────────────────────────────────────────────

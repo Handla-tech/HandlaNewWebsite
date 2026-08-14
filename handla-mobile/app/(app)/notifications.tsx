@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { notificationsApi } from '@/lib/endpoints';
-import { Title, Loading } from '@/components/ui';
-import { spacing, radius, font, useTheme } from '@/theme';
+import { Loading } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard, withAlpha } from '@/components/glass';
+import { spacing, font, useTheme } from '@/theme';
 import type { Notification } from '@/types';
 
 function timeAgo(iso: string) {
@@ -44,24 +44,20 @@ export default function NotificationsScreen() {
   const hasUnread = data.some((n) => !n.isRead);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: spacing.lg,
-        }}
-      >
-        <Title>Notifications</Title>
-        {hasUnread && (
-          <Pressable onPress={() => markAll.mutate()}>
-            <Text style={{ color: colors.accent, fontSize: font.sm, fontWeight: '600' }}>
-              Mark all read
-            </Text>
-          </Pressable>
-        )}
-      </View>
+    <GlassScreen>
+      <GradientHeader
+        title="Notifications"
+        icon="notifications-outline"
+        right={
+          hasUnread ? (
+            <Pressable onPress={() => markAll.mutate()} hitSlop={8}>
+              <Text style={{ color: colors.accent, fontSize: font.sm, fontWeight: '700' }}>
+                Mark all read
+              </Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       {list.isLoading ? (
         <Loading />
@@ -86,40 +82,52 @@ export default function NotificationsScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => !item.isRead && markRead.mutate(item.id)}
-              style={{
-                backgroundColor: item.isRead ? colors.card : colors.accentSoft,
-                borderColor: item.isRead ? colors.border : colors.accentBorder,
-                borderWidth: 1,
-                borderRadius: radius.md,
-                padding: spacing.md,
-                marginBottom: spacing.sm,
-              }}
+            <GlassCard
+              onPress={() => (!item.isRead ? markRead.mutate(item.id) : undefined)}
+              padded={false}
+              style={{ marginBottom: spacing.sm }}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text
-                  style={{ color: colors.text, fontSize: font.md, fontWeight: '600', flex: 1 }}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-                <Text style={{ color: colors.textDim, fontSize: font.xs, marginLeft: spacing.sm }}>
-                  {timeAgo(item.createdAt)}
-                </Text>
+              <View style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.md }}>
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    marginTop: 6,
+                    backgroundColor: item.isRead ? withAlpha(colors.textDim, 0.4) : colors.accent,
+                  }}
+                />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontSize: font.md,
+                        fontWeight: item.isRead ? '600' : '800',
+                        flex: 1,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text style={{ color: colors.textDim, fontSize: font.xs, marginLeft: spacing.sm }}>
+                      {timeAgo(item.createdAt)}
+                    </Text>
+                  </View>
+                  {item.body ? (
+                    <Text
+                      style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 4 }}
+                      numberOfLines={2}
+                    >
+                      {item.body}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
-              {item.body ? (
-                <Text
-                  style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 4 }}
-                  numberOfLines={2}
-                >
-                  {item.body}
-                </Text>
-              ) : null}
-            </Pressable>
+            </GlassCard>
           )}
         />
       )}
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

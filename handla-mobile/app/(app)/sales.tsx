@@ -3,7 +3,6 @@ import { View, Text, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   quotationsApi,
   contractsApi,
@@ -16,7 +15,8 @@ import {
 } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Input } from '@/components/ui';
+import { Loading, Badge, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard } from '@/components/glass';
 import {
   FormModal,
   Textarea,
@@ -34,7 +34,7 @@ import {
   money,
   fmtDate,
 } from '@/lib/salesMeta';
-import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type {
   PaginatedQuotations,
   PaginatedContracts,
@@ -69,46 +69,36 @@ function DocCard({
   badge: { label: string; color: string; soft: string };
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        {
-          backgroundColor: staticColors.card,
-          borderColor: staticColors.border,
-          borderWidth: 1,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.sm,
-        },
-        pressed && { opacity: 0.85 },
-      ]}
-    >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ color: staticColors.accent, fontSize: font.xs, fontWeight: '700' }}>{number}</Text>
-        <Badge label={badge.label} color={badge.color} soft={badge.soft} />
+    <GlassCard onPress={onPress} padded={false} style={{ marginBottom: spacing.sm }}>
+      <View style={{ padding: spacing.md }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={{ color: colors.accent, fontSize: font.xs, fontWeight: '700' }}>{number}</Text>
+          <Badge label={badge.label} color={badge.color} soft={badge.soft} />
+        </View>
+        <Text
+          style={{ color: colors.text, fontSize: font.md, fontWeight: '700', marginTop: 4 }}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
+          {subtitle ? (
+            <Text style={{ color: colors.textFaint, fontSize: font.sm, flex: 1 }} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
+          {amount != null && (
+            <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800', marginLeft: 8 }}>
+              {money(amount, currency)}
+            </Text>
+          )}
+        </View>
       </View>
-      <Text
-        style={{ color: staticColors.text, fontSize: font.md, fontWeight: '700', marginTop: 4 }}
-        numberOfLines={1}
-      >
-        {title}
-      </Text>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-        {subtitle ? (
-          <Text style={{ color: staticColors.textFaint, fontSize: font.sm, flex: 1 }} numberOfLines={1}>
-            {subtitle}
-          </Text>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
-        {amount != null && (
-          <Text style={{ color: staticColors.text, fontSize: font.md, fontWeight: '800', marginLeft: 8 }}>
-            {money(amount, currency)}
-          </Text>
-        )}
-      </View>
-    </Pressable>
+    </GlassCard>
   );
 }
 
@@ -258,10 +248,8 @@ export default function SalesScreen() {
         : 'New Invoice';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Sales</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Sales" icon="cash-outline" />
 
       {/* Segmented control */}
       <View
@@ -424,7 +412,7 @@ export default function SalesScreen() {
           </>
         )}
       </FormModal>
-    </SafeAreaView>
+    </GlassScreen>
   );
 }
 

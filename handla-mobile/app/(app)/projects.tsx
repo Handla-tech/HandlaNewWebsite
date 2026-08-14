@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { projectsApi, clientsApi, type ProjectInput } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Chip, Input } from '@/components/ui';
+import { Loading, Badge, Chip, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard } from '@/components/glass';
 import {
   FormModal,
   Textarea,
@@ -128,49 +128,43 @@ export default function ProjectsScreen() {
     const sc = statusColor(item.status);
     const clientName = item.client?.user?.name ?? item.client?.company ?? '';
     return (
-      <Pressable
-        onPress={() => isStaff && setSheetFor(item)}
-        style={{
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.sm,
-        }}
+      <GlassCard
+        onPress={() => (isStaff ? setSheetFor(item) : undefined)}
+        padded={false}
+        style={{ marginBottom: spacing.sm }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Ionicons name="folder-open-outline" size={18} color={colors.accent} />
-          <Text
-            style={{ flex: 1, color: colors.text, fontSize: font.md, fontWeight: '700' }}
-            numberOfLines={1}
-          >
-            {item.title}
-          </Text>
-          <Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />
+        <View style={{ padding: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <Ionicons name="folder-open-outline" size={18} color={colors.accent} />
+            <Text
+              style={{ flex: 1, color: colors.text, fontSize: font.md, fontWeight: '700' }}
+              numberOfLines={1}
+            >
+              {item.title}
+            </Text>
+            <Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />
+          </View>
+          {clientName ? (
+            <Text style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 4 }} numberOfLines={1}>
+              {clientName}
+            </Text>
+          ) : null}
+          <View style={{ flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm }}>
+            <Text style={{ color: colors.textDim, fontSize: font.xs }}>
+              Start: {fmtDate(item.startDate)}
+            </Text>
+            <Text style={{ color: colors.textDim, fontSize: font.xs }}>
+              End: {fmtDate(item.endDate)}
+            </Text>
+          </View>
         </View>
-        {clientName ? (
-          <Text style={{ color: colors.textFaint, fontSize: font.sm, marginTop: 4 }} numberOfLines={1}>
-            {clientName}
-          </Text>
-        ) : null}
-        <View style={{ flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm }}>
-          <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-            Start: {fmtDate(item.startDate)}
-          </Text>
-          <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-            End: {fmtDate(item.endDate)}
-          </Text>
-        </View>
-      </Pressable>
+      </GlassCard>
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Projects</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Projects" icon="folder-open-outline" />
 
       <ScrollView
         horizontal
@@ -305,6 +299,6 @@ export default function ProjectsScreen() {
         submitting={del.isPending}
         error={deleteErr ?? undefined}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

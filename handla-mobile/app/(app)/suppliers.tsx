@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { suppliersApi, type SupplierInput } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Input } from '@/components/ui';
+import { Loading, Badge, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassListItem } from '@/components/glass';
 import { FormModal, Textarea, SwitchRow, ConfirmModal, ActionSheet, Fab } from '@/components/forms';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { PaginatedSuppliers, Supplier } from '@/types';
@@ -108,60 +108,38 @@ export default function SuppliersScreen() {
   };
 
   const renderItem = ({ item }: { item: Supplier }) => (
-    <Pressable
-      onPress={() => isStaff && setSheetFor(item)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.md,
-        padding: spacing.md,
-        marginBottom: spacing.sm,
-      }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: radius.md,
-          backgroundColor: colors.accentSoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name="business-outline" size={20} color={colors.accent} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-          {item.name}
-        </Text>
-        {item.company ? (
-          <Text style={{ color: colors.textFaint, fontSize: font.sm }} numberOfLines={1}>
-            {item.company}
-          </Text>
-        ) : null}
-        {item.email ? (
-          <Text style={{ color: colors.textDim, fontSize: font.xs }} numberOfLines={1}>
-            {item.email}
-          </Text>
-        ) : null}
-      </View>
-      {item.isActive === false ? (
-        <Badge label="Inactive" color="#9ca3af" soft="rgba(156,163,175,0.15)" />
-      ) : (
-        <Badge label="Active" color="#22c55e" soft="rgba(34,197,94,0.15)" />
-      )}
-    </Pressable>
+    <GlassListItem
+      onPress={() => (isStaff ? setSheetFor(item) : undefined)}
+      leading={
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: radius.md,
+            backgroundColor: colors.accentSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ionicons name="business-outline" size={20} color={colors.accent} />
+        </View>
+      }
+      title={item.name}
+      subtitle={item.company ?? undefined}
+      meta={item.email ?? undefined}
+      right={
+        item.isActive === false ? (
+          <Badge label="Inactive" color="#9ca3af" soft="rgba(156,163,175,0.15)" />
+        ) : (
+          <Badge label="Active" color="#22c55e" soft="rgba(34,197,94,0.15)" />
+        )
+      }
+    />
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Suppliers</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Suppliers" icon="business-outline" />
       {suppliers.isLoading ? (
         <Loading />
       ) : (
@@ -284,6 +262,6 @@ export default function SuppliersScreen() {
         submitting={del.isPending}
         error={deleteErr}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

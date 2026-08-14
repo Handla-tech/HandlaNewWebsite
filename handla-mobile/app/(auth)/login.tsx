@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
-import { Screen, Title, Subtitle, Input, Button, Card } from '@/components/ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Title, Subtitle, Input, Button } from '@/components/ui';
+import { ScreenBackground, GlassCard } from '@/components/glass';
 import { useAuthStore } from '@/store/authStore';
 import { useT } from '@/i18n';
 import { spacing, font, useTheme } from '@/theme';
@@ -34,33 +37,34 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen>
+    <ScreenBackground>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1, justifyContent: 'center' }}
+        style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg }}
       >
         {/* Brand */}
         <View style={{ alignItems: 'center', marginBottom: spacing.xxl }}>
-          <View
+          <LinearGradient
+            colors={colors.accentGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 18,
-              backgroundColor: colors.accentSoft,
-              borderWidth: 1,
-              borderColor: colors.accentBorder,
+              width: 72,
+              height: 72,
+              borderRadius: 20,
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: spacing.md,
             }}
           >
-            <Text style={{ color: colors.accent, fontSize: font.xxl, fontWeight: '800' }}>H</Text>
-          </View>
+            <Text style={{ color: '#0a0a0a', fontSize: font.xxl, fontWeight: '800' }}>H</Text>
+          </LinearGradient>
           <Title>Handla</Title>
           <Subtitle>{t('auth.subtitle')}</Subtitle>
         </View>
 
-        <Card>
+        <GlassCard raised>
           <Input
             label={t('auth.email')}
             value={email}
@@ -90,7 +94,7 @@ export default function LoginScreen() {
           )}
 
           <Button title={submitting ? t('auth.signingIn') : t('auth.signIn')} onPress={onSubmit} loading={submitting} />
-        </Card>
+        </GlassCard>
 
         <Text
           style={{
@@ -103,6 +107,7 @@ export default function LoginScreen() {
           Handla staff & client portal
         </Text>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
+    </ScreenBackground>
   );
 }

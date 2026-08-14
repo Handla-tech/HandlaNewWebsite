@@ -51,6 +51,8 @@ import type {
   PaginatedTestimonials,
   PaginatedTenants,
   TenantStatus,
+  DashboardStats,
+  FinancialChartMonth,
 } from '@/types';
 
 /**
@@ -69,8 +71,12 @@ export const authApi = {
 
 export const dashboardApi = {
   // Existing back-office dashboard endpoints (ADMIN/EMPLOYEE).
-  stats: (params?: object) => api.get('/erp/dashboard/stats', { params }),
-  financialChart: (params?: object) => api.get('/erp/dashboard/financial-chart', { params }),
+  stats: (params?: object) =>
+    api.get<{ message: string; data: DashboardStats }>('/erp/dashboard/stats', { params }),
+  financialChart: (params?: object) =>
+    api.get<{ message: string; data: FinancialChartMonth[] }>('/erp/dashboard/financial-chart', {
+      params,
+    }),
 };
 
 export const notificationsApi = {

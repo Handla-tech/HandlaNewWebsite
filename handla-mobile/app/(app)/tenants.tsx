@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { tenantsApi } from '@/lib/endpoints';
-import { Title, Loading, Badge } from '@/components/ui';
+import { Loading, Badge } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassListItem } from '@/components/glass';
 import { statusColor, prettyStatus } from '@/lib/statusMeta';
-import { spacing, radius, font, useTheme } from '@/theme';
+import { spacing, radius, useTheme } from '@/theme';
 import type { PaginatedTenants, Tenant } from '@/types';
 
 export default function TenantsScreen() {
@@ -23,54 +23,32 @@ export default function TenantsScreen() {
   const renderItem = ({ item }: { item: Tenant }) => {
     const sc = statusColor(item.status);
     return (
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.sm,
-        }}
-      >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: radius.md,
-            backgroundColor: colors.accentSoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="cube-outline" size={20} color={colors.accent} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {item.name}
-          </Text>
-          {item.product?.name ? (
-            <Text style={{ color: colors.textFaint, fontSize: font.sm }} numberOfLines={1}>
-              {item.product.name}
-            </Text>
-          ) : null}
-          <Text style={{ color: colors.textDim, fontSize: font.xs }} numberOfLines={1}>
-            /{item.slug}
-          </Text>
-        </View>
-        <Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />
-      </View>
+      <GlassListItem
+        leading={
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: radius.md,
+              backgroundColor: colors.accentSoft,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="cube-outline" size={20} color={colors.accent} />
+          </View>
+        }
+        title={item.name}
+        subtitle={item.product?.name ?? null}
+        meta={`/${item.slug}`}
+        right={<Badge label={prettyStatus(item.status)} color={sc.color} soft={sc.soft} />}
+      />
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Tenants</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Tenants" icon="cube-outline" />
       {tenants.isLoading ? (
         <Loading />
       ) : (
@@ -94,6 +72,6 @@ export default function TenantsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

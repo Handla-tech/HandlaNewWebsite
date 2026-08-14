@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenBackground } from '@/components/glass';
 import { supportApi, clientsApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Input, Button, Label } from '@/components/ui';
@@ -123,7 +124,8 @@ export default function NewTicketScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <ScreenBackground>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
@@ -280,5 +282,6 @@ export default function NewTicketScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }

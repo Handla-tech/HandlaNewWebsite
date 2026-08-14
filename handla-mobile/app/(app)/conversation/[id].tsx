@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { chatApi } from '@/lib/endpoints';
+import { ScreenBackground, withAlpha } from '@/components/glass';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import {
@@ -183,7 +184,8 @@ export default function ConversationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <ScreenBackground>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
@@ -259,7 +261,7 @@ export default function ConversationScreen() {
                 borderRadius: radius.lg,
                 borderWidth: 1,
                 borderColor: colors.border,
-                backgroundColor: 'rgba(0,0,0,0.4)',
+                backgroundColor: withAlpha(colors.cardAlt, 0.6),
                 color: colors.text,
                 paddingHorizontal: spacing.md,
                 paddingTop: 10,
@@ -288,5 +290,6 @@ export default function ConversationScreen() {
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }

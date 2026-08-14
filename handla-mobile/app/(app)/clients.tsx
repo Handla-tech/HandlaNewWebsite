@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, RefreshControl } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { clientsApi, usersApi } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Badge, Input } from '@/components/ui';
+import { Loading, Badge, Input } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassListItem, Avatar } from '@/components/glass';
 import {
   FormModal,
   Textarea,
@@ -166,65 +166,28 @@ export default function ClientsScreen() {
     const name = item.user?.name ?? item.company ?? 'Client';
     const email = item.user?.email ?? '';
     return (
-      <Pressable
-        onPress={() => isStaff && setSheetFor(item)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: radius.md,
-          padding: spacing.md,
-          marginBottom: spacing.sm,
-        }}
-      >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: radius.pill,
-            backgroundColor: colors.accentSoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: colors.accent, fontWeight: '800' }}>
-            {name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {name}
-          </Text>
-          {item.company ? (
-            <Text style={{ color: colors.textFaint, fontSize: font.sm }} numberOfLines={1}>
-              {item.company}
-            </Text>
-          ) : null}
-          {email ? (
-            <Text style={{ color: colors.textDim, fontSize: font.xs }} numberOfLines={1}>
-              {email}
-            </Text>
-          ) : null}
-        </View>
-        {item.status ? (
-          <Badge
-            label={prettyStatus(item.status)}
-            color={statusColor(item.status).color}
-            soft={statusColor(item.status).soft}
-          />
-        ) : null}
-      </Pressable>
+      <GlassListItem
+        onPress={() => (isStaff ? setSheetFor(item) : undefined)}
+        leading={<Avatar name={name} size={42} />}
+        title={name}
+        subtitle={item.company ?? undefined}
+        meta={email || undefined}
+        right={
+          item.status ? (
+            <Badge
+              label={prettyStatus(item.status)}
+              color={statusColor(item.status).color}
+              soft={statusColor(item.status).soft}
+            />
+          ) : undefined
+        }
+      />
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Clients</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Clients" icon="people-circle-outline" />
       {clients.isLoading ? (
         <Loading />
       ) : (
@@ -350,6 +313,6 @@ export default function ClientsScreen() {
         submitting={del.isPending}
         error={deleteErr ?? undefined}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/authStore';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useT } from '@/i18n';
@@ -52,10 +53,29 @@ export function DrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <LinearGradient
+        colors={colors.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.6, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: -100,
+          left: -80,
+          width: 260,
+          height: 260,
+          borderRadius: 260,
+          backgroundColor: colors.glowA,
+          opacity: 0.8,
+        }}
+      />
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={{ paddingTop: 0 }}
-        style={{ backgroundColor: colors.surface }}
+        style={{ backgroundColor: 'transparent' }}
       >
         {/* Branded header */}
         <View
@@ -69,20 +89,20 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <View
+            <LinearGradient
+              colors={colors.accentGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
                 width: 44,
                 height: 44,
                 borderRadius: radius.md,
-                backgroundColor: colors.accentSoft,
-                borderColor: colors.accentBorder,
-                borderWidth: 1,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: colors.accent, fontSize: font.lg, fontWeight: '800' }}>H</Text>
-            </View>
+              <Text style={{ color: '#0a0a0a', fontSize: font.lg, fontWeight: '800' }}>H</Text>
+            </LinearGradient>
             <View style={{ flex: 1 }}>
               <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '800' }}>Handla</Text>
               <Text style={{ color: colors.textFaint, fontSize: font.xs }} numberOfLines={1}>
@@ -178,20 +198,22 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               style={{ width: 34, height: 34, borderRadius: radius.pill }}
             />
           ) : (
-            <View
+            <LinearGradient
+              colors={colors.accentGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
                 width: 34,
                 height: 34,
                 borderRadius: radius.pill,
-                backgroundColor: colors.accentSoft,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: colors.accent, fontWeight: '700' }}>
+              <Text style={{ color: '#0a0a0a', fontWeight: '800' }}>
                 {(user?.name ?? '?').charAt(0).toUpperCase()}
               </Text>
-            </View>
+            </LinearGradient>
           )}
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontSize: font.sm, fontWeight: '600' }} numberOfLines={1}>

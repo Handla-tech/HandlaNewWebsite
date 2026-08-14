@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { testimonialsApi, type TestimonialInput } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
-import { Title, Loading, Input, Label } from '@/components/ui';
+import { Loading, Input, Label } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard, Avatar } from '@/components/glass';
 import {
   FormModal,
   Textarea,
@@ -145,56 +145,36 @@ export default function TestimonialsScreen() {
   };
 
   const renderItem = ({ item }: { item: Testimonial }) => (
-    <Pressable
-      onPress={() => isAdmin && setSheetFor(item)}
-      style={{
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderWidth: 1,
-        borderRadius: radius.md,
-        padding: spacing.md,
-        marginBottom: spacing.sm,
-        gap: spacing.sm,
-      }}
+    <GlassCard
+      onPress={() => (isAdmin ? setSheetFor(item) : undefined)}
+      padded={false}
+      style={{ marginBottom: spacing.sm }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.accentSoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: colors.accent, fontWeight: '800' }}>
-            {(item.clientName ?? '?').charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-            {item.clientName}
-          </Text>
-          {item.clientCompany ? (
-            <Text style={{ color: colors.textFaint, fontSize: font.xs }} numberOfLines={1}>
-              {item.clientCompany}
+      <View style={{ padding: spacing.md, gap: spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Avatar name={item.clientName} size={40} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
+              {item.clientName}
             </Text>
-          ) : null}
+            {item.clientCompany ? (
+              <Text style={{ color: colors.textFaint, fontSize: font.xs }} numberOfLines={1}>
+                {item.clientCompany}
+              </Text>
+            ) : null}
+          </View>
+          <Stars rating={item.rating} color={colors.accent} />
         </View>
-        <Stars rating={item.rating} color={colors.accent} />
+        <Text style={{ color: colors.textDim, fontSize: font.sm, lineHeight: 20 }} numberOfLines={4}>
+          “{item.content}”
+        </Text>
       </View>
-      <Text style={{ color: colors.textDim, fontSize: font.sm, lineHeight: 20 }} numberOfLines={4}>
-        “{item.content}”
-      </Text>
-    </Pressable>
+    </GlassCard>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-        <Title>Testimonials</Title>
-      </View>
+    <GlassScreen>
+      <GradientHeader title="Testimonials" icon="chatbox-ellipses-outline" />
       {testimonials.isLoading ? (
         <Loading />
       ) : (
@@ -305,6 +285,6 @@ export default function TestimonialsScreen() {
         submitting={del.isPending}
         error={deleteErr ?? undefined}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

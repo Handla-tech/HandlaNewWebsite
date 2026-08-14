@@ -3,7 +3,8 @@ import { View, Text, Pressable, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Screen, Title, Subtitle, Card, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { GlassScreen, GlassScrollView, GradientHeader, GlassCard, Avatar } from '@/components/glass';
 import { useAuthStore } from '@/store/authStore';
 import { useT, type Locale } from '@/i18n';
 import { spacing, radius, font, useTheme, type ThemeMode } from '@/theme';
@@ -221,19 +222,11 @@ export default function ProfileScreen() {
     // AuthGate redirects to login.
   };
 
-  const initials = (user?.name ?? '?')
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
   return (
-    <Screen scroll>
-      <Title>{t('profile.title')}</Title>
-      <Subtitle>{t('profile.subtitle')}</Subtitle>
-
-      <Card style={{ marginTop: spacing.lg, alignItems: 'center' }}>
+    <GlassScreen>
+      <GradientHeader title={t('profile.title')} subtitle={t('profile.subtitle')} icon="person-circle-outline" />
+      <GlassScrollView>
+      <GlassCard raised style={{ marginTop: spacing.sm, alignItems: 'center' }}>
         {user?.avatarUrl ? (
           <Image
             source={{ uri: user.avatarUrl }}
@@ -241,22 +234,7 @@ export default function ProfileScreen() {
             contentFit="cover"
           />
         ) : (
-          <View
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 36,
-              backgroundColor: colors.accentSoft,
-              borderWidth: 1,
-              borderColor: colors.accentBorder,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: colors.accent, fontSize: font.xl, fontWeight: '800' }}>
-              {initials}
-            </Text>
-          </View>
+          <Avatar name={user?.name} size={72} />
         )}
         <Text style={{ color: colors.text, fontSize: font.lg, fontWeight: '700', marginTop: spacing.md }}>
           {user?.name}
@@ -276,9 +254,9 @@ export default function ProfileScreen() {
             {user?.role}
           </Text>
         </View>
-      </Card>
+      </GlassCard>
 
-      <Card style={{ marginTop: spacing.lg, paddingVertical: 0 }}>
+      <GlassCard style={{ marginTop: spacing.lg, paddingVertical: 0 }}>
         <Row icon="mail-outline" label={t('profile.email')} value={user?.email} />
         <Row icon="call-outline" label={t('profile.phone')} value={user?.phoneNumber} />
         <Row icon="briefcase-outline" label={t('profile.jobTitle')} value={user?.jobTitle} />
@@ -286,7 +264,7 @@ export default function ProfileScreen() {
         <View style={{ borderBottomWidth: 0 }}>
           <Row icon="location-outline" label={t('profile.location')} value={user?.location} />
         </View>
-      </Card>
+      </GlassCard>
 
       <Text
         style={{
@@ -301,10 +279,10 @@ export default function ProfileScreen() {
       >
         {t('profile.preferences')}
       </Text>
-      <Card style={{ paddingVertical: 0 }}>
+      <GlassCard style={{ paddingVertical: 0 }}>
         <LanguageSwitcher />
         <ThemeSwitcher />
-      </Card>
+      </GlassCard>
 
       {isAdmin && (
         <>
@@ -321,9 +299,9 @@ export default function ProfileScreen() {
           >
             {t('profile.admin')}
           </Text>
-          <Card style={{ paddingVertical: 0 }}>
+          <GlassCard style={{ paddingVertical: 0 }}>
             <LinkRow icon="people-outline" label={t('profile.team')} onPress={() => router.push('/(app)/team')} />
-          </Card>
+          </GlassCard>
         </>
       )}
 
@@ -334,6 +312,7 @@ export default function ProfileScreen() {
         loading={signingOut}
         style={{ marginTop: spacing.xl }}
       />
-    </Screen>
+      </GlassScrollView>
+    </GlassScreen>
   );
 }

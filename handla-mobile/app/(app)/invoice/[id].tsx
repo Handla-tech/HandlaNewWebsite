@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenBackground } from '@/components/glass';
 import { invoicesApi, type InvoiceInput, type LineItemInput } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
@@ -10,11 +11,26 @@ import { Loading, Badge, DetailHeader, Row, Button, Input } from '@/components/u
 import { FormModal, Textarea, DateField } from '@/components/forms';
 import { LineItemsEditor } from '@/components/LineItemsEditor';
 import { INVOICE_STATUS_META, statusMeta, money, fmtDate } from '@/lib/salesMeta';
-import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { spacing, radius, font, useTheme } from '@/theme';
 import type { Invoice, LineItem } from '@/types';
 
 export default function InvoiceDetailScreen() {
   const { colors } = useTheme();
+  const sectionLabel = {
+    color: colors.textDim,
+    fontSize: font.xs,
+    fontWeight: '600' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  };
+  const cardStyle = {
+    backgroundColor: colors.glass,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  };
   const { id } = useLocalSearchParams<{ id: string }>();
   const invoiceId = String(id);
   const router = useRouter();
@@ -121,7 +137,8 @@ export default function InvoiceDetailScreen() {
   const cur = inv?.currency;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <ScreenBackground>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DetailHeader
         title={inv ? money(inv.total, inv.currency) : 'Loading…'}
@@ -236,22 +253,7 @@ export default function InvoiceDetailScreen() {
         <Textarea label="Notes" value={eNotes} onChangeText={setENotes} placeholder="Optional" />
       </FormModal>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
-const sectionLabel = {
-  color: staticColors.textDim,
-  fontSize: font.xs,
-  fontWeight: '600' as const,
-  textTransform: 'uppercase' as const,
-  letterSpacing: 0.5,
-  marginBottom: spacing.xs,
-};
-
-const cardStyle = {
-  backgroundColor: staticColors.card,
-  borderColor: staticColors.border,
-  borderWidth: 1,
-  borderRadius: radius.md,
-  padding: spacing.md,
-};

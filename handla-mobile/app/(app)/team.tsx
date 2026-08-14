@@ -3,11 +3,11 @@ import { View, Text, FlatList, Pressable, RefreshControl, ScrollView } from 'rea
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { usersApi } from '@/lib/endpoints';
 import type { UsersQuery } from '@/lib/endpoints';
 import { Loading, Badge, Chip } from '@/components/ui';
-import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { GlassScreen, GlassListItem } from '@/components/glass';
+import { spacing, font, useTheme, colors as staticColors } from '@/theme';
 import type { PaginatedUsers, TeamMember, UserRole } from '@/types';
 
 const ROLE_META: Record<UserRole, { label: string; color: string; soft: string }> = {
@@ -46,7 +46,7 @@ export default function TeamScreen() {
   const rows = users.data?.users ?? [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <GlassScreen edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <View
         style={{
@@ -109,53 +109,42 @@ export default function TeamScreen() {
           const m = ROLE_META[item.role];
           const inactive = item.isArchived || item.isDisabled;
           return (
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: spacing.md,
-                paddingVertical: spacing.md,
-                borderBottomColor: colors.border,
-                borderBottomWidth: 1,
-                opacity: inactive ? 0.5 : 1,
-              }}
-            >
-              <View
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 21,
-                  backgroundColor: m.soft,
-                  borderWidth: 1,
-                  borderColor: m.color,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: m.color, fontWeight: '800', fontSize: font.sm }}>
-                  {initials(item.name)}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={{ color: colors.textFaint, fontSize: font.sm }} numberOfLines={1}>
-                  {item.email}
-                </Text>
-              </View>
-              <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Badge label={m.label} color={m.color} soft={m.soft} />
-                {item.isDisabled ? (
-                  <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
-                ) : item.isArchived ? (
-                  <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
-                ) : null}
-              </View>
-            </View>
+            <GlassListItem
+              style={{ opacity: inactive ? 0.55 : 1 }}
+              leading={
+                <View
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 21,
+                    backgroundColor: m.soft,
+                    borderWidth: 1,
+                    borderColor: m.color,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: m.color, fontWeight: '800', fontSize: font.sm }}>
+                    {initials(item.name)}
+                  </Text>
+                </View>
+              }
+              title={item.name}
+              subtitle={item.email}
+              right={
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Badge label={m.label} color={m.color} soft={m.soft} />
+                  {item.isDisabled ? (
+                    <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
+                  ) : item.isArchived ? (
+                    <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
+                  ) : null}
+                </View>
+              }
+            />
           );
         }}
       />
-    </SafeAreaView>
+    </GlassScreen>
   );
 }

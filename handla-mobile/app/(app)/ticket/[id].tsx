@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenBackground } from '@/components/glass';
 import { supportApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge } from '@/components/ui';
@@ -168,7 +169,8 @@ export default function TicketDetailScreen() {
   const canSend = body.trim().length > 0 && !reply.isPending && !isClosed;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
+    <ScreenBackground>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
@@ -451,5 +453,6 @@ export default function TicketDetailScreen() {
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }

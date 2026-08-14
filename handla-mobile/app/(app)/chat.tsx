@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { chatApi } from '@/lib/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import { useChatSocket } from '@/hooks/useChatSocket';
-import { Title, Loading, Button } from '@/components/ui';
+import { Loading, Button } from '@/components/ui';
+import { GlassScreen, GradientHeader, GlassCard } from '@/components/glass';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Conversation, PaginatedConversations } from '@/types';
 
@@ -85,30 +85,26 @@ export default function ChatListScreen() {
   const otherParty = (c: Conversation) => (isStaff ? c.client : c.admin);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['left', 'right']}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: spacing.lg,
-        }}
-      >
-        <Title>Messages</Title>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: connected ? colors.success : colors.textDim,
-            }}
-          />
-          <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-            {connected ? 'Live' : 'Offline'}
-          </Text>
-        </View>
-      </View>
+    <GlassScreen>
+      <GradientHeader
+        title="Messages"
+        icon="chatbubbles-outline"
+        right={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: connected ? colors.success : colors.textDim,
+              }}
+            />
+            <Text style={{ color: colors.textDim, fontSize: font.xs }}>
+              {connected ? 'Live' : 'Offline'}
+            </Text>
+          </View>
+        }
+      />
 
       {list.isLoading ? (
         <Loading />
@@ -149,17 +145,12 @@ export default function ChatListScreen() {
               : 'No messages yet';
             const unread = item.unreadCount ?? 0;
             return (
-              <Pressable
+              <GlassCard
                 onPress={() => router.push(`/(app)/conversation/${item.id}`)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: spacing.md,
-                  paddingVertical: spacing.md,
-                  borderBottomColor: colors.border,
-                  borderBottomWidth: 1,
-                }}
+                padded={false}
+                style={{ marginBottom: spacing.sm }}
               >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md }}>
                 <Avatar name={other?.name} uri={other?.avatarUrl} />
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -200,11 +191,12 @@ export default function ChatListScreen() {
                     )}
                   </View>
                 </View>
-              </Pressable>
+                </View>
+              </GlassCard>
             );
           }}
         />
       )}
-    </SafeAreaView>
+    </GlassScreen>
   );
 }
