@@ -38,25 +38,42 @@ async function runSeeders(): Promise<void> {
   const expenseRepo     = AppDataSource.getRepository(Expense);
 
   // ─── Seed Admin User ────────────────────────────────────────────────────────
-  const existingAdmin = await userRepo.findOne({
-    where: { email: 'admin@handla.com' },
-  });
+  // Configurable via env so you can seed your real admin (e.g.
+  // ADMIN_EMAIL=admin@handla.tech). The seeded admin is created PRE-VERIFIED
+  // (emailVerifiedAt set), so it logs in DIRECTLY and never has to go through
+  // the email OTP step. Defaults preserve the original demo credentials.
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@handla.com').trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
+  const adminName = (process.env.ADMIN_NAME || 'Handla Admin').trim();
+
+  const existingAdmin = await userRepo.findOne({ where: { email: adminEmail } });
 
   let admin: User;
 
   if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash('Admin@123456', 10);
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
     admin = userRepo.create({
-      email: 'admin@handla.com',
+      email: adminEmail,
       passwordHash,
-      name: 'Handla Admin',
+      name: adminName,
       role: UserRole.ADMIN,
+      // Pre-verified: skips OTP entirely on sign-in.
+      emailVerifiedAt: new Date(),
     });
     await userRepo.save(admin);
-    console.log('✅ Admin user created — admin@handla.com / Admin@123456');
+    console.log(`✅ Admin user created (pre-verified) — ${adminEmail} / ${adminPassword}`);
   } else {
     admin = existingAdmin;
-    console.log('ℹ️  Admin user already exists, skipping.');
+    // Backfill: ensure an existing admin is marked verified so it never gets
+    // stuck on the OTP screen (e.g. accounts created before email verification
+    // was introduced).
+    if (!admin.emailVerifiedAt) {
+      admin.emailVerifiedAt = new Date();
+      await userRepo.save(admin);
+      console.log(`✅ Existing admin ${adminEmail} marked as verified (no OTP needed).`);
+    } else {
+      console.log('ℹ️  Admin user already exists (verified), skipping.');
+    }
   }
 
   // ─── Seed Sample Client ────────────────────────────────────────────────────
@@ -73,6 +90,7 @@ async function runSeeders(): Promise<void> {
       passwordHash,
       name: 'Sample Client',
       role: UserRole.CLIENT,
+      emailVerifiedAt: new Date(), // pre-verified: no OTP on sign-in
     });
     await userRepo.save(clientUser);
     console.log('✅ Sample client created — client@example.com / Client@123456');
@@ -95,6 +113,7 @@ async function runSeeders(): Promise<void> {
       passwordHash,
       name: 'Sample Employee',
       role: UserRole.EMPLOYEE,
+      emailVerifiedAt: new Date(), // pre-verified: no OTP on sign-in
     });
     await userRepo.save(employee);
     console.log('✅ Sample employee created — employee@handla.com / Employee@123456');
@@ -115,6 +134,7 @@ async function runSeeders(): Promise<void> {
       passwordHash,
       name: 'Sample Lead',
       role: UserRole.LEAD,
+      emailVerifiedAt: new Date(), // pre-verified: no OTP on sign-in
     });
     await userRepo.save(lead);
     console.log('✅ Sample lead created — lead@example.com / Lead@123456');
