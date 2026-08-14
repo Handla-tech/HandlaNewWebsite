@@ -31,6 +31,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { tasksApi } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import type { Task, TaskStatus } from '@/types';
 
@@ -52,12 +53,7 @@ const STATUS_ICON: Record<TaskStatus, React.ComponentType<{ className?: string }
   DELAYED:     AlertTriangle,
 };
 
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  PENDING:     'Pending',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED:   'Completed',
-  DELAYED:     'Delayed',
-};
+
 
 // ─── Quick-add schema ─────────────────────────────────────────────────────────
 
@@ -108,6 +104,7 @@ function TaskTableRow({
   onStatusCycle: (task: Task) => void;
   isUpdating: boolean;
 }) {
+  const { t } = useTranslation();
   const StatusIcon = STATUS_ICON[task.status];
   const overdue = isOverdue(task.dueDate, task.status);
 
@@ -121,11 +118,11 @@ function TaskTableRow({
           'flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium transition-all hover:opacity-80 cursor-pointer disabled:opacity-50',
           STATUS_BADGE[task.status],
         )}
-        title={`Click to change status → ${STATUS_LABEL[nextStatus(task.status)]}`}
-        aria-label={`Status: ${STATUS_LABEL[task.status]}. Click to change to ${STATUS_LABEL[nextStatus(task.status)]}`}
+        title={t('erp.tasks.list.statusCycleHint', { next: t(`erp.tasks.status.${nextStatus(task.status)}`) })}
+        aria-label={t('erp.tasks.list.statusAria', { current: t(`erp.tasks.status.${task.status}`), next: t(`erp.tasks.status.${nextStatus(task.status)}`) })}
       >
         <StatusIcon className={cn('h-3 w-3', task.status === 'IN_PROGRESS' && 'animate-spin')} />
-        <span className="hidden sm:inline">{STATUS_LABEL[task.status]}</span>
+        <span className="hidden sm:inline">{t(`erp.tasks.status.${task.status}`)}</span>
       </button>
 
       {/* Title */}
@@ -155,7 +152,7 @@ function TaskTableRow({
       </div>
 
       {/* Link arrow */}
-      <Link href={`/erp/tasks/${task.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="View task detail">
+      <Link href={`/erp/tasks/${task.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label={t('erp.tasks.list.viewTaskDetail')}>
         <ChevronRight className="h-4 w-4 text-white/30" />
       </Link>
     </div>
@@ -175,12 +172,13 @@ function KanbanColumn({
   onStatusCycle: (task: Task) => void;
   isUpdating: boolean;
 }) {
+  const { t } = useTranslation();
   const StatusIcon = STATUS_ICON[status];
   return (
     <div className="flex flex-col gap-2 min-w-[200px] flex-1">
       <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold', STATUS_BADGE[status])}>
         <StatusIcon className="h-3 w-3" />
-        {STATUS_LABEL[status]}
+        {t(`erp.tasks.status.${status}`)}
         <span className="ml-auto text-white/40">{tasks.length}</span>
       </div>
       {tasks.map((task) => (
@@ -188,7 +186,7 @@ function KanbanColumn({
           key={task.id}
           className="rounded-xl border border-white/10 bg-white/5 p-3 hover:border-[#fbbf24]/20 transition-all cursor-pointer"
           onClick={() => onStatusCycle(task)}
-          title={`Click to cycle status → ${STATUS_LABEL[nextStatus(task.status)]}`}
+          title={t('erp.tasks.list.statusCycleHint', { next: t(`erp.tasks.status.${nextStatus(task.status)}`) })}
         >
           <p className="text-sm text-white truncate mb-2">{task.title}</p>
           {task.dueDate && (
@@ -201,7 +199,7 @@ function KanbanColumn({
       ))}
       {tasks.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/10 p-4 text-center">
-          <p className="text-xs text-white/20">Empty</p>
+          <p className="text-xs text-white/20">{t('erp.tasks.list.emptyColumn')}</p>
         </div>
       )}
     </div>
@@ -219,6 +217,7 @@ interface TaskListProps {
 
 export function TaskList({ projectId, canCreate = false }: TaskListProps) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
@@ -272,7 +271,7 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-white/50">
           <CheckSquare className="h-4 w-4" />
-          {isLoading ? '...' : `${tasks.length} task${tasks.length !== 1 ? 's' : ''}`}
+          {isLoading ? '...' : t('erp.tasks.list.taskCount', { count: tasks.length })}
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
@@ -280,7 +279,7 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
             <button
               onClick={() => setViewMode('table')}
               className={cn('p-1.5 transition-colors', viewMode === 'table' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white')}
-              aria-label="Table view"
+              aria-label={t('erp.tasks.list.tableView')}
               aria-pressed={viewMode === 'table'}
             >
               <List className="h-4 w-4" />
@@ -288,7 +287,7 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
             <button
               onClick={() => setViewMode('kanban')}
               className={cn('p-1.5 transition-colors', viewMode === 'kanban' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white')}
-              aria-label="Kanban view"
+              aria-label={t('erp.tasks.list.kanbanView')}
               aria-pressed={viewMode === 'kanban'}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -299,7 +298,7 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
               onClick={() => setShowQuickAdd(!showQuickAdd)}
               className="flex items-center gap-1.5 rounded-lg border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-2.5 py-1.5 text-xs font-medium text-[#fbbf24] hover:bg-[#fbbf24]/20 transition-colors min-h-[36px]"
             >
-              <Plus className="h-3.5 w-3.5" /> Add Task
+              <Plus className="h-3.5 w-3.5" /> {t('erp.tasks.quickAdd.submit')}
             </button>
           )}
         </div>
@@ -313,25 +312,25 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
       ) : isError ? (
         <div className="flex flex-col items-center py-10 gap-3">
           <AlertTriangle className="h-8 w-8 text-red-400/60" />
-          <p className="text-sm text-white/50">Failed to load tasks.</p>
-          <button onClick={() => refetch()} className="text-xs text-[#fbbf24] hover:underline">Retry</button>
+          <p className="text-sm text-white/50">{t('erp.tasks.list.loadFailed')}</p>
+          <button onClick={() => refetch()} className="text-xs text-[#fbbf24] hover:underline">{t('erp.ui.retry')}</button>
         </div>
       ) : tasks.length === 0 && !showQuickAdd ? (
         <div className="flex flex-col items-center py-12 gap-2">
           <CheckSquare className="h-10 w-10 text-white/10" />
-          <p className="text-sm text-white/30">No tasks yet.</p>
+          <p className="text-sm text-white/30">{t('erp.tasks.list.noTasks')}</p>
           {canCreate && (
             <button
               onClick={() => setShowQuickAdd(true)}
               className="mt-2 text-sm text-[#fbbf24] hover:underline"
             >
-              Add the first task
+              {t('erp.tasks.list.addFirst')}
             </button>
           )}
         </div>
       ) : viewMode === 'table' ? (
         /* ── Table View ─────────────────────────────────────────────────── */
-        <div className="overflow-x-auto" role="table" aria-label="Tasks table">
+        <div className="overflow-x-auto" role="table" aria-label={t('erp.tasks.title')}>
           {tasks.map((task) => (
             <TaskTableRow
               key={task.id}
@@ -370,10 +369,10 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
         >
           <input
             {...register('title')}
-            placeholder="Task title..."
+            placeholder={t('erp.tasks.list.quickAddPlaceholder')}
             autoFocus
             className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-[#fbbf24]/50 focus:outline-none"
-            aria-label="Quick add task title"
+            aria-label={t('erp.tasks.list.quickAddPlaceholder')}
             aria-invalid={!!errors.title}
           />
           {errors.title && <p className="text-xs text-red-400 sm:hidden">{errors.title.message}</p>}
@@ -381,7 +380,7 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
             type="date"
             {...register('dueDate')}
             className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[#fbbf24]/50 focus:outline-none"
-            aria-label="Due date"
+            aria-label={t('erp.tasks.fields.dueDate')}
           />
           <div className="flex gap-2">
             <button
@@ -389,14 +388,14 @@ export function TaskList({ projectId, canCreate = false }: TaskListProps) {
               disabled={createMutation.isPending}
               className="flex-1 sm:flex-none rounded-lg bg-[#fbbf24] px-3 py-2 text-xs font-semibold text-black hover:bg-[#f59e0b] disabled:opacity-60 transition-colors"
             >
-              {createMutation.isPending ? 'Adding…' : 'Add'}
+              {createMutation.isPending ? t('erp.tasks.list.adding') : t('erp.tasks.list.add')}
             </button>
             <button
               type="button"
               onClick={() => { setShowQuickAdd(false); reset(); }}
               className="flex-1 sm:flex-none rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/5 transition-colors"
             >
-              Cancel
+              {t('erp.ui.cancel')}
             </button>
           </div>
         </form>

@@ -771,6 +771,21 @@
         "clientLabel": "Client",
         "projectLabel": "Project",
         "overdueNote": "This task is overdue."
+      },
+      "list": {
+        "taskCount": "{{count}} tasks",
+        "loadFailed": "Failed to load tasks.",
+        "noTasks": "No tasks yet.",
+        "addFirst": "Add the first task",
+        "emptyColumn": "Empty",
+        "tableView": "Table view",
+        "kanbanView": "Kanban view",
+        "viewTaskDetail": "View task detail",
+        "quickAddPlaceholder": "Task title...",
+        "add": "Add",
+        "adding": "Adding…",
+        "statusCycleHint": "Click to change status → {{next}}",
+        "statusAria": "Status: {{current}}. Click to change to {{next}}"
       }
     },
     "contracts": {

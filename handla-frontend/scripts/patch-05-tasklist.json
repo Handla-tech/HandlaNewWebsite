@@ -1,0 +1,44 @@
+{
+  "en": {
+    "erp": {
+      "tasks": {
+        "list": {
+          "taskCount": "{{count}} tasks",
+          "loadFailed": "Failed to load tasks.",
+          "noTasks": "No tasks yet.",
+          "addFirst": "Add the first task",
+          "emptyColumn": "Empty",
+          "tableView": "Table view",
+          "kanbanView": "Kanban view",
+          "viewTaskDetail": "View task detail",
+          "quickAddPlaceholder": "Task title...",
+          "add": "Add",
+          "adding": "Adding…",
+          "statusCycleHint": "Click to change status → {{next}}",
+          "statusAria": "Status: {{current}}. Click to change to {{next}}"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "tasks": {
+        "list": {
+          "taskCount": "{{count}} مهمة",
+          "loadFailed": "فشل تحميل المهام.",
+          "noTasks": "لا توجد مهام بعد.",
+          "addFirst": "أضف المهمة الأولى",
+          "emptyColumn": "فارغ",
+          "tableView": "عرض الجدول",
+          "kanbanView": "عرض كانبان",
+          "viewTaskDetail": "عرض تفاصيل المهمة",
+          "quickAddPlaceholder": "عنوان المهمة...",
+          "add": "إضافة",
+          "adding": "جارٍ الإضافة…",
+          "statusCycleHint": "انقر لتغيير الحالة ← {{next}}",
+          "statusAria": "الحالة: {{current}}. انقر للتغيير إلى {{next}}"
+        }
+      }
+    }
+  }
+}

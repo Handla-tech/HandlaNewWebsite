@@ -771,6 +771,21 @@
         "clientLabel": "العميل",
         "projectLabel": "المشروع",
         "overdueNote": "هذه المهمة متأخرة."
+      },
+      "list": {
+        "taskCount": "{{count}} مهمة",
+        "loadFailed": "فشل تحميل المهام.",
+        "noTasks": "لا توجد مهام بعد.",
+        "addFirst": "أضف المهمة الأولى",
+        "emptyColumn": "فارغ",
+        "tableView": "عرض الجدول",
+        "kanbanView": "عرض كانبان",
+        "viewTaskDetail": "عرض تفاصيل المهمة",
+        "quickAddPlaceholder": "عنوان المهمة...",
+        "add": "إضافة",
+        "adding": "جارٍ الإضافة…",
+        "statusCycleHint": "انقر لتغيير الحالة ← {{next}}",
+        "statusAria": "الحالة: {{current}}. انقر للتغيير إلى {{next}}"
       }
     },
     "contracts": {
