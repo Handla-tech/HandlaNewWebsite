@@ -250,7 +250,22 @@
     "title": "Support",
     "subtitle": "Your tickets",
     "newTicket": "New Ticket",
-    "empty": "No tickets yet"
+    "empty": "No tickets yet",
+    "new": "New",
+    "all": "All",
+    "stats": {
+      "total": "Total",
+      "open": "Open",
+      "slaBreach": "SLA Breach"
+    },
+    "sla": "SLA",
+    "emptyFiltered": "No tickets match this filter.",
+    "time": {
+      "now": "now",
+      "minutes": "{{n}}m",
+      "hours": "{{n}}h",
+      "days": "{{n}}d"
+    }
   },
   "notifications": {
     "title": "Notifications",

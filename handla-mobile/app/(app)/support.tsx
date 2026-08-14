@@ -11,22 +11,26 @@ import { GlassScreen, GradientHeader, GlassCard, StatCard } from '@/components/g
 import { STATUS_META, PRIORITY_META, STATUS_ORDER } from '@/lib/ticketMeta';
 import { statusMeta } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedTickets, SupportStats, TicketStatus, Ticket } from '@/types';
 
-function timeAgo(iso?: string) {
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+function timeAgo(iso: string | undefined, t: TFn) {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'now';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return t('support.time.now');
+  if (m < 60) return t('support.time.minutes', { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
+  if (h < 24) return t('support.time.hours', { n: h });
   const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d`;
+  if (d < 30) return t('support.time.days', { n: d });
   return new Date(iso).toLocaleDateString();
 }
 
 export default function SupportListScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const router = useRouter();
   const isStaff = useAuthStore((s) => s.isStaff());
@@ -54,7 +58,7 @@ export default function SupportListScreen() {
   return (
     <GlassScreen>
       <GradientHeader
-        title="Support"
+        title={t('support.title')}
         icon="headset-outline"
         right={
           <Pressable
@@ -73,7 +77,7 @@ export default function SupportListScreen() {
             ]}
           >
             <Ionicons name="add" size={16} color="#0a0a0a" />
-            <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.sm }}>New</Text>
+            <Text style={{ color: '#0a0a0a', fontWeight: '800', fontSize: font.sm }}>{t('support.new')}</Text>
           </Pressable>
         }
       />
@@ -96,10 +100,10 @@ export default function SupportListScreen() {
           <View style={{ marginBottom: spacing.md }}>
             {isStaff && stats.data && (
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-                <StatCard label="Total" value={String(stats.data.total)} icon="albums-outline" width="31%" />
-                <StatCard label="Open" value={String(stats.data.open)} icon="radio-outline" tint={colors.info} width="31%" />
+                <StatCard label={t('support.stats.total')} value={String(stats.data.total)} icon="albums-outline" width="31%" />
+                <StatCard label={t('support.stats.open')} value={String(stats.data.open)} icon="radio-outline" tint={colors.info} width="31%" />
                 <StatCard
-                  label="SLA Breach"
+                  label={t('support.stats.slaBreach')}
                   value={String(stats.data.slaBreached)}
                   icon="alert-circle-outline"
                   tint={stats.data.slaBreached > 0 ? colors.danger : colors.text}
@@ -112,11 +116,11 @@ export default function SupportListScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: spacing.sm, paddingVertical: 2 }}
             >
-              <Chip label="All" active={status === null} onPress={() => setStatus(null)} />
+              <Chip label={t('support.all')} active={status === null} onPress={() => setStatus(null)} />
               {STATUS_ORDER.map((s) => (
                 <Chip
                   key={s}
-                  label={STATUS_META[s].label}
+                  label={t(`status.${s}`)}
                   active={status === s}
                   onPress={() => setStatus(status === s ? null : s)}
                 />
@@ -133,14 +137,14 @@ export default function SupportListScreen() {
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl }}>
               <Ionicons name="ticket-outline" size={40} color={colors.textDim} />
               <Text style={{ color: colors.textFaint, marginTop: spacing.md }}>
-                {status ? 'No tickets match this filter.' : 'No support tickets yet.'}
+                {status ? t('support.emptyFiltered') : t('support.empty')}
               </Text>
             </View>
           )
         }
         renderItem={({ item }: { item: Ticket }) => {
-          const st = statusMeta(STATUS_META, item.status);
-          const pr = statusMeta(PRIORITY_META, item.priority);
+          const st = statusMeta(STATUS_META, item.status, t);
+          const pr = statusMeta(PRIORITY_META, item.priority, t);
           const clientName = item.client?.company || item.client?.user?.name;
           return (
             <GlassCard
@@ -157,7 +161,7 @@ export default function SupportListScreen() {
                   {item.ticketNumber}
                 </Text>
                 <Text style={{ color: colors.textDim, fontSize: font.xs }}>
-                  {timeAgo(item.updatedAt || item.createdAt)}
+                  {timeAgo(item.updatedAt || item.createdAt, t)}
                 </Text>
               </View>
               <Text
@@ -186,7 +190,7 @@ export default function SupportListScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                     <Ionicons name="alert-circle" size={13} color={colors.danger} />
                     <Text style={{ color: colors.danger, fontSize: font.xs, fontWeight: '700' }}>
-                      SLA
+                      {t('support.sla')}
                     </Text>
                   </View>
                 )}

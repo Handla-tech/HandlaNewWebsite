@@ -1,0 +1,44 @@
+{
+  "en": {
+    "support": {
+      "title": "Support",
+      "new": "New",
+      "all": "All",
+      "stats": {
+        "total": "Total",
+        "open": "Open",
+        "slaBreach": "SLA Breach"
+      },
+      "sla": "SLA",
+      "emptyFiltered": "No tickets match this filter.",
+      "empty": "No support tickets yet.",
+      "time": {
+        "now": "now",
+        "minutes": "{{n}}m",
+        "hours": "{{n}}h",
+        "days": "{{n}}d"
+      }
+    }
+  },
+  "ar": {
+    "support": {
+      "title": "الدعم",
+      "new": "جديد",
+      "all": "الكل",
+      "stats": {
+        "total": "الإجمالي",
+        "open": "مفتوحة",
+        "slaBreach": "خرق SLA"
+      },
+      "sla": "SLA",
+      "emptyFiltered": "لا توجد تذاكر تطابق هذا التصفية.",
+      "empty": "لا توجد تذاكر دعم بعد.",
+      "time": {
+        "now": "الآن",
+        "minutes": "{{n}} د",
+        "hours": "{{n}} س",
+        "days": "{{n}} ي"
+      }
+    }
+  }
+}

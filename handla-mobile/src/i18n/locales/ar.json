@@ -250,7 +250,22 @@
     "title": "الدعم",
     "subtitle": "تذاكرك",
     "newTicket": "تذكرة جديدة",
-    "empty": "لا توجد تذاكر بعد"
+    "empty": "لا توجد تذاكر بعد",
+    "new": "جديد",
+    "all": "الكل",
+    "stats": {
+      "total": "الإجمالي",
+      "open": "مفتوحة",
+      "slaBreach": "خرق SLA"
+    },
+    "sla": "SLA",
+    "emptyFiltered": "لا توجد تذاكر تطابق هذا التصفية.",
+    "time": {
+      "now": "الآن",
+      "minutes": "{{n}} د",
+      "hours": "{{n}} س",
+      "days": "{{n}} ي"
+    }
   },
   "notifications": {
     "title": "الإشعارات",
