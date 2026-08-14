@@ -514,12 +514,21 @@ export interface NotificationQuery extends PaginationQuery {
 
 // ─── Zustand State Slices ─────────────────────────────────────────────────────
 
+/** Purpose of a pending OTP step returned by login()/signup(). */
+export type OtpPurpose = 'SIGNUP' | 'LOGIN' | 'GOOGLE';
+
+/** Returned by login()/signup(): the email + flow that now needs OTP verification. */
+export interface PendingVerification {
+  email: string;
+  purpose: OtpPurpose;
+}
+
 export interface AuthState {
   user: User | null;
   isLoggedIn: boolean;
   isLoading: boolean;
-  login: (payload: SignInPayload) => Promise<void>;
-  signup: (payload: SignUpPayload) => Promise<void>;
+  login: (payload: SignInPayload) => Promise<PendingVerification>;
+  signup: (payload: SignUpPayload) => Promise<PendingVerification>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   getMe: () => Promise<void>;

@@ -31,15 +31,20 @@ export const useAuthStore = create<AuthStore>()(
 
       clearError: () => set({ error: null }),
 
-      /** Sign up a new CLIENT user */
+      /**
+       * Start signup (step 1 of 2). The backend validates + emails a 6-digit
+       * OTP and returns { status: 'verification_required', email, purpose }.
+       * NO session is created here — that only happens after verifyOtp().
+       * Returns the email to verify so the caller can show the OTP screen.
+       */
       signup: async (payload: SignUpPayload) => {
         console.debug(`${LOG} signup()  email=${payload.email}`);
         set({ isLoading: true, error: null });
         try {
           const res = await authApi.signUp(payload);
-          const user: User = res.data?.data?.user ?? res.data?.user;
-          console.debug(`${LOG} signup() ✅  userId=${user?.id}  role=${user?.role}`);
-          set({ user, isLoggedIn: true });
+          const data = res.data?.data ?? {};
+          console.debug(`${LOG} signup() ✅ pending verification  email=${data.email}`);
+          return { email: data.email as string, purpose: 'SIGNUP' as const };
         } catch (err) {
           const status = (err as { response?: { status?: number } })?.response?.status;
           console.error(`${LOG} signup() ❌  status=${status}  email=${payload.email}`, err);
@@ -50,15 +55,18 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      /** Sign in with email + password */
+      /**
+       * Start sign in (step 1 of 2). Validates credentials + emails an OTP.
+       * NO session yet — verifyOtp() completes it. Returns the pending email.
+       */
       login: async (payload: SignInPayload) => {
         console.debug(`${LOG} login()  email=${payload.email}`);
         set({ isLoading: true, error: null });
         try {
           const res = await authApi.signIn(payload);
-          const user: User = res.data?.data?.user ?? res.data?.user;
-          console.debug(`${LOG} login() ✅  userId=${user?.id}  role=${user?.role}`);
-          set({ user, isLoggedIn: true });
+          const data = res.data?.data ?? {};
+          console.debug(`${LOG} login() ✅ pending verification  email=${data.email}`);
+          return { email: data.email as string, purpose: 'LOGIN' as const };
         } catch (err) {
           const status = (err as { response?: { status?: number } })?.response?.status;
           console.error(`${LOG} login() ❌  status=${status}  email=${payload.email}`, err);

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,33 +8,23 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from '@/hooks/useTranslation';
-
-// ─── Zod schema ───────────────────────────────────────────────────────────────
+import type { PendingVerification } from '@/types';
 
 const signInSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters'),
+  email: z.string().min(1, 'emailRequired').email('emailInvalid'),
+  password: z.string().min(1, 'passwordRequired').min(8, 'passwordMin'),
   rememberMe: z.boolean().optional(),
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface SignInFormProps {
   onSwitchMode: () => void;
+  onPending: (p: PendingVerification) => void;
+  onForgot: () => void;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export default function SignInForm({ onSwitchMode }: SignInFormProps) {
-  const router = useRouter();
+export default function SignInForm({ onSwitchMode, onPending, onForgot }: SignInFormProps) {
   const { login, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
@@ -52,142 +41,121 @@ export default function SignInForm({ onSwitchMode }: SignInFormProps) {
   const onSubmit = async (data: SignInFormData) => {
     clearError();
     try {
-      await login({ email: data.email, password: data.password });
-      // Redirect happens in parent (useEffect on isLoggedIn + user.role)
+      const pending = await login({ email: data.email, password: data.password });
+      onPending(pending);
     } catch {
-      // error is already set in store
+      /* error surfaced via store */
     }
   };
 
   const fieldVariants = {
     hidden: { opacity: 0, y: 8 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: { delay: i * 0.06, duration: 0.25 },
-    }),
+    visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.06, duration: 0.25 } }),
   };
+
+  const inputStyle = {
+    background: 'var(--surface-3)',
+    borderColor: 'var(--ov-strong)',
+    color: 'var(--ink-1)',
+  } as const;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-      {/* ── API error banner ──────────────────────────────────────────── */}
       <AnimatedError message={error} />
 
-      {/* ── Email ─────────────────────────────────────────────────────── */}
+      {/* Email */}
       <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible">
-        <label className="block mb-1.5 text-xs font-medium text-[#aaa]">
+        <label className="block mb-1.5 text-xs font-medium" style={{ color: 'var(--ink-3)' }}>
           {t('auth.email')}
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555]" />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--ink-6)' }} />
           <input
             type="email"
+            dir="ltr"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t('auth.placeholderEmail')}
             {...register('email')}
-            className={`w-full rounded-xl bg-[#0f0f0f] border py-3 pl-10 pr-4 text-sm text-white placeholder-[#444] outline-none transition-all focus:ring-1 ${
+            className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition-all focus:ring-1 ${
               errors.email
                 ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/20'
-                : 'border-[#2a2a2a] focus:border-gold-400/50 focus:ring-gold-400/15'
+                : 'focus:border-gold-400/50 focus:ring-gold-400/15'
             }`}
+            style={inputStyle}
           />
         </div>
-        {errors.email && (
-          <FieldError message={errors.email.message} />
-        )}
+        {errors.email && <FieldError message={t(`auth.validation.${errors.email.message}`)} />}
       </motion.div>
 
-      {/* ── Password ──────────────────────────────────────────────────── */}
+      {/* Password */}
       <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible">
-        <label className="block mb-1.5 text-xs font-medium text-[#aaa]">
+        <label className="block mb-1.5 text-xs font-medium" style={{ color: 'var(--ink-3)' }}>
           {t('auth.password')}
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555]" />
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: 'var(--ink-6)' }} />
           <input
             type={showPassword ? 'text' : 'password'}
+            dir="ltr"
             autoComplete="current-password"
             placeholder="••••••••"
             {...register('password')}
-            className={`w-full rounded-xl bg-[#0f0f0f] border py-3 pl-10 pr-11 text-sm text-white placeholder-[#444] outline-none transition-all focus:ring-1 ${
+            className={`w-full rounded-xl border py-3 pl-10 pr-11 text-sm outline-none transition-all focus:ring-1 ${
               errors.password
                 ? 'border-red-500/60 focus:border-red-500 focus:ring-red-500/20'
-                : 'border-[#2a2a2a] focus:border-gold-400/50 focus:ring-gold-400/15'
+                : 'focus:border-gold-400/50 focus:ring-gold-400/15'
             }`}
+            style={inputStyle}
           />
           <button
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#999] transition-colors"
+            aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+            style={{ color: 'var(--ink-6)' }}
           >
-            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && (
-          <FieldError message={errors.password.message} />
-        )}
+        {errors.password && <FieldError message={t(`auth.validation.${errors.password.message}`)} />}
       </motion.div>
 
-      {/* ── Remember me ───────────────────────────────────────────────── */}
-      <motion.div
-        custom={2}
-        variants={fieldVariants}
-        initial="hidden"
-        animate="visible"
-        className="flex items-center justify-between"
-      >
+      {/* Remember me + forgot */}
+      <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible" className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer group">
           <input
             type="checkbox"
             {...register('rememberMe')}
-            className="h-4 w-4 rounded border-[#3a3a3a] bg-[#0f0f0f] accent-gold-400 cursor-pointer"
+            className="h-4 w-4 rounded accent-gold-400 cursor-pointer"
+            style={{ borderColor: 'var(--ov-strong)', background: 'var(--surface-3)' }}
           />
-          <span className="text-xs text-[#888] group-hover:text-[#aaa] transition-colors select-none">
-            Remember me
+          <span className="text-xs select-none transition-colors" style={{ color: 'var(--ink-4)' }}>
+            {t('auth.rememberMe')}
           </span>
         </label>
-        <button
-          type="button"
-          className="text-xs text-gold-400/70 hover:text-gold-400 transition-colors"
-        >
+        <button type="button" onClick={onForgot} className="text-xs text-gold-400/80 hover:text-gold-400 transition-colors">
           {t('auth.forgotPassword')}
         </button>
       </motion.div>
 
-      {/* ── Submit ────────────────────────────────────────────────────── */}
+      {/* Submit */}
       <motion.div custom={3} variants={fieldVariants} initial="hidden" animate="visible">
         <button
           type="submit"
           disabled={isSubmitting || isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-400 py-3 text-sm font-semibold text-black transition-all hover:bg-gold-500 hover:shadow-glow-gold active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold-400 py-3 text-sm font-semibold text-black transition-all hover:bg-gold-500 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {(isSubmitting || isLoading) ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              {t('auth.signingIn')}
-            </>
-          ) : (
-            t('auth.signIn')
-          )}
+            <><Loader2 className="h-4 w-4 animate-spin" />{t('auth.signingIn')}</>
+          ) : t('auth.signIn')}
         </button>
       </motion.div>
 
-      {/* ── Switch to sign-up ─────────────────────────────────────────── */}
-      <motion.p
-        custom={4}
-        variants={fieldVariants}
-        initial="hidden"
-        animate="visible"
-        className="text-center text-xs text-[#666]"
-      >
+      {/* Switch */}
+      <motion.p custom={4} variants={fieldVariants} initial="hidden" animate="visible" className="text-center text-xs" style={{ color: 'var(--ink-5)' }}>
         {t('auth.noAccount')}{' '}
-        <button
-          type="button"
-          onClick={onSwitchMode}
-          className="text-gold-400/80 hover:text-gold-400 font-medium transition-colors"
-        >
+        <button type="button" onClick={onSwitchMode} className="text-gold-400/90 hover:text-gold-400 font-medium transition-colors">
           {t('auth.signUp')}
         </button>
       </motion.p>
@@ -195,12 +163,10 @@ export default function SignInForm({ onSwitchMode }: SignInFormProps) {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+    <p className="mt-1.5 flex items-center gap-1 text-xs text-red-500">
       <AlertCircle className="h-3 w-3 shrink-0" />
       {message}
     </p>
@@ -211,10 +177,9 @@ function AnimatedError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <motion.div
-      initial={{ opacity: 0, y: -6, height: 0 }}
-      animate={{ opacity: 1, y: 0, height: 'auto' }}
-      exit={{ opacity: 0, y: -6, height: 0 }}
-      className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500"
     >
       <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
       <span>{message}</span>

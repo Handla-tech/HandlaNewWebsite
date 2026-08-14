@@ -5,6 +5,7 @@ import {
   Body,
   Req,
   Res,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -17,10 +18,15 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
 import { SignInDto } from './dto/signin.dto';
+import { VerifyOtpDto, ResendOtpDto } from './dto/verify-otp.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import { GoogleOAuthService } from './google-oauth.service';
 import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { User } from './entities/user.entity';
 import { ConfigService } from '@nestjs/config';
+
+const OAUTH_STATE_COOKIE = 'g_oauth_state';
 
 const COOKIE_NAME = 'access_token';
 const REFRESH_COOKIE_NAME = 'refresh_token';
@@ -31,24 +37,57 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly googleOAuth: GoogleOAuthService,
   ) {}
 
   // ─── POST /api/auth/signup ─────────────────────────────────────────────────
+  // Step 1 of 2: validate + email a 6-digit OTP. NO session is created here.
   @Public()
   @Post('signup')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Register a new client account' })
-  @ApiResponse({ status: 201, description: 'User created and cookies set' })
+  @ApiOperation({ summary: 'Start signup — validates and sends an email OTP' })
+  @ApiResponse({ status: 200, description: 'Verification code sent' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
-  async signUp(@Body() dto: SignUpDto, @Res({ passthrough: true }) res: Response) {
+  async signUp(@Body() dto: SignUpDto) {
     const result = await this.authService.signUp(dto);
-    this.setCookies(res, result.accessToken, result.refreshToken);
-    // Tokens are ALSO returned in the body for non-browser clients (mobile app),
-    // which cannot use httpOnly cookies. Browsers simply ignore these fields and
-    // keep relying on the cookies set above — fully backward compatible.
     return {
-      message: 'Account created successfully',
+      message: 'Verification code sent to your email',
+      data: result,
+    };
+  }
+
+  // ─── POST /api/auth/signin ─────────────────────────────────────────────────
+  // Step 1 of 2: validate credentials + email a 6-digit OTP. NO session yet.
+  @Public()
+  @Post('signin')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Start sign in — validates credentials and sends an email OTP' })
+  @ApiResponse({ status: 200, description: 'Verification code sent' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async signIn(@Body() dto: SignInDto) {
+    const result = await this.authService.signIn(dto);
+    return {
+      message: 'Verification code sent to your email',
+      data: result,
+    };
+  }
+
+  // ─── POST /api/auth/verify-otp ──────────────────────────────────────────────
+  // Step 2 of 2: verify the code, THEN create the session (cookies + body).
+  @Public()
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
+  @ApiOperation({ summary: 'Verify an email OTP and complete authentication' })
+  @ApiResponse({ status: 200, description: 'Verified — session created, cookies set' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired code' })
+  async verifyOtp(@Body() dto: VerifyOtpDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.verifyOtp(dto);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return {
+      message: 'Verified successfully',
       data: {
         user: result.user,
         accessToken: result.accessToken,
@@ -57,27 +96,99 @@ export class AuthController {
     };
   }
 
-  // ─── POST /api/auth/signin ─────────────────────────────────────────────────
+  // ─── POST /api/auth/resend-otp ──────────────────────────────────────────────
   @Public()
-  @Post('signin')
+  @Post('resend-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @ApiOperation({ summary: 'Resend the verification code (rate-limited + cooldown)' })
+  async resendOtp(@Body() dto: ResendOtpDto & { locale?: string }) {
+    const result = await this.authService.resendOtp({
+      email: dto.email,
+      purpose: dto.purpose,
+      locale: (dto as { locale?: string }).locale,
+    });
+    return { message: 'A new verification code has been sent.', data: result };
+  }
+
+  // ─── GET /api/auth/google ───────────────────────────────────────────────────
+  // Redirects the browser to Google's consent screen with an anti-CSRF state.
+  @Public()
+  @Get('google')
+  @ApiOperation({ summary: 'Begin Google OAuth (redirect to consent screen)' })
+  googleStart(@Res() res: Response) {
+    const { url, state } = this.authService.startGoogle();
+    const isProd = this.configService.get('NODE_ENV') === 'production';
+    res.cookie(OAUTH_STATE_COOKIE, state, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/api/auth/google',
+      maxAge: 10 * 60 * 1000,
+    });
+    return res.redirect(url);
+  }
+
+  // ─── GET /api/auth/google/callback ─────────────────────────────────────────
+  // Google redirects here with ?code&state. We verify state, exchange the code,
+  // issue a Handla OTP, then bounce back to the frontend /auth OTP screen.
+  @Public()
+  @Get('google/callback')
+  @ApiOperation({ summary: 'Google OAuth callback — issues a Handla OTP' })
+  async googleCallback(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('code') code?: string,
+    @Query('state') state?: string,
+    @Query('error') error?: string,
+  ) {
+    const frontendUrl =
+      this.configService.get<string>('auth.frontendUrl') || 'http://localhost:3000';
+    const cookieState = req.cookies?.[OAUTH_STATE_COOKIE];
+    res.clearCookie(OAUTH_STATE_COOKIE, { path: '/api/auth/google' });
+
+    // Any failure → back to /auth with a generic error flag (no raw OAuth error).
+    if (error || !code || !state || !cookieState || state !== cookieState) {
+      return res.redirect(`${frontendUrl}/auth?error=google`);
+    }
+
+    try {
+      const result = await this.authService.handleGoogleCallback(code);
+      const params = new URLSearchParams({
+        verify: '1',
+        purpose: 'GOOGLE',
+        email: result.email,
+      });
+      return res.redirect(`${frontendUrl}/auth?${params.toString()}`);
+    } catch {
+      return res.redirect(`${frontendUrl}/auth?error=google`);
+    }
+  }
+
+  // ─── POST /api/auth/forgot-password ────────────────────────────────────────
+  @Public()
+  @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 900000 } })
-  @ApiOperation({ summary: 'Sign in with email and password' })
-  @ApiResponse({ status: 200, description: 'Authenticated, cookies set' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async signIn(@Body() dto: SignInDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.signIn(dto);
-    this.setCookies(res, result.accessToken, result.refreshToken);
-    // Tokens ALSO returned in the body for the mobile app (Bearer auth). Browsers
-    // ignore them and keep using the httpOnly cookies. Backward compatible.
+  @ApiOperation({ summary: 'Request a password-reset code (anti-enumeration)' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto & { locale?: string }) {
+    await this.authService.forgotPassword(dto.email, (dto as { locale?: string }).locale);
+    // Always the same response whether or not the account exists.
     return {
-      message: 'Signed in successfully',
-      data: {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
+      message: 'If an account exists for that email, a reset code has been sent.',
+      data: { status: 'ok' },
     };
+  }
+
+  // ─── POST /api/auth/reset-password ─────────────────────────────────────────
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Reset password using an emailed code' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
+    return { message: 'Your password has been reset. You can now sign in.', data: { status: 'ok' } };
   }
 
   // ─── POST /api/auth/refresh ────────────────────────────────────────────────

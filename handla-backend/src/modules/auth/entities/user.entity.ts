@@ -23,9 +23,11 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
+  // Nullable: Google-only accounts have no local password until/unless they set
+  // one. Email/password accounts always have a bcrypt hash here.
   @Exclude()
-  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
-  passwordHash: string;
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true, default: null })
+  passwordHash: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   name: string;
@@ -36,6 +38,27 @@ export class User {
     default: UserRole.LEAD,
   })
   role: UserRole;
+
+  // ─── Email verification & OAuth provider (added 2026-08 via
+  //     AddEmailVerificationAndProviderToUsers migration) ──────────────────────
+  //
+  // A user is only allowed a full session once email_verified_at is set. For
+  // email/password signup this is set after OTP verification; for Google OAuth
+  // it is set once the Handla OTP step also succeeds. Pre-existing users are
+  // NULL — see the migration for the one-time backfill of already-active
+  // accounts so they are not locked out.
+
+  /** Timestamp the user's email was verified (via OTP). NULL = unverified. */
+  @Column({ name: 'email_verified_at', type: 'datetime', nullable: true, default: null })
+  emailVerifiedAt: Date | null;
+
+  /** OAuth provider the account was linked with, e.g. 'google'. NULL = local only. */
+  @Column({ name: 'provider', type: 'varchar', length: 32, nullable: true, default: null })
+  provider: string | null;
+
+  /** Stable provider-side account identifier (Google `sub`). Matched on, never the name. */
+  @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true, default: null })
+  providerId: string | null;
 
   // ─── Profile fields (added 2026-06 via AddProfileFieldsToUsers migration) ──
   //

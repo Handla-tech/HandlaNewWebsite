@@ -33,6 +33,20 @@ export interface WelcomeEmailPayload {
   dashboardUrl: string;
 }
 
+export interface VerificationCodeEmailPayload {
+  recipientEmail: string;
+  /** Best-effort display name; falls back to a generic greeting when absent. */
+  recipientName?: string | null;
+  /** The plaintext 6-digit code — used ONLY to render the email, never stored. */
+  code: string;
+  /** Minutes until the code expires (for the "expires in N minutes" line). */
+  expiresInMinutes: number;
+  /** Why the code was sent — tunes the wording. */
+  purpose: 'signup' | 'login' | 'google' | 'reset';
+  /** 'ar' | 'en' — locale-aware content. Defaults to 'en'. */
+  locale?: string;
+}
+
 export interface UserCreatedEmailPayload {
   recipientEmail: string;
   userName: string;
@@ -312,6 +326,68 @@ export class EmailService {
     await this.sendMail({
       to: payload.recipientEmail,
       subject: `🎉 Your Handla account is ready — ${payload.userName}`,
+      html,
+    });
+  }
+
+  /**
+   * Render + send a verification/OTP email DIRECTLY (not queued).
+   *
+   * The user is actively waiting on the OTP screen, so this must not depend on
+   * the Redis/Bull worker being up. The plaintext code is used only to render
+   * the HTML here and is never logged or persisted by this method.
+   */
+  async sendVerificationCodeEmail(payload: VerificationCodeEmailPayload): Promise<void> {
+    const isAr = (payload.locale || 'en').toLowerCase().startsWith('ar');
+    const name = payload.recipientName?.trim();
+
+    const purposeTextEn: Record<VerificationCodeEmailPayload['purpose'], string> = {
+      signup: 'Use the code below to verify your email and finish creating your Handla account.',
+      login: 'Use the code below to finish signing in to your Handla account.',
+      google: 'Use the code below to finish signing in with Google.',
+      reset: 'Use the code below to verify your identity and reset your password.',
+    };
+    const purposeTextAr: Record<VerificationCodeEmailPayload['purpose'], string> = {
+      signup: 'استخدم الرمز أدناه للتحقق من بريدك الإلكتروني وإكمال إنشاء حسابك في Handla.',
+      login: 'استخدم الرمز أدناه لإكمال تسجيل الدخول إلى حسابك في Handla.',
+      google: 'استخدم الرمز أدناه لإكمال تسجيل الدخول عبر Google.',
+      reset: 'استخدم الرمز أدناه للتحقق من هويتك وإعادة تعيين كلمة المرور.',
+    };
+
+    const t = isAr
+      ? {
+          title: 'رمز التحقق — Handla',
+          greeting: name ? `مرحباً ${name}،` : 'مرحباً،',
+          purpose: purposeTextAr[payload.purpose],
+          expiry: `ينتهي هذا الرمز خلال ${payload.expiresInMinutes} دقائق.`,
+          security:
+            'لأمانك، لا تشارك هذا الرمز مع أي شخص. إذا لم تطلب هذا الرمز، يمكنك تجاهل هذه الرسالة بأمان.',
+          rights: 'جميع الحقوق محفوظة.',
+        }
+      : {
+          title: 'Your verification code — Handla',
+          greeting: name ? `Hi ${name},` : 'Hi there,',
+          purpose: purposeTextEn[payload.purpose],
+          expiry: `This code expires in ${payload.expiresInMinutes} minutes.`,
+          security:
+            'For your security, never share this code with anyone. If you did not request it, you can safely ignore this email.',
+          rights: 'All rights reserved.',
+        };
+
+    const html = await this.renderTemplate('verification-code', {
+      code: payload.code,
+      lang: isAr ? 'ar' : 'en',
+      dir: isAr ? 'rtl' : 'ltr',
+      align: isAr ? 'right' : 'left',
+      t,
+      year: new Date().getFullYear(),
+    });
+
+    await this.sendMail({
+      to: payload.recipientEmail,
+      subject: isAr
+        ? `رمز التحقق الخاص بك: ${payload.code} — Handla`
+        : `Your Handla verification code: ${payload.code}`,
       html,
     });
   }

@@ -12,10 +12,12 @@ import emailConfig from './config/email.config';
 import socketConfig from './config/socket.config';
 import aiConfig from './config/ai.config';
 import saasConfig from './config/saas.config';
+import authConfig from './config/auth.config';
 import { winstonConfig } from './utils/logger';
 
 // ─── Entities ───────────────────────────────────────────────────────────────
 import { User } from './modules/auth/entities/user.entity';
+import { EmailVerification } from './modules/auth/entities/email-verification.entity';
 import { Conversation } from './modules/chat/entities/conversation.entity';
 import { Message } from './modules/chat/entities/message.entity';
 import { Notification } from './modules/notifications/entities/notification.entity';
@@ -81,7 +83,7 @@ import { SaasModule } from './modules/saas/saas.module';
     // ─── Config ────────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig],
+      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig, authConfig],
       envFilePath: '.env',
     }),
 
@@ -94,7 +96,7 @@ import { SaasModule } from './modules/saas/saas.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
+        entities: [User, EmailVerification, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
       }),
     }),
 

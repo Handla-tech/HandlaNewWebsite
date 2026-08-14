@@ -59,7 +59,7 @@ export default function Process() {
             {t('process.headline')}
           </h2>
           <p className="h-intro max-w-lg mx-auto">
-            From idea to launch — a structured, proven process that delivers on time.
+            {t('process.subtitle')}
           </p>
         </motion.div>
 
@@ -107,10 +107,13 @@ export default function Process() {
                 style={{ background: `radial-gradient(ellipse at top, ${color}05 0%, transparent 60%)` }}
               />
 
-              {/* Step number watermark */}
+              {/* Step number watermark — theme-aware: blends the step colour
+                  over a neutral ink token so it stays clearly visible (yet
+                  decorative) in BOTH light and dark mode instead of the old
+                  fixed 8%-alpha hex that vanished on a white canvas. */}
               <div
-                className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-5xl font-black leading-none select-none pointer-events-none`}
-                style={{ color: `${color}14` }}
+                className={`process-step-num absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-5xl font-black leading-none select-none pointer-events-none`}
+                style={{ color, ['--step-color' as string]: color }}
               >
                 {num}
               </div>
@@ -135,7 +138,7 @@ export default function Process() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--ink-1)' }}>{title}</h3>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>{desc}</p>
 
               {/* Connector arrow (desktop) */}

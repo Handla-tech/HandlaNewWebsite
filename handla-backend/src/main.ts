@@ -67,6 +67,81 @@ async function applyUserArchiveColumns(dataSource: DataSource): Promise<void> {
   }
 }
 
+/**
+ * Idempotent schema patch: adds email-verification / OAuth-provider columns to
+ * `users`, backfills existing users as verified (so they aren't locked out),
+ * and creates the `email_verifications` table. Mirrors the migration
+ * AddEmailVerificationAndProvider so dev environments without a migration run
+ * still get the schema. Safe to run repeatedly.
+ */
+async function applyAuthVerificationSchema(dataSource: DataSource): Promise<void> {
+  const log = new Logger('SchemaPatch');
+  try {
+    const db = await dataSource
+      .query('SELECT DATABASE() AS db')
+      .then((r: Array<{ db: string }>) => r[0]?.db ?? '');
+
+    const existing: Array<{ COLUMN_NAME: string }> = await dataSource.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users'
+         AND COLUMN_NAME IN ('email_verified_at', 'provider', 'provider_id')`,
+      [db],
+    );
+    const found = existing.map((r) => r.COLUMN_NAME);
+
+    if (!found.includes('email_verified_at')) {
+      await dataSource.query(
+        "ALTER TABLE `users` ADD COLUMN `email_verified_at` DATETIME NULL DEFAULT NULL",
+      );
+      // Backfill legacy users as verified so the new "must verify" rule does
+      // not lock out anyone who signed up before OTP existed.
+      await dataSource.query(
+        'UPDATE `users` SET `email_verified_at` = `created_at` WHERE `email_verified_at` IS NULL',
+      );
+      log.log('Added users.email_verified_at (+ backfilled existing users as verified)');
+    }
+    if (!found.includes('provider')) {
+      await dataSource.query("ALTER TABLE `users` ADD COLUMN `provider` VARCHAR(32) NULL DEFAULT NULL");
+    }
+    if (!found.includes('provider_id')) {
+      await dataSource.query("ALTER TABLE `users` ADD COLUMN `provider_id` VARCHAR(255) NULL DEFAULT NULL");
+    }
+
+    // password_hash must be nullable for Google-only accounts.
+    await dataSource
+      .query("ALTER TABLE `users` MODIFY COLUMN `password_hash` VARCHAR(255) NULL DEFAULT NULL")
+      .catch(() => undefined);
+
+    const evExists: Array<{ TABLE_NAME: string }> = await dataSource.query(
+      `SELECT TABLE_NAME FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'email_verifications'`,
+      [db],
+    );
+    if (evExists.length === 0) {
+      await dataSource.query(`
+        CREATE TABLE \`email_verifications\` (
+          \`id\` VARCHAR(36) NOT NULL,
+          \`email\` VARCHAR(255) NOT NULL,
+          \`user_id\` VARCHAR(36) NULL DEFAULT NULL,
+          \`code_hash\` VARCHAR(255) NOT NULL,
+          \`purpose\` ENUM('SIGNUP','LOGIN','GOOGLE','PASSWORD_RESET') NOT NULL,
+          \`payload\` TEXT NULL DEFAULT NULL,
+          \`attempt_count\` INT NOT NULL DEFAULT 0,
+          \`expires_at\` DATETIME NOT NULL,
+          \`consumed_at\` DATETIME NULL DEFAULT NULL,
+          \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (\`id\`),
+          INDEX \`idx_email_verifications_lookup\` (\`email\`, \`purpose\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      log.log('Created email_verifications table');
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log.error(`Auth verification schema patch failed: ${msg}`);
+  }
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -223,6 +298,7 @@ async function bootstrap() {
   // ─── Schema patch: ensure archive/disable columns exist ────────────────────
   const dataSource = app.get(DataSource);
   await applyUserArchiveColumns(dataSource);
+  await applyAuthVerificationSchema(dataSource);
 
   await app.listen(port);
   Logger.log(`🚀 Handla API running on http://localhost:${port}/api`);

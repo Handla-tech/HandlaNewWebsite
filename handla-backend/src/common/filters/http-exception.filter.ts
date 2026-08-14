@@ -22,6 +22,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors: any = undefined;
+    // Optional machine-readable error code (e.g. OTP_INVALID, RESEND_COOLDOWN)
+    // that the client maps to a localized message. Only ever set for
+    // client-fault (4xx) HttpExceptions that deliberately provide it.
+    let code: string | undefined;
+    let retryAfterSeconds: number | undefined;
     // The full, potentially-sensitive message is always logged, but only
     // surfaced to the client for non-5xx (client-fault) errors.
     let internalMessage = 'Internal server error';
@@ -39,6 +44,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
           errors = res.message;
           message = 'Validation failed';
         }
+        // Preserve app-defined machine-readable fields so the frontend can map
+        // them to localized copy. Never leaked for 5xx (see clientMessage).
+        if (typeof res.code === 'string') code = res.code;
+        if (typeof res.retryAfterSeconds === 'number') retryAfterSeconds = res.retryAfterSeconds;
       }
       internalMessage = Array.isArray(message) ? message.join('; ') : String(message);
     } else if (exception instanceof Error) {
@@ -60,10 +69,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const clientMessage =
       isProd && status >= HttpStatus.INTERNAL_SERVER_ERROR ? 'Internal server error' : message;
 
+    // Only surface the machine-readable code for client-fault (4xx) errors —
+    // never for 5xx, to avoid leaking internal failure taxonomy.
+    const exposeCode = status < HttpStatus.INTERNAL_SERVER_ERROR;
+
     response.status(status).json({
       success: false,
       statusCode: status,
       message: clientMessage,
+      ...(exposeCode && code ? { code } : {}),
+      ...(exposeCode && retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
       ...(errors ? { errors } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,

@@ -155,6 +155,18 @@ export const authApi = {
   signOut: ()             => api.post('/auth/logout'),
   refresh: ()             => api.post('/auth/refresh'),
   getMe:   ()             => api.get('/auth/me'),
+  // ── OTP-based two-step auth ────────────────────────────────────────────────
+  verifyOtp:      (data: { email: string; code: string; purpose: 'SIGNUP' | 'LOGIN' | 'GOOGLE' }) =>
+    api.post('/auth/verify-otp', data),
+  resendOtp:      (data: { email: string; purpose: 'SIGNUP' | 'LOGIN' | 'GOOGLE'; locale?: string }) =>
+    api.post('/auth/resend-otp', data),
+  // ── Password reset (email code flow) ───────────────────────────────────────
+  forgotPassword: (data: { email: string; locale?: string }) =>
+    api.post('/auth/forgot-password', data),
+  resetPassword:  (data: { email: string; code: string; password: string }) =>
+    api.post('/auth/reset-password', data),
+  /** Absolute URL that starts the server-side Google OAuth redirect flow. */
+  googleUrl: () => `${API_URL}/auth/google`,
 };
 
 export const chatApi = {

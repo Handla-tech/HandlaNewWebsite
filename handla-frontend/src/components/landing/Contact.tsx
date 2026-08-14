@@ -45,8 +45,12 @@ export default function Contact() {
   const { t }  = useTranslation();
 
   const { isLoggedIn, user } = useAuthStore();
-  const isClient = isLoggedIn && user?.role === 'CLIENT';
-  const isAdmin  = isLoggedIn && user?.role === 'ADMIN';
+  // Staff (ADMIN / EMPLOYEE) get the ERP/Admin panel action. This is a UI
+  // convenience only — the /erp routes and every admin API are independently
+  // protected by the backend JWT + RolesGuard, so a spoofed client role here
+  // cannot actually reach admin functionality.
+  const isStaff  = isLoggedIn && (user?.role === 'ADMIN' || user?.role === 'EMPLOYEE');
+  const isAdmin  = isStaff;
 
   const containerVariants = {
     hidden:  {},
@@ -105,7 +109,7 @@ export default function Contact() {
           variants={containerVariants}
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}
-          className="grid lg:grid-cols-2 gap-5"
+          className="grid lg:grid-cols-2 gap-5 items-start"
         >
 
           {/* ── Left: Chat widget ─────────────────────────────────────────── */}
@@ -191,7 +195,8 @@ export default function Contact() {
             )}
           </motion.div>
 
-          {/* ── Right: Social panel ──────────────────────────────────────── */}
+          {/* ── Right: Social panel — content-driven height (no forced
+              stretch) so the column never becomes a tall empty panel ─────── */}
           <motion.div
             variants={itemVariants}
             className="rounded-2xl overflow-hidden flex flex-col"
@@ -207,9 +212,9 @@ export default function Contact() {
               style={{ background: 'linear-gradient(90deg, transparent, var(--ov-strong), transparent)' }}
             />
 
-            <div className="p-5 sm:p-6 flex flex-col flex-1">
+            <div className="p-5 sm:p-6 flex flex-col">
               <div className="mb-5">
-                <h3 className="text-lg font-bold text-white mb-1">{t('contact.followUs')}</h3>
+                <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--ink-1)' }}>{t('contact.followUs')}</h3>
                 <p className="text-sm" style={{ color: 'var(--ink-4)' }}>
                   {t('contact.followSubtitle')}
                 </p>
@@ -265,7 +270,7 @@ export default function Contact() {
                     <MessageSquare className="w-4 h-4" style={{ color: '#fbbf24' }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--ink-1)' }}>
                       {isAdmin ? t('contact.adminPanel') : t('contact.myChat')}
                     </p>
                     <p className="text-xs truncate" style={{ color: 'var(--ink-6)' }}>
@@ -285,7 +290,7 @@ export default function Contact() {
 
               {!isLoggedIn && (
                 <div
-                  className="mt-auto pt-5 flex items-center gap-2"
+                  className="mt-5 pt-5 flex items-center gap-2"
                   style={{ borderTop: '1px solid var(--ov-soft)' }}
                 >
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.6)' }} />

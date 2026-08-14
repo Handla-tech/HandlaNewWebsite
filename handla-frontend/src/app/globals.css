@@ -600,3 +600,15 @@ html.light .glass-dark { background: rgba(246,247,249,0.85); }
     padding-top: env(safe-area-inset-top, 0px);
   }
 }
+
+/* ── Process step watermark number — theme-aware visibility (Task PART 3) ──
+   Uses colour-mix so each step keeps its colour identity while staying
+   clearly visible on both the dark and light canvas (old fixed 8% hex alpha
+   was invisible in light mode). Decorative, but no longer competing. */
+.process-step-num {
+  color: color-mix(in srgb, var(--step-color) 22%, transparent) !important;
+}
+html.light .process-step-num {
+  color: color-mix(in srgb, var(--step-color) 40%, var(--ink-1) 8%) !important;
+  opacity: 0.5;
+}

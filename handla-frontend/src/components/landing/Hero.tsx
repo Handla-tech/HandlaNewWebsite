@@ -564,10 +564,13 @@ export default function Hero() {
               <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-white leading-[1.15] tracking-tight m-0 p-0">
                 <span className="block">{t('hero.staticLine')}</span>
 
-                {/* Animated slider */}
+                {/* Animated slider — reserves just enough space for a two-line
+                    phrase (1.15 line-height × 2 ≈ 2.3em) but keeps the block
+                    tight so the animated phrase sits directly under the static
+                    line in both RTL and LTR with no oversized gap. */}
                 <span
                   className="block relative overflow-hidden"
-                  style={{ height: '2.3em' }}
+                  style={{ height: '1.35em' }}
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
