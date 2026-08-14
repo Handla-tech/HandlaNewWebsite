@@ -13,8 +13,10 @@ import { LineItemsEditor } from '@/components/LineItemsEditor';
 import { INVOICE_STATUS_META, statusMeta, money, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Invoice, LineItem } from '@/types';
+import { useT } from '@/i18n';
 
 export default function InvoiceDetailScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const sectionLabel = {
     color: colors.textDim,
@@ -60,7 +62,7 @@ export default function InvoiceDetailScreen() {
       router.back();
     },
     onError: (e: any) =>
-      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('invoice.deleteError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
 
   // ─── Edit (UNPAID only) ─────────────────────────────────────────────────────
@@ -111,25 +113,25 @@ export default function InvoiceDetailScreen() {
       qc.invalidateQueries({ queryKey: ['invoices'] });
       setEditOpen(false);
     },
-    onError: (e) => setEditErr(apiError(e, 'Failed to save changes')),
+    onError: (e) => setEditErr(apiError(e, t('detail.editSaveError'))),
   });
 
   const submitEdit = () => {
     if (cleanItems().length === 0)
-      return setEditErr('Add at least one line item (description + quantity).');
+      return setEditErr(t('detail.lineItemError'));
     setEditErr(null);
     edit.mutate();
   };
 
   const confirmPaid = () =>
-    Alert.alert('Mark as paid?', 'Record this invoice as fully paid.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Mark Paid', onPress: () => markPaid.mutate() },
+    Alert.alert(t('invoice.confirmPaidTitle'), t('invoice.confirmPaidMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('invoice.markPaidAction'), onPress: () => markPaid.mutate() },
     ]);
   const confirmDelete = () =>
-    Alert.alert('Delete invoice?', 'Only unpaid invoices can be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+    Alert.alert(t('invoice.confirmDeleteTitle'), t('invoice.confirmDeleteMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.delete'), style: 'destructive', onPress: () => del.mutate() },
     ]);
 
   const canDelete = isAdmin && inv?.paymentStatus === 'UNPAID';
@@ -141,7 +143,7 @@ export default function InvoiceDetailScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DetailHeader
-        title={inv ? money(inv.total, inv.currency) : 'Loading…'}
+        title={inv ? money(inv.total, inv.currency) : t('detail.loading')}
         subtitle={inv?.invoiceNumber}
         onBack={() => router.back()}
       />
@@ -152,12 +154,12 @@ export default function InvoiceDetailScreen() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
             {(() => {
-              const m = statusMeta(INVOICE_STATUS_META, inv.paymentStatus);
+              const m = statusMeta(INVOICE_STATUS_META, inv.paymentStatus, t);
               return <Badge label={m.label} color={m.color} soft={m.soft} />;
             })()}
           </View>
 
-          <Text style={sectionLabel}>Line Items</Text>
+          <Text style={sectionLabel}>{t('detail.lineItems')}</Text>
           <View style={cardStyle}>
             {(inv.lineItems ?? []).map((li: LineItem) => (
               <View
@@ -180,15 +182,15 @@ export default function InvoiceDetailScreen() {
               </View>
             ))}
             {(inv.lineItems ?? []).length === 0 && (
-              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>No line items.</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('detail.noLineItems')}</Text>
             )}
           </View>
 
           <View style={[cardStyle, { marginTop: spacing.md }]}>
-            <Row label="Subtotal" value={money(inv.subtotal, cur)} />
-            <Row label={`Tax (${inv.taxRate}%)`} value={money(inv.taxAmount, cur)} />
+            <Row label={t('detail.subtotal')} value={money(inv.subtotal, cur)} />
+            <Row label={t('detail.tax', { rate: inv.taxRate })} value={money(inv.taxAmount, cur)} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.sm }}>
-              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>Total</Text>
+              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>{t('detail.total')}</Text>
               <Text style={{ color: colors.accent, fontSize: font.lg, fontWeight: '800' }}>
                 {money(inv.total, cur)}
               </Text>
@@ -197,15 +199,15 @@ export default function InvoiceDetailScreen() {
 
           <View style={[cardStyle, { marginTop: spacing.md }]}>
             {isStaff && inv.client ? (
-              <Row label="Client" value={inv.client.company || inv.client.user?.name || '—'} />
+              <Row label={t('detail.client')} value={inv.client.company || inv.client.user?.name || '—'} />
             ) : null}
-            <Row label="Due date" value={fmtDate(inv.dueDate)} />
-            {inv.paidAt ? <Row label="Paid" value={fmtDate(inv.paidAt)} /> : null}
+            <Row label={t('detail.dueDate')} value={fmtDate(inv.dueDate)} />
+            {inv.paidAt ? <Row label={t('detail.paid')} value={fmtDate(inv.paidAt)} /> : null}
           </View>
 
           {inv.notes ? (
             <View style={[cardStyle, { marginTop: spacing.md }]}>
-              <Text style={sectionLabel}>Notes</Text>
+              <Text style={sectionLabel}>{t('detail.notes')}</Text>
               <Text style={{ color: colors.textMuted, fontSize: font.sm }}>{inv.notes}</Text>
             </View>
           ) : null}
@@ -214,14 +216,14 @@ export default function InvoiceDetailScreen() {
           {isStaff && (inv.paymentStatus !== 'PAID' || canDelete) && (
             <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
               {canEdit && (
-                <Button title="Edit invoice" variant="ghost" onPress={openEdit} />
+                <Button title={t('invoice.edit')} variant="ghost" onPress={openEdit} />
               )}
               {inv.paymentStatus !== 'PAID' && (
-                <Button title="Mark as Paid" onPress={confirmPaid} loading={markPaid.isPending} />
+                <Button title={t('invoice.markPaid')} onPress={confirmPaid} loading={markPaid.isPending} />
               )}
               {canDelete && (
                 <Button
-                  title="Delete invoice"
+                  title={t('invoice.delete')}
                   variant="danger"
                   onPress={confirmDelete}
                   loading={del.isPending}
@@ -235,7 +237,7 @@ export default function InvoiceDetailScreen() {
       <FormModal
         visible={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit Invoice"
+        title={t('invoice.editModal')}
         subtitle={inv?.invoiceNumber}
         onSubmit={submitEdit}
         submitting={edit.isPending}
@@ -243,14 +245,14 @@ export default function InvoiceDetailScreen() {
       >
         <LineItemsEditor items={eItems} onChange={setEItems} />
         <Input
-          label="Tax rate (%)"
+          label={t('detail.taxRate')}
           value={eTax}
           onChangeText={setETax}
           placeholder="0"
           keyboardType="decimal-pad"
         />
-        <DateField label="Due date" value={eDueDate} onChange={setEDueDate} />
-        <Textarea label="Notes" value={eNotes} onChangeText={setENotes} placeholder="Optional" />
+        <DateField label={t('detail.dueDate')} value={eDueDate} onChange={setEDueDate} />
+        <Textarea label={t('detail.notes')} value={eNotes} onChangeText={setENotes} placeholder={t('common.optional')} />
       </FormModal>
     </SafeAreaView>
     </ScreenBackground>
