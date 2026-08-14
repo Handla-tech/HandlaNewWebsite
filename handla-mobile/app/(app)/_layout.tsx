@@ -18,6 +18,7 @@ import { HeaderMenuButton, HeaderActions } from '@/components/HeaderButtons';
  */
 export default function AppLayout() {
   const isStaff = useAuthStore((s) => s.isStaff());
+  const isAdmin = useAuthStore((s) => s.isAdmin());
   const { t } = useT();
   const { colors } = useTheme();
 
@@ -124,6 +125,32 @@ export default function AppLayout() {
           drawerIcon: ({ color, size }) => (
             <Ionicons name="stats-chart-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="users"
+        options={{
+          title: t('tabs.users'),
+          drawerItemStyle: isAdmin ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="testimonials"
+        options={{
+          title: t('tabs.testimonials'),
+          drawerItemStyle: isAdmin ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="chatbox-ellipses-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="tenants"
+        options={{
+          title: t('tabs.tenants'),
+          drawerItemStyle: isAdmin ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
         }}
       />
       {/* Team roster is pushed from Profile (admin) and renders its own back

@@ -37,6 +37,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
     tasks: 'checkbox-outline',
     suppliers: 'business-outline',
     analytics: 'stats-chart-outline',
+    users: 'people-outline',
+    testimonials: 'chatbox-ellipses-outline',
+    tenants: 'cube-outline',
     team: 'people-outline',
   };
 

@@ -42,7 +42,10 @@
     "clients": "العملاء",
     "projects": "المشاريع",
     "tasks": "المهام",
-    "suppliers": "الموردون"
+    "suppliers": "الموردون",
+    "users": "المستخدمون",
+    "testimonials": "الشهادات",
+    "tenants": "المستأجرون"
   },
   "dashboard": {
     "title": "لوحة التحكم",

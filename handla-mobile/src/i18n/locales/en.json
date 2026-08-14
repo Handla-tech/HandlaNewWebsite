@@ -42,7 +42,10 @@
     "clients": "Clients",
     "projects": "Projects",
     "tasks": "Tasks",
-    "suppliers": "Suppliers"
+    "suppliers": "Suppliers",
+    "users": "Users",
+    "testimonials": "Testimonials",
+    "tenants": "Tenants"
   },
   "dashboard": {
     "title": "Dashboard",

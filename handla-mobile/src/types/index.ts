@@ -551,3 +551,55 @@ export interface PaginatedUsers {
   page: number;
   pages: number;
 }
+
+// ─── Admin: Testimonials ──────────────────────────────────────────────────────
+export interface Testimonial {
+  id: string;
+  clientName: string;
+  clientCompany: string | null;
+  content: string;
+  imageUrl: string | null;
+  rating: number;
+  createdByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedTestimonials {
+  testimonials: Testimonial[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+// ─── Admin: SaaS Tenants ──────────────────────────────────────────────────────
+export type TenantStatus =
+  | 'PENDING'
+  | 'PROVISIONING'
+  | 'ACTIVE'
+  | 'SUSPENDED'
+  | 'FAILED'
+  | 'ARCHIVED';
+
+export interface Tenant {
+  id: string;
+  clientId: string;
+  productId: string;
+  slug: string;
+  name: string;
+  status: TenantStatus;
+  externalTenantId: string | null;
+  lastError: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  product?: { id: string; name: string } | null;
+  client?: { id: string; user?: { name?: string; email?: string } | null } | null;
+}
+
+export interface PaginatedTenants {
+  tenants: Tenant[];
+  total: number;
+  page: number;
+  pages: number;
+}

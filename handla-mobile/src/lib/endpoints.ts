@@ -44,6 +44,9 @@ import type {
   ProjectStatus,
   PaginatedTasks,
   TaskStatus,
+  PaginatedTestimonials,
+  PaginatedTenants,
+  TenantStatus,
 } from '@/types';
 
 /**
@@ -350,4 +353,27 @@ export interface UsersQuery {
 export const usersApi = {
   list: (params?: UsersQuery) =>
     api.get<{ message: string; data: PaginatedUsers }>('/users', { params }),
+};
+
+// ─── Testimonials (@Controller('testimonials')) — ADMIN ──────────────────────
+export const testimonialsApi = {
+  /** GET /testimonials — paginated. */
+  list: (params?: { page?: number; limit?: number }) =>
+    api.get<{ message: string; data: PaginatedTestimonials }>('/testimonials', { params }),
+};
+
+// ─── SaaS Tenants (@Controller('saas')) — ADMIN ──────────────────────────────
+export interface TenantsQuery {
+  page?: number;
+  limit?: number;
+  status?: TenantStatus;
+  productId?: string;
+  clientId?: string;
+  search?: string;
+}
+
+export const tenantsApi = {
+  /** GET /saas/tenants — ADMIN, paginated. */
+  list: (params?: TenantsQuery) =>
+    api.get<{ message: string; data: PaginatedTenants }>('/saas/tenants', { params }),
 };

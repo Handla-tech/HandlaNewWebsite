@@ -29,6 +29,11 @@ const MAP: Record<string, StatusColor> = {
   ACTIVE_CLIENT: GREEN,
   INACTIVE: GRAY,
   LEAD: PURPLE,
+  // SaaS Tenants
+  PROVISIONING: BLUE,
+  SUSPENDED: AMBER,
+  FAILED: RED,
+  ARCHIVED: GRAY,
 };
 
 export function statusColor(status?: string | null): StatusColor {
