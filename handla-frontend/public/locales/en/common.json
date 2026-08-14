@@ -2425,6 +2425,53 @@
         "save": "Save",
         "addPlan": "Add Plan"
       }
+    },
+    "testimonials": {
+      "title": "Testimonials",
+      "totalBadge": "{{count}} total",
+      "subtitle": "Manage public-facing client testimonials shown on the website.",
+      "addTestimonial": "Add Testimonial",
+      "searchPlaceholder": "Search by client name or company…",
+      "loadError": "Failed to load testimonials",
+      "emptySearch": "No testimonials match your search",
+      "empty": "No testimonials yet",
+      "addFirst": "Add your first testimonial",
+      "toast": {
+        "deleted": "Testimonial deleted.",
+        "updated": "Testimonial updated.",
+        "added": "Testimonial added."
+      },
+      "modal": {
+        "titleEdit": "Edit Testimonial",
+        "titleAdd": "Add Testimonial",
+        "clientName": "Client Name *",
+        "clientNamePlaceholder": "Jane Smith",
+        "company": "Company",
+        "companyPlaceholder": "Acme Corp (optional)",
+        "content": "Testimonial *",
+        "contentPlaceholder": "What the client said…",
+        "imageUrl": "Avatar Image URL",
+        "imageUrlPlaceholder": "https://… (optional)",
+        "preview": "preview",
+        "rating": "Rating *",
+        "ratingOutOf": "{{rating}} / 5",
+        "genericError": "Something went wrong. Please try again.",
+        "saveChanges": "Save Changes"
+      },
+      "delete": {
+        "title": "Delete Testimonial?",
+        "confirmAria": "Confirm delete testimonial",
+        "body": "This will permanently remove the testimonial from {{name}}. This action cannot be undone."
+      },
+      "validation": {
+        "clientNameRequired": "Client name is required",
+        "contentMin": "Testimonial must be at least 10 characters",
+        "invalidUrl": "Must be a valid URL"
+      },
+      "card": {
+        "editAria": "Edit {{name}}'s testimonial",
+        "deleteAria": "Delete {{name}}'s testimonial"
+      }
     }
   },
   "footer": {

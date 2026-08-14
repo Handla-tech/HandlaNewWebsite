@@ -1,0 +1,104 @@
+{
+  "en": {
+    "erp": {
+      "testimonials": {
+        "title": "Testimonials",
+        "totalBadge": "{{count}} total",
+        "subtitle": "Manage public-facing client testimonials shown on the website.",
+        "addTestimonial": "Add Testimonial",
+        "searchPlaceholder": "Search by client name or company…",
+        "loadError": "Failed to load testimonials",
+        "emptySearch": "No testimonials match your search",
+        "empty": "No testimonials yet",
+        "addFirst": "Add your first testimonial",
+        "card": {
+          "editAria": "Edit {{name}}'s testimonial",
+          "deleteAria": "Delete {{name}}'s testimonial"
+        },
+        "toast": {
+          "deleted": "Testimonial deleted.",
+          "updated": "Testimonial updated.",
+          "added": "Testimonial added."
+        },
+        "modal": {
+          "titleEdit": "Edit Testimonial",
+          "titleAdd": "Add Testimonial",
+          "clientName": "Client Name *",
+          "clientNamePlaceholder": "Jane Smith",
+          "company": "Company",
+          "companyPlaceholder": "Acme Corp (optional)",
+          "content": "Testimonial *",
+          "contentPlaceholder": "What the client said…",
+          "imageUrl": "Avatar Image URL",
+          "imageUrlPlaceholder": "https://… (optional)",
+          "preview": "preview",
+          "rating": "Rating *",
+          "ratingOutOf": "{{rating}} / 5",
+          "genericError": "Something went wrong. Please try again.",
+          "saveChanges": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Testimonial?",
+          "confirmAria": "Confirm delete testimonial",
+          "body": "This will permanently remove the testimonial from {{name}}. This action cannot be undone."
+        },
+        "validation": {
+          "clientNameRequired": "Client name is required",
+          "contentMin": "Testimonial must be at least 10 characters",
+          "invalidUrl": "Must be a valid URL"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "testimonials": {
+        "title": "الشهادات",
+        "totalBadge": "{{count}} إجمالاً",
+        "subtitle": "إدارة شهادات العملاء الظاهرة للعامة على الموقع.",
+        "addTestimonial": "إضافة شهادة",
+        "searchPlaceholder": "ابحث باسم العميل أو الشركة…",
+        "loadError": "فشل تحميل الشهادات",
+        "emptySearch": "لا توجد شهادات تطابق بحثك",
+        "empty": "لا توجد شهادات بعد",
+        "addFirst": "أضف أول شهادة",
+        "card": {
+          "editAria": "تعديل شهادة {{name}}",
+          "deleteAria": "حذف شهادة {{name}}"
+        },
+        "toast": {
+          "deleted": "تم حذف الشهادة.",
+          "updated": "تم تحديث الشهادة.",
+          "added": "تمت إضافة الشهادة."
+        },
+        "modal": {
+          "titleEdit": "تعديل الشهادة",
+          "titleAdd": "إضافة شهادة",
+          "clientName": "اسم العميل *",
+          "clientNamePlaceholder": "جين سميث",
+          "company": "الشركة",
+          "companyPlaceholder": "شركة أكمي (اختياري)",
+          "content": "الشهادة *",
+          "contentPlaceholder": "ماذا قال العميل…",
+          "imageUrl": "رابط صورة الأفاتار",
+          "imageUrlPlaceholder": "https://… (اختياري)",
+          "preview": "معاينة",
+          "rating": "التقييم *",
+          "ratingOutOf": "{{rating}} / 5",
+          "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+          "saveChanges": "حفظ التغييرات"
+        },
+        "delete": {
+          "title": "حذف الشهادة؟",
+          "confirmAria": "تأكيد حذف الشهادة",
+          "body": "سيؤدي هذا إلى إزالة شهادة {{name}} نهائياً. لا يمكن التراجع عن هذا الإجراء."
+        },
+        "validation": {
+          "clientNameRequired": "اسم العميل مطلوب",
+          "contentMin": "يجب ألا تقل الشهادة عن 10 أحرف",
+          "invalidUrl": "يجب أن يكون رابطاً صالحاً"
+        }
+      }
+    }
+  }
+}
