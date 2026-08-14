@@ -13,8 +13,10 @@ import { LineItemsEditor } from '@/components/LineItemsEditor';
 import { QUOTATION_STATUS_META, statusMeta, money, fmtDate } from '@/lib/salesMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Quotation, LineItem } from '@/types';
+import { useT } from '@/i18n';
 
 export default function QuotationDetailScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const sectionLabel = {
     color: colors.textDim,
@@ -61,17 +63,17 @@ export default function QuotationDetailScreen() {
     mutationFn: () => quotationsApi.send(quotationId).then((r) => r.data.data),
     onSuccess: invalidate,
     onError: (e: any) =>
-      Alert.alert('Could not send', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('quotation.sendError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
   const convert = useMutation({
     mutationFn: () => quotationsApi.convert(quotationId).then((r) => r.data.data),
     onSuccess: () => {
       invalidate();
       qc.invalidateQueries({ queryKey: ['invoices'] });
-      Alert.alert('Converted', 'An invoice was created from this quotation.');
+      Alert.alert(t('quotation.convertedTitle'), t('quotation.convertedMsg'));
     },
     onError: (e: any) =>
-      Alert.alert('Could not convert', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('quotation.convertError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
   const del = useMutation({
     mutationFn: () => quotationsApi.remove(quotationId),
@@ -80,7 +82,7 @@ export default function QuotationDetailScreen() {
       router.back();
     },
     onError: (e: any) =>
-      Alert.alert('Could not delete', e?.response?.data?.message ?? 'Please try again.'),
+      Alert.alert(t('quotation.deleteError'), e?.response?.data?.message ?? t('common.tryAgain')),
   });
 
   // ─── Edit (DRAFT only) ──────────────────────────────────────────────────────
@@ -136,36 +138,36 @@ export default function QuotationDetailScreen() {
       invalidate();
       setEditOpen(false);
     },
-    onError: (e) => setEditErr(apiError(e, 'Failed to save changes')),
+    onError: (e) => setEditErr(apiError(e, t('detail.editSaveError'))),
   });
 
   const submitEdit = () => {
-    if (eTitle.trim().length < 2) return setEditErr('Title must be at least 2 characters.');
+    if (eTitle.trim().length < 2) return setEditErr(t('detail.titleError'));
     if (cleanItems().length === 0)
-      return setEditErr('Add at least one line item (description + quantity).');
+      return setEditErr(t('detail.lineItemError'));
     setEditErr(null);
     edit.mutate();
   };
 
   const confirmReject = () =>
-    Alert.alert('Reject quotation?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reject', style: 'destructive', onPress: () => reject.mutate() },
+    Alert.alert(t('quotation.confirmRejectTitle'), t('quotation.confirmRejectMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.reject'), style: 'destructive', onPress: () => reject.mutate() },
     ]);
   const confirmSend = () =>
-    Alert.alert('Send quotation?', 'The client will be able to view and respond.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Send', onPress: () => send.mutate() },
+    Alert.alert(t('quotation.confirmSendTitle'), t('quotation.confirmSendMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.send'), onPress: () => send.mutate() },
     ]);
   const confirmConvert = () =>
-    Alert.alert('Convert to invoice?', 'This creates an invoice from the accepted quotation.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Convert', onPress: () => convert.mutate() },
+    Alert.alert(t('quotation.confirmConvertTitle'), t('quotation.confirmConvertMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.convert'), onPress: () => convert.mutate() },
     ]);
   const confirmDelete = () =>
-    Alert.alert('Delete quotation?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => del.mutate() },
+    Alert.alert(t('quotation.confirmDeleteTitle'), t('quotation.confirmDeleteMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('detail.delete'), style: 'destructive', onPress: () => del.mutate() },
     ]);
 
   const canRespond = q?.status === 'SENT';
@@ -181,7 +183,7 @@ export default function QuotationDetailScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DetailHeader
-        title={q?.title ?? 'Loading…'}
+        title={q?.title ?? t('detail.loading')}
         subtitle={q?.quoteNumber}
         onBack={() => router.back()}
       />
@@ -192,13 +194,13 @@ export default function QuotationDetailScreen() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
             {(() => {
-              const m = statusMeta(QUOTATION_STATUS_META, q.status);
+              const m = statusMeta(QUOTATION_STATUS_META, q.status, t);
               return <Badge label={m.label} color={m.color} soft={m.soft} />;
             })()}
           </View>
 
           {/* Line items */}
-          <Text style={sectionLabel}>Line Items</Text>
+          <Text style={sectionLabel}>{t('detail.lineItems')}</Text>
           <View style={cardStyle}>
             {(q.lineItems ?? []).map((li: LineItem) => (
               <View
@@ -221,16 +223,16 @@ export default function QuotationDetailScreen() {
               </View>
             ))}
             {(q.lineItems ?? []).length === 0 && (
-              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>No line items.</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('detail.noLineItems')}</Text>
             )}
           </View>
 
           {/* Totals */}
           <View style={[cardStyle, { marginTop: spacing.md }]}>
-            <Row label="Subtotal" value={money(q.subtotal, cur)} />
-            <Row label={`Tax (${q.taxRate}%)`} value={money(q.taxAmount, cur)} />
+            <Row label={t('detail.subtotal')} value={money(q.subtotal, cur)} />
+            <Row label={t('detail.tax', { rate: q.taxRate })} value={money(q.taxAmount, cur)} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.sm }}>
-              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>Total</Text>
+              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>{t('detail.total')}</Text>
               <Text style={{ color: colors.accent, fontSize: font.lg, fontWeight: '800' }}>
                 {money(q.total, cur)}
               </Text>
@@ -240,17 +242,17 @@ export default function QuotationDetailScreen() {
           {/* Meta */}
           <View style={[cardStyle, { marginTop: spacing.md }]}>
             {isStaff && q.client ? (
-              <Row label="Client" value={q.client.company || q.client.user?.name || '—'} />
+              <Row label={t('detail.client')} value={q.client.company || q.client.user?.name || '—'} />
             ) : null}
-            <Row label="Valid until" value={fmtDate(q.validUntil)} />
-            {q.sentAt ? <Row label="Sent" value={fmtDate(q.sentAt)} /> : null}
-            {q.acceptedAt ? <Row label="Accepted" value={fmtDate(q.acceptedAt)} /> : null}
-            {q.rejectedAt ? <Row label="Rejected" value={fmtDate(q.rejectedAt)} /> : null}
+            <Row label={t('detail.validUntil')} value={fmtDate(q.validUntil)} />
+            {q.sentAt ? <Row label={t('detail.sent')} value={fmtDate(q.sentAt)} /> : null}
+            {q.acceptedAt ? <Row label={t('detail.accepted')} value={fmtDate(q.acceptedAt)} /> : null}
+            {q.rejectedAt ? <Row label={t('detail.rejected')} value={fmtDate(q.rejectedAt)} /> : null}
           </View>
 
           {q.notes ? (
             <View style={[cardStyle, { marginTop: spacing.md }]}>
-              <Text style={sectionLabel}>Notes</Text>
+              <Text style={sectionLabel}>{t('detail.notes')}</Text>
               <Text style={{ color: colors.textMuted, fontSize: font.sm }}>{q.notes}</Text>
             </View>
           ) : null}
@@ -259,11 +261,11 @@ export default function QuotationDetailScreen() {
           {canRespond && (
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg }}>
               <View style={{ flex: 1 }}>
-                <Button title="Accept" onPress={() => accept.mutate()} loading={accept.isPending} />
+                <Button title={t('quotation.accept')} onPress={() => accept.mutate()} loading={accept.isPending} />
               </View>
               <View style={{ flex: 1 }}>
                 <Button
-                  title="Reject"
+                  title={t('detail.reject')}
                   variant="danger"
                   onPress={confirmReject}
                   loading={reject.isPending}
@@ -276,21 +278,21 @@ export default function QuotationDetailScreen() {
           {isStaff && (
             <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
               {canEdit && (
-                <Button title="Edit quotation" variant="ghost" onPress={openEdit} />
+                <Button title={t('quotation.editAction')} variant="ghost" onPress={openEdit} />
               )}
               {canSend && (
-                <Button title="Send to client" onPress={confirmSend} loading={send.isPending} />
+                <Button title={t('quotation.sendToClient')} onPress={confirmSend} loading={send.isPending} />
               )}
               {canConvert && (
                 <Button
-                  title="Convert to invoice"
+                  title={t('quotation.convertToInvoice')}
                   onPress={confirmConvert}
                   loading={convert.isPending}
                 />
               )}
               {canDelete && (
                 <Button
-                  title="Delete quotation"
+                  title={t('quotation.delete')}
                   variant="danger"
                   onPress={confirmDelete}
                   loading={del.isPending}
@@ -304,30 +306,30 @@ export default function QuotationDetailScreen() {
       <FormModal
         visible={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit Quotation"
+        title={t('quotation.editModal')}
         subtitle={q?.quoteNumber}
         onSubmit={submitEdit}
         submitting={edit.isPending}
         error={editErr ?? undefined}
       >
-        <Input label="Title" value={eTitle} onChangeText={setETitle} placeholder="Document title" />
+        <Input label={t('detail.titleLabel')} value={eTitle} onChangeText={setETitle} placeholder={t('detail.docTitlePlaceholder')} />
         <LineItemsEditor items={eItems} onChange={setEItems} />
         <Input
-          label="Tax rate (%)"
+          label={t('detail.taxRate')}
           value={eTax}
           onChangeText={setETax}
           placeholder="0"
           keyboardType="decimal-pad"
         />
         <Input
-          label="Currency"
+          label={t('detail.currency')}
           value={eCurrency}
           onChangeText={setECurrency}
           placeholder="SEK"
           autoCapitalize="characters"
         />
-        <DateField label="Valid until" value={eValidUntil} onChange={setEValidUntil} />
-        <Textarea label="Notes" value={eNotes} onChangeText={setENotes} placeholder="Optional" />
+        <DateField label={t('detail.validUntil')} value={eValidUntil} onChange={setEValidUntil} />
+        <Textarea label={t('detail.notes')} value={eNotes} onChangeText={setENotes} placeholder={t('common.optional')} />
       </FormModal>
     </SafeAreaView>
     </ScreenBackground>
