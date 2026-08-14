@@ -585,4 +585,29 @@ export const saasApi = {
   convertLead:    (data: object)              => api.post('/saas/convert-lead', data),
 };
 
+// ─── Phase 10: AI Handla Assistant (ADMIN + EMPLOYEE) ─────────────────────────
+export const aiApi = {
+  // ── Knowledge Base (list/read: ADMIN+EMPLOYEE; write: ADMIN only) ──
+  /** GET /ai/knowledge — paginated { entries, total, page, pages } */
+  getKnowledge:    (params?: object)           => api.get('/ai/knowledge', { params }),
+  /** GET /ai/knowledge/:id */
+  getKnowledgeEntry:(id: string)               => api.get(`/ai/knowledge/${id}`),
+  /** POST /ai/knowledge (ADMIN) */
+  createKnowledge: (data: object)              => api.post('/ai/knowledge', data),
+  /** PATCH /ai/knowledge/:id (ADMIN) */
+  updateKnowledge: (id: string, data: object)  => api.patch(`/ai/knowledge/${id}`, data),
+  /** DELETE /ai/knowledge/:id (ADMIN) */
+  deleteKnowledge: (id: string)                => api.delete(`/ai/knowledge/${id}`),
+
+  // ── Per-conversation AI state / lead panel / human takeover ──
+  /** GET /ai/conversations/:id/state */
+  getState:        (conversationId: string)    => api.get(`/ai/conversations/${conversationId}/state`),
+  /** POST /ai/conversations/:id/takeover — human takes over, bot muted */
+  takeover:        (conversationId: string, data?: object) =>
+    api.post(`/ai/conversations/${conversationId}/takeover`, data ?? {}),
+  /** POST /ai/conversations/:id/return-to-ai — hand control back to the bot */
+  returnToAi:      (conversationId: string)     =>
+    api.post(`/ai/conversations/${conversationId}/return-to-ai`),
+};
+
 export default api;

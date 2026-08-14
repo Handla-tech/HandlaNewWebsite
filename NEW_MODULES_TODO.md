@@ -219,7 +219,24 @@ Analyzed the existing NestJS chat FIRST (gateway/service/controller/entities) an
 - [x] AiModule: AiService / ChatbotService(orchestrator) / KnowledgeService / LeadExtractionService / ConversationContextService / PromptService / AiStateService. forwardRef wiring with ChatModule; ChatGateway.onModuleInit registers the AI broadcast channel.
 - [x] Env: OPENAI_API_KEY / OPENAI_MODEL (+ base URL, tokens, temperature, timeout, enable switch, windows) documented in .env.example. Disabled cleanly when no key.
 - [x] Tests: 31 AI unit tests (validation, extraction, prompt/injection defense, takeover, KB retrieval) + fixed chat specs; full suite 796/796 green. `nest build` clean.
-- [ ] Admin UI (web): KB CRUD screen, lead panel, AI-state/takeover toggle — FRONTEND PENDING (backend API ready).
+- [x] Admin UI (web): KB CRUD screen, lead panel, AI-state/takeover toggle — ✅ COMPLETE (see block below).
+
+### ✅ Phase 10 — ADMIN UI COMPLETE (2026-08-14)
+Web frontend for the AI assistant admin surface at `/erp/ai`, gated to ADMIN + EMPLOYEE (KB writes ADMIN-only), following the established saas/purchases page pattern (dark theme, TanStack Query v5, httpOnly-cookie axios).
+
+**Types (`src/types/index.ts`, additive):** `KnowledgeCategory`, `LeadStatus`, `AiControlMode`, `MessageOrigin`, `AiIntent` unions; `KnowledgeEntry`, `PaginatedKnowledge`, `CreateKnowledgePayload`, `UpdateKnowledgePayload`, `ConversationAiState` interfaces — mirroring the backend entities/DTOs exactly.
+
+**API client (`src/lib/api.ts`):** `aiApi` — Knowledge Base CRUD (`GET/POST/PATCH/DELETE /ai/knowledge[/:id]`) + per-conversation state (`GET /ai/conversations/:id/state`, `POST .../takeover`, `POST .../return-to-ai`).
+
+**Nav (`src/app/erp/layout.tsx`):** added `Bot` icon + "AI Assistant" item under the **Operations** section (ADMIN + EMPLOYEE — no `adminOnly` flag).
+
+**Page (`src/app/erp/ai/page.tsx`):** two-tab admin screen.
+- **Knowledge Base tab:** debounced search + category + active/inactive filters, paginated list, per-row category/priority/product/inactive badges, ADMIN-only row menu (edit/delete) via `DropdownPortal`, and a create/edit modal (title/content/category/product/tags/priority/isActive with client-side min-length validation). Non-admins get read-only view (no New Entry / row menu).
+- **Lead Panel tab:** conversation list (reuses `chatApi.getConversations`, defensive unwrapping) + a detail pane showing the `ConversationAiState`: lead-status badge, escalation banner (`needsHuman` + reason), **control-mode toggle** (Take over with optional note ↔ Return to AI), captured `leadData` grid, `missingFields` chips, running summary, and AI-reply count.
+
+**Verification:** `tsc --noEmit` clean for all new/modified files (only the pre-existing, unrelated `accounting/page.tsx` `Client.name` error remains).
+
+**Deferred (frontend):** mobile AI parity; embedding the AI state panel directly inside the live chat thread; lead → tenant one-click conversion button (Phase 11 `convert-lead` API exists, wiring the button into this panel is a follow-up).
 
 ## PHASE 11 — SaaS Control Plane (queued, after AI assistant)  🟡
 Analyze Handla + Mudar/Matjari/Manara FIRST. Handla = managed SaaS Control Plane (no public self-service tenant creation; admin-only provisioning).

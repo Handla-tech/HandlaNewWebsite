@@ -29,6 +29,7 @@ import {
   BarChart3,
   LineChart,
   Server,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -87,9 +88,10 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Operations',
     items: [
-      { href: '/erp/support',    icon: LifeBuoy,        label: 'Support'   },
-      { href: '/erp/reports',    icon: BarChart3,       label: 'Reports'   },
-      { href: '/erp/analytics',  icon: LineChart,       label: 'Analytics' },
+      { href: '/erp/support',    icon: LifeBuoy,        label: 'Support'      },
+      { href: '/erp/ai',         icon: Bot,             label: 'AI Assistant' },
+      { href: '/erp/reports',    icon: BarChart3,       label: 'Reports'      },
+      { href: '/erp/analytics',  icon: LineChart,       label: 'Analytics'    },
     ],
   },
   {

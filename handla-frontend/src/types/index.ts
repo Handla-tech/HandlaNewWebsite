@@ -960,6 +960,90 @@ export interface TenantDetail {
   nextStates:   TenantStatus[];
 }
 
+// ─── Phase 10: AI Handla Assistant ────────────────────────────────────────────
+// KB-grounded chatbot + lead qualification. Admin/staff surface only.
+
+export type KnowledgeCategory =
+  | 'COMPANY'
+  | 'PRODUCT'
+  | 'PRICING'
+  | 'PROCESS'
+  | 'FAQ'
+  | 'POLICY'
+  | 'OTHER';
+
+export type LeadStatus =
+  | 'NEW'
+  | 'QUALIFYING'
+  | 'QUALIFIED'
+  | 'DISQUALIFIED'
+  | 'CONVERTED';
+
+export type AiControlMode = 'AI' | 'HUMAN';
+
+export type MessageOrigin = 'CLIENT' | 'STAFF' | 'AI' | 'SYSTEM';
+
+export type AiIntent =
+  | 'GENERAL_QUESTION'
+  | 'LEAD_INQUIRY'
+  | 'SUPPORT_REQUEST'
+  | 'SMALL_TALK'
+  | 'OUT_OF_SCOPE'
+  | 'HANDOFF_REQUEST';
+
+/** A single curated fact the assistant is allowed to speak from. */
+export interface KnowledgeEntry {
+  id:        string;
+  title:     string;
+  content:   string;
+  category:  KnowledgeCategory;
+  tags:      string | null;
+  priority:  number;
+  isActive:  boolean;
+  product:   string | null;
+  authorId:  string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedKnowledge {
+  entries: KnowledgeEntry[];
+  total:   number;
+  page:    number;
+  pages:   number;
+}
+
+export interface CreateKnowledgePayload {
+  title:     string;
+  content:   string;
+  category?: KnowledgeCategory;
+  tags?:     string;
+  priority?: number;
+  isActive?: boolean;
+  product?:  string;
+}
+
+export type UpdateKnowledgePayload = Partial<CreateKnowledgePayload>;
+
+/** Per-conversation AI orchestration state (sidecar keyed by conversationId). */
+export interface ConversationAiState {
+  id:                  string;
+  conversationId:      string;
+  controlMode:         AiControlMode;
+  takenOverBy:         string | null;
+  takenOverAt:         string | null;
+  needsHuman:          boolean;
+  escalationReason:    string | null;
+  leadStatus:          LeadStatus;
+  leadData:            Record<string, unknown> | null;
+  missingFields:       string[] | null;
+  runningSummary:      string | null;
+  lastHandledMessageId: string | null;
+  aiMessageCount:      number;
+  createdAt:           string;
+  updatedAt:           string;
+}
+
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
 export type DeepPartial<T> = T extends object
