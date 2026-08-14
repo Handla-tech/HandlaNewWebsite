@@ -168,6 +168,7 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly transporter: nodemailer.Transporter;
   private readonly from: string;
+  private readonly replyTo: string;
   private readonly templateCache = new Map<string, handlebars.TemplateDelegate>();
 
   constructor(
@@ -185,7 +186,17 @@ export class EmailService {
       },
     });
 
-    this.from = this.configService.get<string>('email.from') || 'no-reply@handla.com';
+    // Prefer the composed `"Display Name" <address>` header so client mailboxes
+    // show a friendly sender; fall back to the bare address.
+    this.from =
+      this.configService.get<string>('email.fromHeader') ||
+      this.configService.get<string>('email.from') ||
+      'no-reply@handla.com';
+    // Where replies should go (e.g. support@handla.com) — falls back to `from`.
+    this.replyTo =
+      this.configService.get<string>('email.replyTo') ||
+      this.configService.get<string>('email.from') ||
+      'no-reply@handla.com';
   }
 
   // ─── Computed Properties ─────────────────────────────────────────────────────
@@ -568,6 +579,7 @@ export class EmailService {
     try {
       const info = await this.transporter.sendMail({
         from: this.from,
+        replyTo: this.replyTo,
         to: options.to,
         subject: options.subject,
         html: options.html,
