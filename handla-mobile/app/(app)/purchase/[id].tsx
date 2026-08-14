@@ -10,8 +10,10 @@ import { money, fmtDate, statusMeta } from '@/lib/salesMeta';
 import { PURCHASE_STATUS_META, PURCHASE_PAYMENT_META } from '@/lib/financeMeta';
 import { spacing, radius, font, useTheme } from '@/theme';
 import type { Purchase, LineItem } from '@/types';
+import { useT } from '@/i18n';
 
 export default function PurchaseDetailScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
   const sectionLabel = {
     color: colors.textDim,
@@ -50,9 +52,9 @@ export default function PurchaseDetailScreen() {
   });
 
   const confirmPaid = () =>
-    Alert.alert('Mark as paid?', 'Record this purchase as fully paid.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Mark Paid', onPress: () => markPaid.mutate() },
+    Alert.alert(t('purchase.confirmPaidTitle'), t('purchase.confirmPaidMsg'), [
+      { text: t('detail.cancel'), style: 'cancel' },
+      { text: t('purchase.markPaidAction'), onPress: () => markPaid.mutate() },
     ]);
 
   const cur = p?.currency;
@@ -62,7 +64,7 @@ export default function PurchaseDetailScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ headerShown: false }} />
       <DetailHeader
-        title={p ? money(p.total, p.currency) : 'Loading…'}
+        title={p ? money(p.total, p.currency) : t('detail.loading')}
         subtitle={p?.purchaseNumber}
         onBack={() => router.back()}
       />
@@ -73,8 +75,8 @@ export default function PurchaseDetailScreen() {
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
             {(() => {
-              const s = statusMeta(PURCHASE_STATUS_META, p.status);
-              const pay = statusMeta(PURCHASE_PAYMENT_META, p.paymentStatus);
+              const s = statusMeta(PURCHASE_STATUS_META, p.status, t);
+              const pay = statusMeta(PURCHASE_PAYMENT_META, p.paymentStatus, t);
               return (
                 <>
                   <Badge label={s.label} color={s.color} soft={s.soft} />
@@ -84,7 +86,7 @@ export default function PurchaseDetailScreen() {
             })()}
           </View>
 
-          <Text style={sectionLabel}>Line Items</Text>
+          <Text style={sectionLabel}>{t('detail.lineItems')}</Text>
           <View style={cardStyle}>
             {(p.lineItems ?? []).map((li: LineItem) => (
               <View
@@ -103,15 +105,15 @@ export default function PurchaseDetailScreen() {
               </View>
             ))}
             {(p.lineItems ?? []).length === 0 && (
-              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>No line items.</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.sm }}>{t('detail.noLineItems')}</Text>
             )}
           </View>
 
           <View style={[cardStyle, { marginTop: spacing.md }]}>
-            <Row label="Subtotal" value={money(p.subtotal, cur)} />
-            <Row label={`Tax (${p.taxRate}%)`} value={money(p.taxAmount, cur)} />
+            <Row label={t('detail.subtotal')} value={money(p.subtotal, cur)} />
+            <Row label={t('detail.tax', { rate: p.taxRate })} value={money(p.taxAmount, cur)} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.sm }}>
-              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>Total</Text>
+              <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '800' }}>{t('detail.total')}</Text>
               <Text style={{ color: colors.accent, fontSize: font.lg, fontWeight: '800' }}>
                 {money(p.total, cur)}
               </Text>
@@ -119,23 +121,23 @@ export default function PurchaseDetailScreen() {
           </View>
 
           <View style={[cardStyle, { marginTop: spacing.md }]}>
-            <Row label="Supplier" value={p.supplier?.company || p.supplier?.name || '—'} />
-            {p.accountCode ? <Row label="Account" value={p.accountCode} /> : null}
-            <Row label="Order date" value={fmtDate(p.orderDate)} />
-            <Row label="Due date" value={fmtDate(p.dueDate)} />
-            {p.paidAt ? <Row label="Paid" value={fmtDate(p.paidAt)} /> : null}
+            <Row label={t('detail.supplier')} value={p.supplier?.company || p.supplier?.name || '—'} />
+            {p.accountCode ? <Row label={t('detail.account')} value={p.accountCode} /> : null}
+            <Row label={t('detail.orderDate')} value={fmtDate(p.orderDate)} />
+            <Row label={t('detail.dueDate')} value={fmtDate(p.dueDate)} />
+            {p.paidAt ? <Row label={t('detail.paid')} value={fmtDate(p.paidAt)} /> : null}
           </View>
 
           {p.notes ? (
             <View style={[cardStyle, { marginTop: spacing.md }]}>
-              <Text style={sectionLabel}>Notes</Text>
+              <Text style={sectionLabel}>{t('detail.notes')}</Text>
               <Text style={{ color: colors.textMuted, fontSize: font.sm }}>{p.notes}</Text>
             </View>
           ) : null}
 
           {p.paymentStatus !== 'PAID' && p.status !== 'CANCELLED' && (
             <View style={{ marginTop: spacing.lg }}>
-              <Button title="Mark as Paid" onPress={confirmPaid} loading={markPaid.isPending} />
+              <Button title={t('purchase.markPaid')} onPress={confirmPaid} loading={markPaid.isPending} />
             </View>
           )}
         </ScrollView>
