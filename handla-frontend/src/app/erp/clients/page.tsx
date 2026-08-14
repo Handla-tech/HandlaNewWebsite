@@ -33,6 +33,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { clientsApi, usersApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 import type { Client, PaginatedClients, User } from '@/types';
@@ -43,11 +44,11 @@ type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'CHURNED';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: { label: string; value: ClientStatus | 'ALL' }[] = [
-  { label: 'All',      value: 'ALL'      },
-  { label: 'Active',   value: 'ACTIVE'   },
-  { label: 'Inactive', value: 'INACTIVE' },
-  { label: 'Churned',  value: 'CHURNED'  },
+const STATUS_FILTERS: { labelKey: string; value: ClientStatus | 'ALL' }[] = [
+  { labelKey: 'erp.clients.filters.all',      value: 'ALL'      },
+  { labelKey: 'erp.clients.filters.active',   value: 'ACTIVE'   },
+  { labelKey: 'erp.clients.filters.inactive', value: 'INACTIVE' },
+  { labelKey: 'erp.clients.filters.churned',  value: 'CHURNED'  },
 ];
 
 const STATUS_BADGE: Record<ClientStatus, string> = {
@@ -133,11 +134,12 @@ function ClientCard({
 }) {
   const menu   = useDropdown('right');
   const router  = useRouter();
+  const { t } = useTranslation();
 
   const StatusIcon = STATUS_ICON[client.status as ClientStatus] ?? AlertCircle;
-  const name       = client.user?.name ?? 'Unknown';
+  const name       = client.user?.name ?? t('erp.ui.unknown');
   const email      = client.user?.email ?? '';
-  const ownerName  = client.owner?.name ?? 'Unassigned';
+  const ownerName  = client.owner?.name ?? t('erp.ui.unassigned');
   const initials   = getInitials(name);
   const avatarColor= getAvatarColor(name);
 
@@ -173,7 +175,7 @@ function ClientCard({
           STATUS_BADGE[client.status as ClientStatus],
         )}>
           <StatusIcon className="w-3 h-3" />
-          {client.status}
+          {t(`erp.clients.status.${client.status}`)}
         </span>
       </div>
 
@@ -192,7 +194,7 @@ function ClientCard({
       >
         <button
           className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-white/10 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Client actions"
+          aria-label={t('erp.clients.clientActions')}
         >
           <MoreVertical className="w-4 h-4" />
         </button>
@@ -203,14 +205,14 @@ function ClientCard({
               onClick={(e) => { e.stopPropagation(); onEdit(client); menu.close(); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors min-h-[40px]"
             >
-              <Pencil className="w-3.5 h-3.5" /> Edit
+              <Pencil className="w-3.5 h-3.5" /> {t('erp.ui.edit')}
             </button>
             {canAssign && (
               <button
                 onClick={(e) => { e.stopPropagation(); onAssign(client); menu.close(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors min-h-[40px]"
               >
-                <UserCog className="w-3.5 h-3.5" /> Assign Owner
+                <UserCog className="w-3.5 h-3.5" /> {t('erp.clients.actions.assignOwner')}
               </button>
             )}
             {canDelete && (
@@ -220,7 +222,7 @@ function ClientCard({
                   onClick={(e) => { e.stopPropagation(); onDelete(client); menu.close(); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors min-h-[40px]"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                  <Trash2 className="w-3.5 h-3.5" /> {t('erp.ui.delete')}
                 </button>
               </>
             )}
@@ -235,6 +237,7 @@ function ClientCard({
 
 export default function ClientsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -319,26 +322,26 @@ export default function ClientsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setShowCreate(false); },
     onError:   (e: any) => {
       const msg = e?.response?.data?.message;
-      setServerError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Failed to create client'));
+      setServerError(Array.isArray(msg) ? msg.join(', ') : (msg ?? t('erp.ui.actionsFailed')));
     },
   });
 
   const editMutation = useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: object }) => clientsApi.updateClient(id, dto),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setEditTarget(null); },
-    onError:    (e: any) => setServerError(e?.response?.data?.message ?? 'Failed to update client'),
+    onError:    (e: any) => setServerError(e?.response?.data?.message ?? t('erp.ui.actionsFailed')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => clientsApi.deleteClient(id),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); qc.invalidateQueries({ queryKey: ['erp-clients-stat'] }); setDeleteTarget(null); },
-    onError:    (e: any) => setServerError(e?.response?.data?.message ?? 'Failed to delete client'),
+    onError:    (e: any) => setServerError(e?.response?.data?.message ?? t('erp.ui.actionsFailed')),
   });
 
   const assignMutation = useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: object }) => clientsApi.assignClientOwner(id, dto),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['erp-clients'] }); setAssignTarget(null); },
-    onError:    (e: any) => setServerError(e?.response?.data?.message ?? 'Failed to assign owner'),
+    onError:    (e: any) => setServerError(e?.response?.data?.message ?? t('erp.ui.actionsFailed')),
   });
 
   // ─── Forms ────────────────────────────────────────────────────────────────
@@ -365,25 +368,25 @@ export default function ClientsPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
               <Briefcase className="w-4.5 h-4.5 text-[#fbbf24]" />
             </span>
-            Clients
+            {t('erp.clients.title')}
           </h1>
-          <p className="text-sm text-white/30 mt-1 ml-11">Manage your client accounts and relationships.</p>
+          <p className="text-sm text-white/30 mt-1 ml-11">{t('erp.clients.subtitle')}</p>
         </div>
         <button
           onClick={() => { createForm.reset(); setServerError(''); setShowCreate(true); }}
           className={cn(btnPrimary, 'flex items-center gap-2')}
         >
-          <Plus className="w-4 h-4" /> New Client
+          <Plus className="w-4 h-4" /> {t('erp.clients.newClient')}
         </button>
       </div>
 
       {/* ─── Stats cards ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total',    value: stats.total,    color: 'text-[#fbbf24]',    border: 'border-[#fbbf24]/15', bg: 'bg-[#fbbf24]/5', icon: Briefcase },
-          { label: 'Active',   value: stats.active,   color: 'text-emerald-400',  border: 'border-emerald-500/15', bg: 'bg-emerald-500/5', icon: CheckCircle2 },
-          { label: 'Inactive', value: stats.inactive, color: 'text-white/50',     border: 'border-white/10',     bg: 'bg-white/[0.03]', icon: AlertCircle },
-          { label: 'Churned',  value: stats.churned,  color: 'text-red-400',      border: 'border-red-500/15',   bg: 'bg-red-500/5',    icon: TrendingDown },
+          { label: t('erp.clients.stats.total'),    value: stats.total,    color: 'text-[#fbbf24]',    border: 'border-[#fbbf24]/15', bg: 'bg-[#fbbf24]/5', icon: Briefcase },
+          { label: t('erp.clients.stats.active'),   value: stats.active,   color: 'text-emerald-400',  border: 'border-emerald-500/15', bg: 'bg-emerald-500/5', icon: CheckCircle2 },
+          { label: t('erp.clients.stats.inactive'), value: stats.inactive, color: 'text-white/50',     border: 'border-white/10',     bg: 'bg-white/[0.03]', icon: AlertCircle },
+          { label: t('erp.clients.stats.churned'),  value: stats.churned,  color: 'text-red-400',      border: 'border-red-500/15',   bg: 'bg-red-500/5',    icon: TrendingDown },
         ].map((s) => (
           <div key={s.label} className={cn('rounded-2xl border p-4 transition-colors', s.border, s.bg)}>
             <div className="flex items-center justify-between mb-2">
@@ -402,7 +405,7 @@ export default function ClientsPage() {
           <input
             value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
-            placeholder="Search name or company…"
+            placeholder={t('erp.clients.searchPlaceholder')}
             className={cn(inputCls, 'pl-10')}
           />
         </div>
@@ -418,7 +421,7 @@ export default function ClientsPage() {
                   : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white hover:border-white/20',
               )}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>
@@ -430,9 +433,9 @@ export default function ClientsPage() {
         <div className="hidden sm:grid px-5 py-3 border-b border-white/[0.06] bg-white/[0.02]"
           style={{ gridTemplateColumns: '40px 1fr 130px 160px 32px', gap: '1rem' }}>
           <div />
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Name / Company</div>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">Status</div>
-          <div className="hidden md:block text-[10px] font-semibold uppercase tracking-widest text-white/25">Assigned To</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">{t('erp.clients.labels.nameCompany')}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-white/25">{t('erp.ui.status')}</div>
+          <div className="hidden md:block text-[10px] font-semibold uppercase tracking-widest text-white/25">{t('erp.clients.labels.assignedTo')}</div>
           <div />
         </div>
 
@@ -441,8 +444,8 @@ export default function ClientsPage() {
         ) : isError ? (
           <div className="flex flex-col items-center gap-4 py-16 text-center">
             <AlertCircle className="w-10 h-10 text-red-400/50" />
-            <p className="text-sm text-white/30">Failed to load clients.</p>
-            <button onClick={() => refetch()} className={btnSecondary}>Retry</button>
+            <p className="text-sm text-white/30">{t('erp.clients.loadFailed')}</p>
+            <button onClick={() => refetch()} className={btnSecondary}>{t('erp.ui.retry')}</button>
           </div>
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-16 text-center">
@@ -450,8 +453,8 @@ export default function ClientsPage() {
               <Briefcase className="w-6 h-6 text-white/20" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white/40">No clients found</p>
-              <p className="text-xs text-white/20 mt-1">Try adjusting your search or filters</p>
+              <p className="text-sm font-medium text-white/40">{t('erp.clients.empty')}</p>
+              <p className="text-xs text-white/20 mt-1">{t('erp.clients.emptyHint')}</p>
             </div>
           </div>
         ) : (
@@ -473,7 +476,7 @@ export default function ClientsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-white/30">
-            {data?.total ?? 0} clients · Page {page} of {totalPages}
+            {t('erp.clients.countSummary', { count: data?.total ?? 0 })} · {t('erp.ui.page')} {page} {t('erp.ui.of')} {totalPages}
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -523,8 +526,8 @@ export default function ClientsPage() {
             >
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 id="create-title" className="text-base font-bold text-white">Create Client</h2>
-                  <p className="text-xs text-white/30 mt-0.5">Creates a CLIENT account and client record in one step.</p>
+                  <h2 id="create-title" className="text-base font-bold text-white">{t('erp.clients.modals.createTitle')}</h2>
+                  <p className="text-xs text-white/30 mt-0.5">{t('erp.clients.createSubtitle')}</p>
                 </div>
                 <button onClick={() => setShowCreate(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-white/10 hover:text-white transition-colors">
                   <X className="w-4 h-4" />
@@ -532,47 +535,47 @@ export default function ClientsPage() {
               </div>
 
               <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
-                <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest">Account Details</p>
+                <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest">{t('erp.clients.labels.accountDetails')}</p>
                 <div>
-                  <label htmlFor="create-name" className="block text-xs font-medium text-white/50 mb-1.5">Full Name</label>
-                  <input id="create-name" {...createForm.register('name')} placeholder="Jane Smith" className={inputCls} autoComplete="off" />
+                  <label htmlFor="create-name" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.clients.labels.fullName')}</label>
+                  <input id="create-name" {...createForm.register('name')} placeholder={t('erp.clients.placeholders.fullName')} className={inputCls} autoComplete="off" />
                   {createForm.formState.errors.name && <p className="text-red-400 text-xs mt-1">{createForm.formState.errors.name.message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="create-email" className="block text-xs font-medium text-white/50 mb-1.5">Email</label>
-                  <input id="create-email" type="email" {...createForm.register('email')} placeholder="jane@example.com" className={inputCls} autoComplete="off" />
+                  <label htmlFor="create-email" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.email')}</label>
+                  <input id="create-email" type="email" {...createForm.register('email')} placeholder={t('erp.clients.placeholders.email')} className={inputCls} autoComplete="off" />
                   {createForm.formState.errors.email && <p className="text-red-400 text-xs mt-1">{createForm.formState.errors.email.message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="create-password" className="block text-xs font-medium text-white/50 mb-1.5">Temporary Password</label>
-                  <input id="create-password" type="password" {...createForm.register('password')} placeholder="Min 8 chars · upper + lower + number" className={inputCls} autoComplete="new-password" />
+                  <label htmlFor="create-password" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.clients.labels.temporaryPassword')}</label>
+                  <input id="create-password" type="password" {...createForm.register('password')} placeholder={t('erp.clients.placeholders.password')} className={inputCls} autoComplete="new-password" />
                   {createForm.formState.errors.password && <p className="text-red-400 text-xs mt-1">{createForm.formState.errors.password.message}</p>}
                 </div>
 
-                <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest pt-1">Client Record</p>
+                <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest pt-1">{t('erp.clients.labels.clientRecord')}</p>
                 <div>
-                  <label htmlFor="create-company" className="block text-xs font-medium text-white/50 mb-1.5">Company (optional)</label>
-                  <input id="create-company" {...createForm.register('company')} placeholder="Acme Corp" className={inputCls} />
+                  <label htmlFor="create-company" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.company')} ({t('erp.ui.optional')})</label>
+                  <input id="create-company" {...createForm.register('company')} placeholder={t('erp.clients.placeholders.company')} className={inputCls} />
                 </div>
                 <div>
-                  <label htmlFor="create-status" className="block text-xs font-medium text-white/50 mb-1.5">Status</label>
+                  <label htmlFor="create-status" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.status')}</label>
                   <select id="create-status" {...createForm.register('status')} className={cn(inputCls, 'bg-[#0f0f0f]')}>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="CHURNED">Churned</option>
+                    <option value="ACTIVE">{t('erp.clients.status.ACTIVE')}</option>
+                    <option value="INACTIVE">{t('erp.clients.status.INACTIVE')}</option>
+                    <option value="CHURNED">{t('erp.clients.status.CHURNED')}</option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="create-notes" className="block text-xs font-medium text-white/50 mb-1.5">Notes (optional)</label>
+                  <label htmlFor="create-notes" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.notes')} ({t('erp.ui.optional')})</label>
                   <textarea id="create-notes" {...createForm.register('notes')} rows={2} className={cn(inputCls, 'resize-none')} />
                 </div>
 
                 {serverError && <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400" role="alert"><AlertCircle className="w-4 h-4 flex-shrink-0" />{serverError}</div>}
 
                 <div className="flex justify-end gap-3 pt-1">
-                  <button type="button" onClick={() => setShowCreate(false)} className={btnSecondary}>Cancel</button>
+                  <button type="button" onClick={() => setShowCreate(false)} className={btnSecondary}>{t('erp.ui.cancel')}</button>
                   <button type="submit" disabled={createMutation.isPending} className={btnPrimary}>
-                    {createMutation.isPending ? 'Creating…' : 'Create Client'}
+                    {createMutation.isPending ? t('erp.ui.creating') : t('erp.clients.modals.createTitle')}
                   </button>
                 </div>
               </form>
@@ -593,32 +596,32 @@ export default function ClientsPage() {
               className={modalPanel}
             >
               <div className="flex items-center justify-between mb-5">
-                <h2 id="edit-title" className="text-base font-bold text-white">Edit Client</h2>
+                <h2 id="edit-title" className="text-base font-bold text-white">{t('erp.clients.modals.editTitle')}</h2>
                 <button onClick={() => setEditTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-white/10 hover:text-white transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
                 <div>
-                  <label htmlFor="edit-company" className="block text-xs font-medium text-white/50 mb-1.5">Company (optional)</label>
+                  <label htmlFor="edit-company" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.company')} ({t('erp.ui.optional')})</label>
                   <input id="edit-company" {...editForm.register('company')} className={inputCls} />
                 </div>
                 <div>
-                  <label htmlFor="edit-status" className="block text-xs font-medium text-white/50 mb-1.5">Status</label>
+                  <label htmlFor="edit-status" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.status')}</label>
                   <select id="edit-status" {...editForm.register('status')} className={cn(inputCls, 'bg-[#0f0f0f]')}>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="CHURNED">Churned</option>
+                    <option value="ACTIVE">{t('erp.clients.status.ACTIVE')}</option>
+                    <option value="INACTIVE">{t('erp.clients.status.INACTIVE')}</option>
+                    <option value="CHURNED">{t('erp.clients.status.CHURNED')}</option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="edit-notes" className="block text-xs font-medium text-white/50 mb-1.5">Notes (optional)</label>
+                  <label htmlFor="edit-notes" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.ui.notes')} ({t('erp.ui.optional')})</label>
                   <textarea id="edit-notes" {...editForm.register('notes')} rows={3} className={cn(inputCls, 'resize-none')} />
                 </div>
                 {serverError && <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400" role="alert"><AlertCircle className="w-4 h-4 flex-shrink-0" />{serverError}</div>}
                 <div className="flex justify-end gap-3 pt-1">
-                  <button type="button" onClick={() => setEditTarget(null)} className={btnSecondary}>Cancel</button>
-                  <button type="submit" disabled={editMutation.isPending} className={btnPrimary}>{editMutation.isPending ? 'Saving…' : 'Save Changes'}</button>
+                  <button type="button" onClick={() => setEditTarget(null)} className={btnSecondary}>{t('erp.ui.cancel')}</button>
+                  <button type="submit" disabled={editMutation.isPending} className={btnPrimary}>{editMutation.isPending ? t('erp.ui.saving') : t('erp.ui.saveChanges')}</button>
                 </div>
               </form>
             </motion.div>
@@ -638,7 +641,7 @@ export default function ClientsPage() {
               className={modalPanel}
             >
               <div className="flex items-center justify-between mb-5">
-                <h2 id="assign-title" className="text-base font-bold text-white">Assign Owner</h2>
+                <h2 id="assign-title" className="text-base font-bold text-white">{t('erp.clients.modals.assignOwnerTitle')}</h2>
                 <button onClick={() => setAssignTarget(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-white/10 hover:text-white transition-colors">
                   <X className="w-4 h-4" />
                 </button>
@@ -646,21 +649,21 @@ export default function ClientsPage() {
               <form onSubmit={assignForm.handleSubmit(onAssignSubmit)} className="space-y-4">
                 <div className="rounded-xl border border-blue-500/20 bg-blue-500/8 p-3">
                   <p className="text-sm text-white/60">
-                    Assign a new EMPLOYEE as the owner of <strong className="text-white">{assignTarget.user?.name}</strong>.
+                    {t('erp.clients.assignInfo', { name: assignTarget.user?.name ?? '' })}
                   </p>
                 </div>
                 <div>
-                  <label htmlFor="assign-owner" className="block text-xs font-medium text-white/50 mb-1.5">Employee</label>
+                  <label htmlFor="assign-owner" className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.clients.employee')}</label>
                   <select id="assign-owner" {...assignForm.register('newOwnerId')} className={cn(inputCls, 'bg-[#0f0f0f]')}>
-                    <option value="">Select an employee…</option>
+                    <option value="">{t('erp.clients.selectEmployee')}</option>
                     {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.email})</option>)}
                   </select>
                   {assignForm.formState.errors.newOwnerId && <p className="text-red-400 text-xs mt-1">{assignForm.formState.errors.newOwnerId.message}</p>}
                 </div>
                 {serverError && <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400" role="alert"><AlertCircle className="w-4 h-4 flex-shrink-0" />{serverError}</div>}
                 <div className="flex justify-end gap-3 pt-1">
-                  <button type="button" onClick={() => setAssignTarget(null)} className={btnSecondary}>Cancel</button>
-                  <button type="submit" disabled={assignMutation.isPending} className={btnPrimary}>{assignMutation.isPending ? 'Assigning…' : 'Assign Owner'}</button>
+                  <button type="button" onClick={() => setAssignTarget(null)} className={btnSecondary}>{t('erp.ui.cancel')}</button>
+                  <button type="submit" disabled={assignMutation.isPending} className={btnPrimary}>{assignMutation.isPending ? t('erp.ui.saving') : t('erp.clients.modals.assignOwnerTitle')}</button>
                 </div>
               </form>
             </motion.div>
@@ -684,22 +687,22 @@ export default function ClientsPage() {
                   <Trash2 className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <h2 id="delete-title" className="text-base font-bold text-white">Delete Client</h2>
-                  <p className="text-xs text-white/30">This action cannot be undone</p>
+                  <h2 id="delete-title" className="text-base font-bold text-white">{t('erp.clients.modals.deleteTitle')}</h2>
+                  <p className="text-xs text-white/30">{t('erp.clients.deleteUndone')}</p>
                 </div>
               </div>
               <p className="text-sm text-white/60 mb-4">
-                Are you sure you want to delete <strong className="text-white">{deleteTarget.user?.name}</strong>?
+                {t('erp.clients.deleteConfirm', { name: deleteTarget.user?.name ?? '' })}
               </p>
               {serverError && <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm text-red-400 mb-3" role="alert"><AlertCircle className="w-4 h-4 flex-shrink-0" />{serverError}</div>}
               <div className="flex justify-end gap-3">
-                <button onClick={() => setDeleteTarget(null)} className={btnSecondary}>Cancel</button>
+                <button onClick={() => setDeleteTarget(null)} className={btnSecondary}>{t('erp.ui.cancel')}</button>
                 <button
                   onClick={() => deleteMutation.mutate(deleteTarget.id)}
                   disabled={deleteMutation.isPending}
                   className="px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors min-h-[44px] disabled:opacity-50"
                 >
-                  {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+                  {deleteMutation.isPending ? t('erp.ui.deleting') : t('erp.ui.delete')}
                 </button>
               </div>
             </motion.div>

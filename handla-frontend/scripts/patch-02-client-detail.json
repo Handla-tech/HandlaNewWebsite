@@ -1,0 +1,88 @@
+{
+  "en": {
+    "erp": {
+      "clients": {
+        "detail": {
+          "notFound": "Client not found or you don't have access.",
+          "backToClients": "Back to Clients",
+          "owner": "Owner",
+          "details": "Details",
+          "notesTitle": "Notes",
+          "noProjects": "No projects yet for this client.",
+          "noContracts": "No contracts yet for this client.",
+          "noInvoices": "No invoices yet for this client.",
+          "due": "Due",
+          "created": "Created",
+          "sent": "Sent",
+          "signed": "Signed",
+          "issued": "Issued",
+          "paid": "Paid",
+          "unpaid": "Unpaid",
+          "overdue": "Overdue",
+          "inclTax": "incl. {{rate}}% tax"
+        }
+      },
+      "projectStatus": {
+        "PLANNING": "Planning",
+        "ACTIVE": "Active",
+        "ON_HOLD": "On Hold",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      },
+      "contractStatus": {
+        "DRAFT": "Draft",
+        "SENT": "Sent",
+        "SIGNED": "Signed",
+        "REJECTED": "Rejected"
+      },
+      "invoiceStatus": {
+        "UNPAID": "Unpaid",
+        "PAID": "Paid",
+        "OVERDUE": "Overdue"
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "clients": {
+        "detail": {
+          "notFound": "العميل غير موجود أو ليس لديك صلاحية الوصول.",
+          "backToClients": "العودة إلى العملاء",
+          "owner": "المسؤول",
+          "details": "التفاصيل",
+          "notesTitle": "ملاحظات",
+          "noProjects": "لا توجد مشاريع لهذا العميل بعد.",
+          "noContracts": "لا توجد عقود لهذا العميل بعد.",
+          "noInvoices": "لا توجد فواتير لهذا العميل بعد.",
+          "due": "الاستحقاق",
+          "created": "أُنشئ",
+          "sent": "أُرسل",
+          "signed": "وُقّع",
+          "issued": "صدر",
+          "paid": "مدفوع",
+          "unpaid": "غير مدفوع",
+          "overdue": "متأخر",
+          "inclTax": "شامل ضريبة {{rate}}%"
+        }
+      },
+      "projectStatus": {
+        "PLANNING": "تخطيط",
+        "ACTIVE": "نشط",
+        "ON_HOLD": "معلّق",
+        "COMPLETED": "مكتمل",
+        "CANCELLED": "ملغى"
+      },
+      "contractStatus": {
+        "DRAFT": "مسودة",
+        "SENT": "مُرسل",
+        "SIGNED": "موقّع",
+        "REJECTED": "مرفوض"
+      },
+      "invoiceStatus": {
+        "UNPAID": "غير مدفوع",
+        "PAID": "مدفوع",
+        "OVERDUE": "متأخر"
+      }
+    }
+  }
+}
