@@ -1,0 +1,184 @@
+{
+  "en": {
+    "erp": {
+      "userRole": { "ADMIN": "Admin", "EMPLOYEE": "Employee", "CLIENT": "Client", "LEAD": "Lead" },
+      "users": {
+        "countActive": "{{count}} active",
+        "countArchived": "{{count}} archived",
+        "badges": { "you": "You", "archived": "Archived", "disabled": "Disabled" },
+        "tabs": { "active": "Active Users", "archive": "Archive" },
+        "menu": {
+          "restore": "Restore from Archive",
+          "edit": "Edit User",
+          "resetPassword": "Reset Password",
+          "changeRole": "Change Role",
+          "promote": "Promote to Client",
+          "reassign": "Reassign Ownership",
+          "enable": "Enable Account",
+          "disable": "Disable Account",
+          "deleteArchive": "Delete / Archive"
+        },
+        "archiveBanner": {
+          "title": "Archive View",
+          "body": "Archived users cannot log in but all their records — invoices, projects, clients, conversations — are fully preserved. Use \"Restore from Archive\" to re-activate an account."
+        },
+        "loadError": "Failed to load users. Try refreshing.",
+        "emptyArchived": "No archived users",
+        "emptyArchivedHint": "Archived users will appear here.",
+        "paginationUsers": "{{total}} users · page {{page}} of {{pages}}",
+        "form": {
+          "emailPlaceholder": "user@example.com",
+          "namePlaceholder": "Jane Smith",
+          "newRole": "New Role",
+          "cancel": "Cancel",
+          "saveChanges": "Save Changes"
+        },
+        "changeRole": {
+          "description": "Changing role for {{name}} ({{email}})",
+          "adminWarning": "⚠ ADMIN role cannot be changed via this endpoint. Only same-role re-affirmation is allowed."
+        },
+        "promote": {
+          "question": "Promote {{name}} from Lead to Client?",
+          "description": "This action will grant the user CLIENT-level access to the dashboard."
+        },
+        "reassign": {
+          "description": "Bulk-reassign all ERP records currently owned by {{name}} to another employee.",
+          "targetLabel": "New Owner (Employee UUID)",
+          "targetPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "targetHint": "Target user must have EMPLOYEE role."
+        },
+        "editTitle": "Edit User",
+        "resetPassword": {
+          "title": "Reset Password",
+          "description": "Set a new password for {{name}}.",
+          "newPassword": "New Password",
+          "newPasswordPlaceholder": "Min 8 chars · upper + lower + digit",
+          "confirmPassword": "Confirm Password",
+          "confirmPasswordPlaceholder": "Repeat the new password",
+          "resetting": "Resetting…",
+          "submit": "Reset Password"
+        },
+        "removeTitle": "Remove User",
+        "removeChoice": "Choose what to do with {{name}} ({{email}}):",
+        "archiveOption": {
+          "title": "Archive User",
+          "archiving": "Archiving…",
+          "body": "Hides the user from active lists and blocks their login.",
+          "bodyEmphasis": " All records are preserved — invoices, projects, clients, conversations remain fully accessible in the Archive view.",
+          "tags": "✓ Records kept  ✓ Reversible  ✓ Login blocked"
+        },
+        "deleteOption": {
+          "title": "Delete Permanently",
+          "deleting": "Deleting…",
+          "body": "Completely removes the user from the database.",
+          "bodyEmphasis": " This cannot be undone. All linked records (invoices, projects, conversations) will also be removed.",
+          "tags": "✗ Records lost  ✗ Irreversible"
+        },
+        "errors": {
+          "createFailed": "Failed to create user",
+          "updateRoleFailed": "Failed to update role",
+          "promoteFailed": "Failed to promote",
+          "reassignFailed": "Failed to reassign",
+          "deleteFailed": "Failed to delete",
+          "archiveFailed": "Failed to archive",
+          "restoreFailed": "Failed to restore",
+          "disableFailed": "Failed to disable",
+          "enableFailed": "Failed to enable",
+          "updateUserFailed": "Failed to update user",
+          "resetPasswordFailed": "Failed to reset password"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "userRole": { "ADMIN": "مدير", "EMPLOYEE": "موظف", "CLIENT": "عميل", "LEAD": "عميل محتمل" },
+      "users": {
+        "countActive": "{{count}} نشط",
+        "countArchived": "{{count}} مؤرشف",
+        "badges": { "you": "أنت", "archived": "مؤرشف", "disabled": "معطّل" },
+        "tabs": { "active": "المستخدمون النشطون", "archive": "الأرشيف" },
+        "menu": {
+          "restore": "استعادة من الأرشيف",
+          "edit": "تعديل المستخدم",
+          "resetPassword": "إعادة تعيين كلمة المرور",
+          "changeRole": "تغيير الدور",
+          "promote": "ترقية إلى عميل",
+          "reassign": "إعادة تعيين الملكية",
+          "enable": "تفعيل الحساب",
+          "disable": "تعطيل الحساب",
+          "deleteArchive": "حذف / أرشفة"
+        },
+        "archiveBanner": {
+          "title": "عرض الأرشيف",
+          "body": "لا يمكن للمستخدمين المؤرشفين تسجيل الدخول، لكن جميع سجلاتهم — الفواتير والمشاريع والعملاء والمحادثات — محفوظة بالكامل. استخدم \"استعادة من الأرشيف\" لإعادة تفعيل الحساب."
+        },
+        "loadError": "فشل تحميل المستخدمين. حاول التحديث.",
+        "emptyArchived": "لا يوجد مستخدمون مؤرشفون",
+        "emptyArchivedHint": "سيظهر المستخدمون المؤرشفون هنا.",
+        "paginationUsers": "{{total}} مستخدم · صفحة {{page}} من {{pages}}",
+        "form": {
+          "emailPlaceholder": "user@example.com",
+          "namePlaceholder": "جين سميث",
+          "newRole": "الدور الجديد",
+          "cancel": "إلغاء",
+          "saveChanges": "حفظ التغييرات"
+        },
+        "changeRole": {
+          "description": "تغيير دور {{name}} ({{email}})",
+          "adminWarning": "⚠ لا يمكن تغيير دور المدير عبر هذه الطريقة. يُسمح فقط بإعادة تأكيد الدور نفسه."
+        },
+        "promote": {
+          "question": "ترقية {{name}} من عميل محتمل إلى عميل؟",
+          "description": "سيمنح هذا الإجراء المستخدم صلاحية الوصول إلى لوحة التحكم بمستوى عميل."
+        },
+        "reassign": {
+          "description": "إعادة تعيين جميع سجلات ERP المملوكة حالياً لـ {{name}} إلى موظف آخر بشكل جماعي.",
+          "targetLabel": "المالك الجديد (معرّف الموظف UUID)",
+          "targetPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "targetHint": "يجب أن يكون المستخدم المستهدف بدور موظف."
+        },
+        "editTitle": "تعديل المستخدم",
+        "resetPassword": {
+          "title": "إعادة تعيين كلمة المرور",
+          "description": "قم بتعيين كلمة مرور جديدة لـ {{name}}.",
+          "newPassword": "كلمة المرور الجديدة",
+          "newPasswordPlaceholder": "8 أحرف على الأقل · حرف كبير + صغير + رقم",
+          "confirmPassword": "تأكيد كلمة المرور",
+          "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور الجديدة",
+          "resetting": "جارٍ إعادة التعيين…",
+          "submit": "إعادة تعيين كلمة المرور"
+        },
+        "removeTitle": "إزالة المستخدم",
+        "removeChoice": "اختر ما تريد فعله بـ {{name}} ({{email}}):",
+        "archiveOption": {
+          "title": "أرشفة المستخدم",
+          "archiving": "جارٍ الأرشفة…",
+          "body": "يُخفي المستخدم من القوائم النشطة ويمنع تسجيل دخوله.",
+          "bodyEmphasis": " تُحفظ جميع السجلات — الفواتير والمشاريع والعملاء والمحادثات تبقى متاحة بالكامل في عرض الأرشيف.",
+          "tags": "✓ السجلات محفوظة  ✓ قابل للتراجع  ✓ الدخول ممنوع"
+        },
+        "deleteOption": {
+          "title": "حذف نهائي",
+          "deleting": "جارٍ الحذف…",
+          "body": "يزيل المستخدم نهائياً من قاعدة البيانات.",
+          "bodyEmphasis": " لا يمكن التراجع عن هذا. ستُحذف أيضاً جميع السجلات المرتبطة (الفواتير والمشاريع والمحادثات).",
+          "tags": "✗ السجلات مفقودة  ✗ غير قابل للتراجع"
+        },
+        "errors": {
+          "createFailed": "فشل إنشاء المستخدم",
+          "updateRoleFailed": "فشل تحديث الدور",
+          "promoteFailed": "فشلت الترقية",
+          "reassignFailed": "فشلت إعادة التعيين",
+          "deleteFailed": "فشل الحذف",
+          "archiveFailed": "فشلت الأرشفة",
+          "restoreFailed": "فشلت الاستعادة",
+          "disableFailed": "فشل التعطيل",
+          "enableFailed": "فشل التفعيل",
+          "updateUserFailed": "فشل تحديث المستخدم",
+          "resetPasswordFailed": "فشل إعادة تعيين كلمة المرور"
+        }
+      }
+    }
+  }
+}

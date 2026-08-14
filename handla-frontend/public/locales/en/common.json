@@ -489,7 +489,12 @@
         "name": "Full Name",
         "password": "Temporary Password",
         "passwordHint": "Min 8 chars, upper + lower + digit",
-        "role": "Role"
+        "role": "Role",
+        "emailPlaceholder": "user@example.com",
+        "namePlaceholder": "Jane Smith",
+        "newRole": "New Role",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
       },
       "empty": {
         "title": "No users found",
@@ -498,6 +503,90 @@
       },
       "pagination": {
         "pageOf": "Page {{page}} of {{pages}} — {{total}} users"
+      },
+      "countActive": "{{count}} active",
+      "countArchived": "{{count}} archived",
+      "badges": {
+        "you": "You",
+        "archived": "Archived",
+        "disabled": "Disabled"
+      },
+      "tabs": {
+        "active": "Active Users",
+        "archive": "Archive"
+      },
+      "menu": {
+        "restore": "Restore from Archive",
+        "edit": "Edit User",
+        "resetPassword": "Reset Password",
+        "changeRole": "Change Role",
+        "promote": "Promote to Client",
+        "reassign": "Reassign Ownership",
+        "enable": "Enable Account",
+        "disable": "Disable Account",
+        "deleteArchive": "Delete / Archive"
+      },
+      "archiveBanner": {
+        "title": "Archive View",
+        "body": "Archived users cannot log in but all their records — invoices, projects, clients, conversations — are fully preserved. Use \"Restore from Archive\" to re-activate an account."
+      },
+      "loadError": "Failed to load users. Try refreshing.",
+      "emptyArchived": "No archived users",
+      "emptyArchivedHint": "Archived users will appear here.",
+      "paginationUsers": "{{total}} users · page {{page}} of {{pages}}",
+      "changeRole": {
+        "description": "Changing role for {{name}} ({{email}})",
+        "adminWarning": "⚠ ADMIN role cannot be changed via this endpoint. Only same-role re-affirmation is allowed."
+      },
+      "promote": {
+        "question": "Promote {{name}} from Lead to Client?",
+        "description": "This action will grant the user CLIENT-level access to the dashboard."
+      },
+      "reassign": {
+        "description": "Bulk-reassign all ERP records currently owned by {{name}} to another employee.",
+        "targetLabel": "New Owner (Employee UUID)",
+        "targetPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "targetHint": "Target user must have EMPLOYEE role."
+      },
+      "editTitle": "Edit User",
+      "resetPassword": {
+        "title": "Reset Password",
+        "description": "Set a new password for {{name}}.",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Min 8 chars · upper + lower + digit",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordPlaceholder": "Repeat the new password",
+        "resetting": "Resetting…",
+        "submit": "Reset Password"
+      },
+      "removeTitle": "Remove User",
+      "removeChoice": "Choose what to do with {{name}} ({{email}}):",
+      "archiveOption": {
+        "title": "Archive User",
+        "archiving": "Archiving…",
+        "body": "Hides the user from active lists and blocks their login.",
+        "bodyEmphasis": " All records are preserved — invoices, projects, clients, conversations remain fully accessible in the Archive view.",
+        "tags": "✓ Records kept  ✓ Reversible  ✓ Login blocked"
+      },
+      "deleteOption": {
+        "title": "Delete Permanently",
+        "deleting": "Deleting…",
+        "body": "Completely removes the user from the database.",
+        "bodyEmphasis": " This cannot be undone. All linked records (invoices, projects, conversations) will also be removed.",
+        "tags": "✗ Records lost  ✗ Irreversible"
+      },
+      "errors": {
+        "createFailed": "Failed to create user",
+        "updateRoleFailed": "Failed to update role",
+        "promoteFailed": "Failed to promote",
+        "reassignFailed": "Failed to reassign",
+        "deleteFailed": "Failed to delete",
+        "archiveFailed": "Failed to archive",
+        "restoreFailed": "Failed to restore",
+        "disableFailed": "Failed to disable",
+        "enableFailed": "Failed to enable",
+        "updateUserFailed": "Failed to update user",
+        "resetPasswordFailed": "Failed to reset password"
       }
     },
     "clients": {
@@ -1548,6 +1637,12 @@
         "ssl": "SSL Certificate Included",
         "deployment": "Deployment Included"
       }
+    },
+    "userRole": {
+      "ADMIN": "Admin",
+      "EMPLOYEE": "Employee",
+      "CLIENT": "Client",
+      "LEAD": "Lead"
     }
   },
   "footer": {

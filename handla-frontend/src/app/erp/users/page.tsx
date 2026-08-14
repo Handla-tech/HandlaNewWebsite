@@ -55,6 +55,7 @@ import {
   Edit2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { usersApi } from '@/lib/api';
 import { cn, getInitials, getAvatarColor } from '@/lib/utils';
 import type { User } from '@/types';
@@ -72,12 +73,12 @@ interface PaginatedUsers {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLE_FILTERS: { label: string; value: UserRole | 'ALL' }[] = [
-  { label: 'All',      value: 'ALL'      },
-  { label: 'Admin',    value: 'ADMIN'    },
-  { label: 'Employee', value: 'EMPLOYEE' },
-  { label: 'Client',   value: 'CLIENT'   },
-  { label: 'Lead',     value: 'LEAD'     },
+const ROLE_FILTERS: { labelKey: string; value: UserRole | 'ALL' }[] = [
+  { labelKey: 'erp.users.filters.all',      value: 'ALL'      },
+  { labelKey: 'erp.users.filters.admin',    value: 'ADMIN'    },
+  { labelKey: 'erp.users.filters.employee', value: 'EMPLOYEE' },
+  { labelKey: 'erp.users.filters.client',   value: 'CLIENT'   },
+  { labelKey: 'erp.users.filters.lead',     value: 'LEAD'     },
 ];
 
 const ROLE_BADGE: Record<UserRole, string> = {
@@ -181,6 +182,7 @@ function FieldError({ msg }: { msg?: string }) {
 
 /** Role badge pill */
 function RoleBadge({ role }: { role: UserRole }) {
+  const { t } = useTranslation();
   const Icon = ROLE_ICONS[role];
   return (
     <span
@@ -190,7 +192,7 @@ function RoleBadge({ role }: { role: UserRole }) {
       )}
     >
       <Icon className="h-2.5 w-2.5" />
-      {role}
+      {t(`erp.userRole.${role}`)}
     </span>
   );
 }
@@ -433,6 +435,7 @@ function StatCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const router            = useRouter();
   const { user: me, isAdmin, isLoading: authLoading } = useAuth();
   const qc                = useQueryClient();
@@ -506,57 +509,57 @@ export default function UsersPage() {
   const createMut = useMutation({
     mutationFn: (data: CreateUserForm) => usersApi.createUser(data),
     onSuccess:  () => { invalidate(); setCreateOpen(false); createForm.reset(); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to create user'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.createFailed')),
   });
 
   const changeRoleMut = useMutation({
     mutationFn: ({ id, role }: { id: string; role: UserRole }) =>
       usersApi.updateRole(id, { role }),
     onSuccess:  () => { invalidate(); setChangeRoleUser(null); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to update role'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.updateRoleFailed')),
   });
 
   const promoteMut = useMutation({
     mutationFn: (leadId: string) => usersApi.promoteLead(leadId),
     onSuccess:  () => { invalidate(); setPromoteUser(null); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to promote'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.promoteFailed')),
   });
 
   const reassignMut = useMutation({
     mutationFn: ({ fromId, toId }: { fromId: string; toId: string }) =>
       usersApi.reassignOwnership(fromId, toId),
     onSuccess:  () => { invalidate(); setReassignUser(null); setToEmployeeId(''); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to reassign'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.reassignFailed')),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => usersApi.deleteUser(id),
     onSuccess:  () => { invalidate(); setDeleteOrArchUser(null); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to delete'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.deleteFailed')),
   });
 
   const archiveMut = useMutation({
     mutationFn: (id: string) => usersApi.archiveUser(id),
     onSuccess:  () => { invalidate(); setDeleteOrArchUser(null); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to archive'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.archiveFailed')),
   });
 
   const unarchiveMut = useMutation({
     mutationFn: (id: string) => usersApi.unarchiveUser(id),
     onSuccess:  () => { invalidate(); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to restore'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.restoreFailed')),
   });
 
   const disableMut = useMutation({
     mutationFn: (id: string) => usersApi.disableUser(id),
     onSuccess:  () => { invalidate(); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to disable'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.disableFailed')),
   });
 
   const enableMut = useMutation({
     mutationFn: (id: string) => usersApi.enableUser(id),
     onSuccess:  () => { invalidate(); },
-    onError:    (e: any) => setApiError(e.response?.data?.message ?? 'Failed to enable'),
+    onError:    (e: any) => setApiError(e.response?.data?.message ?? t('erp.users.errors.enableFailed')),
   });
 
   const editUserMut = useMutation({
@@ -565,7 +568,7 @@ export default function UsersPage() {
     onSuccess: () => { invalidate(); setEditUser(null); editUserForm.reset(); },
     onError:   (e: any) => {
       const msg = e?.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Failed to update user'));
+      setApiError(Array.isArray(msg) ? msg.join(', ') : (msg ?? t('erp.users.errors.updateUserFailed')));
     },
   });
 
@@ -575,7 +578,7 @@ export default function UsersPage() {
     onSuccess: () => { setResetPassUser(null); resetPassForm.reset(); },
     onError:   (e: any) => {
       const msg = e?.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Failed to reset password'));
+      setApiError(Array.isArray(msg) ? msg.join(', ') : (msg ?? t('erp.users.errors.resetPasswordFailed')));
     },
   });
 
@@ -651,13 +654,13 @@ export default function UsersPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
                 <Users className="h-4 w-4 text-[#fbbf24]" />
               </span>
-              <h1 className="text-base font-semibold text-white">Users</h1>
+              <h1 className="text-base font-semibold text-white">{t('erp.users.title')}</h1>
               <span className="rounded-full border border-[#fbbf24]/20 bg-[#fbbf24]/5 px-2 py-0.5 text-[10px] text-[#fbbf24]">
-                {total} {isArchiveView ? 'archived' : 'active'}
+                {isArchiveView ? t('erp.users.countArchived', { count: total }) : t('erp.users.countActive', { count: total })}
               </span>
             </div>
             <p className="mt-0.5 text-xs text-[#555]">
-              Create, manage, and assign roles to system users.
+              {t('erp.users.subtitle')}
             </p>
           </div>
           {!isArchiveView && (
@@ -667,17 +670,17 @@ export default function UsersPage() {
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-2 text-xs font-medium text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20"
             >
               <Plus className="h-3.5 w-3.5" />
-              New User
+              {t('erp.users.newUser')}
             </button>
           )}
         </div>
 
         {/* Stats grid */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatCard label="Admins"    value={adminQ.data?.total    ?? 0} role="ADMIN"    />
-          <StatCard label="Employees" value={employeeQ.data?.total ?? 0} role="EMPLOYEE" />
-          <StatCard label="Clients"   value={clientQ.data?.total   ?? 0} role="CLIENT"   />
-          <StatCard label="Leads"     value={leadQ.data?.total     ?? 0} role="LEAD"     />
+          <StatCard label={t('erp.users.stats.admins')}    value={adminQ.data?.total    ?? 0} role="ADMIN"    />
+          <StatCard label={t('erp.users.stats.employees')} value={employeeQ.data?.total ?? 0} role="EMPLOYEE" />
+          <StatCard label={t('erp.users.stats.clients')}   value={clientQ.data?.total   ?? 0} role="CLIENT"   />
+          <StatCard label={t('erp.users.stats.leads')}     value={leadQ.data?.total     ?? 0} role="LEAD"     />
         </div>
       </div>
 
@@ -695,7 +698,7 @@ export default function UsersPage() {
             )}
           >
             <span className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" /> Active Users
+              <Users className="h-3.5 w-3.5" /> {t('erp.users.tabs.active')}
             </span>
           </button>
           <button
@@ -709,7 +712,7 @@ export default function UsersPage() {
             )}
           >
             <span className="flex items-center gap-1.5">
-              <Archive className="h-3.5 w-3.5" /> Archive
+              <Archive className="h-3.5 w-3.5" /> {t('erp.users.tabs.archive')}
             </span>
           </button>
         </div>
@@ -723,7 +726,7 @@ export default function UsersPage() {
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#444]" />
             <input
               type="text"
-              placeholder="Search name or email…"
+              placeholder={t('erp.users.searchPlaceholder')}
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               className="h-9 w-full rounded-xl border border-[#1e1e1e] bg-[#141414] pl-9 pr-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
@@ -744,7 +747,7 @@ export default function UsersPage() {
                     : 'border border-[#1e1e1e] bg-[#141414] text-[#666] hover:text-white',
                 )}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             ))}
           </div>
@@ -758,9 +761,9 @@ export default function UsersPage() {
           <div className="mb-4 flex items-start gap-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
             <Archive className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-400" />
             <div>
-              <p className="text-xs font-semibold text-orange-300">Archive View</p>
+              <p className="text-xs font-semibold text-orange-300">{t('erp.users.archiveBanner.title')}</p>
               <p className="mt-0.5 text-[11px] text-[#666]">
-                Archived users cannot log in but all their records — invoices, projects, clients, conversations — are fully preserved. Use &ldquo;Restore from Archive&rdquo; to re-activate an account.
+                {t('erp.users.archiveBanner.body')}
               </p>
             </div>
           </div>
@@ -773,7 +776,7 @@ export default function UsersPage() {
         ) : isError ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <AlertTriangle className="h-8 w-8 text-red-400" />
-            <p className="text-sm text-[#666]">Failed to load users. Try refreshing.</p>
+            <p className="text-sm text-[#666]">{t('erp.users.loadError')}</p>
           </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -783,14 +786,14 @@ export default function UsersPage() {
               <Users className="h-8 w-8 text-[#333]" />
             )}
             <p className="text-sm font-medium text-[#555]">
-              {isArchiveView ? 'No archived users' : 'No users found'}
+              {isArchiveView ? t('erp.users.emptyArchived') : t('erp.users.empty.title')}
             </p>
             <p className="text-xs text-[#333]">
               {isArchiveView
-                ? 'Archived users will appear here.'
+                ? t('erp.users.emptyArchivedHint')
                 : search || roleFilter !== 'ALL'
-                  ? 'Try adjusting your filters.'
-                  : 'Create your first user to get started.'}
+                  ? t('erp.users.empty.withFilters')
+                  : t('erp.users.empty.noUsers')}
             </p>
           </div>
         ) : (
@@ -821,7 +824,7 @@ export default function UsersPage() {
         <div className="flex-shrink-0 border-t border-white/[0.06] bg-[#0c0c0c] px-6 py-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-[#555]">
-              {total} users · page {page} of {pages}
+              {t('erp.users.paginationUsers', { total, page, pages })}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -867,7 +870,7 @@ export default function UsersPage() {
       ══════════════════════════════════════════════════════════════════════ */}
 
       {/* ─── Create User Modal ───────────────────────────────────────────── */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create New User">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={t('erp.users.modals.createTitle')}>
         <form
           onSubmit={createForm.handleSubmit(data => {
             setApiError('');
@@ -877,11 +880,11 @@ export default function UsersPage() {
         >
           {/* Email */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Email</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.email')}</label>
             <input
               {...createForm.register('email')}
               type="email"
-              placeholder="user@example.com"
+              placeholder={t('erp.users.form.emailPlaceholder')}
               className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
             />
             <FieldError msg={createForm.formState.errors.email?.message} />
@@ -889,10 +892,10 @@ export default function UsersPage() {
 
           {/* Name */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Full Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.name')}</label>
             <input
               {...createForm.register('name')}
-              placeholder="Jane Smith"
+              placeholder={t('erp.users.form.namePlaceholder')}
               className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
             />
             <FieldError msg={createForm.formState.errors.name?.message} />
@@ -901,12 +904,12 @@ export default function UsersPage() {
           {/* Password */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[#aaa]">
-              Temporary Password
+              {t('erp.users.form.password')}
             </label>
             <input
               {...createForm.register('password')}
               type="password"
-              placeholder="Min 8 chars, upper + lower + digit"
+              placeholder={t('erp.users.form.passwordHint')}
               className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
             />
             <FieldError msg={createForm.formState.errors.password?.message} />
@@ -914,13 +917,13 @@ export default function UsersPage() {
 
           {/* Role */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Role</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.role')}</label>
             <select
               {...createForm.register('role')}
               className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white focus:border-[#fbbf24]/40 focus:outline-none"
             >
               {(['ADMIN', 'EMPLOYEE', 'CLIENT', 'LEAD'] as UserRole[]).map(r => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>{t(`erp.userRole.${r}`)}</option>
               ))}
             </select>
             <FieldError msg={createForm.formState.errors.role?.message} />
@@ -939,14 +942,14 @@ export default function UsersPage() {
               onClick={() => setCreateOpen(false)}
               className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white"
             >
-              Cancel
+              {t('erp.users.form.cancel')}
             </button>
             <button
               type="submit"
               disabled={createMut.isPending}
               className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-medium text-[#fbbf24] hover:bg-[#fbbf24]/20 disabled:opacity-60"
             >
-              {createMut.isPending ? 'Creating…' : 'Create User'}
+              {createMut.isPending ? t('erp.users.modals.creating') : t('erp.users.modals.createSubmit')}
             </button>
           </div>
         </form>
@@ -956,7 +959,7 @@ export default function UsersPage() {
       <Modal
         open={!!changeRoleUser}
         onClose={() => setChangeRoleUser(null)}
-        title="Change Role"
+        title={t('erp.users.modals.changeRoleTitle')}
       >
         {changeRoleUser && (
           <form
@@ -967,24 +970,22 @@ export default function UsersPage() {
             className="space-y-4"
           >
             <p className="text-xs text-[#666]">
-              Changing role for{' '}
-              <span className="font-semibold text-white">{changeRoleUser.name}</span>
-              {' '}({changeRoleUser.email})
+              {t('erp.users.changeRole.description', { name: changeRoleUser.name, email: changeRoleUser.email })}
             </p>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">New Role</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.newRole')}</label>
               <select
                 {...changeRoleForm.register('role')}
                 className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white focus:border-[#fbbf24]/40 focus:outline-none"
               >
                 {(['ADMIN', 'EMPLOYEE', 'CLIENT', 'LEAD'] as UserRole[]).map(r => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>{t(`erp.userRole.${r}`)}</option>
                 ))}
               </select>
             </div>
             {changeRoleUser.role === 'ADMIN' && (
               <p className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-[11px] text-yellow-400">
-                ⚠ ADMIN role cannot be changed via this endpoint. Only same-role re-affirmation is allowed.
+                {t('erp.users.changeRole.adminWarning')}
               </p>
             )}
             {apiError && (
@@ -994,10 +995,10 @@ export default function UsersPage() {
             )}
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setChangeRoleUser(null)} className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white">
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
               <button type="submit" disabled={changeRoleMut.isPending} className="rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-medium text-[#fbbf24] hover:bg-[#fbbf24]/20 disabled:opacity-60">
-                {changeRoleMut.isPending ? 'Saving…' : 'Update Role'}
+                {changeRoleMut.isPending ? t('erp.users.modals.saving') : t('erp.users.modals.changeRoleSubmit')}
               </button>
             </div>
           </form>
@@ -1008,17 +1009,15 @@ export default function UsersPage() {
       <Modal
         open={!!promoteUser}
         onClose={() => setPromoteUser(null)}
-        title="Promote Lead to Client"
+        title={t('erp.users.modals.promoteTitle')}
       >
         {promoteUser && (
           <div className="space-y-4">
-            <p className="text-xs text-[#666]">
-              Promote{' '}
-              <span className="font-semibold text-white">{promoteUser.name}</span>
-              {' '}from <RoleBadge role="LEAD" /> to <RoleBadge role="CLIENT" />?
+            <p className="flex flex-wrap items-center gap-1.5 text-xs text-[#666]">
+              {t('erp.users.promote.question', { name: promoteUser.name })}
             </p>
             <p className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2 text-[11px] text-purple-300">
-              This action will grant the user CLIENT-level access to the dashboard.
+              {t('erp.users.promote.description')}
             </p>
             {apiError && (
               <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
@@ -1027,7 +1026,7 @@ export default function UsersPage() {
             )}
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setPromoteUser(null)} className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white">
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
               <button
                 type="button"
@@ -1035,7 +1034,7 @@ export default function UsersPage() {
                 onClick={() => { setApiError(''); promoteMut.mutate(promoteUser.id); }}
                 className="rounded-xl border border-purple-400/30 bg-purple-400/10 px-4 py-2 text-xs font-medium text-purple-400 hover:bg-purple-400/20 disabled:opacity-60"
               >
-                {promoteMut.isPending ? 'Promoting…' : 'Promote to Client'}
+                {promoteMut.isPending ? t('erp.users.modals.promoting') : t('erp.users.modals.promoteSubmit')}
               </button>
             </div>
           </div>
@@ -1046,28 +1045,26 @@ export default function UsersPage() {
       <Modal
         open={!!reassignUser}
         onClose={() => { setReassignUser(null); setToEmployeeId(''); }}
-        title="Reassign Ownership"
+        title={t('erp.users.modals.reassignTitle')}
       >
         {reassignUser && (
           <div className="space-y-4">
             <p className="text-xs text-[#666]">
-              Bulk-reassign all ERP records currently owned by{' '}
-              <span className="font-semibold text-white">{reassignUser.name}</span>
-              {' '}to another employee.
+              {t('erp.users.reassign.description', { name: reassignUser.name })}
             </p>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-[#aaa]">
-                New Owner (Employee UUID)
+                {t('erp.users.reassign.targetLabel')}
               </label>
               <input
                 type="text"
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                placeholder={t('erp.users.reassign.targetPlaceholder')}
                 value={toEmployeeId}
                 onChange={e => setToEmployeeId(e.target.value)}
                 className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
               />
               <p className="mt-1 text-[10px] text-[#444]">
-                Target user must have EMPLOYEE role.
+                {t('erp.users.reassign.targetHint')}
               </p>
             </div>
             {apiError && (
@@ -1077,7 +1074,7 @@ export default function UsersPage() {
             )}
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => { setReassignUser(null); setToEmployeeId(''); }} className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white">
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
               <button
                 type="button"
@@ -1088,7 +1085,7 @@ export default function UsersPage() {
                 }}
                 className="rounded-xl border border-blue-400/30 bg-blue-400/10 px-4 py-2 text-xs font-medium text-blue-400 hover:bg-blue-400/20 disabled:opacity-60"
               >
-                {reassignMut.isPending ? 'Reassigning…' : 'Reassign'}
+                {reassignMut.isPending ? t('erp.users.modals.reassigning') : t('erp.users.modals.reassignSubmit')}
               </button>
             </div>
           </div>
@@ -1096,7 +1093,7 @@ export default function UsersPage() {
       </Modal>
 
       {/* ─── Edit User Modal ──────────────────────────────────────────── */}
-      <Modal open={!!editUser} onClose={() => setEditUser(null)} title="Edit User">
+      <Modal open={!!editUser} onClose={() => setEditUser(null)} title={t('erp.users.editTitle')}>
         {editUser && (
           <form
             onSubmit={editUserForm.handleSubmit(data => {
@@ -1106,7 +1103,7 @@ export default function UsersPage() {
             className="space-y-4"
           >
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Full Name</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.name')}</label>
               <input
                 {...editUserForm.register('name')}
                 className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
@@ -1114,7 +1111,7 @@ export default function UsersPage() {
               <FieldError msg={editUserForm.formState.errors.name?.message} />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Email</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.form.email')}</label>
               <input
                 {...editUserForm.register('email')}
                 type="email"
@@ -1128,11 +1125,11 @@ export default function UsersPage() {
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setEditUser(null)}
                 className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white">
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
               <button type="submit" disabled={editUserMut.isPending}
                 className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-medium text-[#fbbf24] hover:bg-[#fbbf24]/20 disabled:opacity-60">
-                {editUserMut.isPending ? 'Saving…' : 'Save Changes'}
+                {editUserMut.isPending ? t('erp.users.modals.saving') : t('erp.users.form.saveChanges')}
               </button>
             </div>
           </form>
@@ -1140,7 +1137,7 @@ export default function UsersPage() {
       </Modal>
 
       {/* ─── Reset Password Modal ────────────────────────────────────────── */}
-      <Modal open={!!resetPassUser} onClose={() => setResetPassUser(null)} title="Reset Password">
+      <Modal open={!!resetPassUser} onClose={() => setResetPassUser(null)} title={t('erp.users.resetPassword.title')}>
         {resetPassUser && (
           <form
             onSubmit={resetPassForm.handleSubmit(data => {
@@ -1150,24 +1147,24 @@ export default function UsersPage() {
             className="space-y-4"
           >
             <p className="text-xs text-[#666]">
-              Set a new password for <span className="font-semibold text-white">{resetPassUser.name}</span>.
+              {t('erp.users.resetPassword.description', { name: resetPassUser.name })}
             </p>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">New Password</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.resetPassword.newPassword')}</label>
               <input
                 {...resetPassForm.register('newPassword')}
                 type="password"
-                placeholder="Min 8 chars · upper + lower + digit"
+                placeholder={t('erp.users.resetPassword.newPasswordPlaceholder')}
                 className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
               />
               <FieldError msg={resetPassForm.formState.errors.newPassword?.message} />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">Confirm Password</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#aaa]">{t('erp.users.resetPassword.confirmPassword')}</label>
               <input
                 {...resetPassForm.register('confirmPassword')}
                 type="password"
-                placeholder="Repeat the new password"
+                placeholder={t('erp.users.resetPassword.confirmPasswordPlaceholder')}
                 className="h-9 w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] px-3 text-xs text-white placeholder-[#444] focus:border-[#fbbf24]/40 focus:outline-none"
               />
               <FieldError msg={resetPassForm.formState.errors.confirmPassword?.message} />
@@ -1178,12 +1175,12 @@ export default function UsersPage() {
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={() => setResetPassUser(null)}
                 className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white">
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
               <button type="submit" disabled={resetPassMut.isPending}
                 className="flex items-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-4 py-2 text-xs font-medium text-[#fbbf24] hover:bg-[#fbbf24]/20 disabled:opacity-60">
                 <KeyRound className="h-3.5 w-3.5" />
-                {resetPassMut.isPending ? 'Resetting…' : 'Reset Password'}
+                {resetPassMut.isPending ? t('erp.users.resetPassword.resetting') : t('erp.users.resetPassword.submit')}
               </button>
             </div>
           </form>
@@ -1194,15 +1191,13 @@ export default function UsersPage() {
       <Modal
         open={!!deleteOrArchUser}
         onClose={() => setDeleteOrArchUser(null)}
-        title="Remove User"
+        title={t('erp.users.removeTitle')}
         maxWidth="max-w-lg"
       >
         {deleteOrArchUser && (
           <div className="space-y-4">
             <p className="text-xs text-[#888]">
-              Choose what to do with{' '}
-              <span className="font-semibold text-white">{deleteOrArchUser.name}</span>
-              {' '}({deleteOrArchUser.email}):
+              {t('erp.users.removeChoice', { name: deleteOrArchUser.name, email: deleteOrArchUser.email })}
             </p>
 
             {/* Archive option */}
@@ -1218,16 +1213,14 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-orange-300">
-                    {archiveMut.isPending ? 'Archiving…' : 'Archive User'}
+                    {archiveMut.isPending ? t('erp.users.archiveOption.archiving') : t('erp.users.archiveOption.title')}
                   </p>
                   <p className="mt-1 text-[11px] leading-relaxed text-[#666]">
-                    Hides the user from active lists and blocks their login.
-                    <span className="text-[#888]"> All records are preserved — invoices,
-                    projects, clients, conversations remain fully accessible
-                    in the Archive view.</span>
+                    {t('erp.users.archiveOption.body')}
+                    <span className="text-[#888]">{t('erp.users.archiveOption.bodyEmphasis')}</span>
                   </p>
                   <p className="mt-1.5 text-[10px] font-medium text-orange-400/70">
-                    ✓ Records kept  ✓ Reversible  ✓ Login blocked
+                    {t('erp.users.archiveOption.tags')}
                   </p>
                 </div>
               </div>
@@ -1246,15 +1239,14 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-red-300">
-                    {deleteMut.isPending ? 'Deleting…' : 'Delete Permanently'}
+                    {deleteMut.isPending ? t('erp.users.deleteOption.deleting') : t('erp.users.deleteOption.title')}
                   </p>
                   <p className="mt-1 text-[11px] leading-relaxed text-[#666]">
-                    Completely removes the user from the database.
-                    <span className="text-red-400/70"> This cannot be undone. All linked records
-                    (invoices, projects, conversations) will also be removed.</span>
+                    {t('erp.users.deleteOption.body')}
+                    <span className="text-red-400/70">{t('erp.users.deleteOption.bodyEmphasis')}</span>
                   </p>
                   <p className="mt-1.5 text-[10px] font-medium text-red-400/70">
-                    ✗ Records lost  ✗ Irreversible
+                    {t('erp.users.deleteOption.tags')}
                   </p>
                 </div>
               </div>
@@ -1272,7 +1264,7 @@ export default function UsersPage() {
                 onClick={() => setDeleteOrArchUser(null)}
                 className="rounded-xl border border-[#2a2a2a] px-4 py-2 text-xs text-[#666] hover:text-white"
               >
-                Cancel
+                {t('erp.users.form.cancel')}
               </button>
             </div>
           </div>

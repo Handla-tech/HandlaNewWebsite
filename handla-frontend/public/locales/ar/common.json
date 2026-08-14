@@ -489,7 +489,12 @@
         "name": "الاسم الكامل",
         "password": "كلمة المرور المؤقتة",
         "passwordHint": "8 أحرف على الأقل، أحرف كبيرة وصغيرة وأرقام",
-        "role": "الدور"
+        "role": "الدور",
+        "emailPlaceholder": "user@example.com",
+        "namePlaceholder": "جين سميث",
+        "newRole": "الدور الجديد",
+        "cancel": "إلغاء",
+        "saveChanges": "حفظ التغييرات"
       },
       "empty": {
         "title": "لا يوجد مستخدمون",
@@ -498,6 +503,90 @@
       },
       "pagination": {
         "pageOf": "الصفحة {{page}} من {{pages}} — {{total}} مستخدم"
+      },
+      "countActive": "{{count}} نشط",
+      "countArchived": "{{count}} مؤرشف",
+      "badges": {
+        "you": "أنت",
+        "archived": "مؤرشف",
+        "disabled": "معطّل"
+      },
+      "tabs": {
+        "active": "المستخدمون النشطون",
+        "archive": "الأرشيف"
+      },
+      "menu": {
+        "restore": "استعادة من الأرشيف",
+        "edit": "تعديل المستخدم",
+        "resetPassword": "إعادة تعيين كلمة المرور",
+        "changeRole": "تغيير الدور",
+        "promote": "ترقية إلى عميل",
+        "reassign": "إعادة تعيين الملكية",
+        "enable": "تفعيل الحساب",
+        "disable": "تعطيل الحساب",
+        "deleteArchive": "حذف / أرشفة"
+      },
+      "archiveBanner": {
+        "title": "عرض الأرشيف",
+        "body": "لا يمكن للمستخدمين المؤرشفين تسجيل الدخول، لكن جميع سجلاتهم — الفواتير والمشاريع والعملاء والمحادثات — محفوظة بالكامل. استخدم \"استعادة من الأرشيف\" لإعادة تفعيل الحساب."
+      },
+      "loadError": "فشل تحميل المستخدمين. حاول التحديث.",
+      "emptyArchived": "لا يوجد مستخدمون مؤرشفون",
+      "emptyArchivedHint": "سيظهر المستخدمون المؤرشفون هنا.",
+      "paginationUsers": "{{total}} مستخدم · صفحة {{page}} من {{pages}}",
+      "changeRole": {
+        "description": "تغيير دور {{name}} ({{email}})",
+        "adminWarning": "⚠ لا يمكن تغيير دور المدير عبر هذه الطريقة. يُسمح فقط بإعادة تأكيد الدور نفسه."
+      },
+      "promote": {
+        "question": "ترقية {{name}} من عميل محتمل إلى عميل؟",
+        "description": "سيمنح هذا الإجراء المستخدم صلاحية الوصول إلى لوحة التحكم بمستوى عميل."
+      },
+      "reassign": {
+        "description": "إعادة تعيين جميع سجلات ERP المملوكة حالياً لـ {{name}} إلى موظف آخر بشكل جماعي.",
+        "targetLabel": "المالك الجديد (معرّف الموظف UUID)",
+        "targetPlaceholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "targetHint": "يجب أن يكون المستخدم المستهدف بدور موظف."
+      },
+      "editTitle": "تعديل المستخدم",
+      "resetPassword": {
+        "title": "إعادة تعيين كلمة المرور",
+        "description": "قم بتعيين كلمة مرور جديدة لـ {{name}}.",
+        "newPassword": "كلمة المرور الجديدة",
+        "newPasswordPlaceholder": "8 أحرف على الأقل · حرف كبير + صغير + رقم",
+        "confirmPassword": "تأكيد كلمة المرور",
+        "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور الجديدة",
+        "resetting": "جارٍ إعادة التعيين…",
+        "submit": "إعادة تعيين كلمة المرور"
+      },
+      "removeTitle": "إزالة المستخدم",
+      "removeChoice": "اختر ما تريد فعله بـ {{name}} ({{email}}):",
+      "archiveOption": {
+        "title": "أرشفة المستخدم",
+        "archiving": "جارٍ الأرشفة…",
+        "body": "يُخفي المستخدم من القوائم النشطة ويمنع تسجيل دخوله.",
+        "bodyEmphasis": " تُحفظ جميع السجلات — الفواتير والمشاريع والعملاء والمحادثات تبقى متاحة بالكامل في عرض الأرشيف.",
+        "tags": "✓ السجلات محفوظة  ✓ قابل للتراجع  ✓ الدخول ممنوع"
+      },
+      "deleteOption": {
+        "title": "حذف نهائي",
+        "deleting": "جارٍ الحذف…",
+        "body": "يزيل المستخدم نهائياً من قاعدة البيانات.",
+        "bodyEmphasis": " لا يمكن التراجع عن هذا. ستُحذف أيضاً جميع السجلات المرتبطة (الفواتير والمشاريع والمحادثات).",
+        "tags": "✗ السجلات مفقودة  ✗ غير قابل للتراجع"
+      },
+      "errors": {
+        "createFailed": "فشل إنشاء المستخدم",
+        "updateRoleFailed": "فشل تحديث الدور",
+        "promoteFailed": "فشلت الترقية",
+        "reassignFailed": "فشلت إعادة التعيين",
+        "deleteFailed": "فشل الحذف",
+        "archiveFailed": "فشلت الأرشفة",
+        "restoreFailed": "فشلت الاستعادة",
+        "disableFailed": "فشل التعطيل",
+        "enableFailed": "فشل التفعيل",
+        "updateUserFailed": "فشل تحديث المستخدم",
+        "resetPasswordFailed": "فشل إعادة تعيين كلمة المرور"
       }
     },
     "clients": {
@@ -1548,6 +1637,12 @@
         "ssl": "شهادة SSL مشمولة",
         "deployment": "النشر مشمول"
       }
+    },
+    "userRole": {
+      "ADMIN": "مدير",
+      "EMPLOYEE": "موظف",
+      "CLIENT": "عميل",
+      "LEAD": "عميل محتمل"
     }
   },
   "footer": {
