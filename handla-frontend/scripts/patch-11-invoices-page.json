@@ -1,0 +1,106 @@
+{
+  "en": {
+    "erp": {
+      "invoices": {
+        "title": "Invoices",
+        "subtitle": "Manage client invoices and payments",
+        "newInvoice": "New Invoice",
+        "searchPlaceholder": "Search invoice number...",
+        "empty": "No invoices found",
+        "emptyHintAdmin": "Create your first invoice to get started.",
+        "emptyHintClient": "No invoices have been issued yet.",
+        "revenueOnPage": "Paid revenue on this page:",
+        "pagination": { "summary": "{{total}} invoices · page {{page}} of {{pages}}" },
+        "modals": {
+          "create": {
+            "clientLabel": "Client *",
+            "clientLoading": "Loading clients…",
+            "clientNone": "No clients found",
+            "clientSelect": "Select client…",
+            "lineItemsLabel": "Line Items *",
+            "descriptionPlaceholder": "Description",
+            "qtyPlaceholder": "Qty",
+            "pricePlaceholder": "Price",
+            "lineTotalPrefix": "Line total:",
+            "taxRateLabel": "Tax Rate %",
+            "dueDateLabel": "Due Date",
+            "notesLabel": "Notes",
+            "notesPlaceholder": "Optional payment instructions...",
+            "subtotalLabel": "Subtotal",
+            "taxLabel": "Tax ({{rate}}%)",
+            "totalLabel": "Total",
+            "cancel": "Cancel",
+            "createFailed": "Failed to create invoice",
+            "selectClientError": "Select a client",
+            "lineItemRequired": "At least one line item required"
+          },
+          "markPaid": {
+            "subtitle": "Mark as Paid",
+            "confirm": "Confirm that this invoice has been paid in full?",
+            "cancel": "Cancel",
+            "confirmButton": "Confirm Paid",
+            "failed": "Failed to mark as paid"
+          },
+          "delete": {
+            "warning": "This action cannot be undone. Only UNPAID invoices can be deleted.",
+            "cancel": "Cancel",
+            "deleteButton": "Delete",
+            "failed": "Failed to delete invoice"
+          }
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "invoices": {
+        "title": "الفواتير",
+        "subtitle": "إدارة فواتير العملاء والمدفوعات",
+        "newInvoice": "فاتورة جديدة",
+        "searchPlaceholder": "ابحث برقم الفاتورة...",
+        "empty": "لا توجد فواتير",
+        "emptyHintAdmin": "أنشئ أول فاتورة للبدء.",
+        "emptyHintClient": "لم يتم إصدار أي فواتير بعد.",
+        "revenueOnPage": "الإيرادات المدفوعة في هذه الصفحة:",
+        "pagination": { "summary": "{{total}} فاتورة · صفحة {{page}} من {{pages}}" },
+        "modals": {
+          "create": {
+            "clientLabel": "العميل *",
+            "clientLoading": "جارٍ تحميل العملاء…",
+            "clientNone": "لا يوجد عملاء",
+            "clientSelect": "اختر عميلاً…",
+            "lineItemsLabel": "بنود الفاتورة *",
+            "descriptionPlaceholder": "الوصف",
+            "qtyPlaceholder": "الكمية",
+            "pricePlaceholder": "السعر",
+            "lineTotalPrefix": "إجمالي البند:",
+            "taxRateLabel": "نسبة الضريبة %",
+            "dueDateLabel": "تاريخ الاستحقاق",
+            "notesLabel": "ملاحظات",
+            "notesPlaceholder": "تعليمات دفع اختيارية...",
+            "subtotalLabel": "المجموع الفرعي",
+            "taxLabel": "الضريبة ({{rate}}%)",
+            "totalLabel": "الإجمالي",
+            "cancel": "إلغاء",
+            "createFailed": "فشل إنشاء الفاتورة",
+            "selectClientError": "اختر عميلاً",
+            "lineItemRequired": "مطلوب بند واحد على الأقل"
+          },
+          "markPaid": {
+            "subtitle": "تعليم كمدفوعة",
+            "confirm": "هل تؤكد أن هذه الفاتورة قد تم دفعها بالكامل؟",
+            "cancel": "إلغاء",
+            "confirmButton": "تأكيد الدفع",
+            "failed": "فشل تعليم الفاتورة كمدفوعة"
+          },
+          "delete": {
+            "warning": "لا يمكن التراجع عن هذا الإجراء. يمكن حذف الفواتير غير المدفوعة فقط.",
+            "cancel": "إلغاء",
+            "deleteButton": "حذف",
+            "failed": "فشل حذف الفاتورة"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1058,7 +1058,27 @@
           "addLineItem": "Add Line Item",
           "removeLineItem": "Remove",
           "lineItemsSection": "Line Items",
-          "totalsSection": "Totals Preview"
+          "totalsSection": "Totals Preview",
+          "clientLabel": "Client *",
+          "clientLoading": "Loading clients…",
+          "clientNone": "No clients found",
+          "clientSelect": "Select client…",
+          "lineItemsLabel": "Line Items *",
+          "descriptionPlaceholder": "Description",
+          "qtyPlaceholder": "Qty",
+          "pricePlaceholder": "Price",
+          "lineTotalPrefix": "Line total:",
+          "taxRateLabel": "Tax Rate %",
+          "dueDateLabel": "Due Date",
+          "notesLabel": "Notes",
+          "notesPlaceholder": "Optional payment instructions...",
+          "subtotalLabel": "Subtotal",
+          "taxLabel": "Tax ({{rate}}%)",
+          "totalLabel": "Total",
+          "cancel": "Cancel",
+          "createFailed": "Failed to create invoice",
+          "selectClientError": "Select a client",
+          "lineItemRequired": "At least one line item required"
         },
         "edit": {
           "title": "Edit Invoice",
@@ -1069,12 +1089,21 @@
           "title": "Mark Invoice as Paid",
           "message": "Confirm payment received for {{invoiceNumber}} ({{currency}} {{total}})?",
           "paidAtLabel": "Payment Date (optional)",
-          "submit": "Confirm Payment"
+          "submit": "Confirm Payment",
+          "subtitle": "Mark as Paid",
+          "confirm": "Confirm that this invoice has been paid in full?",
+          "cancel": "Cancel",
+          "confirmButton": "Confirm Paid",
+          "failed": "Failed to mark as paid"
         },
         "delete": {
           "title": "Delete Invoice",
           "message": "Permanently delete {{invoiceNumber}}? This action cannot be undone.",
-          "submit": "Delete Invoice"
+          "submit": "Delete Invoice",
+          "warning": "This action cannot be undone. Only UNPAID invoices can be deleted.",
+          "cancel": "Cancel",
+          "deleteButton": "Delete",
+          "failed": "Failed to delete invoice"
         }
       },
       "banners": {
@@ -1097,6 +1126,12 @@
       "dashboard": {
         "tab": "Invoices",
         "subtitle": "Your invoices — view payment status and history."
+      },
+      "emptyHintAdmin": "Create your first invoice to get started.",
+      "emptyHintClient": "No invoices have been issued yet.",
+      "revenueOnPage": "Paid revenue on this page:",
+      "pagination": {
+        "summary": "{{total}} invoices · page {{page}} of {{pages}}"
       }
     },
     "expenses": {

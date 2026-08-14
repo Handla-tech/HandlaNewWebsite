@@ -14,6 +14,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { invoicesApi, clientsApi } from '@/lib/api';
 import { Invoice, InvoicePaymentStatus, InvoiceLineItem, Client } from '@/types';
 import { cn } from '@/lib/utils';
@@ -25,10 +26,6 @@ const STATUS_BADGE: Record<InvoicePaymentStatus, string> = {
   PAID:    'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
   OVERDUE: 'border-red-500/30 bg-red-500/10 text-red-400',
 };
-const STATUS_LABEL: Record<InvoicePaymentStatus, string> = {
-  UNPAID: 'Unpaid', PAID: 'Paid', OVERDUE: 'Overdue',
-};
-
 // ─── Shared styles ─────────────────────────────────────────────────────────────
 
 const sharedInput = 'w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/20 focus:border-[#fbbf24]/50 focus:outline-none focus:bg-white/[0.06] transition-all text-sm';
@@ -63,6 +60,7 @@ function computeTotals(items: { quantity: number; unitPrice: number }[], taxRate
 function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
   clients: Client[]; clientsLoading: boolean; onClose: () => void; onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
     defaultValues: { lineItems: [{ description: '', quantity: 1, unitPrice: 0 }], taxRate: 0 },
@@ -83,7 +81,7 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
       });
       onSaved();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to create invoice');
+      setError(e?.response?.data?.message ?? t('erp.invoices.modals.create.createFailed'));
     } finally { setSubmitting(false); }
   };
 
@@ -92,8 +90,8 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
       <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
           <div>
-            <h2 className="text-base font-bold text-white">Create Invoice</h2>
-            <p className="text-xs text-white/30 mt-0.5">Generate a new client invoice</p>
+            <h2 className="text-base font-bold text-white">{t('erp.invoices.modals.create.title')}</h2>
+            <p className="text-xs text-white/30 mt-0.5">{t('erp.invoices.modals.create.subtitle')}</p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors"><X className="w-4 h-4" /></button>
         </div>
@@ -101,10 +99,10 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
           {error && <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Client *</label>
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.invoices.modals.create.clientLabel')}</label>
             <select {...register('clientId')} disabled={clientsLoading}
               className={cn(sharedInput, 'bg-[#0f0f0f]', clientsLoading && 'opacity-60 cursor-wait')}>
-              <option value="">{clientsLoading ? 'Loading clients…' : clients.length === 0 ? 'No clients found' : 'Select client…'}</option>
+              <option value="">{clientsLoading ? t('erp.invoices.modals.create.clientLoading') : clients.length === 0 ? t('erp.invoices.modals.create.clientNone') : t('erp.invoices.modals.create.clientSelect')}</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.user?.name ?? c.id}{c.company ? ` — ${c.company}` : ''}</option>)}
             </select>
             {errors.clientId && <p className="text-red-400 text-xs mt-1">{errors.clientId.message}</p>}
@@ -113,29 +111,29 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
           {/* Line items */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-white/50">Line Items *</label>
+              <label className="text-xs font-medium text-white/50">{t('erp.invoices.modals.create.lineItemsLabel')}</label>
               <button type="button" onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}
                 className="flex items-center gap-1.5 text-xs text-[#fbbf24] hover:text-[#f59e0b] transition-colors font-semibold">
-                <PlusCircle className="w-3.5 h-3.5" /> Add Item
+                <PlusCircle className="w-3.5 h-3.5" /> {t('erp.invoices.modals.create.addLineItem')}
               </button>
             </div>
             <div className="space-y-2">
               {fields.map((field, idx) => (
                 <div key={field.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <div className="grid grid-cols-12 gap-2 items-start">
-                    <input {...register(`lineItems.${idx}.description`)} placeholder="Description"
+                    <input {...register(`lineItems.${idx}.description`)} placeholder={t('erp.invoices.modals.create.descriptionPlaceholder')}
                       className={cn('col-span-6', sharedInput, 'py-2')} />
                     <input type="number" step="0.01" min="0.01" {...register(`lineItems.${idx}.quantity`, { valueAsNumber: true })}
-                      placeholder="Qty" className={cn('col-span-2', sharedInput, 'py-2 text-center')} />
+                      placeholder={t('erp.invoices.modals.create.qtyPlaceholder')} className={cn('col-span-2', sharedInput, 'py-2 text-center')} />
                     <input type="number" step="0.01" min="0" {...register(`lineItems.${idx}.unitPrice`, { valueAsNumber: true })}
-                      placeholder="Price" className={cn('col-span-3', sharedInput, 'py-2 text-right')} />
+                      placeholder={t('erp.invoices.modals.create.pricePlaceholder')} className={cn('col-span-3', sharedInput, 'py-2 text-right')} />
                     <button type="button" onClick={() => fields.length > 1 && remove(idx)}
                       className="col-span-1 flex h-9 w-9 items-center justify-center rounded-lg text-red-400 hover:bg-red-400/10 disabled:opacity-30 transition-colors" disabled={fields.length === 1}>
                       <MinusCircle className="w-4 h-4" />
                     </button>
                   </div>
                   <p className="text-right text-[11px] text-white/25 mt-1.5">
-                    Line total: ${((watchItems?.[idx]?.quantity ?? 0) * (watchItems?.[idx]?.unitPrice ?? 0)).toFixed(2)}
+                    {t('erp.invoices.modals.create.lineTotalPrefix')} ${((watchItems?.[idx]?.quantity ?? 0) * (watchItems?.[idx]?.unitPrice ?? 0)).toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -145,40 +143,40 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
           {/* Tax + due date + notes */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Tax Rate %</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.invoices.modals.create.taxRateLabel')}</label>
               <input type="number" step="0.01" min="0" max="100" {...register('taxRate', { valueAsNumber: true })} className={sharedInput} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5">Due Date</label>
+              <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.invoices.modals.create.dueDateLabel')}</label>
               <input type="date" {...register('dueDate')} className={sharedInput} />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Notes</label>
-            <textarea {...register('notes')} rows={2} placeholder="Optional payment instructions..." className={cn(sharedInput, 'resize-none')} />
+            <label className="block text-xs font-medium text-white/50 mb-1.5">{t('erp.invoices.modals.create.notesLabel')}</label>
+            <textarea {...register('notes')} rows={2} placeholder={t('erp.invoices.modals.create.notesPlaceholder')} className={cn(sharedInput, 'resize-none')} />
           </div>
 
           {/* Totals summary */}
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
             <div className="flex justify-between text-sm text-white/40">
-              <span>Subtotal</span><span>${totals.subtotal.toFixed(2)}</span>
+              <span>{t('erp.invoices.modals.create.subtotalLabel')}</span><span>${totals.subtotal.toFixed(2)}</span>
             </div>
             {watchTax > 0 && (
               <div className="flex justify-between text-sm text-white/40">
-                <span>Tax ({watchTax}%)</span><span>${totals.taxAmount.toFixed(2)}</span>
+                <span>{t('erp.invoices.modals.create.taxLabel', { rate: watchTax })}</span><span>${totals.taxAmount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-white border-t border-white/[0.08] pt-2">
-              <span>Total</span><span className="text-[#fbbf24] text-lg">${totals.total.toFixed(2)}</span>
+              <span>{t('erp.invoices.modals.create.totalLabel')}</span><span className="text-[#fbbf24] text-lg">${totals.total.toFixed(2)}</span>
             </div>
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">{t('erp.invoices.modals.create.cancel')}</button>
             <button type="submit" disabled={submitting}
               className="flex-1 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2">
-              {submitting && <Loader2 className="w-4 h-4 animate-spin" />} Create Invoice
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />} {t('erp.invoices.modals.create.submit')}
             </button>
           </div>
         </form>
@@ -190,13 +188,14 @@ function CreateInvoiceModal({ clients, clientsLoading, onClose, onSaved }: {
 // ─── MarkPaidModal ────────────────────────────────────────────────────────────
 
 function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
   const handleConfirm = async () => {
     setLoading(true); setError('');
     try { await invoicesApi.markInvoicePaid(invoice.id); onSaved(); }
-    catch (e: any) { setError(e?.response?.data?.message ?? 'Failed to mark as paid'); }
+    catch (e: any) { setError(e?.response?.data?.message ?? t('erp.invoices.modals.markPaid.failed')); }
     finally { setLoading(false); }
   };
 
@@ -208,17 +207,17 @@ function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClos
             <CreditCard className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Mark as Paid</h3>
+            <h3 className="text-base font-bold text-white">{t('erp.invoices.modals.markPaid.subtitle')}</h3>
             <p className="text-xs text-white/30">{invoice.invoiceNumber} — ${Number(invoice.total).toFixed(2)}</p>
           </div>
         </div>
-        <p className="text-sm text-white/60 mb-4">Confirm that this invoice has been paid in full?</p>
+        <p className="text-sm text-white/60 mb-4">{t('erp.invoices.modals.markPaid.confirm')}</p>
         {error && <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">{t('erp.invoices.modals.markPaid.cancel')}</button>
           <button onClick={handleConfirm} disabled={loading}
             className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2">
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />} Confirm Paid
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />} {t('erp.invoices.modals.markPaid.confirmButton')}
           </button>
         </div>
       </div>
@@ -229,13 +228,14 @@ function MarkPaidModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClos
 // ─── DeleteConfirmModal ────────────────────────────────────────────────────────
 
 function DeleteConfirmModal({ invoice, onClose, onSaved }: { invoice: Invoice; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
   const handleDelete = async () => {
     setLoading(true); setError('');
     try { await invoicesApi.deleteInvoice(invoice.id); onSaved(); }
-    catch (e: any) { setError(e?.response?.data?.message ?? 'Failed to delete invoice'); }
+    catch (e: any) { setError(e?.response?.data?.message ?? t('erp.invoices.modals.delete.failed')); }
     finally { setLoading(false); }
   };
 
@@ -247,17 +247,17 @@ function DeleteConfirmModal({ invoice, onClose, onSaved }: { invoice: Invoice; o
             <Trash2 className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Delete Invoice</h3>
+            <h3 className="text-base font-bold text-white">{t('erp.invoices.modals.delete.title')}</h3>
             <p className="text-xs text-white/30">{invoice.invoiceNumber}</p>
           </div>
         </div>
-        <p className="text-sm text-white/60 mb-4">This action cannot be undone. Only UNPAID invoices can be deleted.</p>
+        <p className="text-sm text-white/60 mb-4">{t('erp.invoices.modals.delete.warning')}</p>
         {error && <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white transition-colors text-sm">{t('erp.invoices.modals.delete.cancel')}</button>
           <button onClick={handleDelete} disabled={loading}
             className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors text-sm flex items-center justify-center gap-2">
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />} Delete
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />} {t('erp.invoices.modals.delete.deleteButton')}
           </button>
         </div>
       </div>
@@ -271,6 +271,7 @@ export default function InvoicesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const router = useRouter();
@@ -328,7 +329,7 @@ export default function InvoicesPage() {
   const columns: Column<Invoice>[] = [
     {
       key: 'invoice',
-      header: 'Invoice',
+      header: t('erp.invoices.fields.invoiceNumber'),
       cell: (inv) => (
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-[#fbbf24]/10 border border-[#fbbf24]/20 flex items-center justify-center flex-shrink-0">
@@ -346,7 +347,7 @@ export default function InvoicesPage() {
     },
     {
       key: 'due',
-      header: 'Due Date',
+      header: t('erp.invoices.fields.dueDate'),
       hideOnMobile: true,
       cell: (inv) => inv.dueDate
         ? <span className={cn('text-xs', inv.paymentStatus === 'OVERDUE' ? 'text-red-400' : 'text-white/40')}>{new Date(inv.dueDate).toLocaleDateString()}</span>
@@ -354,23 +355,23 @@ export default function InvoicesPage() {
     },
     {
       key: 'owner',
-      header: 'Owner',
+      header: t('erp.invoices.fields.owner'),
       hideOnMobile: true,
       cell: (inv) => <span className="text-white/50 text-xs">{inv.owner?.name ?? '—'}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('erp.ui.status'),
       align: 'center',
       cell: (inv) => (
         <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-semibold border inline-block', STATUS_BADGE[inv.paymentStatus])}>
-          {STATUS_LABEL[inv.paymentStatus]}
+          {t(`erp.invoiceStatus.${inv.paymentStatus}`)}
         </span>
       ),
     },
     {
       key: 'total',
-      header: 'Total',
+      header: t('erp.invoices.fields.total'),
       align: 'right',
       cell: (inv) => (
         <div className="text-right whitespace-nowrap">
@@ -382,9 +383,9 @@ export default function InvoicesPage() {
   ];
 
   const rowActions: RowAction<Invoice>[] = [
-    { label: 'Mark as Paid', icon: CreditCard, onClick: (inv) => setMarkPaidInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus !== 'PAID' },
-    { label: 'Edit', icon: Edit2, onClick: (inv) => setEditInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus === 'UNPAID' },
-    { label: 'Delete', icon: Trash2, danger: true, onClick: (inv) => setDeleteInvoice(inv), show: (inv) => isAdmin && inv.paymentStatus === 'UNPAID' },
+    { label: t('erp.invoices.actions.markPaid'), icon: CreditCard, onClick: (inv) => setMarkPaidInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus !== 'PAID' },
+    { label: t('erp.invoices.actions.edit'), icon: Edit2, onClick: (inv) => setEditInvoice(inv), show: (inv) => (isAdmin || isEmployee) && inv.paymentStatus === 'UNPAID' },
+    { label: t('erp.invoices.actions.delete'), icon: Trash2, danger: true, onClick: (inv) => setDeleteInvoice(inv), show: (inv) => isAdmin && inv.paymentStatus === 'UNPAID' },
   ];
 
   if (!mounted) return null;
@@ -398,14 +399,14 @@ export default function InvoicesPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/10 border border-[#fbbf24]/20">
               <Receipt className="w-4.5 h-4.5 text-[#fbbf24]" />
             </span>
-            Invoices
+            {t('erp.invoices.title')}
           </h1>
-          <p className="text-sm text-white/30 mt-1 ml-11">Manage client invoices and payments</p>
+          <p className="text-sm text-white/30 mt-1 ml-11">{t('erp.invoices.subtitle')}</p>
         </div>
         {(isAdmin || isEmployee) && (
           <button onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#fbbf24] text-black font-semibold hover:bg-[#f59e0b] transition-colors text-sm min-h-[44px]">
-            <Plus className="w-4 h-4" /> New Invoice
+            <Plus className="w-4 h-4" /> {t('erp.invoices.newInvoice')}
           </button>
         )}
       </div>
@@ -413,10 +414,10 @@ export default function InvoicesPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total',   value: total,   icon: Receipt,       color: 'text-white',        border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
-          { label: 'Unpaid',  value: unpaid,  icon: Clock,         color: 'text-amber-400',    border: 'border-amber-500/20',   bg: 'bg-amber-500/5'   },
-          { label: 'Paid',    value: paid,    icon: CheckCircle,   color: 'text-emerald-400',  border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
-          { label: 'Overdue', value: overdue, icon: AlertCircle,   color: 'text-red-400',      border: 'border-red-500/20',     bg: 'bg-red-500/5'     },
+          { label: t('erp.invoices.stats.total'),   value: total,   icon: Receipt,       color: 'text-white',        border: 'border-white/10',       bg: 'bg-white/[0.03]'  },
+          { label: t('erp.invoices.stats.unpaid'),  value: unpaid,  icon: Clock,         color: 'text-amber-400',    border: 'border-amber-500/20',   bg: 'bg-amber-500/5'   },
+          { label: t('erp.invoices.stats.paid'),    value: paid,    icon: CheckCircle,   color: 'text-emerald-400',  border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+          { label: t('erp.invoices.stats.overdue'), value: overdue, icon: AlertCircle,   color: 'text-red-400',      border: 'border-red-500/20',     bg: 'bg-red-500/5'     },
         ].map(s => (
           <div key={s.label} className={cn('p-4 rounded-2xl border', s.border, s.bg)}>
             <div className="flex items-center justify-between mb-2">
@@ -435,7 +436,7 @@ export default function InvoicesPage() {
             <DollarSign className="w-4 h-4 text-[#fbbf24]" />
           </div>
           <p className="text-sm text-white/60">
-            Paid revenue on this page: <span className="text-[#fbbf24] font-bold">${totalRevenue.toFixed(2)}</span>
+            {t('erp.invoices.revenueOnPage')} <span className="text-[#fbbf24] font-bold">${totalRevenue.toFixed(2)}</span>
           </p>
         </div>
       )}
@@ -444,7 +445,7 @@ export default function InvoicesPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-          <input type="text" placeholder="Search invoice number..." value={searchInput}
+          <input type="text" placeholder={t('erp.invoices.searchPlaceholder')} value={searchInput}
             onChange={e => { setSearchInput(e.target.value); setPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-white text-sm placeholder-white/20 focus:outline-none focus:border-[#fbbf24]/50 focus:bg-white/[0.06] transition-all" />
         </div>
@@ -455,7 +456,7 @@ export default function InvoicesPage() {
                 statusFilter === s
                   ? 'bg-[#fbbf24] border-[#fbbf24] text-black'
                   : 'bg-white/[0.03] text-white/40 hover:bg-white/[0.08] hover:text-white border-white/10')}>
-              {s === '' ? 'All' : STATUS_LABEL[s as InvoicePaymentStatus]}
+              {s === '' ? t('erp.invoices.filters.all') : t(`erp.invoiceStatus.${s as InvoicePaymentStatus}`)}
             </button>
           ))}
         </div>
@@ -469,9 +470,9 @@ export default function InvoicesPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] mb-4">
             <Receipt className="w-7 h-7 text-white/15" />
           </div>
-          <h3 className="text-sm font-semibold text-white/40 mb-1">No invoices found</h3>
+          <h3 className="text-sm font-semibold text-white/40 mb-1">{t('erp.invoices.empty')}</h3>
           <p className="text-xs text-white/25">
-            {(isAdmin || isEmployee) ? 'Create your first invoice to get started.' : 'No invoices have been issued yet.'}
+            {(isAdmin || isEmployee) ? t('erp.invoices.emptyHintAdmin') : t('erp.invoices.emptyHintClient')}
           </p>
         </div>
       ) : (
@@ -482,7 +483,7 @@ export default function InvoicesPage() {
       {/* Pagination */}
       {pages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-white/30">{total} invoices · page {page} of {pages}</p>
+          <p className="text-sm text-white/30">{t('erp.invoices.pagination.summary', { total, page, pages })}</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
