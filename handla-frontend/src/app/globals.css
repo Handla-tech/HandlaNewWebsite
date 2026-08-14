@@ -59,24 +59,34 @@
     --surface-7:   #1e1e1e;
     --surface-8:   #2a2a2a;  /* borders / chips   */
 
-    /* Neutral text ramp (light → dark reading contrast) */
-    --ink-1:  #ffffff;   /* strongest */
-    --ink-2:  #b0b0b0;
-    --ink-3:  #aaaaaa;
-    --ink-4:  #888888;
-    --ink-5:  #666666;
-    --ink-6:  #555555;
-    --ink-7:  #444444;
-    --ink-8:  #333333;
+    /* Neutral text ramp (light → dark reading contrast).
+       Tightened for legibility: descriptions/meta live on ink-3/4 and are now
+       noticeably brighter so secondary copy reads without effort. */
+    --ink-1:  #ffffff;   /* strongest — headings                    */
+    --ink-2:  #d4d4d4;   /* strong body                             */
+    --ink-3:  #b8b8b8;   /* body / card descriptions                */
+    --ink-4:  #9a9a9a;   /* supporting copy                         */
+    --ink-5:  #8a8a8a;   /* meta                                    */
+    --ink-6:  #767676;   /* faint meta                              */
+    --ink-7:  #5c5c5c;   /* watermarks / dividers text              */
+    --ink-8:  #4a4a4a;   /* very faint                              */
 
     /* White-overlay tokens (used for bg-white/x, border-white/x) */
     --ov-weak:    rgba(255,255,255,0.03);
-    --ov-soft:    rgba(255,255,255,0.05);
-    --ov-med:     rgba(255,255,255,0.08);
-    --ov-strong:  rgba(255,255,255,0.12);
+    --ov-soft:    rgba(255,255,255,0.06);
+    --ov-med:     rgba(255,255,255,0.09);
+    --ov-strong:  rgba(255,255,255,0.13);
     --ov-border:  rgba(255,255,255,0.10);
     --ov-border-2:rgba(255,255,255,0.06);
     --vignette:   rgba(8,8,8,0.4);        /* edge-darkening fade toward page bg */
+
+    /* ── Shadow scale (dark canvas) ──────────────────────────────────────
+       Three deliberate tiers. Subtle, layered, never a big blurry cloud.
+       On the dark theme shadows lean on black; elevated adds a faint lift. */
+    --shadow-sm:  0 1px 2px rgba(0,0,0,0.30);
+    --shadow-card:0 2px 8px rgba(0,0,0,0.28), 0 1px 2px rgba(0,0,0,0.24);
+    --shadow-md:  0 10px 24px rgba(0,0,0,0.34), 0 3px 8px rgba(0,0,0,0.26);
+    --shadow-lg:  0 18px 40px rgba(0,0,0,0.42), 0 6px 14px rgba(0,0,0,0.30);
     color-scheme: dark;
   }
 
@@ -127,24 +137,33 @@
     --surface-7:   #e9ecf0;
     --surface-8:   #e3e6ea;
 
-    /* Text ramp inverted: dark ink on light bg */
-    --ink-1:  #0f1115;
-    --ink-2:  #374151;
-    --ink-3:  #4b5563;
-    --ink-4:  #6b7280;
-    --ink-5:  #6b7280;
-    --ink-6:  #9ca3af;
-    --ink-7:  #9ca3af;
-    --ink-8:  #b8bec7;
+    /* Text ramp inverted: dark ink on light bg.
+       Darkened the mid/low tiers so descriptions and meta clear WCAG AA on the
+       #f6f7f9 page — the old #9ca3af/#b8bec7 grays were too pale to read. */
+    --ink-1:  #0f1115;   /* headings           */
+    --ink-2:  #1f2937;   /* strong body        */
+    --ink-3:  #374151;   /* body / card desc   */
+    --ink-4:  #4b5563;   /* supporting copy    */
+    --ink-5:  #556070;   /* meta               */
+    --ink-6:  #64748b;   /* faint meta         */
+    --ink-7:  #7a8598;   /* watermarks text    */
+    --ink-8:  #94a3b8;   /* very faint         */
 
     /* Overlays become dark-on-light instead of white-on-dark */
     --ov-weak:    rgba(17,20,26,0.02);
-    --ov-soft:    rgba(17,20,26,0.04);
-    --ov-med:     rgba(17,20,26,0.06);
-    --ov-strong:  rgba(17,20,26,0.10);
+    --ov-soft:    rgba(17,20,26,0.05);
+    --ov-med:     rgba(17,20,26,0.08);
+    --ov-strong:  rgba(17,20,26,0.12);
     --ov-border:  rgba(17,20,26,0.12);
     --ov-border-2:rgba(17,20,26,0.08);
     --vignette:   rgba(230,232,236,0.55);  /* soft light fade toward page bg */
+
+    /* ── Shadow scale (light canvas) ─────────────────────────────────────
+       Premium slate-tinted shadows — soft, layered, never a gray cloud. */
+    --shadow-sm:  0 1px 2px rgba(15,23,42,0.05);
+    --shadow-card:0 2px 8px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-md:  0 12px 28px rgba(15,23,42,0.08), 0 3px 8px rgba(15,23,42,0.05);
+    --shadow-lg:  0 18px 45px rgba(15,23,42,0.10), 0 4px 14px rgba(15,23,42,0.05);
     color-scheme: light;
   }
 
@@ -187,29 +206,69 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── Card ─────────────────────────────────────────────────────────────── */
+  /* ── Card ─────────────────────────────────────────────────────────────
+     Canonical surface card for the whole site. One radius, one border, one
+     shadow tier, one hover behaviour (lift + border emphasis + shadow bump). */
   .h-card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 1rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--surface-1);
+    border: 1px solid var(--ov-med);
+    border-radius: 1rem;               /* 16px — the site card radius */
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .h-card:hover {
-    border-color: var(--border-hover);
+    border-color: var(--ov-strong);
+  }
+  /* Interactive variant — adds the lift + shadow bump on hover. */
+  .h-card-interactive:hover {
+    transform: translateY(-3px);
+    border-color: var(--ov-strong);
+    box-shadow: var(--shadow-md);
   }
   .h-card-gold:hover {
     border-color: rgba(251,191,36,0.4);
     box-shadow: var(--gold-glow);
   }
 
+  /* ── Shadow scale utilities ──────────────────────────────────────────── */
+  .shadow-h-sm   { box-shadow: var(--shadow-sm); }
+  .shadow-h-card { box-shadow: var(--shadow-card); }
+  .shadow-h-md   { box-shadow: var(--shadow-md); }
+  .shadow-h-lg   { box-shadow: var(--shadow-lg); }
+
+  /* ── Section rhythm ──────────────────────────────────────────────────────
+     Consistent vertical rhythm + centered content container across sections. */
+  .h-section    { padding-top: 6rem; padding-bottom: 6rem; }
+  @media (min-width: 640px) {
+    .h-section  { padding-top: 7rem; padding-bottom: 7rem; }
+  }
+  .h-container  { margin-inline: auto; max-width: 80rem; padding-inline: 1rem; }
+  @media (min-width: 640px) { .h-container { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px){ .h-container { padding-inline: 2rem; } }
+
   /* ── Section label (eyebrow) ─────────────────────────────────────────── */
   .h-label {
     display: inline-block;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--gold);
+  }
+
+  /* ── Section heading + supporting copy ────────────────────────────────
+     Standardized heading + intro so every section matches (Task #3). */
+  .h-heading {
+    font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink-1);
+  }
+  .h-intro {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--ink-4);
   }
 
   /* ── Gradient text ────────────────────────────────────────────────────── */
@@ -226,20 +285,29 @@
   }
   .btn-primary:hover {
     background-color: #f59e0b;
-    box-shadow: var(--gold-glow);
+    box-shadow: 0 6px 20px rgba(251,191,36,0.22);
     transform: translateY(-1px);
+  }
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
 
   /* ── Secondary button (outline) ─────────────────────────────────────── */
   .btn-secondary {
     @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    border: 1px solid var(--ov-border);
+    color: var(--ink-2);
     background-color: transparent;
   }
   .btn-secondary:hover {
-    border-color: var(--border-hover);
-    color: #fff;
+    border-color: var(--ov-strong);
+    color: var(--ink-1);
+    background-color: var(--ov-soft);
+  }
+  .btn-secondary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
 
   /* ── Grid background ─────────────────────────────────────────────────── */
@@ -355,6 +423,7 @@ html.light .text-\[\#b0b0b0\],
 html.light .text-\[\#a0a0a0\] { color: var(--ink-3) !important; }
 html.light .text-\[\#999\],
 html.light .text-\[\#888\],
+html.light .text-\[\#8a8a8a\],
 html.light .text-\[\#707070\] { color: var(--ink-4) !important; }
 html.light .text-\[\#666\],
 html.light .text-\[\#555\] { color: var(--ink-5) !important; }

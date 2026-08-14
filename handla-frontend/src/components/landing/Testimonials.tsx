@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Quote, BadgeCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { testimonialApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -58,8 +58,8 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`w-4 h-4 transition-colors ${i < rating ? 'fill-[#fbbf24] text-[#fbbf24]' : 'text-[#2a2a2a]'}`}
-          style={i < rating ? { filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.5))' } : {}}
+          className={`w-4 h-4 transition-colors ${i < rating ? 'fill-[#fbbf24] text-[#fbbf24]' : ''}`}
+          style={i < rating ? {} : { color: 'var(--ov-strong)' }}
         />
       ))}
     </div>
@@ -135,7 +135,7 @@ export default function Testimonials() {
       />
 
       <div
-        className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8"
+        className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
@@ -148,10 +148,10 @@ export default function Testimonials() {
           className="text-center mb-14"
         >
           <p className="h-label mb-3">{t('testimonials.label')}</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="h-heading mb-4">
             {t('testimonials.title')}
           </h2>
-          <p className="text-base" style={{ color: 'var(--ink-5)' }}>
+          <p className="h-intro">
             {t('testimonials.subtitle')}
           </p>
         </motion.div>
@@ -169,11 +169,11 @@ export default function Testimonials() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: -24, scale: 0.98 }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="relative rounded-2xl p-8 sm:p-10 overflow-hidden"
+              className="relative rounded-2xl p-7 sm:p-8 overflow-hidden"
               style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--ov-med)',
-                boxShadow: '0 4px 60px rgba(0,0,0,0.5)',
+                boxShadow: 'var(--shadow-md)',
               }}
             >
               {/* Gold top accent */}
@@ -182,40 +182,24 @@ export default function Testimonials() {
                 style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.3), transparent)' }}
               />
 
-              {/* Large decorative quote */}
-              <div
-                className="absolute top-6 right-8 pointer-events-none select-none"
-                style={{
-                  fontSize: 120,
-                  fontFamily: 'Georgia, serif',
-                  lineHeight: 1,
-                  color: 'rgba(251,191,36,0.04)',
-                  transform: 'scaleX(-1)',
-                }}
-              >
-                &ldquo;
+              {/* Quote icon + stars on one row for a tighter header */}
+              <div className="flex items-center justify-between mb-4">
+                <Quote className="w-7 h-7" style={{ color: 'rgba(251,191,36,0.35)' }} />
+                <StarRating rating={current.rating} />
               </div>
 
-              {/* Quote icon */}
-              <Quote
-                className="w-8 h-8 mb-5"
-                style={{ color: 'rgba(251,191,36,0.2)' }}
-              />
-
-              <StarRating rating={current.rating} />
-
-              <blockquote className="mt-5 text-lg sm:text-xl font-medium leading-relaxed text-white relative">
+              <blockquote className="text-lg sm:text-xl font-medium leading-relaxed text-white relative">
                 &ldquo;{current.content}&rdquo;
               </blockquote>
 
-              <div className="mt-8 flex items-center gap-4">
+              <div className="mt-6 flex items-center gap-4 pt-5" style={{ borderTop: '1px solid var(--ov-soft)' }}>
                 {/* Avatar */}
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                   style={{
                     background: avatarStyle.bg,
                     color: avatarStyle.text,
-                    boxShadow: '0 0 20px rgba(251,191,36,0.2)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   {getInitials(current.clientName)}
@@ -223,16 +207,17 @@ export default function Testimonials() {
                 <div>
                   <div className="font-semibold text-white">{current.clientName}</div>
                   {current.clientCompany && (
-                    <div className="text-sm mt-0.5" style={{ color: 'var(--ink-6)' }}>{current.clientCompany}</div>
+                    <div className="text-sm mt-0.5" style={{ color: 'var(--ink-4)' }}>{current.clientCompany}</div>
                   )}
                 </div>
 
                 {/* Gold verified badge */}
                 <div
-                  className="ml-auto px-3 py-1.5 rounded-full text-xs font-semibold"
-                  style={{ background: 'rgba(251,191,36,0.08)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.15)' }}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                  style={{ background: 'rgba(251,191,36,0.08)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.18)' }}
                 >
-                  ✓ Verified Client
+                  <BadgeCheck className="w-3.5 h-3.5" />
+                  Verified Client
                 </div>
               </div>
             </motion.div>

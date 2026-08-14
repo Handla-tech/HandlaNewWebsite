@@ -55,7 +55,7 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
       </div>
 
       {/* ── Messages area with blur overlay ── */}
-      <div className="px-4 py-4 space-y-3 min-h-[300px] relative">
+      <div className="px-4 py-4 space-y-3 min-h-[260px] relative">
         {/* Mock messages — always rendered, blurred behind overlay */}
         {MOCK_MESSAGES.map(({ id, role, text, time }) => (
           <div key={id} className={`flex ${role === 'admin' ? 'justify-start' : 'justify-end'}`}>
@@ -90,7 +90,7 @@ export default function BlurredChatPreview({ isAuthenticated = false, userName }
             style={{
               background: 'color-mix(in srgb, var(--surface-4) 95%, transparent)',
               border: '1px solid var(--ov-border)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+              boxShadow: 'var(--shadow-md)',
             }}
           >
             {/* ── NON-AUTHENTICATED ── */}

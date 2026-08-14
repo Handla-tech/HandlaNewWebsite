@@ -26,8 +26,10 @@ export default function ProjectCard({
       style={{
         background: 'var(--surface-1)',
         border: '1px solid var(--ov-med)',
-        boxShadow: '0 4px 40px rgba(0,0,0,0.35)',
+        boxShadow: 'var(--shadow-card)',
       }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card)'; }}
     >
       {/* Gold top accent on hover */}
       <div
@@ -47,8 +49,29 @@ export default function ProjectCard({
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <FolderGit2 className="h-10 w-10" style={{ color: 'var(--ink-6)' }} />
+          <div
+            className="relative flex h-full w-full flex-col items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, var(--surface-3) 0%, var(--surface-1) 100%)' }}
+          >
+            <div
+              className="absolute inset-0 opacity-[0.4]"
+              style={{
+                backgroundImage:
+                  'linear-gradient(var(--ov-soft) 1px, transparent 1px), linear-gradient(90deg, var(--ov-soft) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }}
+            />
+            <div
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl"
+              style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.22)' }}
+            >
+              <FolderGit2 className="h-5 w-5" style={{ color: '#fbbf24' }} />
+            </div>
+            <span className="relative font-mono text-xs font-bold tracking-tight">
+              <span className="text-white">&lt;Handla </span>
+              <span style={{ color: '#fbbf24' }}>/</span>
+              <span className="text-white">&gt;</span>
+            </span>
           </div>
         )}
 
@@ -88,12 +111,12 @@ export default function ProjectCard({
         </div>
 
         {project.clientName && (
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ink-6)' }}>
+          <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--ink-5)' }}>
             {project.clientName}
           </p>
         )}
 
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>
           {project.summary || project.description}
         </p>
 
@@ -104,7 +127,7 @@ export default function ProjectCard({
               <span
                 key={tag}
                 className="rounded-md px-2 py-0.5 text-[10px] font-medium"
-                style={{ background: 'var(--ov-soft)', color: 'var(--ink-4)', border: '1px solid var(--ov-med)' }}
+                style={{ background: 'var(--ov-soft)', color: 'var(--ink-3)', border: '1px solid var(--ov-med)' }}
               >
                 {tag}
               </span>

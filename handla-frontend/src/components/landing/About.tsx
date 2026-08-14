@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Lightbulb, TrendingUp, Users, CheckCircle2 } from 'lucide-react';
+import { Lightbulb, TrendingUp, Users, CheckCircle2, Rocket, Globe, Clock, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -22,10 +22,10 @@ export default function About() {
   const { t }  = useTranslation();
 
   const STATS = [
-    { value: t('about.stats.projects'),   label: t('about.stats.projectsLabel'),   icon: '🚀', color: '#fbbf24' },
-    { value: t('about.stats.industries'), label: t('about.stats.industriesLabel'), icon: '🌐', color: '#60a5fa' },
-    { value: t('about.stats.support'),    label: t('about.stats.supportLabel'),    icon: '🕐', color: '#34d399' },
-    { value: t('about.stats.uptime'),     label: t('about.stats.uptimeLabel'),     icon: '✅', color: '#a78bfa' },
+    { value: t('about.stats.projects'),   label: t('about.stats.projectsLabel'),   icon: Rocket,      color: '#fbbf24' },
+    { value: t('about.stats.industries'), label: t('about.stats.industriesLabel'), icon: Globe,       color: '#60a5fa' },
+    { value: t('about.stats.support'),    label: t('about.stats.supportLabel'),    icon: Clock,       color: '#34d399' },
+    { value: t('about.stats.uptime'),     label: t('about.stats.uptimeLabel'),     icon: ShieldCheck, color: '#a78bfa' },
   ];
 
   const FEATURES = [
@@ -59,7 +59,7 @@ export default function About() {
           className="text-center mb-14"
         >
           <p className="h-label mb-3">{t('about.label')}</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="h-heading">
             {t('about.headline')}
           </h2>
         </motion.div>
@@ -80,13 +80,15 @@ export default function About() {
             style={{ background: 'var(--surface-1)' }}
           >
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {STATS.map((stat, i) => (
+              {STATS.map((stat, i) => {
+                const Icon = stat.icon;
+                return (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, y: 16 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
-                  className="relative text-center group"
+                  className="relative flex flex-col items-center text-center group"
                 >
                   {/* Vertical separator (except last) */}
                   {i < STATS.length - 1 && (
@@ -96,18 +98,25 @@ export default function About() {
                     />
                   )}
 
-                  <div className="text-2xl mb-3">{stat.icon}</div>
+                  {/* Icon badge — consistent lucide icon in a tinted tile */}
                   <div
-                    className="text-3xl sm:text-4xl font-extrabold mb-1.5 transition-all duration-300"
+                    className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `${stat.color}14`, border: `1px solid ${stat.color}26` }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: stat.color }} />
+                  </div>
+                  <div
+                    className="text-3xl sm:text-4xl font-extrabold mb-1 transition-all duration-300"
                     style={{ color: stat.color }}
                   >
                     {stat.value}
                   </div>
-                  <div className="text-sm font-medium" style={{ color: 'var(--ink-6)' }}>
+                  <div className="text-sm font-medium" style={{ color: 'var(--ink-4)' }}>
                     {stat.label}
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </motion.div>
@@ -122,21 +131,12 @@ export default function About() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            {/* Outer glow */}
-            <div
-              className="absolute -inset-4 rounded-3xl pointer-events-none"
-              style={{
-                background: 'radial-gradient(ellipse at center, rgba(251,191,36,0.08) 0%, transparent 65%)',
-                filter: 'blur(20px)',
-              }}
-            />
-
             {/* Photo card */}
             <div
               className="relative rounded-2xl overflow-hidden"
               style={{
-                border: '1px solid rgba(251,191,36,0.15)',
-                boxShadow: '0 0 80px rgba(251,191,36,0.06), 0 40px 80px rgba(0,0,0,0.6)',
+                border: '1px solid var(--ov-med)',
+                boxShadow: 'var(--shadow-lg)',
                 aspectRatio: '4/3',
               }}
             >
@@ -149,19 +149,11 @@ export default function About() {
                 priority
               />
 
-              {/* Gradient overlay */}
+              {/* Subtle bottom gradient — keeps depth without heavy fog */}
               <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
                 style={{
-                  background: 'linear-gradient(to bottom, transparent 60%, var(--vignette) 100%)',
-                }}
-              />
-
-              {/* Premium corner decoration */}
-              <div
-                className="absolute top-0 left-0 w-16 h-16 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(251,191,36,0.12) 0%, transparent 60%)',
+                  background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.18))',
                 }}
               />
             </div>
@@ -180,7 +172,7 @@ export default function About() {
                   right: '-1rem',
                   background: 'var(--surface-1)',
                   border: '1px solid var(--ov-med)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                  boxShadow: 'var(--shadow-md)',
                 }}
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -198,24 +190,11 @@ export default function About() {
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
           >
-            {/* Label */}
-            <motion.p variants={itemVariants} className="h-label mb-3">
-              {t('about.label')}
-            </motion.p>
-
-            {/* Headline */}
-            <motion.h2
-              variants={itemVariants}
-              className="text-3xl sm:text-4xl font-extrabold text-white mb-5 leading-tight"
-            >
-              {t('about.headline')}
-            </motion.h2>
-
             {/* Body */}
             <motion.p
               variants={itemVariants}
-              className="text-base leading-relaxed mb-8"
-              style={{ color: 'var(--ink-4)' }}
+              className="text-base leading-relaxed mb-8 max-w-prose"
+              style={{ color: 'var(--ink-3)' }}
             >
               {t('about.description')}
             </motion.p>
@@ -232,19 +211,17 @@ export default function About() {
                     border: '1px solid var(--ov-soft)',
                   }}
                   whileHover={{
-                    backgroundColor: 'rgba(251,191,36,0.04)',
-                    borderColor: 'rgba(251,191,36,0.12)',
+                    y: -2,
+                    backgroundColor: 'rgba(251,191,36,0.05)',
+                    borderColor: 'rgba(251,191,36,0.18)',
                   }}
                 >
-                  <div
-                    className="icon-badge flex-shrink-0 transition-all duration-200"
-                    style={{ boxShadow: '0 0 0 0 rgba(251,191,36,0)' }}
-                  >
+                  <div className="icon-badge flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-semibold text-white text-sm mb-0.5">{title}</div>
-                    <div className="text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>{desc}</div>
+                    <div className="font-semibold text-white text-sm mb-1">{title}</div>
+                    <div className="text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>{desc}</div>
                   </div>
                 </motion.div>
               ))}

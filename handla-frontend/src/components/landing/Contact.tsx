@@ -61,7 +61,7 @@ export default function Contact() {
     <section
       id="contact"
       ref={ref}
-      className="relative py-20 sm:py-24 overflow-hidden"
+      className="relative py-24 sm:py-32 overflow-hidden"
       style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
@@ -91,11 +91,11 @@ export default function Contact() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <p className="h-label mb-2">{t('contact.label')}</p>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+          <p className="h-label mb-3">{t('contact.label')}</p>
+          <h2 className="h-heading mb-4">
             {isLoggedIn ? t('contact.headlineAuth') : t('contact.headlineGuest')}
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--ink-5)' }}>
+          <p className="h-intro max-w-xl mx-auto">
             {isLoggedIn ? t('contact.subtitleAuth') : t('contact.subtitleGuest')}
           </p>
         </motion.div>
@@ -119,9 +119,8 @@ export default function Contact() {
                 className="rounded-2xl overflow-hidden flex flex-col"
                 style={{
                   background: 'var(--surface-1)',
-                  border: '1px solid rgba(251,191,36,0.12)',
-                  boxShadow: '0 0 40px rgba(251,191,36,0.04)',
-                  minHeight: '280px',
+                  border: '1px solid rgba(251,191,36,0.14)',
+                  boxShadow: 'var(--shadow-card)',
                 }}
               >
                 {/* Gold top accent */}
@@ -175,7 +174,7 @@ export default function Contact() {
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   )}
-                  <p className="text-center text-xs mt-3" style={{ color: 'var(--ink-6)' }}>
+                  <p className="text-center text-xs mt-3" style={{ color: 'var(--ink-4)' }}>
                     {isAdmin ? t('contact.adminSubtitle') : t('contact.clientSubtitle')}
                   </p>
                 </div>
@@ -199,7 +198,7 @@ export default function Contact() {
             style={{
               background: 'var(--surface-1)',
               border: '1px solid var(--ov-med)',
-              minHeight: '280px',
+              boxShadow: 'var(--shadow-card)',
             }}
           >
             {/* Gold top accent */}
@@ -211,37 +210,38 @@ export default function Contact() {
             <div className="p-5 sm:p-6 flex flex-col flex-1">
               <div className="mb-5">
                 <h3 className="text-lg font-bold text-white mb-1">{t('contact.followUs')}</h3>
-                <p className="text-sm" style={{ color: 'var(--ink-6)' }}>
+                <p className="text-sm" style={{ color: 'var(--ink-4)' }}>
                   {t('contact.followSubtitle')}
                 </p>
               </div>
 
-              {/* Social grid */}
-              <div className="grid grid-cols-3 gap-2.5 flex-1">
+              {/* Social grid — compact secondary options */}
+              <div className="grid grid-cols-3 gap-2.5">
                 {SOCIALS.map(({ label, href, color, bg, hoverBorder }) => (
                   <a
                     key={label}
                     href={href}
-                    className="flex flex-col items-center justify-center gap-2 rounded-xl p-3 transition-all duration-200 group"
+                    aria-label={label}
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl py-3 px-2 transition-all duration-200 group"
                     style={{
                       background: bg,
                       border: '1px solid var(--ov-soft)',
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.borderColor = hoverBorder;
-                      (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)';
-                      (e.currentTarget as HTMLElement).style.boxShadow = `0 0 16px ${color}15`;
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)';
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-soft)';
-                      (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
                       (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                     }}
                   >
-                    <span style={{ color }} className="transition-transform duration-200">
+                    <span style={{ color }}>
                       <SocialIcon label={label} />
                     </span>
-                    <span className="text-xs font-medium" style={{ color: 'var(--ink-5)' }}>{label}</span>
+                    <span className="text-[11px] font-medium" style={{ color: 'var(--ink-4)' }}>{label}</span>
                   </a>
                 ))}
               </div>
@@ -284,9 +284,15 @@ export default function Contact() {
               )}
 
               {!isLoggedIn && (
-                <p className="text-xs mt-5" style={{ color: 'var(--ink-8)' }}>
-                  {t('contact.communityNote')}
-                </p>
+                <div
+                  className="mt-auto pt-5 flex items-center gap-2"
+                  style={{ borderTop: '1px solid var(--ov-soft)' }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.6)' }} />
+                  <p className="text-xs" style={{ color: 'var(--ink-5)' }}>
+                    {t('contact.communityNote')}
+                  </p>
+                </div>
               )}
             </div>
           </motion.div>

@@ -55,16 +55,16 @@ export default function Process() {
           className="text-center mb-16"
         >
           <p className="h-label mb-3">{t('process.label')}</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="h-heading mb-4">
             {t('process.headline')}
           </h2>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: 'var(--ink-5)' }}>
+          <p className="h-intro max-w-lg mx-auto">
             From idea to launch — a structured, proven process that delivers on time.
           </p>
         </motion.div>
 
         {/* ── Steps ─────────────────────────────────────────────────── */}
-        <div className="relative grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="relative grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-14">
 
           {/* Animated connector line (desktop only) */}
           <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-px z-0">
@@ -91,13 +91,14 @@ export default function Process() {
               className="relative group rounded-2xl p-6 transition-all duration-300"
               style={{
                 background: 'var(--surface-1)',
-                border: '1px solid var(--ov-soft)',
+                border: '1px solid var(--ov-med)',
+                boxShadow: 'var(--shadow-card)',
                 zIndex: 1,
               }}
               whileHover={{
-                borderColor: `${color}20`,
-                boxShadow: `0 0 30px ${color}08`,
-                y: -2,
+                borderColor: `${color}40`,
+                boxShadow: 'var(--shadow-md)',
+                y: -3,
               }}
             >
               {/* Hover inner glow */}
@@ -109,7 +110,7 @@ export default function Process() {
               {/* Step number watermark */}
               <div
                 className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-5xl font-black leading-none select-none pointer-events-none`}
-                style={{ color: `${color}06` }}
+                style={{ color: `${color}14` }}
               >
                 {num}
               </div>
@@ -134,8 +135,8 @@ export default function Process() {
                 </div>
               </div>
 
-              <h3 className="text-base font-bold text-white mb-2">{title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>{desc}</p>
+              <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>{desc}</p>
 
               {/* Connector arrow (desktop) */}
               {i < STEPS.length - 1 && (
@@ -143,12 +144,12 @@ export default function Process() {
                   className={`hidden lg:flex absolute top-[3.5rem] ${isRTL ? '-left-5' : '-right-5'} w-10 h-10 items-center justify-center z-20`}
                 >
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: 'var(--surface-1)', border: '1px solid var(--ov-strong)' }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--surface-1)', border: '1px solid var(--ov-strong)', boxShadow: 'var(--shadow-sm)' }}
                   >
                     {isRTL
-                      ? <ArrowLeft  className="w-3 h-3" style={{ color: 'var(--ink-7)' }} />
-                      : <ArrowRight className="w-3 h-3" style={{ color: 'var(--ink-7)' }} />
+                      ? <ArrowLeft  className="w-3 h-3" style={{ color: 'var(--ink-4)' }} />
+                      : <ArrowRight className="w-3 h-3" style={{ color: 'var(--ink-4)' }} />
                     }
                   </div>
                 </div>

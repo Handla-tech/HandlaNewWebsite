@@ -26,8 +26,10 @@ export default function ProductCard({
       style={{
         background: 'var(--surface-1)',
         border: '1px solid var(--ov-med)',
-        boxShadow: '0 4px 40px rgba(0,0,0,0.35)',
+        boxShadow: 'var(--shadow-card)',
       }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-card)'; }}
     >
       {/* Gold top accent on hover */}
       <div
@@ -47,8 +49,29 @@ export default function ProductCard({
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-10 w-10" style={{ color: 'var(--ink-6)' }} />
+          <div
+            className="relative flex h-full w-full flex-col items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, var(--surface-3) 0%, var(--surface-1) 100%)' }}
+          >
+            <div
+              className="absolute inset-0 opacity-[0.4]"
+              style={{
+                backgroundImage:
+                  'linear-gradient(var(--ov-soft) 1px, transparent 1px), linear-gradient(90deg, var(--ov-soft) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }}
+            />
+            <div
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl"
+              style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.22)' }}
+            >
+              <Package className="h-5 w-5" style={{ color: '#fbbf24' }} />
+            </div>
+            <span className="relative font-mono text-xs font-bold tracking-tight">
+              <span className="text-white">&lt;Handla </span>
+              <span style={{ color: '#fbbf24' }}>/</span>
+              <span className="text-white">&gt;</span>
+            </span>
           </div>
         )}
 
@@ -88,12 +111,12 @@ export default function ProductCard({
         </div>
 
         {product.tagline && (
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ink-6)' }}>
+          <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--ink-5)' }}>
             {product.tagline}
           </p>
         )}
 
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>
           {product.description}
         </p>
 
@@ -101,7 +124,7 @@ export default function ProductCard({
         {product.features && product.features.length > 0 && (
           <ul className="mt-3 space-y-1.5">
             {product.features.slice(0, 3).map((feature) => (
-              <li key={feature} className="flex items-start gap-2 text-xs" style={{ color: 'var(--ink-4)' }}>
+              <li key={feature} className="flex items-start gap-2 text-xs" style={{ color: 'var(--ink-3)' }}>
                 <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
                 <span>{feature}</span>
               </li>

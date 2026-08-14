@@ -282,7 +282,7 @@ export default function Navbar() {
 
                 const className = `relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
                   isRTL ? 'font-[family-name:var(--font-space-grotesk)]' : ''
-                } ${isActive ? 'text-white' : 'text-[#707070] hover:text-white'}`;
+                } ${isActive ? 'text-white' : 'text-[#8a8a8a] hover:text-white'}`;
 
                 const inner = (
                   <>
@@ -330,7 +330,7 @@ export default function Navbar() {
                 onClick={toggleTheme}
                 aria-label={t('common.theme.toggle')}
                 title={t('common.theme.toggle')}
-                className="flex items-center justify-center w-[44px] h-[44px] text-[#707070] hover:text-white rounded-lg hover:bg-white/[0.04] transition-all duration-200"
+                className="flex items-center justify-center w-[44px] h-[44px] text-[#8a8a8a] hover:text-white rounded-lg hover:bg-white/[0.04] transition-all duration-200"
               >
                 {theme === 'dark'
                   ? <Sun className="w-4 h-4" aria-hidden="true" />
@@ -342,7 +342,7 @@ export default function Navbar() {
                 type="button"
                 onClick={toggleLocale}
                 aria-label={t('common.language.toggle')}
-                className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm font-medium text-[#707070] hover:text-white rounded-lg hover:bg-white/[0.04] transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm font-medium text-[#8a8a8a] hover:text-white rounded-lg hover:bg-white/[0.04] transition-all duration-200"
               >
                 <Globe className="w-4 h-4" aria-hidden="true" />
                 <span>{locale === 'en' ? t('common.language.ar') : t('common.language.en')}</span>
@@ -387,7 +387,7 @@ export default function Navbar() {
               {isLoggedIn && <NotificationBell />}
               <button
                 type="button"
-                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#707070] hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
+                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8a8a8a] hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? t('common.close') : 'Open navigation menu'}
                 aria-expanded={mobileOpen}

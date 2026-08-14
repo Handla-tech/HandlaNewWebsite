@@ -21,25 +21,12 @@ function FeaturePill({ text }: { text: string }) {
       style={{
         background: 'var(--ov-soft)',
         border: '1px solid var(--ov-med)',
-        color: 'var(--ink-4)',
+        color: 'var(--ink-3)',
       }}
     >
       <span className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
       {text}
     </span>
-  );
-}
-
-// Floating mini stat for the hero card
-function MiniStat({ value, label, color = '#fbbf24' }: { value: string; label: string; color?: string }) {
-  return (
-    <div
-      className="rounded-lg p-3 flex flex-col gap-0.5"
-      style={{ background: 'var(--ov-weak)', border: '1px solid var(--ov-soft)' }}
-    >
-      <span className="text-lg font-extrabold" style={{ color }}>{value}</span>
-      <span className="text-xs" style={{ color: 'var(--ink-6)' }}>{label}</span>
-    </div>
   );
 }
 
@@ -123,10 +110,10 @@ export default function ServicesBento() {
           className="text-center mb-14"
         >
           <p className="h-label mb-3">{t('services.label')}</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="h-heading mb-4">
             {t('services.headline')}
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--ink-5)' }}>
+          <p className="h-intro max-w-xl mx-auto">
             {t('services.description')}
           </p>
         </motion.div>
@@ -146,14 +133,14 @@ export default function ServicesBento() {
                   ? 'linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%)'
                   : 'var(--surface-1)',
                 border: featured
-                  ? '1px solid rgba(251,191,36,0.15)'
-                  : '1px solid var(--ov-soft)',
-                boxShadow: featured ? '0 0 40px rgba(251,191,36,0.06)' : 'none',
+                  ? '1px solid rgba(251,191,36,0.18)'
+                  : '1px solid var(--ov-med)',
+                boxShadow: 'var(--shadow-card)',
               }}
               whileHover={{
-                borderColor: `${accent}30`,
-                boxShadow: `0 0 30px ${accent}10`,
-                y: -2,
+                borderColor: `${accent}40`,
+                boxShadow: 'var(--shadow-md)',
+                y: -3,
               }}
             >
               {/* Featured gold top border */}
@@ -189,8 +176,8 @@ export default function ServicesBento() {
                   />
                 </div>
 
-                <h3 className="text-base font-bold text-white mb-2 leading-tight">{title}</h3>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-5)' }}>{desc}</p>
+                <h3 className="text-lg font-bold text-white mb-2 leading-tight">{title}</h3>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-3)' }}>{desc}</p>
 
                 {/* Pills */}
                 <div className="flex flex-wrap gap-1.5">
@@ -213,21 +200,22 @@ export default function ServicesBento() {
           {HIGHLIGHTS.map(({ icon: Icon, label, value }) => (
             <div
               key={label}
-              className="flex items-center gap-4 rounded-xl px-5 py-4"
+              className="flex items-center gap-4 rounded-xl px-5 py-4 transition-all duration-200"
               style={{
-                background: 'var(--ov-weak)',
-                border: '1px solid var(--ov-soft)',
+                background: 'var(--surface-1)',
+                border: '1px solid var(--ov-med)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.12)' }}
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.18)' }}
               >
                 <Icon className="w-4 h-4" style={{ color: '#fbbf24' }} />
               </div>
               <div>
                 <div className="text-sm font-semibold text-white">{label}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#fbbf24' }}>{value}</div>
+                <div className="text-xs mt-0.5 font-medium" style={{ color: '#fbbf24' }}>{value}</div>
               </div>
             </div>
           ))}

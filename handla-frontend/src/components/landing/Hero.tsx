@@ -500,32 +500,11 @@ export default function Hero() {
         }}
       />
 
-      {/* Second gold glow — deeper, larger */}
-      <div
-        className={`absolute ${isRTL ? '-left-40' : '-right-40'} top-1/3 w-[600px] h-[600px] pointer-events-none`}
-        style={{
-          background: 'radial-gradient(circle, rgba(251,191,36,0.04) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }}
-      />
-
-      {/* Left side subtle glow */}
-      <div
-        className={`absolute ${isRTL ? 'right-0' : 'left-0'} bottom-1/4 w-[400px] h-[400px] pointer-events-none`}
-        style={{
-          background: 'radial-gradient(circle, rgba(96,165,250,0.03) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-
-      {/* ── Floating particles ─────────────────────────────────────────────── */}
+      {/* ── Floating particles (reduced to 3 for restraint) ────────────────── */}
       {[
         { x: '15%', y: '20%', size: 2, delay: 0,   dur: 4  },
-        { x: '85%', y: '15%', size: 1.5, delay: 1, dur: 5  },
-        { x: '70%', y: '75%', size: 2, delay: 2,   dur: 3.5},
-        { x: '25%', y: '65%', size: 1.5, delay: 0.5, dur: 6},
-        { x: '90%', y: '50%', size: 1, delay: 1.5,  dur: 4.5},
-        { x: '50%', y: '85%', size: 2, delay: 2.5,  dur: 5  },
+        { x: '85%', y: '18%', size: 1.5, delay: 1, dur: 5  },
+        { x: '78%', y: '72%', size: 2, delay: 2,   dur: 4.5},
       ].map((p, i) => (
         <motion.div
           key={i}
@@ -618,7 +597,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-base sm:text-lg leading-relaxed mb-8 max-w-lg"
-              style={{ color: 'var(--ink-4)' }}
+              style={{ color: 'var(--ink-3)' }}
             >
               {t('hero.subtitle')}
             </motion.p>
@@ -673,7 +652,7 @@ export default function Hero() {
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col">
                   <span className="text-base font-extrabold" style={{ color: '#fbbf24' }}>{stat.value}</span>
-                  <span className="text-xs" style={{ color: 'var(--ink-6)' }}>{stat.label}</span>
+                  <span className="text-xs" style={{ color: 'var(--ink-4)' }}>{stat.label}</span>
                 </div>
               ))}
             </motion.div>
@@ -695,8 +674,7 @@ export default function Hero() {
                 padding: 10,
                 background: 'linear-gradient(145deg, var(--surface-5) 0%, var(--surface-3) 100%)',
                 border: '1px solid var(--ov-med)',
-                boxShadow:
-                  '0 0 0 1px rgba(0,0,0,0.5), 0 0 100px rgba(251,191,36,0.1), 0 40px 100px rgba(0,0,0,0.8)',
+                boxShadow: 'var(--shadow-lg)',
               }}
             >
               {/* Tablet notch bar */}
@@ -729,7 +707,7 @@ export default function Hero() {
                 background: 'var(--surface-3)',
                 border: '1px solid var(--ov-strong)',
                 color: '#fbbf24',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 20px rgba(251,191,36,0.08)',
+                boxShadow: 'var(--shadow-md)',
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -745,7 +723,7 @@ export default function Hero() {
               style={{
                 background: 'var(--surface-3)',
                 border: '1px solid var(--ov-strong)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,197,94,0.06)',
+                boxShadow: 'var(--shadow-md)',
               }}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -759,7 +737,7 @@ export default function Hero() {
               </div>
               <div>
                 <div style={{ color: 'var(--ink-1)', fontWeight: 700, fontSize: 13 }}>+18%</div>
-                <div style={{ color: 'var(--ink-6)', fontSize: 10 }}>Revenue Growth</div>
+                <div style={{ color: 'var(--ink-4)', fontSize: 10 }}>Revenue Growth</div>
               </div>
             </motion.div>
 
@@ -770,7 +748,7 @@ export default function Hero() {
                 background: 'var(--surface-3)',
                 border: '1px solid var(--ov-strong)',
                 color: 'var(--ink-1)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+                boxShadow: 'var(--shadow-md)',
               }}
               initial={{ opacity: 0, x: isRTL ? -16 : 16 }}
               animate={{ opacity: 1, x: 0 }}
