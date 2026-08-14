@@ -1,0 +1,124 @@
+{
+  "en": {
+    "erp": {
+      "purchases": {
+        "title": "Purchases",
+        "subtitle": "Purchase orders → bills. Paid bills post an expense automatically.",
+        "new": "New Purchase",
+        "searchPlaceholder": "Search PO number…",
+        "loadFailed": "Failed to load purchases.",
+        "empty": "No purchases found.",
+        "createFirst": "Create first purchase",
+        "pageInfo": "{{total}} purchases · page {{page}} of {{pages}}",
+        "col": { "po": "PO #", "dates": "Dates", "status": "Status", "payment": "Payment", "total": "Total" },
+        "unknownSupplier": "Unknown supplier",
+        "ordered": "Ordered {{date}}",
+        "due": "Due {{date}}",
+        "status": { "DRAFT": "Draft", "ORDERED": "Ordered", "RECEIVED": "Received", "CANCELLED": "Cancelled" },
+        "payment": { "all": "All", "UNPAID": "Unpaid", "PAID": "Paid", "OVERDUE": "Overdue" },
+        "actions": { "markPaid": "Mark Paid (→ Expense)", "edit": "Edit", "delete": "Delete" },
+        "modal": {
+          "editTitle": "Edit Purchase",
+          "newTitle": "New Purchase Order",
+          "subtitle": "A paid purchase auto-creates a matching expense.",
+          "supplier": "Supplier *",
+          "selectSupplier": "Select supplier…",
+          "status": "Status",
+          "orderDate": "Order Date",
+          "dueDate": "Due Date",
+          "currencyOptional": "Currency (optional)",
+          "accountCodeOptional": "Account Code (optional)",
+          "lineItems": "Line Items",
+          "description": "Description",
+          "qty": "Qty",
+          "unitPrice": "Unit price",
+          "addLine": "Add line",
+          "taxRate": "Tax Rate (%)",
+          "subtotal": "Subtotal",
+          "tax": "Tax",
+          "total": "Total",
+          "notesOptional": "Notes (optional)",
+          "notesPlaceholder": "Internal notes",
+          "saveFailed": "Failed to save purchase",
+          "saveChanges": "Save Changes",
+          "create": "Create Purchase"
+        },
+        "markPaid": {
+          "title": "Mark as Paid",
+          "subtitle": "Auto-creates a linked expense.",
+          "confirm": "Mark {{number}} ({{amount}}) paid?",
+          "paymentDate": "Payment Date",
+          "failed": "Failed to mark paid",
+          "confirmButton": "Confirm Paid"
+        },
+        "delete": {
+          "title": "Delete Purchase",
+          "subtitle": "This cannot be undone.",
+          "confirm": "Permanently delete {{number}}?",
+          "failed": "Failed to delete"
+        }
+      }
+    }
+  },
+  "ar": {
+    "erp": {
+      "purchases": {
+        "title": "المشتريات",
+        "subtitle": "أوامر الشراء ← الفواتير. الفواتير المدفوعة تُسجَّل كمصروف تلقائياً.",
+        "new": "شراء جديد",
+        "searchPlaceholder": "ابحث برقم أمر الشراء…",
+        "loadFailed": "تعذّر تحميل المشتريات.",
+        "empty": "لا توجد مشتريات.",
+        "createFirst": "أنشئ أول عملية شراء",
+        "pageInfo": "{{total}} عملية شراء · صفحة {{page}} من {{pages}}",
+        "col": { "po": "رقم أمر الشراء", "dates": "التواريخ", "status": "الحالة", "payment": "الدفع", "total": "الإجمالي" },
+        "unknownSupplier": "مورّد غير معروف",
+        "ordered": "طُلب في {{date}}",
+        "due": "الاستحقاق {{date}}",
+        "status": { "DRAFT": "مسودة", "ORDERED": "مطلوب", "RECEIVED": "مستلم", "CANCELLED": "ملغى" },
+        "payment": { "all": "الكل", "UNPAID": "غير مدفوع", "PAID": "مدفوع", "OVERDUE": "متأخر السداد" },
+        "actions": { "markPaid": "تعليم كمدفوع (← مصروف)", "edit": "تعديل", "delete": "حذف" },
+        "modal": {
+          "editTitle": "تعديل عملية الشراء",
+          "newTitle": "أمر شراء جديد",
+          "subtitle": "عملية الشراء المدفوعة تُنشئ مصروفاً مطابقاً تلقائياً.",
+          "supplier": "المورّد *",
+          "selectSupplier": "اختر مورّداً…",
+          "status": "الحالة",
+          "orderDate": "تاريخ الطلب",
+          "dueDate": "تاريخ الاستحقاق",
+          "currencyOptional": "العملة (اختياري)",
+          "accountCodeOptional": "رمز الحساب (اختياري)",
+          "lineItems": "البنود",
+          "description": "الوصف",
+          "qty": "الكمية",
+          "unitPrice": "سعر الوحدة",
+          "addLine": "إضافة بند",
+          "taxRate": "نسبة الضريبة (%)",
+          "subtotal": "المجموع الفرعي",
+          "tax": "الضريبة",
+          "total": "الإجمالي",
+          "notesOptional": "ملاحظات (اختياري)",
+          "notesPlaceholder": "ملاحظات داخلية",
+          "saveFailed": "تعذّر حفظ عملية الشراء",
+          "saveChanges": "حفظ التغييرات",
+          "create": "إنشاء عملية شراء"
+        },
+        "markPaid": {
+          "title": "تعليم كمدفوع",
+          "subtitle": "يُنشئ مصروفاً مرتبطاً تلقائياً.",
+          "confirm": "تعليم {{number}} ({{amount}}) كمدفوع؟",
+          "paymentDate": "تاريخ الدفع",
+          "failed": "تعذّر التعليم كمدفوع",
+          "confirmButton": "تأكيد الدفع"
+        },
+        "delete": {
+          "title": "حذف عملية الشراء",
+          "subtitle": "لا يمكن التراجع عن هذا الإجراء.",
+          "confirm": "حذف {{number}} نهائياً؟",
+          "failed": "تعذّر الحذف"
+        }
+      }
+    }
+  }
+}

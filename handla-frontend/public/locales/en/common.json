@@ -1780,6 +1780,83 @@
       "deleting": "Deleting…",
       "edit": "Edit",
       "retry": "Retry"
+    },
+    "purchases": {
+      "title": "Purchases",
+      "subtitle": "Purchase orders → bills. Paid bills post an expense automatically.",
+      "new": "New Purchase",
+      "searchPlaceholder": "Search PO number…",
+      "loadFailed": "Failed to load purchases.",
+      "empty": "No purchases found.",
+      "createFirst": "Create first purchase",
+      "pageInfo": "{{total}} purchases · page {{page}} of {{pages}}",
+      "col": {
+        "po": "PO #",
+        "dates": "Dates",
+        "status": "Status",
+        "payment": "Payment",
+        "total": "Total"
+      },
+      "unknownSupplier": "Unknown supplier",
+      "ordered": "Ordered {{date}}",
+      "due": "Due {{date}}",
+      "status": {
+        "DRAFT": "Draft",
+        "ORDERED": "Ordered",
+        "RECEIVED": "Received",
+        "CANCELLED": "Cancelled"
+      },
+      "payment": {
+        "all": "All",
+        "UNPAID": "Unpaid",
+        "PAID": "Paid",
+        "OVERDUE": "Overdue"
+      },
+      "actions": {
+        "markPaid": "Mark Paid (→ Expense)",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "modal": {
+        "editTitle": "Edit Purchase",
+        "newTitle": "New Purchase Order",
+        "subtitle": "A paid purchase auto-creates a matching expense.",
+        "supplier": "Supplier *",
+        "selectSupplier": "Select supplier…",
+        "status": "Status",
+        "orderDate": "Order Date",
+        "dueDate": "Due Date",
+        "currencyOptional": "Currency (optional)",
+        "accountCodeOptional": "Account Code (optional)",
+        "lineItems": "Line Items",
+        "description": "Description",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "addLine": "Add line",
+        "taxRate": "Tax Rate (%)",
+        "subtotal": "Subtotal",
+        "tax": "Tax",
+        "total": "Total",
+        "notesOptional": "Notes (optional)",
+        "notesPlaceholder": "Internal notes",
+        "saveFailed": "Failed to save purchase",
+        "saveChanges": "Save Changes",
+        "create": "Create Purchase"
+      },
+      "markPaid": {
+        "title": "Mark as Paid",
+        "subtitle": "Auto-creates a linked expense.",
+        "confirm": "Mark {{number}} ({{amount}}) paid?",
+        "paymentDate": "Payment Date",
+        "failed": "Failed to mark paid",
+        "confirmButton": "Confirm Paid"
+      },
+      "delete": {
+        "title": "Delete Purchase",
+        "subtitle": "This cannot be undone.",
+        "confirm": "Permanently delete {{number}}?",
+        "failed": "Failed to delete"
+      }
     }
   },
   "footer": {

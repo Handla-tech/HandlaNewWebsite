@@ -1780,6 +1780,83 @@
       "deleting": "جارٍ الحذف…",
       "edit": "تعديل",
       "retry": "إعادة المحاولة"
+    },
+    "purchases": {
+      "title": "المشتريات",
+      "subtitle": "أوامر الشراء ← الفواتير. الفواتير المدفوعة تُسجَّل كمصروف تلقائياً.",
+      "new": "شراء جديد",
+      "searchPlaceholder": "ابحث برقم أمر الشراء…",
+      "loadFailed": "تعذّر تحميل المشتريات.",
+      "empty": "لا توجد مشتريات.",
+      "createFirst": "أنشئ أول عملية شراء",
+      "pageInfo": "{{total}} عملية شراء · صفحة {{page}} من {{pages}}",
+      "col": {
+        "po": "رقم أمر الشراء",
+        "dates": "التواريخ",
+        "status": "الحالة",
+        "payment": "الدفع",
+        "total": "الإجمالي"
+      },
+      "unknownSupplier": "مورّد غير معروف",
+      "ordered": "طُلب في {{date}}",
+      "due": "الاستحقاق {{date}}",
+      "status": {
+        "DRAFT": "مسودة",
+        "ORDERED": "مطلوب",
+        "RECEIVED": "مستلم",
+        "CANCELLED": "ملغى"
+      },
+      "payment": {
+        "all": "الكل",
+        "UNPAID": "غير مدفوع",
+        "PAID": "مدفوع",
+        "OVERDUE": "متأخر السداد"
+      },
+      "actions": {
+        "markPaid": "تعليم كمدفوع (← مصروف)",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "modal": {
+        "editTitle": "تعديل عملية الشراء",
+        "newTitle": "أمر شراء جديد",
+        "subtitle": "عملية الشراء المدفوعة تُنشئ مصروفاً مطابقاً تلقائياً.",
+        "supplier": "المورّد *",
+        "selectSupplier": "اختر مورّداً…",
+        "status": "الحالة",
+        "orderDate": "تاريخ الطلب",
+        "dueDate": "تاريخ الاستحقاق",
+        "currencyOptional": "العملة (اختياري)",
+        "accountCodeOptional": "رمز الحساب (اختياري)",
+        "lineItems": "البنود",
+        "description": "الوصف",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "addLine": "إضافة بند",
+        "taxRate": "نسبة الضريبة (%)",
+        "subtotal": "المجموع الفرعي",
+        "tax": "الضريبة",
+        "total": "الإجمالي",
+        "notesOptional": "ملاحظات (اختياري)",
+        "notesPlaceholder": "ملاحظات داخلية",
+        "saveFailed": "تعذّر حفظ عملية الشراء",
+        "saveChanges": "حفظ التغييرات",
+        "create": "إنشاء عملية شراء"
+      },
+      "markPaid": {
+        "title": "تعليم كمدفوع",
+        "subtitle": "يُنشئ مصروفاً مرتبطاً تلقائياً.",
+        "confirm": "تعليم {{number}} ({{amount}}) كمدفوع؟",
+        "paymentDate": "تاريخ الدفع",
+        "failed": "تعذّر التعليم كمدفوع",
+        "confirmButton": "تأكيد الدفع"
+      },
+      "delete": {
+        "title": "حذف عملية الشراء",
+        "subtitle": "لا يمكن التراجع عن هذا الإجراء.",
+        "confirm": "حذف {{number}} نهائياً؟",
+        "failed": "تعذّر الحذف"
+      }
     }
   },
   "footer": {
