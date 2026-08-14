@@ -614,6 +614,60 @@ export interface PaginatedTestimonials {
   pages: number;
 }
 
+// ─── Admin: Website Content — Products ────────────────────────────────────────
+// Marketing products/solutions advertised on the PUBLIC website. Managed by
+// admins from the ERP; unrelated to the internal SaaS control-plane product.
+export interface WebsiteProduct {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string;
+  category: string | null;
+  imageUrl: string | null;
+  productUrl: string | null;
+  price: string | null;
+  features: string[] | null;
+  featured: boolean;
+  sortOrder: number;
+  createdByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedWebsiteProducts {
+  products: WebsiteProduct[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
+// ─── Admin: Website Content — Projects ────────────────────────────────────────
+// Showcase/portfolio projects on the PUBLIC website. Completely separate from
+// the internal ERP `Project` entity.
+export interface WebsiteProject {
+  id: string;
+  title: string;
+  clientName: string | null;
+  summary: string | null;
+  description: string;
+  category: string | null;
+  imageUrl: string | null;
+  projectUrl: string | null;
+  tags: string[] | null;
+  featured: boolean;
+  sortOrder: number;
+  createdByAdminId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedWebsiteProjects {
+  projects: WebsiteProject[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
 // ─── Admin: SaaS Tenants ──────────────────────────────────────────────────────
 export type TenantStatus =
   | 'PENDING'

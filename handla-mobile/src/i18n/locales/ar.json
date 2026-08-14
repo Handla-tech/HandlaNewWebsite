@@ -45,7 +45,9 @@
     "suppliers": "الموردون",
     "users": "المستخدمون",
     "testimonials": "الشهادات",
-    "tenants": "المستأجرون"
+    "tenants": "المستأجرون",
+    "website-products": "منتجات الموقع",
+    "website-projects": "مشاريع الموقع"
   },
   "dashboard": {
     "title": "لوحة التحكم",

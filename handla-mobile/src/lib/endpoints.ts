@@ -53,6 +53,10 @@ import type {
   TenantStatus,
   DashboardStats,
   FinancialChartMonth,
+  WebsiteProduct,
+  PaginatedWebsiteProducts,
+  WebsiteProject,
+  PaginatedWebsiteProjects,
 } from '@/types';
 
 /**
@@ -602,6 +606,71 @@ export const testimonialsApi = {
   update: (id: string, body: TestimonialInput) => api.patch(`/testimonials/${id}`, body),
   /** DELETE /testimonials/:id — ADMIN. */
   remove: (id: string) => api.delete(`/testimonials/${id}`),
+};
+
+// ─── Website Content: Products (@Controller('website/products')) — ADMIN ──────
+// Public GET (paginated); create/update/delete are ADMIN-only. Envelope: list
+// returns { data: { products, total, page, pages } }; single/create/update
+// return { data: { product } }.
+export interface WebsiteProductInput {
+  name?: string;
+  tagline?: string | null;
+  description?: string;
+  category?: string | null;
+  imageUrl?: string | null;
+  productUrl?: string | null;
+  price?: string | null;
+  features?: string[] | null;
+  featured?: boolean;
+  sortOrder?: number;
+}
+
+export const websiteProductsApi = {
+  /** GET /website/products — public, paginated. */
+  list: (params?: { page?: number; limit?: number; featured?: boolean; category?: string }) =>
+    api.get<{ message: string; data: PaginatedWebsiteProducts }>('/website/products', { params }),
+  /** GET /website/products/:id — public. */
+  get: (id: string) =>
+    api.get<{ message: string; data: { product: WebsiteProduct } }>(`/website/products/${id}`),
+  /** POST /website/products — ADMIN. */
+  create: (body: WebsiteProductInput) =>
+    api.post<{ message: string; data: { product: WebsiteProduct } }>('/website/products', body),
+  /** PATCH /website/products/:id — ADMIN. */
+  update: (id: string, body: WebsiteProductInput) =>
+    api.patch<{ message: string; data: { product: WebsiteProduct } }>(`/website/products/${id}`, body),
+  /** DELETE /website/products/:id — ADMIN. */
+  remove: (id: string) => api.delete(`/website/products/${id}`),
+};
+
+// ─── Website Content: Projects (@Controller('website/projects')) — ADMIN ──────
+export interface WebsiteProjectInput {
+  title?: string;
+  clientName?: string | null;
+  summary?: string | null;
+  description?: string;
+  category?: string | null;
+  imageUrl?: string | null;
+  projectUrl?: string | null;
+  tags?: string[] | null;
+  featured?: boolean;
+  sortOrder?: number;
+}
+
+export const websiteProjectsApi = {
+  /** GET /website/projects — public, paginated. */
+  list: (params?: { page?: number; limit?: number; featured?: boolean; category?: string }) =>
+    api.get<{ message: string; data: PaginatedWebsiteProjects }>('/website/projects', { params }),
+  /** GET /website/projects/:id — public. */
+  get: (id: string) =>
+    api.get<{ message: string; data: { project: WebsiteProject } }>(`/website/projects/${id}`),
+  /** POST /website/projects — ADMIN. */
+  create: (body: WebsiteProjectInput) =>
+    api.post<{ message: string; data: { project: WebsiteProject } }>('/website/projects', body),
+  /** PATCH /website/projects/:id — ADMIN. */
+  update: (id: string, body: WebsiteProjectInput) =>
+    api.patch<{ message: string; data: { project: WebsiteProject } }>(`/website/projects/${id}`, body),
+  /** DELETE /website/projects/:id — ADMIN. */
+  remove: (id: string) => api.delete(`/website/projects/${id}`),
 };
 
 // ─── SaaS Tenants (@Controller('saas')) — ADMIN ──────────────────────────────

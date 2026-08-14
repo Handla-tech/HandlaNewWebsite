@@ -146,6 +146,26 @@ export default function AppLayout() {
         }}
       />
       <Drawer.Screen
+        name="website-products"
+        options={{
+          title: t('tabs.website-products'),
+          drawerItemStyle: isAdmin ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="pricetags-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="website-projects"
+        options={{
+          title: t('tabs.website-projects'),
+          drawerItemStyle: isAdmin ? undefined : { display: 'none' },
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="albums-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
         name="tenants"
         options={{
           title: t('tabs.tenants'),

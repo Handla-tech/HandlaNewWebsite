@@ -45,7 +45,9 @@
     "suppliers": "Suppliers",
     "users": "Users",
     "testimonials": "Testimonials",
-    "tenants": "Tenants"
+    "tenants": "Tenants",
+    "website-products": "Web Products",
+    "website-projects": "Web Projects"
   },
   "dashboard": {
     "title": "Dashboard",

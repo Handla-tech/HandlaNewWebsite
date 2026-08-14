@@ -40,6 +40,8 @@ export function DrawerContent(props: DrawerContentComponentProps) {
     analytics: 'stats-chart-outline',
     users: 'people-outline',
     testimonials: 'chatbox-ellipses-outline',
+    'website-products': 'pricetags-outline',
+    'website-projects': 'albums-outline',
     tenants: 'cube-outline',
     team: 'people-outline',
   };
