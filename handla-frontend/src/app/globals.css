@@ -76,6 +76,7 @@
     --ov-strong:  rgba(255,255,255,0.12);
     --ov-border:  rgba(255,255,255,0.10);
     --ov-border-2:rgba(255,255,255,0.06);
+    --vignette:   rgba(8,8,8,0.4);        /* edge-darkening fade toward page bg */
     color-scheme: dark;
   }
 
@@ -143,6 +144,7 @@
     --ov-strong:  rgba(17,20,26,0.10);
     --ov-border:  rgba(17,20,26,0.12);
     --ov-border-2:rgba(17,20,26,0.08);
+    --vignette:   rgba(230,232,236,0.55);  /* soft light fade toward page bg */
     color-scheme: light;
   }
 

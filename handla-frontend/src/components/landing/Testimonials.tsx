@@ -73,9 +73,9 @@ function getInitials(name: string) {
 // Avatar gradient colors
 const AVATAR_COLORS = [
   { bg: 'linear-gradient(135deg, #fbbf24, #f59e0b)', text: '#000' },
-  { bg: 'linear-gradient(135deg, #60a5fa, #3b82f6)', text: '#fff' },
+  { bg: 'linear-gradient(135deg, #60a5fa, #3b82f6)', text: 'var(--ink-1)' },
   { bg: 'linear-gradient(135deg, #34d399, #10b981)', text: '#000' },
-  { bg: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', text: '#fff' },
+  { bg: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', text: 'var(--ink-1)' },
 ];
 
 export default function Testimonials() {
@@ -120,12 +120,12 @@ export default function Testimonials() {
       id="testimonials"
       ref={ref}
       className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Ambient gold glow */}
@@ -151,7 +151,7 @@ export default function Testimonials() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             {t('testimonials.title')}
           </h2>
-          <p className="text-base" style={{ color: '#666' }}>
+          <p className="text-base" style={{ color: 'var(--ink-5)' }}>
             {t('testimonials.subtitle')}
           </p>
         </motion.div>
@@ -171,8 +171,8 @@ export default function Testimonials() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="relative rounded-2xl p-8 sm:p-10 overflow-hidden"
               style={{
-                background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'var(--surface-1)',
+                border: '1px solid var(--ov-med)',
                 boxShadow: '0 4px 60px rgba(0,0,0,0.5)',
               }}
             >
@@ -223,7 +223,7 @@ export default function Testimonials() {
                 <div>
                   <div className="font-semibold text-white">{current.clientName}</div>
                   {current.clientCompany && (
-                    <div className="text-sm mt-0.5" style={{ color: '#555' }}>{current.clientCompany}</div>
+                    <div className="text-sm mt-0.5" style={{ color: 'var(--ink-6)' }}>{current.clientCompany}</div>
                   )}
                 </div>
 
@@ -244,17 +244,17 @@ export default function Testimonials() {
               onClick={prev}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                color: '#666',
+                background: 'var(--ov-weak)',
+                border: '1px solid var(--ov-med)',
+                color: 'var(--ink-5)',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.borderColor = 'rgba(251,191,36,0.3)';
                 (e.currentTarget as HTMLElement).style.color = '#fbbf24';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                (e.currentTarget as HTMLElement).style.color = '#666';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-med)';
+                (e.currentTarget as HTMLElement).style.color = 'var(--ink-5)';
               }}
               aria-label="Previous"
             >
@@ -270,7 +270,7 @@ export default function Testimonials() {
                   className="h-1.5 rounded-full transition-all duration-300"
                   style={{
                     width: i === index ? '1.75rem' : '0.375rem',
-                    background: i === index ? '#fbbf24' : 'rgba(255,255,255,0.1)',
+                    background: i === index ? '#fbbf24' : 'var(--ov-border)',
                     boxShadow: i === index ? '0 0 8px rgba(251,191,36,0.5)' : 'none',
                   }}
                   aria-label={`Testimonial ${i + 1}`}
@@ -282,17 +282,17 @@ export default function Testimonials() {
               onClick={next}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                color: '#666',
+                background: 'var(--ov-weak)',
+                border: '1px solid var(--ov-med)',
+                color: 'var(--ink-5)',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.borderColor = 'rgba(251,191,36,0.3)';
                 (e.currentTarget as HTMLElement).style.color = '#fbbf24';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                (e.currentTarget as HTMLElement).style.color = '#666';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-med)';
+                (e.currentTarget as HTMLElement).style.color = 'var(--ink-5)';
               }}
               aria-label="Next"
             >

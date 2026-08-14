@@ -42,7 +42,7 @@ function HighlightedPhrase({
           <span
             key={i}
             style={{
-              color: isHighlighted ? '#fbbf24' : '#ffffff',
+              color: isHighlighted ? '#fbbf24' : 'var(--ink-1)',
               textShadow: isHighlighted ? '0 0 40px rgba(251,191,36,0.4)' : 'none',
             }}
           >
@@ -64,7 +64,7 @@ function PhraseDots({ total, active }: { total: number; active: number }) {
           className="rounded-full"
           animate={{
             width: i === active ? 20 : 6,
-            background: i === active ? '#fbbf24' : '#2a2a2a',
+            background: i === active ? '#fbbf24' : 'var(--surface-8)',
           }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           style={{ height: 4 }}
@@ -113,11 +113,11 @@ function WorldMapDots() {
         className="absolute inset-0 w-full h-full"
         style={{ opacity: 0.18 }}
       >
-        <path d="M18 20 Q22 15 28 20 Q32 28 30 40 Q26 55 22 65 Q18 70 16 60 Q12 45 14 30 Z" fill="#555" />
-        <path d="M85 18 Q92 14 98 20 Q100 28 96 34 Q90 38 85 34 Q82 28 85 18 Z" fill="#555" />
-        <path d="M90 40 Q98 36 104 42 Q108 52 106 65 Q102 75 96 72 Q90 65 88 55 Q87 46 90 40 Z" fill="#555" />
-        <path d="M105 18 Q130 10 155 14 Q165 20 162 32 Q155 40 140 38 Q120 36 108 30 Q103 24 105 18 Z" fill="#555" />
-        <path d="M148 65 Q158 60 165 66 Q168 74 162 80 Q154 82 148 76 Q144 70 148 65 Z" fill="#555" />
+        <path d="M18 20 Q22 15 28 20 Q32 28 30 40 Q26 55 22 65 Q18 70 16 60 Q12 45 14 30 Z" fill="var(--ink-6)" />
+        <path d="M85 18 Q92 14 98 20 Q100 28 96 34 Q90 38 85 34 Q82 28 85 18 Z" fill="var(--ink-6)" />
+        <path d="M90 40 Q98 36 104 42 Q108 52 106 65 Q102 75 96 72 Q90 65 88 55 Q87 46 90 40 Z" fill="var(--ink-6)" />
+        <path d="M105 18 Q130 10 155 14 Q165 20 162 32 Q155 40 140 38 Q120 36 108 30 Q103 24 105 18 Z" fill="var(--ink-6)" />
+        <path d="M148 65 Q158 60 165 66 Q168 74 162 80 Q154 82 148 76 Q144 70 148 65 Z" fill="var(--ink-6)" />
       </svg>
       {dots.map((d, i) => (
         <motion.div
@@ -170,8 +170,8 @@ function ERPDashboard() {
     <div
       className="relative flex w-full overflow-hidden rounded-xl"
       style={{
-        background: '#0d0d0d',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--surface-1)',
+        border: '1px solid var(--ov-med)',
         fontFamily: 'system-ui, sans-serif',
         fontSize: 10,
         height: 420,
@@ -180,14 +180,14 @@ function ERPDashboard() {
       {/* ── Sidebar ─────────────────────────────────────── */}
       <div
         className="flex-shrink-0 flex flex-col"
-        style={{ width: 96, background: '#080808', borderRight: '1px solid rgba(255,255,255,0.05)', padding: '12px 0' }}
+        style={{ width: 96, background: 'var(--page-bg)', borderRight: '1px solid var(--ov-soft)', padding: '12px 0' }}
       >
         {/* Logo */}
-        <div className="px-3 pb-3 mb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="px-3 pb-3 mb-2" style={{ borderBottom: '1px solid var(--ov-soft)' }}>
           <div className="flex items-center gap-0" style={{ fontWeight: 800, fontSize: 12, letterSpacing: '-0.02em' }}>
-            <span style={{ color: '#fff' }}>&lt;Handla&nbsp;</span>
+            <span style={{ color: 'var(--ink-1)' }}>&lt;Handla&nbsp;</span>
             <span style={{ color: '#fbbf24', textShadow: '0 0 8px rgba(251,191,36,0.6)' }}>/</span>
-            <span style={{ color: '#fff' }}>&gt;</span>
+            <span style={{ color: 'var(--ink-1)' }}>&gt;</span>
           </div>
         </div>
 
@@ -201,7 +201,7 @@ function ERPDashboard() {
                 gap: 6,
                 padding: '5px 8px',
                 background: active ? '#fbbf24' : 'transparent',
-                color: active ? '#0a0a0a' : '#555',
+                color: active ? '#0a0a0a' : 'var(--ink-6)',
               }}
             >
               <Icon style={{ width: 10, height: 10, flexShrink: 0 }} />
@@ -211,7 +211,7 @@ function ERPDashboard() {
         </div>
 
         {/* User */}
-        <div className="px-3 pt-2 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="px-3 pt-2 mt-auto" style={{ borderTop: '1px solid var(--ov-soft)' }}>
           <div className="flex items-center" style={{ gap: 7 }}>
             <div
               className="rounded-full flex items-center justify-center"
@@ -220,8 +220,8 @@ function ERPDashboard() {
               S
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#fff', fontSize: 8, fontWeight: 600, whiteSpace: 'nowrap' }}>Admin</div>
-              <div style={{ color: '#555', fontSize: 7 }}>Administrator</div>
+              <div style={{ color: 'var(--ink-1)', fontSize: 8, fontWeight: 600, whiteSpace: 'nowrap' }}>Admin</div>
+              <div style={{ color: 'var(--ink-6)', fontSize: 7 }}>Administrator</div>
             </div>
           </div>
         </div>
@@ -231,7 +231,7 @@ function ERPDashboard() {
       <div className="flex-1 overflow-hidden flex flex-col" style={{ padding: '12px 14px', gap: 9 }}>
 
         {/* Page title */}
-        <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>Dashboard</div>
+        <div style={{ color: 'var(--ink-1)', fontWeight: 700, fontSize: 13 }}>Dashboard</div>
 
         {/* Stat cards */}
         <div className="grid grid-cols-4 gap-2">
@@ -239,13 +239,13 @@ function ERPDashboard() {
             <motion.div
               key={s.label}
               className="rounded-lg"
-              style={{ background: '#111', border: '1px solid rgba(255,255,255,0.05)', padding: '7px 8px' }}
+              style={{ background: 'var(--surface-3)', border: '1px solid var(--ov-soft)', padding: '7px 8px' }}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.5 + i * 0.07 }}
             >
-              <div style={{ color: '#555', fontSize: 7.5, marginBottom: 3 }}>{s.label}</div>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 10, marginBottom: 2 }}>{s.value}</div>
+              <div style={{ color: 'var(--ink-6)', fontSize: 7.5, marginBottom: 3 }}>{s.label}</div>
+              <div style={{ color: 'var(--ink-1)', fontWeight: 700, fontSize: 10, marginBottom: 2 }}>{s.value}</div>
               <div className="flex items-center gap-0.5">
                 {s.up
                   ? <TrendingUp style={{ width: 8, height: 8, color: '#22c55e' }} />
@@ -263,13 +263,13 @@ function ERPDashboard() {
           {/* Revenue overview */}
           <motion.div
             className="flex-1 rounded-lg flex flex-col"
-            style={{ background: '#111', border: '1px solid rgba(255,255,255,0.05)', minWidth: 0, padding: '10px 10px 8px' }}
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--ov-soft)', minWidth: 0, padding: '10px 10px 8px' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.7 }}
           >
             <div className="flex items-center justify-between mb-2">
-              <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Revenue Overview</span>
+              <span style={{ color: 'var(--ink-3)', fontSize: 9, fontWeight: 600 }}>Revenue Overview</span>
               <span style={{ color: '#fbbf24', fontSize: 8 }}>New Year ▾</span>
             </div>
             {/* Area chart */}
@@ -283,7 +283,7 @@ function ERPDashboard() {
                   <line
                     key={i}
                     x1="0" y1={y * 48} x2="120" y2={y * 48}
-                    stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"
+                    stroke="var(--ov-soft)" strokeWidth="0.5"
                   />
                 ))}
                 <defs>
@@ -311,7 +311,7 @@ function ERPDashboard() {
             </div>
             <div className="flex justify-between mt-1">
               {['Jan','Mar','May','Jul','Sep','Nov','Dec'].map((m) => (
-                <span key={m} style={{ color: '#444', fontSize: 7 }}>{m}</span>
+                <span key={m} style={{ color: 'var(--ink-7)', fontSize: 7 }}>{m}</span>
               ))}
             </div>
           </motion.div>
@@ -320,8 +320,8 @@ function ERPDashboard() {
           <motion.div
             className="rounded-lg"
             style={{
-              background: '#111',
-              border: '1px solid rgba(255,255,255,0.05)',
+              background: 'var(--surface-3)',
+              border: '1px solid var(--ov-soft)',
               width: 130,
               flexShrink: 0,
               padding: '10px 11px 10px',
@@ -333,7 +333,7 @@ function ERPDashboard() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.8 }}
           >
-            <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Performance</span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 9, fontWeight: 600 }}>Performance</span>
             {[
               { label: 'On-time',  value: '98%',   color: '#22c55e', bar: 98 },
               { label: 'Uptime',   value: '99.9%', color: '#fbbf24', bar: 99 },
@@ -341,10 +341,10 @@ function ERPDashboard() {
             ].map((kpi) => (
               <div key={kpi.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#777', fontSize: 8 }}>{kpi.label}</span>
+                  <span style={{ color: 'var(--ink-4)', fontSize: 8 }}>{kpi.label}</span>
                   <span style={{ color: kpi.color, fontSize: 8.5, fontWeight: 700 }}>{kpi.value}</span>
                 </div>
-                <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99 }}>
+                <div style={{ height: 3, background: 'var(--ov-med)', borderRadius: 99 }}>
                   <motion.div
                     style={{ height: '100%', borderRadius: 99, background: kpi.color }}
                     initial={{ width: 0 }}
@@ -363,18 +363,18 @@ function ERPDashboard() {
           {/* Recent orders */}
           <motion.div
             className="flex-1 rounded-lg"
-            style={{ background: '#111', border: '1px solid rgba(255,255,255,0.05)', minWidth: 0, padding: '10px 10px 8px' }}
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--ov-soft)', minWidth: 0, padding: '10px 10px 8px' }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.9 }}
           >
             <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-              <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600 }}>Recent Orders</span>
+              <span style={{ color: 'var(--ink-3)', fontSize: 9, fontWeight: 600 }}>Recent Orders</span>
               <span style={{ color: '#fbbf24', fontSize: 8 }}>Sale All →</span>
             </div>
             <div className="grid" style={{ gridTemplateColumns: '1.8fr 1.4fr 1.8fr 1fr 1.1fr', gap: '0 8px', marginBottom: 5 }}>
               {['Order ID','Customer','Date','Revenue','Status'].map((h) => (
-                <span key={h} style={{ color: '#444', fontSize: 7.5 }}>{h}</span>
+                <span key={h} style={{ color: 'var(--ink-7)', fontSize: 7.5 }}>{h}</span>
               ))}
             </div>
             {orders.map((o) => (
@@ -385,14 +385,14 @@ function ERPDashboard() {
                   gridTemplateColumns: '1.8fr 1.4fr 1.8fr 1fr 1.1fr',
                   gap: '0 8px',
                   padding: '5px 0',
-                  borderTop: '1px solid rgba(255,255,255,0.04)',
+                  borderTop: '1px solid var(--ov-soft)',
                   alignItems: 'center',
                 }}
               >
-                <span style={{ color: '#888', fontSize: 8 }}>{o.id}</span>
-                <span style={{ color: '#ccc', fontSize: 8 }}>{o.customer}</span>
-                <span style={{ color: '#555', fontSize: 8 }}>{o.date}</span>
-                <span style={{ color: '#fff', fontSize: 8 }}>{o.amount}</span>
+                <span style={{ color: 'var(--ink-4)', fontSize: 8 }}>{o.id}</span>
+                <span style={{ color: 'var(--ink-2)', fontSize: 8 }}>{o.customer}</span>
+                <span style={{ color: 'var(--ink-6)', fontSize: 8 }}>{o.date}</span>
+                <span style={{ color: 'var(--ink-1)', fontSize: 8 }}>{o.amount}</span>
                 <span
                   className="rounded-full inline-flex items-center justify-center"
                   style={{
@@ -412,12 +412,12 @@ function ERPDashboard() {
           {/* Sales by region */}
           <motion.div
             className="rounded-lg flex flex-col"
-            style={{ background: '#111', border: '1px solid rgba(255,255,255,0.05)', width: 110, padding: '10px 10px 8px' }}
+            style={{ background: 'var(--surface-3)', border: '1px solid var(--ov-soft)', width: 110, padding: '10px 10px 8px' }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 1.0 }}
           >
-            <span style={{ color: '#aaa', fontSize: 9, fontWeight: 600, marginBottom: 6, display: 'block' }}>Sales by Region</span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 9, fontWeight: 600, marginBottom: 6, display: 'block' }}>Sales by Region</span>
             <WorldMapDots />
             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
@@ -427,10 +427,10 @@ function ERPDashboard() {
               ].map((r) => (
                 <div key={r.region}>
                   <div className="flex justify-between" style={{ marginBottom: 3 }}>
-                    <span style={{ color: '#555', fontSize: 7.5 }}>{r.region}</span>
+                    <span style={{ color: 'var(--ink-6)', fontSize: 7.5 }}>{r.region}</span>
                     <span style={{ color: '#fbbf24', fontSize: 7.5 }}>{r.pct}%</span>
                   </div>
-                  <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                  <div style={{ height: 3, background: 'var(--ov-med)', borderRadius: 2 }}>
                     <motion.div
                       style={{ height: '100%', borderRadius: 2, background: '#fbbf24' }}
                       initial={{ width: 0 }}
@@ -469,7 +469,7 @@ export default function Hero() {
     <section
       id="home"
       className="relative min-h-screen flex items-center overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       {/* ── Background layers ─────────────────────────────────────────────── */}
@@ -479,7 +479,7 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+            'linear-gradient(var(--ov-weak) 1px, transparent 1px), linear-gradient(90deg, var(--ov-weak) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
         }}
       />
@@ -488,7 +488,7 @@ export default function Hero() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, transparent 0%, rgba(8,8,8,0.4) 100%)',
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, transparent 0%, var(--vignette) 100%)',
         }}
       />
 
@@ -618,7 +618,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-base sm:text-lg leading-relaxed mb-8 max-w-lg"
-              style={{ color: '#888' }}
+              style={{ color: 'var(--ink-4)' }}
             >
               {t('hero.subtitle')}
             </motion.p>
@@ -664,7 +664,7 @@ export default function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
               className="flex items-center gap-5 mt-8 pt-6"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+              style={{ borderTop: '1px solid var(--ov-soft)' }}
             >
               {[
                 { value: '200+', label: 'Projects Delivered' },
@@ -673,7 +673,7 @@ export default function Hero() {
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col">
                   <span className="text-base font-extrabold" style={{ color: '#fbbf24' }}>{stat.value}</span>
-                  <span className="text-xs" style={{ color: '#555' }}>{stat.label}</span>
+                  <span className="text-xs" style={{ color: 'var(--ink-6)' }}>{stat.label}</span>
                 </div>
               ))}
             </motion.div>
@@ -693,8 +693,8 @@ export default function Hero() {
                 maxWidth: 520,
                 borderRadius: 20,
                 padding: 10,
-                background: 'linear-gradient(145deg, #161616 0%, #111 100%)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'linear-gradient(145deg, var(--surface-5) 0%, var(--surface-3) 100%)',
+                border: '1px solid var(--ov-med)',
                 boxShadow:
                   '0 0 0 1px rgba(0,0,0,0.5), 0 0 100px rgba(251,191,36,0.1), 0 40px 100px rgba(0,0,0,0.8)',
               }}
@@ -704,11 +704,11 @@ export default function Hero() {
                 className="flex items-center justify-between mb-2 px-1"
                 style={{ height: 14 }}
               >
-                <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
-                <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--ov-med)' }} />
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--ov-med)', flexShrink: 0 }} />
                 <div className="flex gap-1.5 items-center">
                   {[0,1,2].map((i) => (
-                    <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                    <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--ov-strong)' }} />
                   ))}
                 </div>
               </div>
@@ -718,7 +718,7 @@ export default function Hero() {
 
               {/* Bottom bar */}
               <div className="flex justify-center pt-2">
-                <div style={{ width: 52, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ width: 52, height: 4, borderRadius: 2, background: 'var(--ov-med)' }} />
               </div>
             </div>
 
@@ -726,8 +726,8 @@ export default function Hero() {
             <motion.div
               className={`absolute -top-4 ${isRTL ? '-right-4' : '-left-4'} hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-mono`}
               style={{
-                background: '#111',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--surface-3)',
+                border: '1px solid var(--ov-strong)',
                 color: '#fbbf24',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.5), 0 0 20px rgba(251,191,36,0.08)',
               }}
@@ -743,8 +743,8 @@ export default function Hero() {
             <motion.div
               className={`absolute -bottom-4 ${isRTL ? '-left-2' : '-right-2'} hidden lg:flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl`}
               style={{
-                background: '#111',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--surface-3)',
+                border: '1px solid var(--ov-strong)',
                 boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,197,94,0.06)',
               }}
               initial={{ opacity: 0, y: 12 }}
@@ -758,8 +758,8 @@ export default function Hero() {
                 <TrendingUp style={{ width: 14, height: 14, color: '#22c55e' }} />
               </div>
               <div>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>+18%</div>
-                <div style={{ color: '#555', fontSize: 10 }}>Revenue Growth</div>
+                <div style={{ color: 'var(--ink-1)', fontWeight: 700, fontSize: 13 }}>+18%</div>
+                <div style={{ color: 'var(--ink-6)', fontSize: 10 }}>Revenue Growth</div>
               </div>
             </motion.div>
 
@@ -767,9 +767,9 @@ export default function Hero() {
             <motion.div
               className={`absolute top-8 ${isRTL ? '-left-6' : '-right-6'} hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold`}
               style={{
-                background: '#111',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#fff',
+                background: 'var(--surface-3)',
+                border: '1px solid var(--ov-strong)',
+                color: 'var(--ink-1)',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
               }}
               initial={{ opacity: 0, x: isRTL ? -16 : 16 }}

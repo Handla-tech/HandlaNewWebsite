@@ -19,9 +19,9 @@ function FeaturePill({ text }: { text: string }) {
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        color: '#888',
+        background: 'var(--ov-soft)',
+        border: '1px solid var(--ov-med)',
+        color: 'var(--ink-4)',
       }}
     >
       <span className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
@@ -35,10 +35,10 @@ function MiniStat({ value, label, color = '#fbbf24' }: { value: string; label: s
   return (
     <div
       className="rounded-lg p-3 flex flex-col gap-0.5"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+      style={{ background: 'var(--ov-weak)', border: '1px solid var(--ov-soft)' }}
     >
       <span className="text-lg font-extrabold" style={{ color }}>{value}</span>
-      <span className="text-xs" style={{ color: '#555' }}>{label}</span>
+      <span className="text-xs" style={{ color: 'var(--ink-6)' }}>{label}</span>
     </div>
   );
 }
@@ -95,12 +95,12 @@ export default function ServicesBento() {
       id="services"
       ref={ref}
       className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Ambient glows */}
@@ -126,7 +126,7 @@ export default function ServicesBento() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             {t('services.headline')}
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ color: '#666' }}>
+          <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--ink-5)' }}>
             {t('services.description')}
           </p>
         </motion.div>
@@ -143,11 +143,11 @@ export default function ServicesBento() {
               className="group relative rounded-2xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: featured
-                  ? 'linear-gradient(135deg, #0f0f0f 0%, #111 100%)'
-                  : '#0d0d0d',
+                  ? 'linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%)'
+                  : 'var(--surface-1)',
                 border: featured
                   ? '1px solid rgba(251,191,36,0.15)'
-                  : '1px solid rgba(255,255,255,0.05)',
+                  : '1px solid var(--ov-soft)',
                 boxShadow: featured ? '0 0 40px rgba(251,191,36,0.06)' : 'none',
               }}
               whileHover={{
@@ -185,12 +185,12 @@ export default function ServicesBento() {
                   </div>
                   <ArrowUpRight
                     className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    style={{ color: '#333' }}
+                    style={{ color: 'var(--ink-8)' }}
                   />
                 </div>
 
                 <h3 className="text-base font-bold text-white mb-2 leading-tight">{title}</h3>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: '#666' }}>{desc}</p>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-5)' }}>{desc}</p>
 
                 {/* Pills */}
                 <div className="flex flex-wrap gap-1.5">
@@ -215,8 +215,8 @@ export default function ServicesBento() {
               key={label}
               className="flex items-center gap-4 rounded-xl px-5 py-4"
               style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.04)',
+                background: 'var(--ov-weak)',
+                border: '1px solid var(--ov-soft)',
               }}
             >
               <div

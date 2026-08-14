@@ -30,13 +30,13 @@ export default function Process() {
       id="process"
       ref={ref}
       className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Ambient glow */}
@@ -58,7 +58,7 @@ export default function Process() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             {t('process.headline')}
           </h2>
-          <p className="text-sm max-w-lg mx-auto" style={{ color: '#666' }}>
+          <p className="text-sm max-w-lg mx-auto" style={{ color: 'var(--ink-5)' }}>
             From idea to launch — a structured, proven process that delivers on time.
           </p>
         </motion.div>
@@ -70,7 +70,7 @@ export default function Process() {
           <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-px z-0">
             <div
               className="absolute inset-0"
-              style={{ background: 'rgba(255,255,255,0.05)' }}
+              style={{ background: 'var(--ov-soft)' }}
             />
             <motion.div
               className="absolute inset-y-0 left-0"
@@ -90,8 +90,8 @@ export default function Process() {
               animate={inView ? 'visible' : 'hidden'}
               className="relative group rounded-2xl p-6 transition-all duration-300"
               style={{
-                background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                background: 'var(--surface-1)',
+                border: '1px solid var(--ov-soft)',
                 zIndex: 1,
               }}
               whileHover={{
@@ -135,7 +135,7 @@ export default function Process() {
               </div>
 
               <h3 className="text-base font-bold text-white mb-2">{title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: '#666' }}>{desc}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>{desc}</p>
 
               {/* Connector arrow (desktop) */}
               {i < STEPS.length - 1 && (
@@ -144,11 +144,11 @@ export default function Process() {
                 >
                   <div
                     className="w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)' }}
+                    style={{ background: 'var(--surface-1)', border: '1px solid var(--ov-strong)' }}
                   >
                     {isRTL
-                      ? <ArrowLeft  className="w-3 h-3" style={{ color: '#444' }} />
-                      : <ArrowRight className="w-3 h-3" style={{ color: '#444' }} />
+                      ? <ArrowLeft  className="w-3 h-3" style={{ color: 'var(--ink-7)' }} />
+                      : <ArrowRight className="w-3 h-3" style={{ color: 'var(--ink-7)' }} />
                     }
                   </div>
                 </div>

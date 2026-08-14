@@ -12,9 +12,9 @@ import { track } from '@/lib/track';
 // ── Social links ──────────────────────────────────────────────────────────────
 const SOCIALS = [
   { label: 'Facebook',  href: '#', color: '#1877F2', bg: 'rgba(24,119,242,0.08)',  hoverBorder: 'rgba(24,119,242,0.3)'  },
-  { label: 'TikTok',   href: '#', color: '#ffffff', bg: 'rgba(255,255,255,0.04)', hoverBorder: 'rgba(255,255,255,0.2)' },
+  { label: 'TikTok',   href: '#', color: 'var(--ink-1)', bg: 'var(--ov-soft)', hoverBorder: 'var(--ov-border)' },
   { label: 'Instagram', href: '#', color: '#E1306C', bg: 'rgba(225,48,108,0.08)', hoverBorder: 'rgba(225,48,108,0.3)'  },
-  { label: 'X',        href: '#', color: '#ffffff', bg: 'rgba(255,255,255,0.04)', hoverBorder: 'rgba(255,255,255,0.2)' },
+  { label: 'X',        href: '#', color: 'var(--ink-1)', bg: 'var(--ov-soft)', hoverBorder: 'var(--ov-border)' },
   { label: 'YouTube',  href: '#', color: '#FF0000', bg: 'rgba(255,0,0,0.08)',     hoverBorder: 'rgba(255,0,0,0.3)'     },
   { label: 'LinkedIn', href: '#', color: '#0A66C2', bg: 'rgba(10,102,194,0.08)', hoverBorder: 'rgba(10,102,194,0.3)'  },
 ];
@@ -62,12 +62,12 @@ export default function Contact() {
       id="contact"
       ref={ref}
       className="relative py-20 sm:py-24 overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Ambient glows */}
@@ -95,7 +95,7 @@ export default function Contact() {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
             {isLoggedIn ? t('contact.headlineAuth') : t('contact.headlineGuest')}
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ color: '#666' }}>
+          <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--ink-5)' }}>
             {isLoggedIn ? t('contact.subtitleAuth') : t('contact.subtitleGuest')}
           </p>
         </motion.div>
@@ -118,7 +118,7 @@ export default function Contact() {
                 transition={{ duration: 0.4 }}
                 className="rounded-2xl overflow-hidden flex flex-col"
                 style={{
-                  background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
+                  background: 'var(--surface-1)',
                   border: '1px solid rgba(251,191,36,0.12)',
                   boxShadow: '0 0 40px rgba(251,191,36,0.04)',
                   minHeight: '280px',
@@ -138,7 +138,7 @@ export default function Contact() {
                 <div
                   className="px-5 py-5"
                   style={{
-                    borderTop: '1px solid rgba(255,255,255,0.05)',
+                    borderTop: '1px solid var(--ov-soft)',
                     background: 'rgba(251,191,36,0.01)',
                   }}
                 >
@@ -175,7 +175,7 @@ export default function Contact() {
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   )}
-                  <p className="text-center text-xs mt-3" style={{ color: '#555' }}>
+                  <p className="text-center text-xs mt-3" style={{ color: 'var(--ink-6)' }}>
                     {isAdmin ? t('contact.adminSubtitle') : t('contact.clientSubtitle')}
                   </p>
                 </div>
@@ -197,21 +197,21 @@ export default function Contact() {
             variants={itemVariants}
             className="rounded-2xl overflow-hidden flex flex-col"
             style={{
-              background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--surface-1)',
+              border: '1px solid var(--ov-med)',
               minHeight: '280px',
             }}
           >
             {/* Gold top accent */}
             <div
               className="h-px flex-shrink-0"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }}
+              style={{ background: 'linear-gradient(90deg, transparent, var(--ov-strong), transparent)' }}
             />
 
             <div className="p-5 sm:p-6 flex flex-col flex-1">
               <div className="mb-5">
                 <h3 className="text-lg font-bold text-white mb-1">{t('contact.followUs')}</h3>
-                <p className="text-sm" style={{ color: '#555' }}>
+                <p className="text-sm" style={{ color: 'var(--ink-6)' }}>
                   {t('contact.followSubtitle')}
                 </p>
               </div>
@@ -225,7 +225,7 @@ export default function Contact() {
                     className="flex flex-col items-center justify-center gap-2 rounded-xl p-3 transition-all duration-200 group"
                     style={{
                       background: bg,
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      border: '1px solid var(--ov-soft)',
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.borderColor = hoverBorder;
@@ -233,7 +233,7 @@ export default function Contact() {
                       (e.currentTarget as HTMLElement).style.boxShadow = `0 0 16px ${color}15`;
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-soft)';
                       (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
                       (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                     }}
@@ -241,7 +241,7 @@ export default function Contact() {
                     <span style={{ color }} className="transition-transform duration-200">
                       <SocialIcon label={label} />
                     </span>
-                    <span className="text-xs font-medium" style={{ color: '#666' }}>{label}</span>
+                    <span className="text-xs font-medium" style={{ color: 'var(--ink-5)' }}>{label}</span>
                   </a>
                 ))}
               </div>
@@ -268,7 +268,7 @@ export default function Contact() {
                     <p className="text-sm font-medium text-white truncate">
                       {isAdmin ? t('contact.adminPanel') : t('contact.myChat')}
                     </p>
-                    <p className="text-xs truncate" style={{ color: '#555' }}>
+                    <p className="text-xs truncate" style={{ color: 'var(--ink-6)' }}>
                       {isAdmin ? t('contact.manageConversations') : t('contact.continueConversation')}
                     </p>
                   </div>
@@ -284,7 +284,7 @@ export default function Contact() {
               )}
 
               {!isLoggedIn && (
-                <p className="text-xs mt-5" style={{ color: '#3a3a3a' }}>
+                <p className="text-xs mt-5" style={{ color: 'var(--ink-8)' }}>
                   {t('contact.communityNote')}
                 </p>
               )}

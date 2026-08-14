@@ -49,7 +49,7 @@ export default function Footer() {
     <footer
       role="contentinfo"
       className="relative overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
     >
       {/* Gold top separator */}
       <div
@@ -91,9 +91,9 @@ export default function Footer() {
                 href={link.href}
                 onClick={(e) => handleClick(e, link.href)}
                 className="text-sm transition-colors py-1 min-h-[44px] flex items-center"
-                style={{ color: '#555' }}
+                style={{ color: 'var(--ink-6)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = '#fbbf24')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-6)')}
               >
                 {t(link.key)}
               </a>
@@ -109,9 +109,9 @@ export default function Footer() {
                 aria-label={label}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  color: '#555',
+                  background: 'var(--ov-soft)',
+                  border: '1px solid var(--ov-med)',
+                  color: 'var(--ink-6)',
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.color = '#fbbf24';
@@ -119,9 +119,9 @@ export default function Footer() {
                   (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.06)';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = '#555';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--ink-6)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-med)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--ov-soft)';
                 }}
               >
                 <SocialIcon label={label} />
@@ -133,9 +133,9 @@ export default function Footer() {
         {/* ── Bottom bar ─────────────────────────────────────────────────── */}
         <div
           className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+          style={{ borderTop: '1px solid var(--ov-soft)' }}
         >
-          <p className="text-xs" style={{ color: '#3a3a3a' }}>
+          <p className="text-xs" style={{ color: 'var(--ink-8)' }}>
             {t('footer.copyright', { year: String(year) })}
           </p>
 
@@ -145,9 +145,9 @@ export default function Footer() {
                 key={item}
                 href="#"
                 className="text-xs transition-colors"
-                style={{ color: '#3a3a3a' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#666')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#3a3a3a')}
+                style={{ color: 'var(--ink-8)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink-5)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-8)')}
               >
                 {item}
               </a>
@@ -156,7 +156,7 @@ export default function Footer() {
 
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#22c55e', boxShadow: '0 0 4px rgba(34,197,94,0.6)' }} />
-            <span className="text-xs" style={{ color: '#3a3a3a' }}>All systems operational</span>
+            <span className="text-xs" style={{ color: 'var(--ink-8)' }}>All systems operational</span>
           </div>
         </div>
 

@@ -27,9 +27,9 @@ export default function TrustStrip() {
     <section
       className="relative py-10 overflow-hidden"
       style={{
-        background: '#080808',
-        borderTop:    '1px solid rgba(255,255,255,0.04)',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        background: 'var(--page-bg)',
+        borderTop:    '1px solid var(--ov-soft)',
+        borderBottom: '1px solid var(--ov-soft)',
       }}
     >
       {/* Subtle gold top highlight */}
@@ -40,25 +40,25 @@ export default function TrustStrip() {
 
       {/* Fade edges */}
       <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to right, #080808, transparent)' }} />
+        style={{ background: 'linear-gradient(to right, var(--page-bg), transparent)' }} />
       <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to left, #080808, transparent)' }} />
+        style={{ background: 'linear-gradient(to left, var(--page-bg), transparent)' }} />
 
       {/* Label */}
       <div className="flex items-center gap-4 mb-5 justify-center">
         <div
           className="h-px flex-1 max-w-16"
-          style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08))' }}
+          style={{ background: 'linear-gradient(to right, transparent, var(--ov-strong))' }}
         />
         <p
           className="text-xs font-semibold uppercase tracking-widest"
-          style={{ color: '#444' }}
+          style={{ color: 'var(--ink-7)' }}
         >
           {t('contact.trustStrip')}
         </p>
         <div
           className="h-px flex-1 max-w-16"
-          style={{ background: 'linear-gradient(to left, transparent, rgba(255,255,255,0.08))' }}
+          style={{ background: 'linear-gradient(to left, transparent, var(--ov-strong))' }}
         />
       </div>
 
@@ -78,8 +78,8 @@ export default function TrustStrip() {
               key={`${name}-${idx}`}
               className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl cursor-default select-none shrink-0 group transition-all duration-300"
               style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                background: 'var(--ov-weak)',
+                border: '1px solid var(--ov-soft)',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.05)';
@@ -87,8 +87,8 @@ export default function TrustStrip() {
                 (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(251,191,36,0.08)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)';
+                (e.currentTarget as HTMLElement).style.background = 'var(--ov-weak)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'var(--ov-soft)';
                 (e.currentTarget as HTMLElement).style.boxShadow = 'none';
               }}
             >
@@ -100,7 +100,7 @@ export default function TrustStrip() {
               </span>
               <span
                 className="text-sm font-medium transition-colors duration-300"
-                style={{ color: '#555' }}
+                style={{ color: 'var(--ink-6)' }}
               >
                 {name}
               </span>

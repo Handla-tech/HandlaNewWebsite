@@ -20,7 +20,7 @@ function Feature({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2.5">
       <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#fbbf24' }} />
-      <span className="text-sm" style={{ color: '#888' }}>{text}</span>
+      <span className="text-sm" style={{ color: 'var(--ink-4)' }}>{text}</span>
     </div>
   );
 }
@@ -58,12 +58,12 @@ export default function Solutions() {
       id="solutions"
       ref={ref}
       className="relative py-24 sm:py-32 overflow-hidden"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Gold center ambient glow */}
@@ -85,7 +85,7 @@ export default function Solutions() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
             {t('solutions.headline')}
           </h2>
-          <p className="text-base max-w-2xl mx-auto" style={{ color: '#666' }}>
+          <p className="text-base max-w-2xl mx-auto" style={{ color: 'var(--ink-5)' }}>
             {t('solutions.description')}
           </p>
         </motion.div>
@@ -103,8 +103,8 @@ export default function Solutions() {
               variants={itemVariants}
               className="group relative rounded-2xl p-8 overflow-hidden transition-all duration-300"
               style={{
-                background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'var(--surface-1)',
+                border: '1px solid var(--ov-med)',
               }}
               whileHover={{
                 borderColor: `${accent}20`,
@@ -141,17 +141,17 @@ export default function Solutions() {
                   <div
                     className="text-right px-3 py-2 rounded-xl"
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      background: 'var(--ov-weak)',
+                      border: '1px solid var(--ov-soft)',
                     }}
                   >
                     <div className="text-base font-extrabold" style={{ color: accent }}>{stat.value}</div>
-                    <div className="text-xs" style={{ color: '#555' }}>{stat.label}</div>
+                    <div className="text-xs" style={{ color: 'var(--ink-6)' }}>{stat.label}</div>
                   </div>
                 </div>
 
                 <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: '#666' }}>{desc}</p>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-5)' }}>{desc}</p>
 
                 {/* Features checklist */}
                 <div className="space-y-2.5 mb-7">

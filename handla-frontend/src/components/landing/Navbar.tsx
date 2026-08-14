@@ -185,7 +185,7 @@ export default function Navbar() {
               </button>
 
               {/* Vertical separator */}
-              <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="w-px h-5 mx-1" style={{ background: 'var(--ov-strong)' }} />
 
               {isLoggedIn ? (
                 /* ── Authenticated — bell + profile icon ── */
@@ -287,9 +287,9 @@ export default function Navbar() {
                 isRTL ? 'left-0' : 'right-0'
               }`}
               style={{
-                background: '#0d0d0d',
-                borderLeft: isRTL ? 'none' : '1px solid rgba(255,255,255,0.06)',
-                borderRight: isRTL ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                background: 'var(--surface-1)',
+                borderLeft: isRTL ? 'none' : '1px solid var(--ov-med)',
+                borderRight: isRTL ? '1px solid var(--ov-med)' : 'none',
               }}
             >
               {/* Gold top accent */}
@@ -301,7 +301,7 @@ export default function Navbar() {
               {/* Drawer header */}
               <div
                 className="flex items-center justify-between px-6 py-5"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ borderBottom: '1px solid var(--ov-med)' }}
               >
                 <span className="font-mono font-bold text-lg tracking-tight">
                   <span className="text-white">&lt;Handla </span>
@@ -337,7 +337,7 @@ export default function Navbar() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                    <p className="text-[10px] truncate mt-0.5" style={{ color: '#555' }}>{user.email}</p>
+                    <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--ink-6)' }}>{user.email}</p>
                     <span
                       className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
                       style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24' }}
@@ -360,18 +360,18 @@ export default function Navbar() {
                     transition={{ delay: i * 0.05 }}
                     className="flex items-center px-4 py-3 min-h-[44px] text-sm font-medium rounded-xl transition-all duration-200"
                     style={{
-                      color: activeLink === link.href ? '#fbbf24' : '#a0a0a0',
+                      color: activeLink === link.href ? '#fbbf24' : 'var(--ink-3)',
                       background: activeLink === link.href ? 'rgba(251,191,36,0.06)' : 'transparent',
                     }}
                     onMouseEnter={(e) => {
                       if (activeLink !== link.href) {
-                        (e.currentTarget as HTMLElement).style.color = '#fff';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--ink-1)';
+                        (e.currentTarget as HTMLElement).style.background = 'var(--ov-soft)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (activeLink !== link.href) {
-                        (e.currentTarget as HTMLElement).style.color = '#a0a0a0';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--ink-3)';
                         (e.currentTarget as HTMLElement).style.background = 'transparent';
                       }
                     }}
@@ -384,7 +384,7 @@ export default function Navbar() {
                 {isLoggedIn && (
                   <div
                     className="pt-3 mt-2 space-y-1"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                    style={{ borderTop: '1px solid var(--ov-soft)' }}
                   >
                     <Link
                       href={dashboardHref}
@@ -420,7 +420,7 @@ export default function Navbar() {
               {/* Drawer footer */}
               <div
                 className="px-4 py-5 space-y-2"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ borderTop: '1px solid var(--ov-soft)' }}
               >
                 <button
                   type="button"

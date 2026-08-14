@@ -35,12 +35,12 @@ export default function About() {
   ];
 
   return (
-    <section id="about" ref={ref} className="relative py-24 sm:py-32 overflow-hidden" style={{ background: '#080808' }}>
+    <section id="about" ref={ref} className="relative py-24 sm:py-32 overflow-hidden" style={{ background: 'var(--page-bg)' }}>
 
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, var(--ov-med) 30%, var(--ov-med) 70%, transparent)' }}
       />
 
       {/* Ambient glow */}
@@ -71,13 +71,13 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="mb-20 rounded-2xl p-1"
           style={{
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, rgba(255,255,255,0.02) 50%, rgba(251,191,36,0.04) 100%)',
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.08) 0%, var(--ov-weak) 50%, rgba(251,191,36,0.04) 100%)',
             border: '1px solid rgba(251,191,36,0.12)',
           }}
         >
           <div
             className="rounded-xl p-6 sm:p-8"
-            style={{ background: '#0d0d0d' }}
+            style={{ background: 'var(--surface-1)' }}
           >
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
               {STATS.map((stat, i) => (
@@ -92,7 +92,7 @@ export default function About() {
                   {i < STATS.length - 1 && (
                     <div
                       className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-12"
-                      style={{ background: 'rgba(255,255,255,0.05)' }}
+                      style={{ background: 'var(--ov-soft)' }}
                     />
                   )}
 
@@ -103,7 +103,7 @@ export default function About() {
                   >
                     {stat.value}
                   </div>
-                  <div className="text-sm font-medium" style={{ color: '#555' }}>
+                  <div className="text-sm font-medium" style={{ color: 'var(--ink-6)' }}>
                     {stat.label}
                   </div>
                 </motion.div>
@@ -153,7 +153,7 @@ export default function About() {
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: 'linear-gradient(to bottom, transparent 60%, rgba(8,8,8,0.4) 100%)',
+                  background: 'linear-gradient(to bottom, transparent 60%, var(--vignette) 100%)',
                 }}
               />
 
@@ -178,8 +178,8 @@ export default function About() {
                   bottom: i === 0 ? '1.5rem' : undefined,
                   top: i === 1 ? '1.5rem' : undefined,
                   right: '-1rem',
-                  background: '#0d0d0d',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: 'var(--surface-1)',
+                  border: '1px solid var(--ov-med)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                 }}
                 initial={{ opacity: 0, x: 16 }}
@@ -215,7 +215,7 @@ export default function About() {
             <motion.p
               variants={itemVariants}
               className="text-base leading-relaxed mb-8"
-              style={{ color: '#777' }}
+              style={{ color: 'var(--ink-4)' }}
             >
               {t('about.description')}
             </motion.p>
@@ -228,8 +228,8 @@ export default function About() {
                   variants={itemVariants}
                   className="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 group"
                   style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.04)',
+                    background: 'var(--ov-weak)',
+                    border: '1px solid var(--ov-soft)',
                   }}
                   whileHover={{
                     backgroundColor: 'rgba(251,191,36,0.04)',
@@ -244,7 +244,7 @@ export default function About() {
                   </div>
                   <div>
                     <div className="font-semibold text-white text-sm mb-0.5">{title}</div>
-                    <div className="text-sm leading-relaxed" style={{ color: '#666' }}>{desc}</div>
+                    <div className="text-sm leading-relaxed" style={{ color: 'var(--ink-5)' }}>{desc}</div>
                   </div>
                 </motion.div>
               ))}
