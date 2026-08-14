@@ -1,0 +1,98 @@
+{
+  "en": {
+    "role": {
+      "ADMIN": "Admin",
+      "EMPLOYEE": "Employee",
+      "CLIENT": "Client",
+      "LEAD": "Lead"
+    },
+    "users": {
+      "title": "Users",
+      "all": "All",
+      "membersCount": "{{count}} members",
+      "loading": "Loading…",
+      "disabled": "DISABLED",
+      "archived": "ARCHIVED",
+      "empty": "No users found.",
+      "newUser": "New User",
+      "editUser": "Edit User",
+      "changeRole": "Change Role",
+      "resetPassword": "Reset Password",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Jane Smith",
+      "emailPlaceholder": "jane@example.com",
+      "tempPassword": "Temporary password",
+      "newPassword": "New password",
+      "passwordPlaceholder": "Min 8 chars, mixed case + number",
+      "roleLabel": "Role",
+      "actions": {
+        "editNameEmail": "Edit name / email",
+        "changeRole": "Change role",
+        "resetPassword": "Reset password",
+        "promote": "Promote to client",
+        "enable": "Enable",
+        "disable": "Disable",
+        "unarchive": "Unarchive",
+        "archive": "Archive"
+      },
+      "deleteTitle": "Delete User",
+      "deleteMessage": "Delete \"{{name}}\"? This permanently removes the account and cannot be undone.",
+      "errors": {
+        "save": "Failed to save",
+        "action": "Action failed",
+        "delete": "Failed to delete user",
+        "name": "Name must be at least 2 characters.",
+        "email": "A valid email is required.",
+        "password": "Password: min 8 chars with uppercase, lowercase and a number."
+      }
+    }
+  },
+  "ar": {
+    "role": {
+      "ADMIN": "مدير",
+      "EMPLOYEE": "موظف",
+      "CLIENT": "عميل",
+      "LEAD": "عميل محتمل"
+    },
+    "users": {
+      "title": "المستخدمون",
+      "all": "الكل",
+      "membersCount": "{{count}} عضو",
+      "loading": "جارٍ التحميل…",
+      "disabled": "معطّل",
+      "archived": "مؤرشف",
+      "empty": "لم يتم العثور على مستخدمين.",
+      "newUser": "مستخدم جديد",
+      "editUser": "تعديل المستخدم",
+      "changeRole": "تغيير الدور",
+      "resetPassword": "إعادة تعيين كلمة المرور",
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "جين سميث",
+      "emailPlaceholder": "jane@example.com",
+      "tempPassword": "كلمة مرور مؤقتة",
+      "newPassword": "كلمة مرور جديدة",
+      "passwordPlaceholder": "8 أحرف على الأقل، أحرف كبيرة وصغيرة ورقم",
+      "roleLabel": "الدور",
+      "actions": {
+        "editNameEmail": "تعديل الاسم / البريد الإلكتروني",
+        "changeRole": "تغيير الدور",
+        "resetPassword": "إعادة تعيين كلمة المرور",
+        "promote": "ترقية إلى عميل",
+        "enable": "تفعيل",
+        "disable": "تعطيل",
+        "unarchive": "إلغاء الأرشفة",
+        "archive": "أرشفة"
+      },
+      "deleteTitle": "حذف المستخدم",
+      "deleteMessage": "حذف \"{{name}}\"؟ سيؤدي هذا إلى إزالة الحساب نهائياً ولا يمكن التراجع عنه.",
+      "errors": {
+        "save": "فشل الحفظ",
+        "action": "فشل الإجراء",
+        "delete": "فشل حذف المستخدم",
+        "name": "يجب أن يكون الاسم حرفين على الأقل.",
+        "email": "البريد الإلكتروني الصالح مطلوب.",
+        "password": "كلمة المرور: 8 أحرف على الأقل مع حرف كبير وصغير ورقم."
+      }
+    }
+  }
+}

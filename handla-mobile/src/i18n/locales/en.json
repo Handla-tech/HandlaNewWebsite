@@ -434,5 +434,51 @@
       "delete": "Failed to delete supplier",
       "name": "Name is required."
     }
+  },
+  "role": {
+    "ADMIN": "Admin",
+    "EMPLOYEE": "Employee",
+    "CLIENT": "Client",
+    "LEAD": "Lead"
+  },
+  "users": {
+    "title": "Users",
+    "all": "All",
+    "membersCount": "{{count}} members",
+    "loading": "Loading…",
+    "disabled": "DISABLED",
+    "archived": "ARCHIVED",
+    "empty": "No users found.",
+    "newUser": "New User",
+    "editUser": "Edit User",
+    "changeRole": "Change Role",
+    "resetPassword": "Reset Password",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Jane Smith",
+    "emailPlaceholder": "jane@example.com",
+    "tempPassword": "Temporary password",
+    "newPassword": "New password",
+    "passwordPlaceholder": "Min 8 chars, mixed case + number",
+    "roleLabel": "Role",
+    "actions": {
+      "editNameEmail": "Edit name / email",
+      "changeRole": "Change role",
+      "resetPassword": "Reset password",
+      "promote": "Promote to client",
+      "enable": "Enable",
+      "disable": "Disable",
+      "unarchive": "Unarchive",
+      "archive": "Archive"
+    },
+    "deleteTitle": "Delete User",
+    "deleteMessage": "Delete \"{{name}}\"? This permanently removes the account and cannot be undone.",
+    "errors": {
+      "save": "Failed to save",
+      "action": "Action failed",
+      "delete": "Failed to delete user",
+      "name": "Name must be at least 2 characters.",
+      "email": "A valid email is required.",
+      "password": "Password: min 8 chars with uppercase, lowercase and a number."
+    }
   }
 }

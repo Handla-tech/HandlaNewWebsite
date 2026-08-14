@@ -18,22 +18,18 @@ import {
   type SheetAction,
 } from '@/components/forms';
 import { spacing, radius, font, useTheme, colors as staticColors } from '@/theme';
+import { useT } from '@/i18n';
 import type { PaginatedUsers, TeamMember, UserRole } from '@/types';
 
-const ROLE_META: Record<UserRole, { label: string; color: string; soft: string }> = {
-  ADMIN: { label: 'Admin', color: staticColors.accent, soft: staticColors.accentSoft },
-  EMPLOYEE: { label: 'Employee', color: staticColors.info, soft: 'rgba(96,165,250,0.15)' },
-  CLIENT: { label: 'Client', color: staticColors.success, soft: staticColors.successSoft },
-  LEAD: { label: 'Lead', color: '#c084fc', soft: 'rgba(192,132,252,0.15)' },
+const ROLE_META: Record<UserRole, { color: string; soft: string }> = {
+  ADMIN: { color: staticColors.accent, soft: staticColors.accentSoft },
+  EMPLOYEE: { color: staticColors.info, soft: 'rgba(96,165,250,0.15)' },
+  CLIENT: { color: staticColors.success, soft: staticColors.successSoft },
+  LEAD: { color: '#c084fc', soft: 'rgba(192,132,252,0.15)' },
 };
 
 const ROLE_FILTERS: (UserRole | null)[] = [null, 'ADMIN', 'EMPLOYEE', 'CLIENT', 'LEAD'];
-const ROLE_OPTIONS: SelectOption[] = [
-  { label: 'Admin', value: 'ADMIN' },
-  { label: 'Employee', value: 'EMPLOYEE' },
-  { label: 'Client', value: 'CLIENT' },
-  { label: 'Lead', value: 'LEAD' },
-];
+const ROLE_VALUES: UserRole[] = ['ADMIN', 'EMPLOYEE', 'CLIENT', 'LEAD'];
 
 function initials(name: string) {
   return (name ?? '?')
@@ -47,7 +43,12 @@ function initials(name: string) {
 type Mode = 'create' | 'edit' | 'role' | 'password';
 
 export default function UsersScreen() {
+  const { t } = useT();
   const { colors } = useTheme();
+  const ROLE_OPTIONS: SelectOption[] = ROLE_VALUES.map((r) => ({
+    label: t(`role.${r}`),
+    value: r,
+  }));
   const qc = useQueryClient();
   const isAdmin = useAuthStore((s) => s.isAdmin());
   const [role, setRole] = useState<UserRole | null>(null);
@@ -138,13 +139,13 @@ export default function UsersScreen() {
       invalidate();
       setFormOpen(false);
     },
-    onError: (e) => setErr(apiError(e, 'Failed to save')),
+    onError: (e) => setErr(apiError(e, t('users.errors.save'))),
   });
 
   const simpleAction = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
     onSuccess: invalidate,
-    onError: (e) => setErr(apiError(e, 'Action failed')),
+    onError: (e) => setErr(apiError(e, t('users.errors.action'))),
   });
 
   const del = useMutation({
@@ -153,23 +154,23 @@ export default function UsersScreen() {
       invalidate();
       setDeleteFor(null);
     },
-    onError: (e) => setDeleteErr(apiError(e, 'Failed to delete user')),
+    onError: (e) => setDeleteErr(apiError(e, t('users.errors.delete'))),
   });
 
   const submit = () => {
     if (mode === 'create') {
-      if (name.trim().length < 2) return setErr('Name must be at least 2 characters.');
+      if (name.trim().length < 2) return setErr(t('users.errors.name'));
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-        return setErr('A valid email is required.');
+        return setErr(t('users.errors.email'));
       if (password.length < 8 || !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password))
-        return setErr('Password: min 8 chars with uppercase, lowercase and a number.');
+        return setErr(t('users.errors.password'));
     } else if (mode === 'edit') {
-      if (name.trim().length < 2) return setErr('Name must be at least 2 characters.');
+      if (name.trim().length < 2) return setErr(t('users.errors.name'));
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-        return setErr('A valid email is required.');
+        return setErr(t('users.errors.email'));
     } else if (mode === 'password') {
       if (password.length < 8 || !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password))
-        return setErr('Password: min 8 chars with uppercase, lowercase and a number.');
+        return setErr(t('users.errors.password'));
     }
     setErr(null);
     save.mutate();
@@ -177,17 +178,17 @@ export default function UsersScreen() {
 
   const formTitle =
     mode === 'create'
-      ? 'New User'
+      ? t('users.newUser')
       : mode === 'edit'
-        ? 'Edit User'
+        ? t('users.editUser')
         : mode === 'role'
-          ? 'Change Role'
-          : 'Reset Password';
+          ? t('users.changeRole')
+          : t('users.resetPassword');
 
   const buildActions = (u: TeamMember): SheetAction[] => {
     const actions: SheetAction[] = [
       {
-        label: 'Edit name / email',
+        label: t('users.actions.editNameEmail'),
         icon: 'create-outline',
         onPress: () => {
           setSheetFor(null);
@@ -195,7 +196,7 @@ export default function UsersScreen() {
         },
       },
       {
-        label: 'Change role',
+        label: t('users.actions.changeRole'),
         icon: 'swap-horizontal-outline',
         onPress: () => {
           setSheetFor(null);
@@ -203,7 +204,7 @@ export default function UsersScreen() {
         },
       },
       {
-        label: 'Reset password',
+        label: t('users.actions.resetPassword'),
         icon: 'key-outline',
         onPress: () => {
           setSheetFor(null);
@@ -213,7 +214,7 @@ export default function UsersScreen() {
     ];
     if (u.role === 'LEAD') {
       actions.push({
-        label: 'Promote to client',
+        label: t('users.actions.promote'),
         icon: 'trending-up-outline',
         onPress: () => {
           setSheetFor(null);
@@ -222,7 +223,7 @@ export default function UsersScreen() {
       });
     }
     actions.push({
-      label: u.isDisabled ? 'Enable' : 'Disable',
+      label: u.isDisabled ? t('users.actions.enable') : t('users.actions.disable'),
       icon: u.isDisabled ? 'lock-open-outline' : 'lock-closed-outline',
       onPress: () => {
         setSheetFor(null);
@@ -230,7 +231,7 @@ export default function UsersScreen() {
       },
     });
     actions.push({
-      label: u.isArchived ? 'Unarchive' : 'Archive',
+      label: u.isArchived ? t('users.actions.unarchive') : t('users.actions.archive'),
       icon: u.isArchived ? 'arrow-undo-outline' : 'archive-outline',
       onPress: () => {
         setSheetFor(null);
@@ -240,7 +241,7 @@ export default function UsersScreen() {
       },
     });
     actions.push({
-      label: 'Delete',
+      label: t('common.delete'),
       icon: 'trash-outline',
       destructive: true,
       onPress: () => {
@@ -281,11 +282,11 @@ export default function UsersScreen() {
         subtitle={item.email}
         right={
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            <Badge label={m.label} color={m.color} soft={m.soft} />
+            <Badge label={t(`role.${item.role}`)} color={m.color} soft={m.soft} />
             {item.isDisabled ? (
-              <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>DISABLED</Text>
+              <Text style={{ color: colors.danger, fontSize: 10, fontWeight: '700' }}>{t('users.disabled')}</Text>
             ) : item.isArchived ? (
-              <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>ARCHIVED</Text>
+              <Text style={{ color: colors.textDim, fontSize: 10, fontWeight: '700' }}>{t('users.archived')}</Text>
             ) : null}
           </View>
         }
@@ -296,9 +297,9 @@ export default function UsersScreen() {
   return (
     <GlassScreen>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
-        <GradientHeader title="Users" icon="people-outline" style={{ paddingHorizontal: 0, paddingTop: 0 }} />
+        <GradientHeader title={t('users.title')} icon="people-outline" style={{ paddingHorizontal: 0, paddingTop: 0 }} />
         <Text style={{ color: colors.textDim, fontSize: font.xs, marginTop: 2 }}>
-          {users.data ? `${users.data.total} members` : 'Loading…'}
+          {users.data ? t('users.membersCount', { count: users.data.total }) : t('users.loading')}
         </Text>
       </View>
       {users.isLoading ? (
@@ -325,7 +326,7 @@ export default function UsersScreen() {
               {ROLE_FILTERS.map((r) => (
                 <Chip
                   key={r ?? 'all'}
-                  label={r ? ROLE_META[r].label : 'All'}
+                  label={r ? t(`role.${r}`) : t('users.all')}
                   active={role === r}
                   onPress={() => setRole(r)}
                 />
@@ -335,7 +336,7 @@ export default function UsersScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.sm }}>
               <Ionicons name="people-outline" size={40} color={colors.textDim} />
-              <Text style={{ color: colors.textFaint }}>No users found.</Text>
+              <Text style={{ color: colors.textFaint }}>{t('users.empty')}</Text>
             </View>
           }
         />
@@ -355,17 +356,17 @@ export default function UsersScreen() {
         {(mode === 'create' || mode === 'edit') && (
           <>
             <Input
-              label="Full name"
+              label={t('users.fullName')}
               value={name}
               onChangeText={setName}
-              placeholder="Jane Smith"
+              placeholder={t('users.fullNamePlaceholder')}
               autoCapitalize="words"
             />
             <Input
-              label="Email"
+              label={t('common.email')}
               value={email}
               onChangeText={setEmail}
-              placeholder="jane@example.com"
+              placeholder={t('users.emailPlaceholder')}
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -373,17 +374,17 @@ export default function UsersScreen() {
         )}
         {(mode === 'create' || mode === 'password') && (
           <Input
-            label={mode === 'create' ? 'Temporary password' : 'New password'}
+            label={mode === 'create' ? t('users.tempPassword') : t('users.newPassword')}
             value={password}
             onChangeText={setPassword}
-            placeholder="Min 8 chars, mixed case + number"
+            placeholder={t('users.passwordPlaceholder')}
             autoCapitalize="none"
             secureTextEntry
           />
         )}
         {(mode === 'create' || mode === 'role') && (
           <Select
-            label="Role"
+            label={t('users.roleLabel')}
             value={roleField}
             options={ROLE_OPTIONS}
             onChange={(v) => setRoleField(v as UserRole)}
@@ -402,9 +403,9 @@ export default function UsersScreen() {
         visible={!!deleteFor}
         onClose={() => setDeleteFor(null)}
         onConfirm={() => deleteFor && del.mutate(deleteFor.id)}
-        title="Delete User"
-        message={`Delete "${deleteFor?.name}"? This permanently removes the account and cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('users.deleteTitle')}
+        message={t('users.deleteMessage', { name: deleteFor?.name ?? '' })}
+        confirmLabel={t('common.delete')}
         destructive
         submitting={del.isPending}
         error={deleteErr ?? undefined}
