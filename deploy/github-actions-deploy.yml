@@ -50,12 +50,19 @@ jobs:
         run: npm run build
 
   # ── 3. Deploy to VPS (only on push to main, after tests pass) ────────────────
+  #
+  # This VPS runs a pre-existing Traefik reverse proxy that owns ports 80/443,
+  # so we deploy via deploy/deploy.traefik.sh (which uses the explicit
+  # docker-compose.yml + deploy/docker-compose.traefik.yml overlay and does NOT
+  # bring up Handla's own nginx/certbot). TRAEFIK_NETWORK defaults to "proxy";
+  # override it with the optional VPS_TRAEFIK_NETWORK secret if your Traefik
+  # network has a different name.
   deploy:
     needs: [test-backend, build-frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - name: Deploy over SSH (Traefik path)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -65,11 +72,14 @@ jobs:
           script_stop: true
           command_timeout: 30m
           script: |
+            set -e
             export HANDLA_DIR="${{ secrets.VPS_HANDLA_DIR }}"
             export DEPLOY_BRANCH=main
+            export TRAEFIK_NETWORK="${{ secrets.VPS_TRAEFIK_NETWORK }}"
+            export TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-proxy}"
             cd "$HANDLA_DIR"
             git fetch --all --prune
             git checkout main
             git reset --hard origin/main
-            chmod +x deploy.sh deploy/deploy.sh
-            ./deploy.sh
+            chmod +x deploy.sh deploy/deploy.sh deploy/deploy.traefik.sh
+            ./deploy/deploy.traefik.sh

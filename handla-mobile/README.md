@@ -110,11 +110,16 @@ npm run typecheck
 `EXPO_PUBLIC_SOCKET_URL` are injected per profile (edit the staging/production
 hosts to match your deployment):
 
-| Profile       | Distribution | API host                          |
-| ------------- | ------------ | --------------------------------- |
-| `development` | internal     | `http://localhost:3001` (dev client, iOS simulator) |
-| `preview`     | internal     | `https://staging-api.handla.tech` |
-| `production`  | store        | `https://api.handla.tech`         |
+| Profile          | Distribution | Output    | API host                          |
+| ---------------- | ------------ | --------- | --------------------------------- |
+| `development`    | internal     | dev client| `http://localhost:3001` (iOS simulator) |
+| `preview`        | internal     | `.aab`/`.app` | `https://staging-api.handla.tech` |
+| `production`     | store        | `.aab`    | `https://api.handla.tech`         |
+| `production-apk` | internal     | **`.apk`**| `https://api.handla.tech`         |
+
+> **`production-apk`** is the profile for a **personal, sideloadable Android
+> build** — it produces a directly-installable `.apk` (no Play Store needed).
+> See "Personal Android APK" below.
 
 ```bash
 npm install -g eas-cli
@@ -132,6 +137,40 @@ eas submit --profile production --platform ios      # / android
 
 Bundle identifiers are already set (`tech.handla.mobile` for both platforms)
 and `runtimeVersion` uses the `appVersion` policy for EAS Update compatibility.
+
+## Personal Android APK (no Play Store, free)
+
+To run the app on your **own Android phone** without publishing to Google Play,
+build the `production-apk` profile. It points at the live backend
+(`https://api.handla.tech`) and outputs a standalone `.apk` you can download and
+sideload. Requires only a **free** Expo account — no $25 Play fee.
+
+```bash
+cd handla-mobile
+npm install
+npm install -g eas-cli
+
+eas login                       # create a free account at expo.dev if needed
+eas build:configure             # one-time: links/creates the EAS project id
+
+# Build the installable APK (runs on Expo's cloud, ~10-20 min)
+eas build --profile production-apk --platform android
+```
+
+When it finishes, the terminal (and your expo.dev dashboard) shows a **download
+URL**. On the phone:
+
+1. Open that link in the phone's browser and download the `.apk`.
+2. Tap it → allow **"Install from unknown sources"** when prompted → Install.
+3. Open **Handla** → sign in with your account → it talks to the live backend.
+
+The build is permanent — it never expires. Rebuild only when you change the app
+(bump `expo.version` in `app.json` first).
+
+> **iOS note:** a self-signed personal iPhone build is possible with a free
+> Apple ID (`eas build --profile preview --platform ios` + sideload), but it
+> **expires after 7 days** and re-signing requires a Mac. A paid Apple Developer
+> account ($99/yr) removes the expiry. Android APK is the free, hassle-free path.
 
 ## Device smoke test
 

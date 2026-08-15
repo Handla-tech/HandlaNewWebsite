@@ -92,4 +92,3 @@ ormconfig.json
 .cache/
 .turbo/
 *.tsbuildinfo
-.github/workflows/

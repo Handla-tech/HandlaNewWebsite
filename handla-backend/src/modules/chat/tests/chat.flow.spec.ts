@@ -16,6 +16,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForbiddenException } from '@nestjs/common';
 
 import { ChatService } from '../chat.service';
+import { AwsService } from '../../aws/aws.service';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { User } from '../../auth/entities/user.entity';
@@ -160,6 +161,12 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
         ChatService,
         { provide: getRepositoryToken(Conversation), useValue: mockConvRepo },
         { provide: getRepositoryToken(Message), useValue: mockMsgRepo },
+        {
+          provide: AwsService,
+          // signFileUrl is called on every message-return path; pass the value
+          // through unchanged so flow assertions on fileUrl still hold.
+          useValue: { signFileUrl: jest.fn(async (u: string | null) => u) },
+        },
       ],
     }).compile();
 

@@ -334,6 +334,10 @@ describe('Phase 19.3.3 — Socket / Conversation Access Control', () => {
         ChatService,
         { provide: getRepositoryToken(Conversation), useValue: mockConvRepo },
         { provide: getRepositoryToken(Message), useValue: mockMsgRepo },
+        {
+          provide: AwsService,
+          useValue: { signFileUrl: jest.fn(async (u: string | null) => u) },
+        },
       ],
     }).compile();
 

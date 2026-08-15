@@ -102,12 +102,18 @@ api.interceptors.response.use(
       }
     }
 
-    // Only attempt refresh on 401 that hasn't already been retried
+    // Only attempt refresh on 401 that hasn't already been retried.
+    //
+    // We explicitly EXCLUDE the session-probe endpoints below. A 401 from
+    // /auth/me simply means "not authenticated" — it must NOT kick off a
+    // refresh→retry cascade. The store's getMe()/refresh() actions own that
+    // flow deliberately; letting the interceptor also react here created the
+    // "count keeps climbing" loop:  me 401 → refresh → me 401 → refresh …
+    const refreshExemptUrls = ['/auth/refresh', '/auth/signin', '/auth/me'];
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      originalRequest.url !== '/auth/refresh' &&
-      originalRequest.url !== '/auth/signin'
+      !refreshExemptUrls.includes(originalRequest.url ?? '')
     ) {
       if (isRefreshing) {
         // Queue this request until the refresh finishes
