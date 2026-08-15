@@ -1,13 +1,17 @@
 # =============================================================================
-# Handla — Production Docker Compose
+# Handla — base Docker Compose
 # Services: mysql · redis · api
 #
-# Usage:
-#   cp handla-backend/.env.example handla-backend/.env   # fill in secrets
-#   docker compose up -d
-#   docker compose logs -f api
+# ── Production (VPS) ─────────────────────────────────────────────────────────
+# docker-compose.override.yml is AUTO-LOADED on top of this file when you run
+# Compose with NO -f flags, adding web + nginx + certbot. So the full site
+# comes up with a plain:
+#   ./deploy.sh                 # (recommended) or:
+#   docker compose up -d --build
+# Requires the root ./.env (deploy.sh generates it) + handla-backend/.env.
 #
-# For local development with hot-reload, use:
+# ── Local development (hot-reload, NO nginx/web/certbot) ─────────────────────
+# Pass explicit -f flags so the prod override is NOT auto-loaded:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 # =============================================================================
 

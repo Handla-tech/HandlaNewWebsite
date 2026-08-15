@@ -1,15 +1,26 @@
 # =============================================================================
-# Handla — PRODUCTION stack for the Hostinger VPS
-# Services: mysql · redis · api · web (Next.js) · nginx (+ TLS) · certbot
+# Handla — Docker Compose OVERRIDE (production overlay, auto-loaded)
+# =============================================================================
+# Docker Compose AUTOMATICALLY merges this file on top of docker-compose.yml
+# whenever you run `docker compose ...` with NO explicit `-f` flags. That means
+# a plain, zero-argument:
 #
-# Run from the repo root on the VPS:
-#   docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+#     docker compose up -d --build
 #
-# The base docker-compose.yml provides mysql + redis + api. This overlay:
-#   - pins api to NOT publish 3001 to the host (nginx proxies it internally)
-#   - adds the Next.js frontend (web)
-#   - adds nginx as the public TLS entrypoint for handla.tech + api.handla.tech
-#   - adds certbot for Let's Encrypt certificate issuance/renewal
+# run from the repo root brings up the COMPLETE production stack:
+#     mysql · redis · api · web (Next.js) · nginx (+TLS) · certbot
+#
+# This is what an automated SSH deploy tool runs by default, so the whole site
+# comes up correctly without needing to know about extra -f files.
+#
+# ── Local development ────────────────────────────────────────────────────────
+# For local dev you do NOT want nginx/web/certbot. Opt out of this override with
+# an explicit file list, e.g.:
+#     docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# (Compose only auto-loads the override when you pass NO -f flags at all.)
+#
+# All build-context paths are relative to the repo root (./handla-frontend,
+# ./deploy/nginx).
 # =============================================================================
 
 volumes:
@@ -20,14 +31,13 @@ volumes:
 
 services:
 
-  # NOTE: the API port is already bound to 127.0.0.1 in the base
-  # docker-compose.yml, so it is not publicly reachable. nginx proxies to it
-  # in-network at api:3001. No api override needed here.
+  # NOTE: the API port is already bound to 127.0.0.1 in docker-compose.yml, so
+  # it is not publicly reachable. nginx proxies to it in-network at api:3001.
 
   # ── Frontend (Next.js standalone) ───────────────────────────────────────────
   web:
     build:
-      context: ../handla-frontend
+      context: ./handla-frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL:    "https://api.handla.tech/api"
@@ -51,7 +61,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot_conf:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
     networks:

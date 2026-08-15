@@ -71,5 +71,5 @@ jobs:
             git fetch --all --prune
             git checkout main
             git reset --hard origin/main
-            chmod +x deploy/deploy.sh
-            ./deploy/deploy.sh
+            chmod +x deploy.sh deploy/deploy.sh
+            ./deploy.sh

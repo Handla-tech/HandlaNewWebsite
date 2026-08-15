@@ -15,6 +15,10 @@ node_modules/
 .env.production.local
 .env.production
 *.env
+# ...but DO track documentation templates (no secrets):
+!.env.example
+!*.env.example
+!handla-backend/.env.production.example
 
 # ===========================
 # Next.js
@@ -74,7 +78,8 @@ Thumbs.db
 # ===========================
 # Docker
 # ===========================
-docker-compose.override.yml
+# NOTE: docker-compose.override.yml IS tracked — it is the production overlay
+# (web + nginx + certbot) that Compose auto-loads on the VPS. Do not ignore it.
 
 # ===========================
 # TypeORM
@@ -87,3 +92,4 @@ ormconfig.json
 .cache/
 .turbo/
 *.tsbuildinfo
+.github/workflows/
