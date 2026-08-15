@@ -8,6 +8,12 @@ import type { AuthState, User, SignInPayload, SignUpPayload } from '@/types';
 
 const LOG = '[authStore]';
 
+// Module-level in-flight guard: collapses concurrent/rapid getMe() calls
+// (e.g. useAuth mount + Providers mount + React re-render storms) into a
+// SINGLE network request. Without this, a 401 that re-renders consumers can
+// fan out into an unbounded request loop (the "count keeps climbing" bug).
+let _getMeInFlight: Promise<void> | null = null;
+
 interface AuthStore extends AuthState {
   error: string | null;
   clearError: () => void;
@@ -130,27 +136,42 @@ export const useAuthStore = create<AuthStore>()(
 
       /** Fetch current user from /auth/me */
       getMe: async () => {
+        // ── In-flight dedup ──────────────────────────────────────────────
+        // If a getMe() is already running, return the SAME promise instead of
+        // firing another /auth/me. This is what stops the "request count keeps
+        // climbing" loop when multiple mount effects + re-renders all call it.
+        if (_getMeInFlight) {
+          console.debug(`${LOG} getMe() — join in-flight request (dedup)`);
+          return _getMeInFlight;
+        }
+
         console.debug(`${LOG} getMe() → calling /auth/me`);
         set({ isLoading: true });
-        try {
-          const res = await authApi.getMe();
-          // Backend returns { message, data: { user: User } }
-          // res.data (Axios) = { message, data: { user: User } }
-          // so res.data?.data = { user: User } — must unwrap one more level
-          const inner = res.data?.data;
-          const user: User =
-            (inner && typeof inner === 'object' && 'user' in inner)
-              ? (inner as { user: User }).user
-              : inner as User;
-          console.debug(`${LOG} getMe() ✅  userId=${user?.id}  role=${user?.role}  isLoggedIn → true`);
-          set({ user, isLoggedIn: true });
-        } catch (err) {
-          const status = (err as { response?: { status?: number } })?.response?.status;
-          console.warn(`${LOG} getMe() ❌  status=${status} — not authenticated (cookie missing or expired)  → isLoggedIn=false`, err);
-          set({ user: null, isLoggedIn: false });
-        } finally {
-          set({ isLoading: false, authResolved: true });
-        }
+
+        _getMeInFlight = (async () => {
+          try {
+            const res = await authApi.getMe();
+            // Backend returns { message, data: { user: User } }
+            // res.data (Axios) = { message, data: { user: User } }
+            // so res.data?.data = { user: User } — must unwrap one more level
+            const inner = res.data?.data;
+            const user: User =
+              (inner && typeof inner === 'object' && 'user' in inner)
+                ? (inner as { user: User }).user
+                : inner as User;
+            console.debug(`${LOG} getMe() ✅  userId=${user?.id}  role=${user?.role}  isLoggedIn → true`);
+            set({ user, isLoggedIn: true });
+          } catch (err) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            console.warn(`${LOG} getMe() ❌  status=${status} — not authenticated (cookie missing or expired)  → isLoggedIn=false`, err);
+            set({ user: null, isLoggedIn: false });
+          } finally {
+            set({ isLoading: false, authResolved: true });
+            _getMeInFlight = null;
+          }
+        })();
+
+        return _getMeInFlight;
       },
     }),
     {

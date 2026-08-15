@@ -24,16 +24,24 @@ export function useAuth() {
     clearError,
   } = useAuthStore();
 
-  // On first client render, always validate the session against the server.
-  // `getMe()` flips `authResolved=true` in its finally block regardless of
-  // outcome, which the route guards wait on. We must run it even when the
-  // persisted store already says `isLoggedIn` (e.g. after a hard refresh):
-  // `authResolved` is intentionally NOT persisted, so skipping getMe there
-  // would leave guards stuck on the loading spinner forever.
+  // Session validation is owned by Providers.AppInitializer (the single root
+  // that always mounts), which calls getMe() once on load. `getMe()` flips
+  // `authResolved=true` in its finally block regardless of outcome, which the
+  // route guards wait on.
+  //
+  // We DO NOT call getMe() here as well: doing so previously double-fired the
+  // /auth/me probe from every component that used this hook, which — combined
+  // with re-renders on a 401 — produced the runaway "request count climbing"
+  // loop. As a belt-and-braces safeguard, getMe() is also in-flight-deduped in
+  // the store. If auth has not been resolved yet by the time a guarded layout
+  // mounts, kick off exactly one resolution pass (dedup makes this a no-op if
+  // Providers already started it).
   useEffect(() => {
-    getMe().catch(() => {
-      // Ignore — user is simply not logged in yet (getMe still sets authResolved)
-    });
+    if (!authResolved) {
+      getMe().catch(() => {
+        // Ignore — user is simply not logged in yet (getMe still sets authResolved)
+      });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
