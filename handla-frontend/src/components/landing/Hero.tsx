@@ -564,13 +564,15 @@ export default function Hero() {
               <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold text-white leading-[1.15] tracking-tight m-0 p-0">
                 <span className="block">{t('hero.staticLine')}</span>
 
-                {/* Animated slider — reserves just enough space for a two-line
-                    phrase (1.15 line-height × 2 ≈ 2.3em) but keeps the block
-                    tight so the animated phrase sits directly under the static
-                    line in both RTL and LTR with no oversized gap. */}
+                {/* Animated slider — reserves space for a two-line phrase
+                    (1.15 line-height × 2 ≈ 2.3em). English phrases like
+                    "Transform Into Managed Success" wrap to two lines, so the
+                    container must be tall enough or the second line gets
+                    clipped by overflow-hidden. RTL (Arabic) phrases are shorter
+                    but the same height keeps both layouts consistent. */}
                 <span
                   className="block relative overflow-hidden"
-                  style={{ height: '1.35em' }}
+                  style={{ height: '2.4em' }}
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
