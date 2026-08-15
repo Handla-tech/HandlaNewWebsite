@@ -189,8 +189,12 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
     });
 
     it('should create a new conversation between client and admin', async () => {
-      // Fast-path check: no existing conversation
-      mockConvRepo.findOne.mockResolvedValue(null);
+      // Fast-path check: no existing conversation. The second findOne is the
+      // post-INSERT reloadWithParticipants() lookup, which returns the saved
+      // row with admin/client relations populated.
+      mockConvRepo.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(newConversation);
       // Direct repo.create + repo.save (no transaction in the happy path now —
       // race recovery is via catching ER_DUP_ENTRY, see chat.service.spec.ts)
       mockConvRepo.create.mockReturnValue(newConversation);

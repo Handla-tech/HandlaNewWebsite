@@ -153,8 +153,12 @@ describe('ChatService', () => {
     });
 
     it('should create and return a new conversation when none exists', async () => {
-      // Fast-path findOne returns null (no existing row)
-      mockConversationRepository.findOne.mockResolvedValue(null);
+      // Fast-path findOne returns null (no existing row); the post-INSERT
+      // reloadWithParticipants() findOne returns the persisted row WITH its
+      // admin/client relations populated.
+      mockConversationRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockConversation);
       // Try-INSERT path: create returns a draft, save persists it
       mockConversationRepository.create.mockReturnValue(mockConversation);
       mockConversationRepository.save.mockResolvedValue(mockConversation);
@@ -169,6 +173,13 @@ describe('ChatService', () => {
         }),
       );
       expect(mockConversationRepository.save).toHaveBeenCalledTimes(1);
+      // The returned conversation must carry participant relations so the chat
+      // header renders the other participant's name immediately (no "Loading…"
+      // until refresh). The reload findOne is called with admin+client relations.
+      expect(mockConversationRepository.findOne).toHaveBeenLastCalledWith({
+        where: { id: mockConversation.id },
+        relations: ['admin', 'client'],
+      });
       expect(result.clientId).toBe(clientUser.id);
     });
 
@@ -206,8 +217,11 @@ describe('ChatService', () => {
       expect(result).toEqual(winningRow);
       // findOne called twice: fast-path + recovery re-read
       expect(mockConversationRepository.findOne).toHaveBeenCalledTimes(2);
+      // Both lookups load participant relations so the recovered row is
+      // returned to the client with admin/client populated (no "Loading…").
       expect(mockConversationRepository.findOne).toHaveBeenLastCalledWith({
         where: { clientId: clientUser.id, adminId: adminUser.id },
+        relations: ['admin', 'client'],
       });
     });
 

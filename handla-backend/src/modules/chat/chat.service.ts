@@ -202,6 +202,7 @@ export class ChatService {
     // 1. Fast path — existing row.
     const existing = await this.conversationRepo.findOne({
       where: { clientId, adminId },
+      relations: ['admin', 'client'],
     });
     if (existing) {
       this.logger.log(
@@ -223,12 +224,17 @@ export class ChatService {
       this.logger.log(
         `Conversation created: client=${clientId}, admin=${adminId}, id=${conversation.id}`,
       );
-      return conversation;
+      // Reload with participant relations so callers (e.g. the client's first
+      // dashboard load) immediately get `admin`/`client` populated. Without
+      // this, a freshly-saved entity has no relations and the chat header
+      // renders "Loading…" until a manual refresh hits a join-based endpoint.
+      return await this.reloadWithParticipants(conversation.id);
     } catch (err) {
       // 3. Recover from race: another request just won the INSERT — re-read.
       if (err instanceof QueryFailedError && isDuplicateKeyError(err)) {
         const winner = await this.conversationRepo.findOne({
           where: { clientId, adminId },
+          relations: ['admin', 'client'],
         });
         if (winner) {
           this.logger.log(
@@ -248,6 +254,21 @@ export class ChatService {
       // Not a duplicate-key error (or recovery failed): propagate.
       throw err;
     }
+  }
+
+  // Reload a conversation with its participant relations populated. Used after
+  // an INSERT so the returned entity carries `admin`/`client` (the chat header
+  // needs the other participant's name/avatar immediately, not after refresh).
+  // Falls back to a relation-less findOneByOrFail-equivalent if the row somehow
+  // can't be re-read (should never happen right after a successful save).
+  private async reloadWithParticipants(id: string): Promise<Conversation> {
+    const reloaded = await this.conversationRepo.findOne({
+      where: { id },
+      relations: ['admin', 'client'],
+    });
+    if (reloaded) return reloaded;
+    // Extremely defensive: return the bare row rather than throwing.
+    return this.conversationRepo.findOneByOrFail({ id });
   }
 
   // ─── Save Message ─────────────────────────────────────────────────────────────
