@@ -204,4 +204,65 @@ describe('AwsService', () => {
       expect(extractedKey).toBe(originalKey);
     });
   });
+
+  // ─── key prefix (AWS_S3_KEY_PREFIX) ─────────────────────────────────────────
+
+  describe('keyPrefix = "handla"', () => {
+    let prefixed: AwsService;
+
+    beforeEach(async () => {
+      const cfg = {
+        get: jest.fn((key: string) =>
+          key === 'aws.keyPrefix' ? 'handla' : configValues[key],
+        ),
+      };
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [AwsService, { provide: ConfigService, useValue: cfg }],
+      }).compile();
+      prefixed = module.get<AwsService>(AwsService);
+    });
+
+    it('buildFileUrl prepends the prefix to the physical path', () => {
+      expect(prefixed.buildFileUrl('chat/u1/file.pdf')).toBe(
+        'https://handla-uploads.s3.us-east-1.amazonaws.com/handla/chat/u1/file.pdf',
+      );
+    });
+
+    it('generatePresignedUrl stores the prefixed physical key but a logical fileUrl', async () => {
+      mockGetSignedUrl.mockResolvedValue('https://signed.example.com');
+      const res = await prefixed.generatePresignedUrl('chat/u1/file.pdf', 'application/pdf');
+
+      expect(res.key).toBe('handla/chat/u1/file.pdf');
+      expect(res.fileUrl).toBe(
+        'https://handla-uploads.s3.us-east-1.amazonaws.com/handla/chat/u1/file.pdf',
+      );
+      const { PutObjectCommand } = require('@aws-sdk/client-s3');
+      expect(PutObjectCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ Key: 'handla/chat/u1/file.pdf' }),
+      );
+    });
+
+    it('deleteFile targets the prefixed physical key', async () => {
+      mockS3Send.mockResolvedValue({});
+      await prefixed.deleteFile('avatars/u1/a.png');
+      const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+      expect(DeleteObjectCommand).toHaveBeenCalledWith({
+        Bucket: 'handla-uploads',
+        Key: 'handla/avatars/u1/a.png',
+      });
+    });
+
+    it('is idempotent — a key already carrying the prefix is not double-prefixed', () => {
+      expect(prefixed.buildFileUrl('handla/contracts/x.html')).toBe(
+        'https://handla-uploads.s3.us-east-1.amazonaws.com/handla/contracts/x.html',
+      );
+    });
+
+    it('getKeyFromUrl strips the prefix so it round-trips through the logical key', () => {
+      const logical = 'contracts/abc.html';
+      const url = prefixed.buildFileUrl(logical);
+      expect(url).toContain('/handla/contracts/abc.html');
+      expect(prefixed.getKeyFromUrl(url)).toBe(logical);
+    });
+  });
 });
