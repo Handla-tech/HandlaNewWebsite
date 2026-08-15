@@ -50,8 +50,11 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Health-check: Next serves 200 on / once ready
+# Health-check: Next serves 200 on / once ready.
+# Use 127.0.0.1 (not localhost): in Alpine, localhost can resolve to IPv6 ::1
+# first, where the server (bound to IPv4 0.0.0.0:3000) is not listening →
+# false "unhealthy". 127.0.0.1 forces IPv4 and matches the listen address.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1
 
 CMD ["node", "server.js"]

@@ -59,8 +59,10 @@ USER handla
 # Expose the API port (default 3001, overridable via PORT env var)
 EXPOSE 3001
 
-# Health-check: poll /api/health every 30 s, allow 10 s to respond
+# Health-check: poll /api/health every 30 s, allow 10 s to respond.
+# Use 127.0.0.1 (not localhost) to force IPv4 — in Alpine, localhost may resolve
+# to IPv6 ::1 first, where the server (bound to 0.0.0.0) is not listening.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT:-3001}/api/health || exit 1
+  CMD wget -qO- http://127.0.0.1:${PORT:-3001}/api/health || exit 1
 
 ENTRYPOINT ["./entrypoint.sh"]
