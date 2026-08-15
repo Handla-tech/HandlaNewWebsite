@@ -1,0 +1,78 @@
+name: CI + Deploy
+
+# dev  -> runs tests only (safe to iterate)
+# main -> runs tests, then deploys to the Hostinger VPS on success
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # 1. Backend tests
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: handla-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.build.json
+      - name: Unit tests
+        run: npx jest --ci
+
+  # 2. Frontend build check
+  build-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: handla-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps
+      - name: Build (public env baked at build time)
+        env:
+          NEXT_PUBLIC_API_URL: https://api.handla.tech/api
+          NEXT_PUBLIC_SOCKET_URL: https://api.handla.tech
+          NEXT_PUBLIC_APP_URL: https://handla.tech
+        run: npm run build
+
+  # 3. Deploy to VPS (only on push to main, after tests pass)
+  deploy:
+    needs: [test-backend, build-frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH (Traefik path)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -e
+            export HANDLA_DIR="${{ secrets.VPS_HANDLA_DIR }}"
+            export DEPLOY_BRANCH=main
+            export TRAEFIK_NETWORK="${{ secrets.VPS_TRAEFIK_NETWORK }}"
+            export TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-proxy}"
+            cd "$HANDLA_DIR"
+            git fetch --all --prune
+            git checkout main
+            git reset --hard origin/main
+            chmod +x deploy.sh deploy/deploy.sh deploy/deploy.traefik.sh
+            ./deploy/deploy.traefik.sh
