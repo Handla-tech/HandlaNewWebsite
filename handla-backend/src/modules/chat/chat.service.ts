@@ -5,6 +5,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../auth/entities/user.entity';
+import { AwsService } from '../aws/aws.service';
 import { UserRole, ConversationStatus, MessageOrigin } from '../../common/enums';
 import {
   ResourceNotFoundException,
@@ -39,7 +40,28 @@ export class ChatService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    private readonly awsService: AwsService,
   ) {}
+
+  /**
+   * Replace a message's stored (plain/private) fileUrl with a short-lived
+   * presigned GET URL so the browser can actually view the attachment. Mutates
+   * and returns the same message object. Safe when fileUrl is null.
+   */
+  private async withSignedFileUrl<T extends { fileUrl?: string | null } | null>(
+    message: T,
+  ): Promise<T> {
+    if (message && message.fileUrl) {
+      message.fileUrl = await this.awsService.signFileUrl(message.fileUrl);
+    }
+    return message;
+  }
+
+  /** Sign fileUrl on every message in a list (in place). */
+  private async signMessages<T extends { fileUrl?: string | null }>(messages: T[]): Promise<T[]> {
+    await Promise.all(messages.map((m) => this.withSignedFileUrl(m)));
+    return messages;
+  }
 
   // ─── Get Conversations ────────────────────────────────────────────────────────
   async getConversations(user: User, pagination: PaginationQuery = {}) {
@@ -86,6 +108,7 @@ export class ChatService {
           order: { createdAt: 'DESC' },
           relations: ['sender'],
         });
+        await this.withSignedFileUrl(lastMessage);
 
         return {
           ...conv,
@@ -123,6 +146,7 @@ export class ChatService {
       relations: ['sender'],
       order: { createdAt: 'ASC' },
     });
+    await this.signMessages(messages);
 
     return { conversation, messages };
   }
@@ -140,11 +164,12 @@ export class ChatService {
 
     this.assertAccess(conversation, user);
 
-    return this.messageRepo.find({
+    const messages = await this.messageRepo.find({
       where: { conversationId: id },
       relations: ['sender'],
       order: { createdAt: 'ASC' },
     });
+    return this.signMessages(messages);
   }
 
   // ─── Send Message (REST fallback) ─────────────────────────────────────────────
@@ -305,7 +330,10 @@ export class ChatService {
       relations: ['sender'],
     });
 
-    return saved!;
+    // Return a presigned GET URL (the DB keeps the raw/private URL). This covers
+    // BOTH the REST sendMessage path and the WebSocket gateway broadcast, so the
+    // sender and recipient can view the attachment immediately without a refetch.
+    return this.withSignedFileUrl(saved!);
   }
 
   // ─── Mark Message As Read ─────────────────────────────────────────────────────

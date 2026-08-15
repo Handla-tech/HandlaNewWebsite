@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   CopyObjectCommand,
   HeadObjectCommand,
@@ -94,6 +95,49 @@ export class AwsService {
     this.logger.log(`Presigned URL generated for key: ${physicalKey} (expires in ${expiry}s)`);
 
     return { url, bucket: this.bucket, key: physicalKey, expiresIn: expiry, fileUrl };
+  }
+
+  // ─── Generate Presigned DOWNLOAD (GET) URL ───────────────────────────────────
+  /**
+   * The bucket is PRIVATE, so a plain object URL returns AccessDenied. To let a
+   * browser view/download an object we must hand it a short-lived presigned GET
+   * URL (signature in the query string). Callers pass the logical key.
+   */
+  async generateGetUrl(key: string, expiresInOverride?: number): Promise<string> {
+    const expiry = expiresInOverride ?? this.expiresIn;
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: this.withPrefix(key),
+    });
+    return getSignedUrl(this.s3Client, command, { expiresIn: expiry });
+  }
+
+  /**
+   * Convert a stored value (either a full plain S3 URL or a bare key) into a
+   * presigned GET URL. Returns the input unchanged if it is null/empty or is
+   * not an object in THIS bucket (e.g. an external URL). Never throws — on any
+   * failure it falls back to the original value so message rendering can't break.
+   */
+  async signFileUrl(fileUrlOrKey: string | null | undefined, expiresInOverride?: number): Promise<string | null> {
+    if (!fileUrlOrKey) return fileUrlOrKey ?? null;
+    // Already a presigned URL? Leave it alone.
+    if (fileUrlOrKey.includes('X-Amz-Signature=')) return fileUrlOrKey;
+
+    try {
+      let logicalKey: string | null = null;
+      if (/^https?:\/\//i.test(fileUrlOrKey)) {
+        // Full S3 URL → extract the logical key (returns null if not our bucket).
+        logicalKey = this.getKeyFromUrl(fileUrlOrKey);
+        if (!logicalKey) return fileUrlOrKey; // external URL — pass through
+      } else {
+        // Bare key.
+        logicalKey = fileUrlOrKey;
+      }
+      return await this.generateGetUrl(logicalKey, expiresInOverride);
+    } catch (err) {
+      this.logger.warn(`signFileUrl failed for "${fileUrlOrKey}" — returning original`, err as Error);
+      return fileUrlOrKey;
+    }
   }
 
   // ─── Delete File ─────────────────────────────────────────────────────────────
