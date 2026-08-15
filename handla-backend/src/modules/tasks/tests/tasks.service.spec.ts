@@ -85,6 +85,9 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     ownerId: 'user-1',
     status: TaskStatus.PENDING,
     dueDate: null,
+    assignedToClient: false,
+    requiresUpload: false,
+    attachments: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     project: makeProject(),
@@ -675,6 +678,116 @@ describe('TasksService', () => {
         expect.any(String),
         task.id,
       );
+    });
+  });
+
+  // ─── submitClientTask ─────────────────────────────────────────────────────────
+
+  describe('submitClientTask', () => {
+    const clientUser = makeUser({ id: 'client-user-1', role: UserRole.CLIENT });
+
+    // A client-directed task owned by the client-user-1's project.
+    function makeClientTask(overrides: Partial<Task> = {}): Task {
+      return makeTask({
+        assignedToClient: true,
+        requiresUpload: false,
+        attachments: null,
+        ownerId: 'staff-1',
+        project: makeProject({ client: makeClient({ userId: 'client-user-1' }) }),
+        ...overrides,
+      });
+    }
+
+    it('throws InsufficientPermissionsException for a non-CLIENT user', async () => {
+      const employee = makeUser({ role: UserRole.EMPLOYEE });
+      await expect(
+        service.submitClientTask('task-1', { attachments: [] }, employee),
+      ).rejects.toThrow(InsufficientPermissionsException);
+    });
+
+    it('throws AppException (403) when the task is not assigned to the client', async () => {
+      const task = makeClientTask({ assignedToClient: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.submitClientTask('task-1', { attachments: [] }, clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('throws AppException (400) when requiresUpload but no attachments provided', async () => {
+      const task = makeClientTask({ requiresUpload: true });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.submitClientTask('task-1', { attachments: [] }, clientUser),
+      ).rejects.toThrow(AppException);
+      expect(mockTaskRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('uploads attachments, marks COMPLETED, and notifies the owner', async () => {
+      const task = makeClientTask({ requiresUpload: true });
+      // findOne (ownership) then reload after save.
+      mockTaskRepo.findOne
+        .mockResolvedValueOnce(task)
+        .mockResolvedValueOnce({ ...task, status: TaskStatus.COMPLETED });
+      mockTaskRepo.save.mockImplementation(async (t: Task) => t);
+
+      const result = await service.submitClientTask(
+        'task-1',
+        {
+          attachments: [{ url: 'https://cdn.example.com/a.pdf', name: 'a.pdf', size: 1234 }],
+          note: 'Here are my files',
+        },
+        clientUser,
+      );
+
+      // Saved task became COMPLETED with the attachment merged in.
+      const savedArg = mockTaskRepo.save.mock.calls[0][0] as Task;
+      expect(savedArg.status).toBe(TaskStatus.COMPLETED);
+      expect(savedArg.attachments).toHaveLength(1);
+      expect(savedArg.attachments![0]).toEqual(
+        expect.objectContaining({ url: 'https://cdn.example.com/a.pdf', name: 'a.pdf', size: 1234 }),
+      );
+      expect(savedArg.attachments![0].uploadedAt).toEqual(expect.any(String));
+
+      expect(mockNotificationService.createErpNotification).toHaveBeenCalledWith(
+        'staff-1',
+        'SYSTEM',
+        expect.any(String),
+        expect.any(String),
+        task.id,
+      );
+      expect(result.status).toBe(TaskStatus.COMPLETED);
+    });
+
+    it('merges new attachments onto previously-submitted ones', async () => {
+      const existing = { url: 'https://cdn.example.com/old.pdf', name: 'old.pdf', uploadedAt: '2024-01-01T00:00:00.000Z' };
+      const task = makeClientTask({ requiresUpload: false, attachments: [existing] });
+      mockTaskRepo.findOne
+        .mockResolvedValueOnce(task)
+        .mockResolvedValueOnce(task);
+      mockTaskRepo.save.mockImplementation(async (t: Task) => t);
+
+      await service.submitClientTask(
+        'task-1',
+        { attachments: [{ url: 'https://cdn.example.com/new.pdf', name: 'new.pdf' }] },
+        clientUser,
+      );
+
+      const savedArg = mockTaskRepo.save.mock.calls[0][0] as Task;
+      expect(savedArg.attachments).toHaveLength(2);
+      expect(savedArg.attachments!.map((a) => a.name)).toEqual(['old.pdf', 'new.pdf']);
+    });
+
+    it('allows completion with no files when requiresUpload is false', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne
+        .mockResolvedValueOnce(task)
+        .mockResolvedValueOnce({ ...task, status: TaskStatus.COMPLETED });
+      mockTaskRepo.save.mockImplementation(async (t: Task) => t);
+
+      const result = await service.submitClientTask('task-1', { attachments: [] }, clientUser);
+      expect(result.status).toBe(TaskStatus.COMPLETED);
     });
   });
 });
