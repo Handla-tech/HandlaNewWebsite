@@ -244,11 +244,18 @@ async function runSeeders(): Promise<void> {
   }
 
   // ─── ERP-13.2: Seed Invoices ───────────────────────────────────────────────
-  const existingInvoiceCount = await invoiceRepo.count({ where: { clientId: clientRecord.id } });
+  // Guard on the globally-unique invoice_number (NOT a per-client count):
+  // invoice_number has a UNIQUE constraint, so if a previous (possibly partial)
+  // seed already inserted INV-2026-0001 — even under a different client id —
+  // re-inserting it here would fail with a duplicate-key error. Checking the
+  // unique number makes this block safely idempotent.
+  const existingSeedInvoice = await invoiceRepo.findOne({
+    where: { invoiceNumber: 'INV-2026-0001' },
+  });
 
   let paidInvoice: Invoice | null = null;
 
-  if (existingInvoiceCount === 0) {
+  if (!existingSeedInvoice) {
     // Paid invoice
     paidInvoice = invoiceRepo.create({
       invoiceNumber: 'INV-2026-0001',
@@ -304,10 +311,8 @@ async function runSeeders(): Promise<void> {
 
     console.log('✅ 2 Seed Invoices created (1 PAID, 1 UNPAID)');
   } else {
-    console.log(`ℹ️  Seed Invoices already exist (${existingInvoiceCount}), skipping.`);
-    paidInvoice = await invoiceRepo.findOne({
-      where: { invoiceNumber: 'INV-2026-0001' },
-    });
+    console.log('ℹ️  Seed Invoices already exist (INV-2026-0001), skipping.');
+    paidInvoice = existingSeedInvoice;
   }
 
   // ─── ERP-13.2: Seed Expenses ───────────────────────────────────────────────
