@@ -53,8 +53,12 @@ services:
 
   # ── Frontend (Next.js) — routed by Traefik at handla.tech + www ─────────────
   web:
+    # NOTE: relative build contexts resolve against the FIRST -f file's dir.
+    # deploy.traefik.sh runs `-f docker-compose.yml -f deploy/docker-compose.traefik.yml`
+    # from the repo root, so this path is root-relative (./handla-frontend),
+    # NOT relative to this file's location under deploy/.
     build:
-      context: ../handla-frontend
+      context: ./handla-frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL:    "https://api.handla.tech/api"
