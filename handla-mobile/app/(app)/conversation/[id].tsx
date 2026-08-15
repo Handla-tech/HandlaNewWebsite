@@ -33,6 +33,158 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ─── System event card ────────────────────────────────────────────────────────
+// Backend emits automated chat events as `__SYSTEM__:{json}` so they can be
+// rendered as rich, tappable cards instead of raw JSON. Mirrors the web
+// MessageList SystemEventCard.
+
+type SystemEventType = 'CONTRACT_SENT' | 'INVOICE_CREATED' | 'PROJECT_CREATED';
+
+interface SystemEventPayload {
+  type: SystemEventType;
+  title: string;
+  id: string;
+  message: string;
+  amount?: string;
+  dueDate?: string | null;
+  status?: string;
+}
+
+const SYSTEM_PREFIX = '__SYSTEM__:';
+
+export function parseSystemPayload(content: string | null | undefined): SystemEventPayload | null {
+  if (!content || !content.startsWith(SYSTEM_PREFIX)) return null;
+  try {
+    const payload = JSON.parse(content.slice(SYSTEM_PREFIX.length)) as SystemEventPayload;
+    if (payload && typeof payload.type === 'string') return payload;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function SystemEventCard({
+  payload,
+  colors,
+  t,
+  onOpen,
+}: {
+  payload: SystemEventPayload;
+  colors: ReturnType<typeof useTheme>['colors'];
+  t: ReturnType<typeof useT>['t'];
+  onOpen: (payload: SystemEventPayload) => void;
+}) {
+  const CONFIG: Record<
+    SystemEventType,
+    { icon: keyof typeof Ionicons.glyphMap; label: string; accent: string; cta: string }
+  > = {
+    CONTRACT_SENT: {
+      icon: 'document-text-outline',
+      label: t('conversation.system.contractLabel'),
+      accent: colors.warning,
+      cta: t('conversation.system.viewContract'),
+    },
+    INVOICE_CREATED: {
+      icon: 'receipt-outline',
+      label: t('conversation.system.invoiceLabel'),
+      accent: colors.info,
+      cta: t('conversation.system.viewInvoice'),
+    },
+    PROJECT_CREATED: {
+      icon: 'folder-open-outline',
+      label: t('conversation.system.projectLabel'),
+      accent: colors.success,
+      cta: t('conversation.system.viewProject'),
+    },
+  };
+
+  const cfg = CONFIG[payload.type];
+  // Unknown event type → show just the friendly message, never raw JSON.
+  if (!cfg) {
+    return (
+      <View
+        style={{
+          alignSelf: 'flex-start',
+          maxWidth: '85%',
+          marginVertical: 3,
+          backgroundColor: colors.cardAlt,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: radius.lg,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+        }}
+      >
+        <Text style={{ color: colors.textMuted, fontSize: font.sm }}>{payload.message}</Text>
+      </View>
+    );
+  }
+
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  return (
+    <View style={{ alignSelf: 'stretch', marginVertical: 5 }}>
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: withAlpha(cfg.accent, 0.35),
+          backgroundColor: withAlpha(cfg.accent, 0.08),
+          borderRadius: radius.lg,
+          padding: spacing.md,
+          gap: 6,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Ionicons name={cfg.icon} size={15} color={cfg.accent} />
+          <Text
+            style={{
+              color: cfg.accent,
+              fontSize: font.xs,
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            {cfg.label}
+          </Text>
+        </View>
+
+        <Text style={{ color: colors.text, fontSize: font.md, fontWeight: '700' }}>{payload.title}</Text>
+
+        {payload.amount ? (
+          <Text style={{ color: colors.textMuted, fontSize: font.sm }}>
+            {t('conversation.system.amount')}: <Text style={{ color: colors.text }}>{payload.amount}</Text>
+          </Text>
+        ) : null}
+        {payload.dueDate ? (
+          <Text style={{ color: colors.textMuted, fontSize: font.sm }}>
+            {t('conversation.system.due')}: <Text style={{ color: colors.text }}>{fmtDate(payload.dueDate)}</Text>
+          </Text>
+        ) : null}
+        {payload.status ? (
+          <Text style={{ color: colors.textMuted, fontSize: font.sm }}>
+            {t('conversation.system.status')}: <Text style={{ color: colors.text }}>{payload.status.replace(/_/g, ' ')}</Text>
+          </Text>
+        ) : null}
+
+        {payload.message ? (
+          <Text style={{ color: colors.textMuted, fontSize: font.sm }}>{payload.message}</Text>
+        ) : null}
+
+        <Pressable
+          onPress={() => onOpen(payload)}
+          hitSlop={6}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
+        >
+          <Text style={{ color: cfg.accent, fontSize: font.sm, fontWeight: '700' }}>{cfg.cta}</Text>
+          <Ionicons name="chevron-forward" size={14} color={cfg.accent} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function ConversationScreen() {
   const { colors } = useTheme();
   const { t } = useT();
@@ -138,7 +290,32 @@ export default function ConversationScreen() {
     }
   };
 
+  const openSystemTarget = useCallback(
+    (payload: SystemEventPayload) => {
+      switch (payload.type) {
+        case 'CONTRACT_SENT':
+          router.push(`/(app)/contract/${payload.id}`);
+          break;
+        case 'INVOICE_CREATED':
+          router.push(`/(app)/invoice/${payload.id}`);
+          break;
+        case 'PROJECT_CREATED':
+          router.push('/(app)/projects');
+          break;
+      }
+    },
+    [router],
+  );
+
   const renderItem = ({ item }: { item: Message }) => {
+    // Automated backend events (`__SYSTEM__:{json}`) render as rich cards.
+    const systemPayload = parseSystemPayload(item.content);
+    if (systemPayload) {
+      return (
+        <SystemEventCard payload={systemPayload} colors={colors} t={t} onOpen={openSystemTarget} />
+      );
+    }
+
     const mine = item.senderId === user?.id;
     return (
       <View

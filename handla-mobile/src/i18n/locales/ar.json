@@ -579,7 +579,18 @@
     "offline": "غير متصل",
     "attachment": "📎 مرفق",
     "empty": "لا توجد رسائل بعد. ألقِ التحية 👋",
-    "inputPlaceholder": "اكتب رسالة…"
+    "inputPlaceholder": "اكتب رسالة…",
+    "system": {
+      "contractLabel": "عقد",
+      "invoiceLabel": "فاتورة",
+      "projectLabel": "مشروع",
+      "viewContract": "عرض العقد",
+      "viewInvoice": "عرض الفاتورة",
+      "viewProject": "عرض المشاريع",
+      "amount": "المبلغ",
+      "due": "الاستحقاق",
+      "status": "الحالة"
+    }
   },
   "analytics": {
     "title": "التحليلات",

@@ -579,7 +579,18 @@
     "offline": "offline",
     "attachment": "📎 Attachment",
     "empty": "No messages yet. Say hello 👋",
-    "inputPlaceholder": "Type a message…"
+    "inputPlaceholder": "Type a message…",
+    "system": {
+      "contractLabel": "Contract",
+      "invoiceLabel": "Invoice",
+      "projectLabel": "Project",
+      "viewContract": "View contract",
+      "viewInvoice": "View invoice",
+      "viewProject": "View projects",
+      "amount": "Amount",
+      "due": "Due",
+      "status": "Status"
+    }
   },
   "analytics": {
     "title": "Analytics",
