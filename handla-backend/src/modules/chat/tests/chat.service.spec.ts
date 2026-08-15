@@ -4,6 +4,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
 
 import { ChatService } from '../chat.service';
+import { AwsService } from '../../aws/aws.service';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { User } from '../../auth/entities/user.entity';
@@ -126,6 +127,12 @@ describe('ChatService', () => {
         {
           provide: getRepositoryToken(Message),
           useValue: mockMessageRepository,
+        },
+        {
+          provide: AwsService,
+          // signFileUrl runs on every message-return path; pass through so
+          // existing fileUrl assertions remain valid.
+          useValue: { signFileUrl: jest.fn(async (u: string | null) => u) },
         },
       ],
     }).compile();
