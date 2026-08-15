@@ -5,19 +5,12 @@ import * as path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { User } from '../modules/auth/entities/user.entity';
-import { Conversation } from '../modules/chat/entities/conversation.entity';
-import { Message } from '../modules/chat/entities/message.entity';
-import { Notification } from '../modules/notifications/entities/notification.entity';
-import { Testimonial } from '../modules/testimonials/entities/testimonial.entity';
-import { Client } from '../modules/clients/entities/client.entity';
-import { Project } from '../modules/projects/entities/project.entity';
-import { Task } from '../modules/tasks/entities/task.entity';
-import { Contract } from '../modules/contracts/entities/contract.entity';
-import { Invoice } from '../modules/invoices/entities/invoice.entity';
-import { InvoiceLineItem } from '../modules/invoices/entities/invoice-line-item.entity';
-import { Expense } from '../modules/expenses/entities/expense.entity';
-
+// Glob ALL entities (same as the runtime AppModule config) rather than a
+// hand-maintained subset. Previously this file only listed 12 of the 35
+// entities, which meant migrations/CLI were blind to the rest (purchases,
+// quotations, saas, suppliers, support, accounting, ai, analytics, website),
+// so those tables only ever existed via synchronize:true. Globbing keeps the
+// migration data-source in lockstep with the app.
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DATABASE_HOST || 'localhost',
@@ -25,10 +18,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DATABASE_NAME || 'handla_db',
   username: process.env.DATABASE_USER || 'root',
   password: process.env.DATABASE_PASSWORD || undefined,
-  entities: [
-    User, Conversation, Message, Notification, Testimonial,
-    Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense,
-  ],
+  entities: [path.resolve(__dirname, '../modules/**/*.entity{.ts,.js}')],
   migrations: [path.resolve(__dirname, '../database/migrations/*{.ts,.js}')],
   synchronize: false,
   logging: true,
