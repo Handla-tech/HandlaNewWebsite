@@ -128,7 +128,17 @@ export default function ContractDetailScreen() {
       { text: t('detail.delete'), style: 'destructive', onPress: () => del.mutate() },
     ]);
 
+  // A formal PDF/HTML document only exists once it has been generated
+  // (typically at signing). Until then there is no s3Key, so the pdf-url
+  // endpoint would 404 — the readable contract body below is the source of
+  // truth in that case.
+  const hasDocument = !!(c?.s3Key || c?.pdfUrl);
+
   const openDocument = async () => {
+    if (!hasDocument) {
+      Alert.alert(t('contract.noDocTitle'), t('contract.noDocMsg'));
+      return;
+    }
     try {
       setOpeningDoc(true);
       const { url } = (await contractsApi.pdfUrl(contractId)).data.data;
@@ -173,22 +183,29 @@ export default function ContractDetailScreen() {
             <Row label={t('detail.updated')} value={fmtDate(c.updatedAt)} />
           </View>
 
-          <View style={{ marginTop: spacing.md }}>
-            <Button
-              title={t('contract.viewDocument')}
-              variant="ghost"
-              onPress={openDocument}
-              loading={openingDoc}
-            />
-          </View>
+          {hasDocument ? (
+            <View style={{ marginTop: spacing.md }}>
+              <Button
+                title={t('contract.viewDocument')}
+                variant="ghost"
+                onPress={openDocument}
+                loading={openingDoc}
+              />
+            </View>
+          ) : null}
 
-          {/* Body preview */}
+          {/* Body — the full readable contract text (always available). */}
           <Text style={[sectionLabel, { marginTop: spacing.lg }]}>{t('contract.contractBody')}</Text>
           <View style={cardStyle}>
-            <Text style={{ color: colors.textMuted, fontSize: font.sm, lineHeight: 20 }}>
-              {c.body}
+            <Text style={{ color: colors.text, fontSize: font.sm, lineHeight: 22 }}>
+              {c.body || t('contract.noBody')}
             </Text>
           </View>
+          {!hasDocument ? (
+            <Text style={{ color: colors.textMuted, fontSize: font.xs, marginTop: spacing.xs }}>
+              {t('contract.docAvailableAfterSign')}
+            </Text>
+          ) : null}
 
           {canRespond && (
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg }}>
