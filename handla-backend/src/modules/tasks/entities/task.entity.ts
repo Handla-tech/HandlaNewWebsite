@@ -12,6 +12,14 @@ import { TaskStatus } from '../../../common/enums';
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../auth/entities/user.entity';
 
+/** A file a client uploaded to fulfil a client-directed task. */
+export interface TaskAttachment {
+  url: string;
+  name: string;
+  size?: number;
+  uploadedAt: string;
+}
+
 /**
  * ERP-5 — Task entity.
  *
@@ -79,6 +87,26 @@ export class Task {
 
   @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate: string | null;
+
+  // ─── Client-directed task fields ────────────────────────────────────────────
+  /**
+   * When true, this task is a deliverable REQUESTED FROM THE CLIENT (e.g. "upload
+   * the brand assets"), not internal staff work. The client can see it in their
+   * project view and fulfil it. Default false keeps every existing task internal.
+   */
+  @Column({ name: 'assigned_to_client', type: 'boolean', default: false })
+  assignedToClient: boolean;
+
+  /** When true, the client must attach at least one file to complete the task. */
+  @Column({ name: 'requires_upload', type: 'boolean', default: false })
+  requiresUpload: boolean;
+
+  /**
+   * Files the client submitted for this task. JSON array of
+   * { url, name, size, uploadedAt }. Null until the client submits.
+   */
+  @Column({ name: 'attachments', type: 'json', nullable: true })
+  attachments: TaskAttachment[] | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;

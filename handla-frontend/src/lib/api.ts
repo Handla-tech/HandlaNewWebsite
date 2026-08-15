@@ -314,6 +314,8 @@ export const tasksApi = {
   deleteTask:           (id: string)                          => api.delete(`/erp/tasks/${id}`),
   /** GET /erp/projects/:projectId/tasks — tasks for a specific project */
   getTasksByProject:    (projectId: string)                   => api.get(`/erp/projects/${projectId}/tasks`),
+  /** PATCH /erp/tasks/:id/submit — CLIENT submits a client-directed task (files + complete) */
+  submitClientTask:     (id: string, data: object)            => api.patch(`/erp/tasks/${id}/submit`, data),
   /** POST /erp/tasks/recalculate-delayed — ADMIN manual trigger */
   recalculateDelayed:   ()                                    => api.post('/erp/tasks/recalculate-delayed'),
 };

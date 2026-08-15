@@ -23,6 +23,7 @@ import {
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { SubmitClientTaskDto } from './dto/submit-client-task.dto';
 import { TasksQueryDto } from './dto/tasks-query.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
@@ -111,6 +112,27 @@ export class TasksController {
   ) {
     const task = await this.tasksService.update(id, dto, user);
     return { message: 'Task updated', data: { task } };
+  }
+
+  // ─── PATCH /api/erp/tasks/:id/submit ──────────────────────────────────────────
+  // CLIENT fulfils a client-directed task: attach uploaded files + mark done.
+  // Not @OwnedResource() — that guard is for staff ownership; client access is
+  // enforced inside the service (project must belong to the calling client).
+  @Patch(':id/submit')
+  @Roles(UserRole.CLIENT)
+  @ApiOperation({ summary: 'CLIENT submits a client-directed task (upload files, mark complete)' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Task submitted and marked completed' })
+  @ApiResponse({ status: 400, description: 'Upload required but no files attached' })
+  @ApiResponse({ status: 403, description: 'Not the client this task belongs to' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  async submitClientTask(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SubmitClientTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    const task = await this.tasksService.submitClientTask(id, dto, user);
+    return { message: 'Task submitted', data: { task } };
   }
 
   // ─── DELETE /api/erp/tasks/:id ────────────────────────────────────────────────

@@ -844,7 +844,11 @@
         "descriptionLabel": "Description",
         "descriptionPlaceholder": "Task description (optional)",
         "statusLabel": "Status",
-        "dueDateLabel": "Due Date"
+        "dueDateLabel": "Due Date",
+        "assignToClientLabel": "Assign to client",
+        "assignToClientHint": "The client will see this task in their portal and can act on it (e.g. upload files).",
+        "requiresUploadLabel": "Require file upload",
+        "requiresUploadHint": "The client must attach at least one file to complete this task."
       },
       "views": {
         "table": "Table",

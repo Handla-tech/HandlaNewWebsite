@@ -4,6 +4,7 @@ import {
   IsUUID,
   IsEnum,
   IsDateString,
+  IsBoolean,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -48,4 +49,22 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      'If true, this task is a deliverable requested FROM THE CLIENT (e.g. upload files). ' +
+      'The client can see and fulfil it in their portal. Ignores assigneeId.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  assignedToClient?: boolean;
+
+  @ApiPropertyOptional({
+    default: false,
+    description: 'If true (client task only), the client must attach at least one file to complete it.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  requiresUpload?: boolean;
 }

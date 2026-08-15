@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,8 @@ import {
   Loader2,
   Calendar,
   FolderOpen,
+  UserCheck,
+  Upload,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -76,6 +78,8 @@ const createSchema = z.object({
   assigneeId:  z.string().uuid().optional().or(z.literal('')),
   status:      z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED']).default('PENDING'),
   dueDate:     z.string().optional(),
+  assignedToClient: z.boolean().optional(),
+  requiresUpload:   z.boolean().optional(),
 });
 
 type CreateFormValues = z.infer<typeof createSchema>;
@@ -125,14 +129,18 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
   isLoading: boolean;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, control, formState: { errors } } = useForm<CreateFormValues>({
+  const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     defaultValues: {
       title: initial?.title ?? '', description: initial?.description ?? '',
       projectId: initial?.projectId ?? '', assigneeId: initial?.assigneeId ?? '',
       status: initial?.status ?? 'PENDING', dueDate: initial?.dueDate ?? '',
+      assignedToClient: initial?.assignedToClient ?? false,
+      requiresUpload: initial?.requiresUpload ?? false,
     },
   });
+
+  const assignedToClient = useWatch({ control, name: 'assignedToClient' });
 
   const sharedInput = 'w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder-white/20 focus:border-[#fbbf24]/50 focus:outline-none focus:bg-white/[0.06] transition-all';
 
@@ -202,6 +210,55 @@ function TaskModal({ mode, initial, projects, onClose, onSubmit, isLoading }: {
               <input id="task-due" type="date" {...register('dueDate')} className={sharedInput} />
             </div>
           </div>
+
+          {mode === 'create' && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <Controller name="assignedToClient" control={control} render={({ field }) => (
+                  <input
+                    type="checkbox"
+                    checked={!!field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                      if (!e.target.checked) setValue('requiresUpload', false);
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-[#fbbf24]"
+                  />
+                )} />
+                <span className="flex-1">
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-white">
+                    <UserCheck className="h-3.5 w-3.5 text-[#fbbf24]" />
+                    {t('erp.tasks.modals.assignToClientLabel')}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-white/40">
+                    {t('erp.tasks.modals.assignToClientHint')}
+                  </span>
+                </span>
+              </label>
+
+              {assignedToClient && (
+                <label className="flex items-start gap-3 cursor-pointer border-t border-white/[0.06] pt-3">
+                  <Controller name="requiresUpload" control={control} render={({ field }) => (
+                    <input
+                      type="checkbox"
+                      checked={!!field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-white/[0.04] accent-[#fbbf24]"
+                    />
+                  )} />
+                  <span className="flex-1">
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-white">
+                      <Upload className="h-3.5 w-3.5 text-[#fbbf24]" />
+                      {t('erp.tasks.modals.requiresUploadLabel')}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-white/40">
+                      {t('erp.tasks.modals.requiresUploadHint')}
+                    </span>
+                  </span>
+                </label>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
@@ -521,7 +578,12 @@ export default function TasksPage() {
               const payload: Record<string, unknown> = { title: values.title, projectId: values.projectId, status: values.status };
               if (values.description) payload.description = values.description;
               if (values.dueDate)     payload.dueDate = values.dueDate;
-              if (values.assigneeId)  payload.assigneeId = values.assigneeId;
+              if (values.assignedToClient) {
+                payload.assignedToClient = true;
+                payload.requiresUpload = !!values.requiresUpload;
+              } else if (values.assigneeId) {
+                payload.assigneeId = values.assigneeId;
+              }
               createMutation.mutate(payload);
             }}
             isLoading={createMutation.isPending}

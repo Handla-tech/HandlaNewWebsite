@@ -201,6 +201,13 @@ export interface PaginatedProjects {
 
 // ─── ERP-5: Task Entity ───────────────────────────────────────────────────────
 
+export interface TaskAttachment {
+  url: string;
+  name: string;
+  size?: number;
+  uploadedAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -210,6 +217,12 @@ export interface Task {
   ownerId: string | null;
   status: TaskStatus;
   dueDate: string | null;
+  /** True when this task is a deliverable requested from the CLIENT. */
+  assignedToClient?: boolean;
+  /** True when the client must upload at least one file to complete it. */
+  requiresUpload?: boolean;
+  /** Files the client submitted (null until submitted). */
+  attachments?: TaskAttachment[] | null;
   createdAt: string;
   updatedAt: string;
   project?: Project & { client?: Client };

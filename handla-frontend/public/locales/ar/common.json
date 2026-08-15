@@ -844,7 +844,11 @@
         "descriptionLabel": "الوصف",
         "descriptionPlaceholder": "وصف المهمة (اختياري)",
         "statusLabel": "الحالة",
-        "dueDateLabel": "تاريخ الاستحقاق"
+        "dueDateLabel": "تاريخ الاستحقاق",
+        "assignToClientLabel": "إسناد إلى العميل",
+        "assignToClientHint": "سيظهر هذا المهمة للعميل في بوابته ويمكنه التعامل معها (مثل رفع الملفات).",
+        "requiresUploadLabel": "طلب رفع ملف",
+        "requiresUploadHint": "يجب على العميل إرفاق ملف واحد على الأقل لإكمال هذه المهمة."
       },
       "views": {
         "table": "جدول",

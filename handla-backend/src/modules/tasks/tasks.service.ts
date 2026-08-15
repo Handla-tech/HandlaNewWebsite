@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, Not, In } from 'typeorm';
 
@@ -8,6 +8,7 @@ import { User } from '../auth/entities/user.entity';
 import { UserRole, TaskStatus, NotificationType } from '../../common/enums';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { SubmitClientTaskDto } from './dto/submit-client-task.dto';
 import { TasksQueryDto } from './dto/tasks-query.dto';
 import {
   ResourceNotFoundException,
@@ -243,14 +244,22 @@ export class TasksService {
 
     const ownerId = actingUser.role === UserRole.EMPLOYEE ? actingUser.id : null;
 
+    // A client-directed task is a deliverable request; it has no employee
+    // assignee (the "assignee" is conceptually the client), so drop assigneeId.
+    const assignedToClient = dto.assignedToClient === true;
+    const assigneeId = assignedToClient ? null : (dto.assigneeId ?? null);
+
     const task = this.taskRepo.create({
       title: dto.title,
       description: dto.description ?? null,
       projectId: dto.projectId,
-      assigneeId: dto.assigneeId ?? null,
+      assigneeId,
       ownerId,
       status: dto.status ?? TaskStatus.PENDING,
       dueDate: dto.dueDate ?? null,
+      assignedToClient,
+      requiresUpload: assignedToClient ? dto.requiresUpload === true : false,
+      attachments: null,
     });
 
     const saved = await this.taskRepo.save(task);
@@ -280,6 +289,73 @@ export class TasksService {
           erpUrl: `${this.baseUrl}/erp/tasks/${saved.id}`,
         });
       }
+    }
+
+    return this.taskRepo.findOne({
+      where: { id: saved.id },
+      relations: ['project', 'project.client', 'assignee', 'owner'],
+    }) as Promise<Task>;
+  }
+
+  // ─── submitClientTask ───────────────────────────────────────────────────────────
+  /**
+   * A CLIENT fulfils a client-directed task: attach uploaded files (if any) and
+   * mark the task COMPLETED. Only the client who owns the task's project may do
+   * this, and only for tasks flagged assignedToClient. If the task requires an
+   * upload, at least one attachment must be provided.
+   *
+   * Notifies the task owner (and project owner) that the client submitted.
+   */
+  async submitClientTask(
+    id: string,
+    dto: SubmitClientTaskDto,
+    user: User,
+  ): Promise<Task> {
+    if (user.role !== UserRole.CLIENT) {
+      throw new InsufficientPermissionsException('submit this task (CLIENT only)');
+    }
+
+    // findOne enforces that the CLIENT owns the task's project.
+    const task = await this.findOne(id, user);
+
+    if (!task.assignedToClient) {
+      throw new AppException('This task is not assigned to you.', HttpStatus.FORBIDDEN);
+    }
+
+    const attachments = (dto.attachments ?? []).map((a) => ({
+      url: a.url,
+      name: a.name,
+      size: a.size,
+      uploadedAt: new Date().toISOString(),
+    }));
+
+    if (task.requiresUpload && attachments.length === 0) {
+      throw new AppException(
+        'This task requires at least one uploaded file.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Merge onto any previously-submitted files rather than overwriting.
+    task.attachments = [...(task.attachments ?? []), ...attachments];
+    task.status = TaskStatus.COMPLETED;
+    const saved = await this.taskRepo.save(task);
+
+    this.logger.log(
+      `Client task submitted: id=${saved.id} by client=${user.id} files=${attachments.length}`,
+    );
+
+    // Notify the staff owner that the client submitted their deliverable.
+    const notifyUserId = task.ownerId ?? task.project?.ownerId ?? null;
+    if (notifyUserId) {
+      const noteSuffix = dto.note ? ` — "${dto.note}"` : '';
+      void this.notificationService.createErpNotification(
+        notifyUserId,
+        NotificationType.SYSTEM,
+        'Client submitted a task',
+        `The client completed "${saved.title}" (${attachments.length} file(s))${noteSuffix}.`,
+        saved.id,
+      );
     }
 
     return this.taskRepo.findOne({
