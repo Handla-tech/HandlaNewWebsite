@@ -29,6 +29,18 @@
         "EXPO_PUBLIC_API_URL": "https://api.handla.tech/api",
         "EXPO_PUBLIC_SOCKET_URL": "https://api.handla.tech"
       }
+    },
+    "production-apk": {
+      "channel": "production",
+      "autoIncrement": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.handla.tech/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://api.handla.tech"
+      }
     }
   },
   "submit": {
