@@ -268,10 +268,16 @@ export class AuthController {
   private setCookies(res: Response, accessToken: string, refreshToken: string): void {
     const isProd = this.configService.get('NODE_ENV') === 'production';
 
+    // Frontend (handla.tech) and API (api.handla.tech) are different registrable
+    // sub-origins, so the auth cookies travel cross-site on the XHR to the API.
+    // `SameSite=Strict`/`Lax` are NOT sent on those cross-site requests, which
+    // makes /auth/me return 401 right after login and the dashboard bounce back
+    // to /auth. Cross-site cookies over HTTPS require `SameSite=None; Secure`.
+    // In non-prod (http://localhost) we keep `Lax` since `None` requires Secure.
     const baseOptions = {
       httpOnly: true,
       secure: isProd,
-      sameSite: isProd ? ('strict' as const) : ('lax' as const),
+      sameSite: isProd ? ('none' as const) : ('lax' as const),
       path: '/',
     };
 
@@ -288,7 +294,15 @@ export class AuthController {
   }
 
   private clearCookies(res: Response): void {
-    res.clearCookie(COOKIE_NAME, { path: '/' });
-    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth/refresh' });
+    const isProd = this.configService.get('NODE_ENV') === 'production';
+    // Must mirror the attributes used in setCookies (SameSite/Secure), otherwise
+    // some browsers won't match and clear the cookie on logout.
+    const opts = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? ('none' as const) : ('lax' as const),
+    };
+    res.clearCookie(COOKIE_NAME, { ...opts, path: '/' });
+    res.clearCookie(REFRESH_COOKIE_NAME, { ...opts, path: '/api/auth/refresh' });
   }
 }
