@@ -548,6 +548,13 @@ export interface AuthState {
   user: User | null;
   isLoggedIn: boolean;
   isLoading: boolean;
+  /**
+   * False until the first /auth/me hydration completes (success or failure).
+   * Route guards MUST wait for this before deciding to redirect, otherwise the
+   * initial (pre-hydration) `isLoggedIn=false` bounces authenticated users to
+   * /auth in a loop.
+   */
+  authResolved: boolean;
   login: (payload: SignInPayload) => Promise<LoginResult>;
   signup: (payload: SignUpPayload) => Promise<PendingVerification>;
   logout: () => Promise<void>;

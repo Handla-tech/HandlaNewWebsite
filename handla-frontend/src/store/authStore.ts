@@ -20,13 +20,16 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isLoggedIn: false,
       isLoading: false,
+      authResolved: false,
       error: null,
 
       // ── Actions ────────────────────────────────────────────────────────────
 
       setUser: (user: User | null) => {
         console.debug(`${LOG} setUser  userId=${user?.id ?? 'null'}  role=${user?.role ?? 'none'}`);
-        set({ user, isLoggedIn: user !== null });
+        // Adopting a user (e.g. right after OTP verify) is itself a resolved
+        // auth state — mark it so route guards don't bounce before /auth/me.
+        set({ user, isLoggedIn: user !== null, authResolved: true });
       },
 
       clearError: () => set({ error: null }),
@@ -82,7 +85,7 @@ export const useAuthStore = create<AuthStore>()(
           // Verified account → session cookies are set; adopt the user.
           const user = data.user as User;
           console.debug(`${LOG} login() ✅ signed in directly  userId=${user?.id}  role=${user?.role}`);
-          set({ user, isLoggedIn: true });
+          set({ user, isLoggedIn: true, authResolved: true });
           return { loggedIn: true as const, user };
         } catch (err) {
           const status = (err as { response?: { status?: number } })?.response?.status;
@@ -146,7 +149,7 @@ export const useAuthStore = create<AuthStore>()(
           console.warn(`${LOG} getMe() ❌  status=${status} — not authenticated (cookie missing or expired)  → isLoggedIn=false`, err);
           set({ user: null, isLoggedIn: false });
         } finally {
-          set({ isLoading: false });
+          set({ isLoading: false, authResolved: true });
         }
       },
     }),

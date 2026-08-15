@@ -174,7 +174,7 @@ function SidebarContent({
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const { user, isLoggedIn, isLoading, isAdmin, isEmployee, logout } = useAuth();
+  const { user, isLoggedIn, isLoading, authResolved, isAdmin, isEmployee, logout } = useAuth();
   const isClient = user?.role === 'CLIENT';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchParams, setSearchParams] = useState('');
@@ -188,17 +188,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname]);
 
   // ── Auth guard: redirect to correct dashboard per role ───────────────────
+  // Wait until auth is RESOLVED (first /auth/me settled or a user was adopted
+  // after OTP verify) before redirecting. Without this gate the initial
+  // pre-hydration `isLoggedIn=false` bounces authenticated users straight back
+  // to /auth in a loop (the "stuck on OTP screen after verify" bug).
   useEffect(() => {
-    if (!isLoading && isLoggedIn && isAdmin) {
+    if (!authResolved) return;
+    if (isLoggedIn && (isAdmin || isEmployee)) {
       router.replace('/erp');
-    }
-    if (!isLoading && isLoggedIn && isEmployee) {
-      router.replace('/erp');
-    }
-    if (!isLoading && !isLoggedIn) {
+    } else if (!isLoggedIn) {
       router.replace('/auth');
     }
-  }, [isLoading, isLoggedIn, isAdmin, isEmployee, router]);
+  }, [authResolved, isLoggedIn, isAdmin, isEmployee, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -210,8 +211,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setSearchParams(tab === 'chat' ? '' : `?tab=${tab}`);
   };
 
-  // Prevent flash during auth loading
-  if (isLoading || !isLoggedIn) {
+  // Prevent flash during auth loading — wait for resolution, not just isLoading.
+  if (!authResolved || isLoading || !isLoggedIn) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0a0a0a]">
         <div className="flex flex-col items-center gap-3">

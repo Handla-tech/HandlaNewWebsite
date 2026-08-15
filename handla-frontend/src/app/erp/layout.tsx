@@ -266,7 +266,7 @@ function SidebarContent({
 export default function ErpLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
-  const { user, isLoggedIn, isLoading, isAdmin, isEmployee, logout } = useAuth();
+  const { user, isLoggedIn, isLoading, authResolved, isAdmin, isEmployee, logout } = useAuth();
   const { t, isRTL } = useTranslation();
   const [mounted,    setMounted]    = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -275,8 +275,10 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => { setMounted(true); }, []);
 
   // ── Auth guard: only ADMIN or EMPLOYEE may enter ─────────────────────────
+  // Wait for auth resolution before redirecting — the initial pre-hydration
+  // `isLoggedIn=false` would otherwise bounce authenticated users to /auth.
   useEffect(() => {
-    if (!mounted || isLoading) return;
+    if (!mounted || !authResolved) return;
     if (!isLoggedIn) {
       router.replace('/auth');
       return;
@@ -285,7 +287,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
       // CLIENT / LEAD → back to their dashboard
       router.replace('/dashboard');
     }
-  }, [mounted, isLoading, isLoggedIn, isAdmin, isEmployee, router]);
+  }, [mounted, authResolved, isLoggedIn, isAdmin, isEmployee, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -293,7 +295,7 @@ export default function ErpLayout({ children }: { children: React.ReactNode }) {
   };
 
   // Loading / auth flash guard
-  if (!mounted || isLoading || !isLoggedIn) {
+  if (!mounted || !authResolved || isLoading || !isLoggedIn) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#080808]">
         <div className="flex flex-col items-center gap-4">
