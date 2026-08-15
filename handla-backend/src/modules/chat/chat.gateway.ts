@@ -291,6 +291,23 @@ export class ChatGateway
       .emit('messageReceived', { message, conversationId });
   }
 
+  // ─── Public helper: let the AI assistant react to a REST-sent message ────────
+  //
+  // Text messages are sent via the REST endpoint
+  // `POST /chat/conversations/:id/messages` (only file uploads go over the
+  // WebSocket `sendMessage` handler). The AI trigger originally lived ONLY in
+  // the WebSocket handler, so text messages never invoked the assistant — the
+  // bot appeared to "never reply". This passthrough gives the REST controller
+  // the same hook. It never throws/blocks (fire-and-forget) and the chatbot
+  // gates internally on takeover / role / config, so it's safe on every message.
+  triggerAiReply(params: {
+    conversation: import('./entities/conversation.entity').Conversation;
+    senderUser: User;
+    message: import('./entities/message.entity').Message;
+  }): void {
+    void this.chatbotService.handleIncomingMessage(params);
+  }
+
   // ─── Public helper: notify the conversation recipient about a new message ───
   //
   // Used by BOTH the WebSocket `sendMessage` handler AND the REST

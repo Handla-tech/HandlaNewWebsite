@@ -99,6 +99,17 @@ export class ChatController {
       content,
     });
 
+    // Let the AI assistant react to this message. Text messages are sent via
+    // THIS REST endpoint (only file uploads use the WebSocket handler), so the
+    // AI trigger must live here too — otherwise the bot never replies to normal
+    // text chat. Fire-and-forget; the chatbot gates internally on
+    // takeover/role/config and never blocks or breaks the chat flow.
+    this.chatGateway.triggerAiReply({
+      conversation,
+      senderUser: user,
+      message,
+    });
+
     return { message: 'Message sent', data: { message } };
   }
 

@@ -45,6 +45,7 @@ describe('ChatController', () => {
   let chatGateway: {
     broadcastMessage: jest.Mock;
     notifyMessageRecipient: jest.Mock;
+    triggerAiReply: jest.Mock;
   };
   let awsService: { generatePresignedUrl: jest.Mock };
 
@@ -64,6 +65,7 @@ describe('ChatController', () => {
     chatGateway = {
       broadcastMessage: jest.fn(),
       notifyMessageRecipient: jest.fn().mockResolvedValue(undefined),
+      triggerAiReply: jest.fn(),
     };
     awsService = { generatePresignedUrl: jest.fn() };
 
