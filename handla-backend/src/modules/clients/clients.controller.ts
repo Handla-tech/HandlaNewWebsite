@@ -22,6 +22,7 @@ import {
 
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
+import { ProvisionClientDto } from './dto/provision-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ClientsQueryDto } from './dto/clients-query.dto';
 import { AssignOwnerDto } from './dto/assign-owner.dto';
@@ -92,6 +93,24 @@ export class ClientsController {
   async create(@Body() dto: CreateClientDto, @CurrentUser() user: User) {
     const client = await this.clientsService.create(dto, user);
     return { message: 'Client created', data: { client } };
+  }
+
+  // ─── POST /api/erp/clients/provision ──────────────────────────────────────────
+  // Create a new CLIENT user + Client record atomically. Staff-accessible
+  // (ADMIN + EMPLOYEE) so employees can onboard clients without hitting the
+  // ADMIN-only /users controller (which previously 403'd them).
+  @Post('provision')
+  @HttpCode(HttpStatus.CREATED)
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({
+    summary: 'Create a new CLIENT user and its Client record in one call (ADMIN+EMPLOYEE)',
+  })
+  @ApiResponse({ status: 201, description: 'Client user + record created' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  @ApiResponse({ status: 403, description: 'ADMIN or EMPLOYEE role required' })
+  async provision(@Body() dto: ProvisionClientDto, @CurrentUser() user: User) {
+    const client = await this.clientsService.provision(dto, user);
+    return { message: 'Client provisioned', data: { client } };
   }
 
   // ─── PATCH /api/erp/clients/:id ───────────────────────────────────────────────

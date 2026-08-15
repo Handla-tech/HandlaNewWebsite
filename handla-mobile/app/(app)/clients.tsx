@@ -109,32 +109,18 @@ export default function ClientsScreen() {
         });
         return;
       }
-      // Create: make a CLIENT user (backend auto-creates the client record),
-      // then patch company/status/notes onto the new client record.
-      const userRes = await usersApi.create({
+      // Create: provision the CLIENT user + client record atomically in one
+      // call. This staff-accessible endpoint (ADMIN+EMPLOYEE) replaces the old
+      // create-user → poll → patch dance and does NOT touch the ADMIN-only
+      // /users controller, so employees can onboard clients too.
+      await clientsApi.provision({
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
-        role: 'CLIENT',
+        ...(form.company.trim() ? { company: form.company.trim() } : {}),
+        ...(form.status ? { status: form.status } : {}),
+        ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
       });
-      const newUserId = userRes.data?.data?.user?.id;
-      if (!newUserId) throw new Error('User creation did not return an ID');
-      // Give the backend a moment to create the client record, then locate it.
-      await new Promise((res) => setTimeout(res, 400));
-      let list = await clientsApi.list({ limit: 20, page: 1 });
-      let match = list.data.data.clients.find((c) => c.userId === newUserId);
-      if (!match) {
-        await new Promise((res) => setTimeout(res, 600));
-        list = await clientsApi.list({ limit: 20, page: 1 });
-        match = list.data.data.clients.find((c) => c.userId === newUserId);
-      }
-      if (match && (form.company.trim() || form.status || form.notes.trim())) {
-        await clientsApi.update(match.id, {
-          ...(form.company.trim() ? { company: form.company.trim() } : {}),
-          ...(form.status ? { status: form.status } : {}),
-          ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
-        });
-      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clients-mobile'] });
@@ -217,11 +203,11 @@ export default function ClientsScreen() {
         />
       )}
 
-      {/* Creating a client requires creating a CLIENT user first, and user
-          creation is an ADMIN-only backend endpoint (/users). Employees may
-          view and edit clients but cannot create the underlying user, so the
-          create FAB is admin-only (mirrors the backend — avoids a 403). */}
-      {isAdmin ? <Fab onPress={openCreate} /> : null}
+      {/* Onboarding a client now uses POST /erp/clients/provision, which is
+          staff-accessible (ADMIN+EMPLOYEE) and creates the CLIENT user + record
+          atomically — no ADMIN-only /users dependency. So employees can create
+          clients too, and the FAB is shown to all staff. */}
+      {isStaff ? <Fab onPress={openCreate} /> : null}
 
       <FormModal
         visible={formOpen}
@@ -234,10 +220,10 @@ export default function ClientsScreen() {
         submitting={save.isPending}
         error={err ?? undefined}
       >
-        {/* Name & email belong to the linked user account, editable only via
-            the ADMIN-only /users endpoint. Hide them when a non-admin (employee)
-            is editing, since their changes here can't be saved — employees edit
-            company/status/notes only. Always shown on create (admin-only). */}
+        {/* On CREATE, name & email feed the staff-accessible provision endpoint,
+            so all staff see them. On EDIT they belong to the linked user account
+            (only mutable via the ADMIN-only /users endpoint), so hide them for a
+            non-admin editor — employees edit company/status/notes only. */}
         {(!editing || isAdmin) && (
           <>
             <Input

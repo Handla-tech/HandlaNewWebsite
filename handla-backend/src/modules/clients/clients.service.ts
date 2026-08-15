@@ -1,20 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { Client } from './entities/client.entity';
 import { User } from '../auth/entities/user.entity';
 import { Conversation } from '../chat/entities/conversation.entity';
 import { UserRole, ClientStatus, NotificationType } from '../../common/enums';
 import { CreateClientDto } from './dto/create-client.dto';
+import { ProvisionClientDto } from './dto/provision-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ClientsQueryDto } from './dto/clients-query.dto';
 import {
   ResourceNotFoundException,
   OwnershipViolationException,
   InsufficientPermissionsException,
+  EmailAlreadyExistsException,
   AppException,
 } from '../../utils/exceptions';
+import { BCRYPT_ROUNDS } from '../../common/constants/security.constants';
 import { NotificationService } from '../notifications/notification.service';
 import { EmailService } from '../email/email.service';
 
@@ -171,6 +175,81 @@ export class ClientsService {
 
     return this.clientRepo.findOne({
       where: { id: saved.id },
+      relations: ['user', 'owner'],
+    }) as Promise<Client>;
+  }
+
+  // ─── provision ──────────────────────────────────────────────────────────────────
+  /**
+   * Create a brand-new CLIENT user AND its Client record in a single atomic call.
+   *
+   * Why this exists: onboarding a new client previously required creating the
+   * user via the ADMIN-only /users controller, then polling /erp/clients for the
+   * auto-created record and patching it. That flow 403'd EMPLOYEEs and was racy.
+   * This endpoint lives on the (ADMIN+EMPLOYEE) clients controller, so any staff
+   * member can onboard a client without touching /users, and the user + client
+   * are committed together in one transaction.
+   *
+   * EMPLOYEE actor → the new client is owned by them (ownerId = actor.id).
+   * ADMIN actor    → ownerId is null (unassigned) unless later assigned.
+   */
+  async provision(dto: ProvisionClientDto, actingUser: User): Promise<Client> {
+    const email = dto.email.toLowerCase();
+
+    // Reject duplicate emails up-front (unique user constraint).
+    const existingUser = await this.userRepo.findOne({ where: { email } });
+    if (existingUser) {
+      throw new EmailAlreadyExistsException(dto.email);
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    const ownerId = actingUser.role === UserRole.EMPLOYEE ? actingUser.id : null;
+
+    // Create the CLIENT user + Client record atomically so we never leave a
+    // dangling user without a client record (or vice-versa) on partial failure.
+    const savedClientId = await this.clientRepo.manager.transaction(
+      async (manager: EntityManager) => {
+        const user = manager.create(User, {
+          email,
+          passwordHash,
+          name: dto.name.trim(),
+          role: UserRole.CLIENT,
+        });
+        const savedUser = await manager.save(user);
+
+        const client = manager.create(Client, {
+          userId: savedUser.id,
+          ownerId,
+          company: dto.company?.trim() || null,
+          status: dto.status ?? ClientStatus.ACTIVE,
+          notes: dto.notes?.trim() || null,
+        });
+        const savedClient = await manager.save(client);
+        return savedClient.id;
+      },
+    );
+
+    this.logger.log(
+      `Client provisioned (user+record) id=${savedClientId} email=${email} ownerId=${ownerId ?? 'none'} by actor=${actingUser.id}`,
+    );
+
+    // Fire-and-forget welcome email — must never fail/delay the response.
+    const dashboardUrl = `${this.baseUrl}/dashboard`;
+    void this.emailService
+      .queueUserCreatedEmail({
+        recipientEmail: email,
+        userName: dto.name.trim(),
+        temporaryPassword: dto.password,
+        dashboardUrl,
+      })
+      .catch((err: any) => {
+        this.logger.error(
+          `Failed to queue user-created email for provisioned client ${email}: ${err.message}`,
+        );
+      });
+
+    return this.clientRepo.findOne({
+      where: { id: savedClientId },
       relations: ['user', 'owner'],
     }) as Promise<Client>;
   }

@@ -50,8 +50,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.7:3001/api",
-      "socketUrl": "http://192.168.0.7:3001"
+      "apiUrl": "",
+      "socketUrl": ""
     }
   }
 }

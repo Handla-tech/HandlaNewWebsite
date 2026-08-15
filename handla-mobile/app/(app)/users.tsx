@@ -144,7 +144,12 @@ export default function UsersScreen() {
 
   const simpleAction = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      // Promoting a LEAD → CLIENT creates a Client record, so refresh the
+      // Clients list too (and role-changes may move a user between filters).
+      qc.invalidateQueries({ queryKey: ['clients-mobile'] });
+    },
     onError: (e) => setErr(apiError(e, t('users.errors.action'))),
   });
 

@@ -187,16 +187,33 @@ export interface ClientInput {
   notes?: string | null;
 }
 
+/** Body for POST /erp/clients/provision — creates the CLIENT user + record together. */
+export interface ProvisionClientInput {
+  name: string;
+  email: string;
+  password: string;
+  company?: string;
+  status?: string;
+  notes?: string;
+}
+
 export const clientsApi = {
   /** GET /erp/clients — ADMIN/EMPLOYEE, role-scoped. */
   list: (params?: { page?: number; limit?: number; search?: string }) =>
     api.get<{ message: string; data: PaginatedClients }>('/erp/clients', { params }),
-  /** POST /erp/clients — ADMIN/EMPLOYEE. */
+  /** POST /erp/clients — ADMIN/EMPLOYEE. Attach a record to an existing CLIENT user. */
   create: (body: ClientInput) =>
-    api.post<{ message: string; data: Client }>('/erp/clients', body),
+    api.post<{ message: string; data: { client: Client } }>('/erp/clients', body),
+  /**
+   * POST /erp/clients/provision — ADMIN/EMPLOYEE. Create a NEW CLIENT user and
+   * its Client record atomically. Use this to onboard a client from mobile —
+   * it does NOT touch the ADMIN-only /users controller, so employees can use it.
+   */
+  provision: (body: ProvisionClientInput) =>
+    api.post<{ message: string; data: { client: Client } }>('/erp/clients/provision', body),
   /** PATCH /erp/clients/:id — ADMIN/EMPLOYEE. */
   update: (id: string, body: ClientInput) =>
-    api.patch<{ message: string; data: Client }>(`/erp/clients/${id}`, body),
+    api.patch<{ message: string; data: { client: Client } }>(`/erp/clients/${id}`, body),
   /** DELETE /erp/clients/:id — ADMIN. */
   remove: (id: string) => api.delete(`/erp/clients/${id}`),
 };

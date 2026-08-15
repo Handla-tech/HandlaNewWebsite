@@ -9,6 +9,7 @@ import {
   ResourceNotFoundException,
   OwnershipViolationException,
   InsufficientPermissionsException,
+  EmailAlreadyExistsException,
   AppException,
 } from '../../../utils/exceptions';
 import { NotificationService } from '../../notifications/notification.service';
@@ -92,6 +93,7 @@ const mockNotificationService = {
 
 const mockEmailService = {
   queueLeadAssigned: jest.fn().mockResolvedValue(undefined),
+  queueUserCreatedEmail: jest.fn().mockResolvedValue(undefined),
 };
 
 // ─── Test Suite ───────────────────────────────────────────────────────────────
@@ -272,6 +274,80 @@ describe('ClientsService', () => {
       await expect(service.create({ userId: 'ghost' }, admin)).rejects.toBeInstanceOf(
         ResourceNotFoundException,
       );
+    });
+  });
+
+  // ─── provision ────────────────────────────────────────────────────────────────
+
+  describe('provision', () => {
+    /** Wire the transaction mock to run the callback with a fake EntityManager. */
+    function wireTransaction(createdClientId: string, createdUserId = 'new-user-id') {
+      const manager: any = {
+        create: jest.fn((entity: any, data: any) => ({ ...data })),
+        save: jest.fn(),
+      };
+      // First save() = user (gets an id), second save() = client (gets an id).
+      manager.save
+        .mockResolvedValueOnce({ id: createdUserId })
+        .mockResolvedValueOnce({ id: createdClientId });
+      mockClientRepo.manager.transaction.mockImplementation(async (cb: any) => cb(manager));
+      return manager;
+    }
+
+    it('creates a CLIENT user + record atomically; EMPLOYEE actor owns it', async () => {
+      const employee = makeUser({ role: UserRole.EMPLOYEE, id: 'emp-id' });
+      const finalClient = makeClient({ id: 'prov-client', ownerId: 'emp-id' });
+
+      mockUserRepo.findOne.mockResolvedValue(null); // email not taken
+      const manager = wireTransaction('prov-client');
+      mockClientRepo.findOne.mockResolvedValue(finalClient); // refetch after tx
+
+      const result = await service.provision(
+        { name: 'Jane', email: 'Jane@Example.com', password: 'password123' },
+        employee,
+      );
+
+      // User is created with lowercased email + CLIENT role.
+      expect(manager.create).toHaveBeenCalledWith(
+        User,
+        expect.objectContaining({ email: 'jane@example.com', role: UserRole.CLIENT }),
+      );
+      // Client is owned by the acting employee.
+      expect(manager.create).toHaveBeenCalledWith(
+        Client,
+        expect.objectContaining({ ownerId: 'emp-id' }),
+      );
+      expect(result).toBe(finalClient);
+    });
+
+    it('ADMIN actor leaves the new client unassigned (ownerId null)', async () => {
+      const admin = makeUser({ role: UserRole.ADMIN, id: 'admin-id' });
+      mockUserRepo.findOne.mockResolvedValue(null);
+      const manager = wireTransaction('prov-client-2');
+      mockClientRepo.findOne.mockResolvedValue(makeClient({ id: 'prov-client-2' }));
+
+      await service.provision(
+        { name: 'Bob', email: 'bob@example.com', password: 'password123' },
+        admin,
+      );
+
+      expect(manager.create).toHaveBeenCalledWith(
+        Client,
+        expect.objectContaining({ ownerId: null }),
+      );
+    });
+
+    it('throws EmailAlreadyExistsException when email is taken', async () => {
+      const admin = makeUser({ role: UserRole.ADMIN });
+      mockUserRepo.findOne.mockResolvedValue(makeUser({ id: 'dupe' }));
+
+      await expect(
+        service.provision(
+          { name: 'Dup', email: 'dupe@example.com', password: 'password123' },
+          admin,
+        ),
+      ).rejects.toBeInstanceOf(EmailAlreadyExistsException);
+      expect(mockClientRepo.manager.transaction).not.toHaveBeenCalled();
     });
   });
 
