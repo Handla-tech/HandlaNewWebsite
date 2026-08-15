@@ -55,6 +55,20 @@ export class TasksController {
     return { message: 'Tasks retrieved', data: result };
   }
 
+  // ─── GET /api/erp/tasks/assignable-staff ──────────────────────────────────────
+  // Declared BEFORE the `:id` route so "assignable-staff" isn't captured as an id.
+  // ADMIN + EMPLOYEE: employees may create/assign tasks but cannot hit the
+  // ADMIN-only /users list, so this gives them the assignee picker options.
+  @Get('assignable-staff')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'List staff (ADMIN+EMPLOYEE) assignable to a task' })
+  @ApiResponse({ status: 200, description: 'Assignable staff list' })
+  @ApiResponse({ status: 403, description: 'ADMIN or EMPLOYEE role required' })
+  async findAssignableStaff() {
+    const staff = await this.tasksService.findAssignableStaff();
+    return { message: 'Assignable staff retrieved', data: { staff } };
+  }
+
   // ─── GET /api/erp/tasks/:id ───────────────────────────────────────────────────
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)

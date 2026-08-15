@@ -269,6 +269,13 @@ export interface TaskInput {
   dueDate?: string;
 }
 
+export interface AssignableStaff {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
 export const tasksApi = {
   /** GET /erp/tasks — ADMIN/EMPLOYEE, role-scoped. */
   list: (params?: {
@@ -279,6 +286,15 @@ export const tasksApi = {
     projectId?: string;
     assigneeId?: string;
   }) => api.get<{ message: string; data: PaginatedTasks }>('/erp/tasks', { params }),
+  /**
+   * GET /erp/tasks/assignable-staff — ADMIN/EMPLOYEE. Assignee-picker options.
+   * Use this (NOT usersApi.list, which is ADMIN-only) so employees can populate
+   * the task assignee dropdown without a 403.
+   */
+  assignableStaff: () =>
+    api.get<{ message: string; data: { staff: AssignableStaff[] } }>(
+      '/erp/tasks/assignable-staff',
+    ),
   /** POST /erp/tasks — ADMIN/EMPLOYEE. */
   create: (body: TaskInput) => api.post<{ message: string; data: Task }>('/erp/tasks', body),
   /** PATCH /erp/tasks/:id — ADMIN/EMPLOYEE. */

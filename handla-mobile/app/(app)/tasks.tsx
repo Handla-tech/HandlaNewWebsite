@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, FlatList, RefreshControl, ScrollView } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { tasksApi, projectsApi, usersApi, type TaskInput } from '@/lib/endpoints';
+import { tasksApi, projectsApi, type TaskInput } from '@/lib/endpoints';
 import { apiError } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
 import { Loading, Badge, Chip, Input } from '@/components/ui';
@@ -65,16 +65,17 @@ export default function TasksScreen() {
     value: p.id,
   }));
 
+  // Assignee picker options. Use the staff-accessible /erp/tasks/assignable-staff
+  // endpoint (ADMIN+EMPLOYEE) — NOT usersApi.list, which is ADMIN-only and would
+  // 403 for an employee, leaving them unable to assign tasks.
   const staffList = useQuery({
-    queryKey: ['staff-for-task'],
+    queryKey: ['assignable-staff'],
     enabled: isStaff,
-    queryFn: () => usersApi.list({ limit: 100 }).then((r) => r.data.data.users),
+    queryFn: () => tasksApi.assignableStaff().then((r) => r.data.data.staff),
   });
   const assigneeOptions: SelectOption[] = [
     { label: t('tasks.unassigned'), value: '' },
-    ...(staffList.data ?? [])
-      .filter((u) => u.role === 'ADMIN' || u.role === 'EMPLOYEE')
-      .map((u) => ({ label: u.name || u.email, value: u.id })),
+    ...(staffList.data ?? []).map((u) => ({ label: u.name || u.email, value: u.id })),
   ];
 
   const rows = tasks.data?.tasks ?? [];

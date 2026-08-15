@@ -121,6 +121,8 @@ export default function AppLayout() {
         name="analytics"
         options={{
           title: t('tabs.analytics'),
+          // Backend: @Roles(ADMIN, EMPLOYEE) on /erp/analytics — employees may
+          // view analytics, so gate on isStaff (ADMIN||EMPLOYEE), not isAdmin.
           drawerItemStyle: isStaff ? undefined : { display: 'none' },
           drawerIcon: ({ color, size }) => (
             <Ionicons name="stats-chart-outline" size={size} color={color} />

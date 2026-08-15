@@ -129,6 +129,7 @@ const mockProjectRepo = {
 
 const mockUserRepo = {
   findOne: jest.fn(),
+  find: jest.fn(),
 };
 
 const mockNotificationService = {
@@ -352,6 +353,39 @@ describe('TasksService', () => {
       await expect(service.findByProject('ghost-id', admin)).rejects.toThrow(
         ResourceNotFoundException,
       );
+    });
+  });
+
+  // ─── findAssignableStaff ───────────────────────────────────────────────────────
+
+  describe('findAssignableStaff', () => {
+    it('returns only non-archived/non-disabled ADMIN+EMPLOYEE users, mapped to picker fields', async () => {
+      const staff = [
+        makeUser({ id: 'admin-1', name: 'Alice', email: 'a@x.com', role: UserRole.ADMIN }),
+        makeUser({ id: 'emp-1', name: 'Bob', email: 'b@x.com', role: UserRole.EMPLOYEE }),
+      ];
+      mockUserRepo.find.mockResolvedValue(staff);
+
+      const result = await service.findAssignableStaff();
+
+      expect(mockUserRepo.find).toHaveBeenCalledWith({
+        where: [
+          { role: UserRole.ADMIN, isArchived: false, isDisabled: false },
+          { role: UserRole.EMPLOYEE, isArchived: false, isDisabled: false },
+        ],
+        select: ['id', 'name', 'email', 'role'],
+        order: { name: 'ASC' },
+      });
+      expect(result).toEqual([
+        { id: 'admin-1', name: 'Alice', email: 'a@x.com', role: UserRole.ADMIN },
+        { id: 'emp-1', name: 'Bob', email: 'b@x.com', role: UserRole.EMPLOYEE },
+      ]);
+    });
+
+    it('returns an empty array when no staff exist', async () => {
+      mockUserRepo.find.mockResolvedValue([]);
+      const result = await service.findAssignableStaff();
+      expect(result).toEqual([]);
     });
   });
 

@@ -143,6 +143,31 @@ export class TasksService {
     return task;
   }
 
+  // ─── findAssignableStaff ──────────────────────────────────────────────────────
+  /**
+   * Return the staff users a task can be assigned to (ADMIN + EMPLOYEE), for
+   * populating the "Assignee" dropdown in the task create/edit form.
+   *
+   * Why this lives on the tasks controller (ADMIN+EMPLOYEE) rather than reusing
+   * GET /users: the whole /users controller is ADMIN-only, so an EMPLOYEE — who
+   * IS allowed to create/assign tasks — would get 403 fetching the user list.
+   * This endpoint exposes only the minimal, non-sensitive fields needed for the
+   * picker (id, name, email, role) and excludes archived/disabled accounts.
+   */
+  async findAssignableStaff(): Promise<
+    Array<{ id: string; name: string; email: string; role: UserRole }>
+  > {
+    const staff = await this.userRepo.find({
+      where: [
+        { role: UserRole.ADMIN, isArchived: false, isDisabled: false },
+        { role: UserRole.EMPLOYEE, isArchived: false, isDisabled: false },
+      ],
+      select: ['id', 'name', 'email', 'role'],
+      order: { name: 'ASC' },
+    });
+    return staff.map((u) => ({ id: u.id, name: u.name, email: u.email, role: u.role }));
+  }
+
   // ─── findByProject ────────────────────────────────────────────────────────────
   /**
    * List all tasks for a specific project.

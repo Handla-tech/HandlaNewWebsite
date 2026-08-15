@@ -92,8 +92,11 @@ export default function ClientsScreen() {
   const save = useMutation({
     mutationFn: async () => {
       if (editing) {
-        // Update the linked user's name/email (best-effort) + client fields.
-        if (editing.userId && (form.name.trim() || form.email.trim())) {
+        // Editing the linked user's name/email hits the ADMIN-only /users
+        // endpoint, so only attempt it as an admin. Employees can still update
+        // the client-record fields (company/status/notes) via /erp/clients,
+        // which they're allowed to do — so their edits no longer 403.
+        if (isAdmin && editing.userId && (form.name.trim() || form.email.trim())) {
           await usersApi.update(editing.userId, {
             ...(form.name.trim() ? { name: form.name.trim() } : {}),
             ...(form.email.trim() ? { email: form.email.trim() } : {}),
@@ -214,7 +217,11 @@ export default function ClientsScreen() {
         />
       )}
 
-      {isStaff ? <Fab onPress={openCreate} /> : null}
+      {/* Creating a client requires creating a CLIENT user first, and user
+          creation is an ADMIN-only backend endpoint (/users). Employees may
+          view and edit clients but cannot create the underlying user, so the
+          create FAB is admin-only (mirrors the backend — avoids a 403). */}
+      {isAdmin ? <Fab onPress={openCreate} /> : null}
 
       <FormModal
         visible={formOpen}
@@ -227,21 +234,29 @@ export default function ClientsScreen() {
         submitting={save.isPending}
         error={err ?? undefined}
       >
-        <Input
-          label={t('clients.fullName')}
-          value={form.name}
-          onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-          placeholder={t('clients.fullNamePlaceholder')}
-          autoCapitalize="words"
-        />
-        <Input
-          label={t('common.email')}
-          value={form.email}
-          onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
-          placeholder={t('clients.emailPlaceholder')}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        {/* Name & email belong to the linked user account, editable only via
+            the ADMIN-only /users endpoint. Hide them when a non-admin (employee)
+            is editing, since their changes here can't be saved — employees edit
+            company/status/notes only. Always shown on create (admin-only). */}
+        {(!editing || isAdmin) && (
+          <>
+            <Input
+              label={t('clients.fullName')}
+              value={form.name}
+              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+              placeholder={t('clients.fullNamePlaceholder')}
+              autoCapitalize="words"
+            />
+            <Input
+              label={t('common.email')}
+              value={form.email}
+              onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
+              placeholder={t('clients.emailPlaceholder')}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </>
+        )}
         {!editing ? (
           <Input
             label={t('clients.tempPassword')}
