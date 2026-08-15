@@ -3,8 +3,10 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * InitialSchema — MySQL version.
  *
- * All CREATE statements use IF NOT EXISTS so this migration is safe to run
- * on a DB that was bootstrapped via TypeORM synchronize (tables already exist).
+ * Tables use `CREATE TABLE IF NOT EXISTS` and indexes are created via the
+ * `createIndex` helper (which checks information_schema first), so this
+ * migration is safe to run on a DB that was bootstrapped via TypeORM
+ * synchronize (tables/indexes already exist).
  *
  * MySQL differences vs PostgreSQL original:
  *   - No CREATE TYPE — enums are inline column definitions
@@ -13,9 +15,38 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   - gen_random_uuid() → (UUID())
  *   - BOOLEAN → TINYINT(1)
  *   - SMALLINT stays the same
+ *   - No `CREATE INDEX IF NOT EXISTS` (MySQL 8 lacks it) → guarded via
+ *     information_schema.STATISTICS in the private `createIndex` helper
  */
 export class InitialSchema1716825600000 implements MigrationInterface {
   name = 'InitialSchema1716825600000';
+
+  /**
+   * MySQL 8.0 does NOT support `CREATE INDEX IF NOT EXISTS` (unlike PostgreSQL
+   * and MariaDB). To keep this migration idempotent — safe to run on a DB that
+   * was bootstrapped via TypeORM `synchronize` where the index may already
+   * exist — we check `information_schema.STATISTICS` first and only create the
+   * index when it is absent.
+   */
+  private async createIndex(
+    queryRunner: QueryRunner,
+    table: string,
+    indexName: string,
+    columns: string,
+  ): Promise<void> {
+    const existing: unknown[] = await queryRunner.query(
+      `SELECT 1 FROM information_schema.STATISTICS
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+          AND index_name = ?
+        LIMIT 1`,
+      [table, indexName],
+    );
+    if (Array.isArray(existing) && existing.length > 0) return;
+    await queryRunner.query(
+      `CREATE INDEX \`${indexName}\` ON \`${table}\` (${columns})`,
+    );
+  }
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // ─── Users ─────────────────────────────────────────────────────────────────
@@ -33,9 +64,7 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_users_email\` ON \`users\` (\`email\`)
-    `);
+    await this.createIndex(queryRunner, 'users', 'idx_users_email', '`email`');
 
     // ─── Conversations ─────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -57,15 +86,19 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_conversation_admin_client_status\`
-        ON \`conversations\` (\`admin_id\`, \`client_id\`, \`status\`)
-    `);
+    await this.createIndex(
+      queryRunner,
+      'conversations',
+      'idx_conversation_admin_client_status',
+      '`admin_id`, `client_id`, `status`',
+    );
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_conversations_assigned_employee\`
-        ON \`conversations\` (\`assigned_employee_id\`)
-    `);
+    await this.createIndex(
+      queryRunner,
+      'conversations',
+      'idx_conversations_assigned_employee',
+      '`assigned_employee_id`',
+    );
 
     // ─── Messages ──────────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -86,10 +119,12 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_message_conversation_created\`
-        ON \`messages\` (\`conversation_id\`, \`created_at\`)
-    `);
+    await this.createIndex(
+      queryRunner,
+      'messages',
+      'idx_message_conversation_created',
+      '`conversation_id`, `created_at`',
+    );
 
     // ─── Notifications ─────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -115,10 +150,12 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_notification_user_read_created\`
-        ON \`notifications\` (\`user_id\`, \`is_read\`, \`created_at\`)
-    `);
+    await this.createIndex(
+      queryRunner,
+      'notifications',
+      'idx_notification_user_read_created',
+      '`user_id`, `is_read`, `created_at`',
+    );
 
     // ─── Testimonials ──────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -139,10 +176,12 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_testimonial_created_at\`
-        ON \`testimonials\` (\`created_at\`)
-    `);
+    await this.createIndex(
+      queryRunner,
+      'testimonials',
+      'idx_testimonial_created_at',
+      '`created_at`',
+    );
 
     // ─── ERP: Clients ──────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -164,12 +203,8 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_clients_owner_id\` ON \`clients\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_clients_status\` ON \`clients\` (\`status\`)
-    `);
+    await this.createIndex(queryRunner, 'clients', 'idx_clients_owner_id', '`owner_id`');
+    await this.createIndex(queryRunner, 'clients', 'idx_clients_status', '`status`');
 
     // ─── ERP: Projects ─────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -192,15 +227,9 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_projects_client_id\` ON \`projects\` (\`client_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_projects_owner_id\`  ON \`projects\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_projects_status\`    ON \`projects\` (\`status\`)
-    `);
+    await this.createIndex(queryRunner, 'projects', 'idx_projects_client_id', '`client_id`');
+    await this.createIndex(queryRunner, 'projects', 'idx_projects_owner_id', '`owner_id`');
+    await this.createIndex(queryRunner, 'projects', 'idx_projects_status', '`status`');
 
     // ─── ERP: Tasks ────────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -222,18 +251,10 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_tasks_project_id\`  ON \`tasks\` (\`project_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_tasks_owner_id\`    ON \`tasks\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_tasks_assignee_id\` ON \`tasks\` (\`assignee_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_tasks_status_due\`  ON \`tasks\` (\`status\`, \`due_date\`)
-    `);
+    await this.createIndex(queryRunner, 'tasks', 'idx_tasks_project_id', '`project_id`');
+    await this.createIndex(queryRunner, 'tasks', 'idx_tasks_owner_id', '`owner_id`');
+    await this.createIndex(queryRunner, 'tasks', 'idx_tasks_assignee_id', '`assignee_id`');
+    await this.createIndex(queryRunner, 'tasks', 'idx_tasks_status_due', '`status`, `due_date`');
 
     // ─── ERP: Contracts ────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -258,15 +279,9 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_contracts_client_id\` ON \`contracts\` (\`client_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_contracts_owner_id\`  ON \`contracts\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_contracts_status\`    ON \`contracts\` (\`status\`)
-    `);
+    await this.createIndex(queryRunner, 'contracts', 'idx_contracts_client_id', '`client_id`');
+    await this.createIndex(queryRunner, 'contracts', 'idx_contracts_owner_id', '`owner_id`');
+    await this.createIndex(queryRunner, 'contracts', 'idx_contracts_status', '`status`');
 
     // ─── ERP: Invoices + Line Items ────────────────────────────────────────────
     await queryRunner.query(`
@@ -310,26 +325,21 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_invoices_client_id\`
-        ON \`invoices\` (\`client_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_invoices_owner_id\`
-        ON \`invoices\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_invoices_payment_status\`
-        ON \`invoices\` (\`payment_status\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_invoices_due_date\`
-        ON \`invoices\` (\`due_date\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_invoice_line_items_invoice_id\`
-        ON \`invoice_line_items\` (\`invoice_id\`)
-    `);
+    await this.createIndex(queryRunner, 'invoices', 'idx_invoices_client_id', '`client_id`');
+    await this.createIndex(queryRunner, 'invoices', 'idx_invoices_owner_id', '`owner_id`');
+    await this.createIndex(
+      queryRunner,
+      'invoices',
+      'idx_invoices_payment_status',
+      '`payment_status`',
+    );
+    await this.createIndex(queryRunner, 'invoices', 'idx_invoices_due_date', '`due_date`');
+    await this.createIndex(
+      queryRunner,
+      'invoice_line_items',
+      'idx_invoice_line_items_invoice_id',
+      '`invoice_id`',
+    );
 
     // ─── ERP: Expenses ─────────────────────────────────────────────────────────
     await queryRunner.query(`
@@ -353,22 +363,10 @@ export class InitialSchema1716825600000 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_expenses_type\`
-        ON \`expenses\` (\`type\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_expenses_date\`
-        ON \`expenses\` (\`expense_date\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_expenses_owner_id\`
-        ON \`expenses\` (\`owner_id\`)
-    `);
-    await queryRunner.query(`
-      CREATE INDEX IF NOT EXISTS \`idx_expenses_invoice_id\`
-        ON \`expenses\` (\`invoice_id\`)
-    `);
+    await this.createIndex(queryRunner, 'expenses', 'idx_expenses_type', '`type`');
+    await this.createIndex(queryRunner, 'expenses', 'idx_expenses_date', '`expense_date`');
+    await this.createIndex(queryRunner, 'expenses', 'idx_expenses_owner_id', '`owner_id`');
+    await this.createIndex(queryRunner, 'expenses', 'idx_expenses_invoice_id', '`invoice_id`');
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
