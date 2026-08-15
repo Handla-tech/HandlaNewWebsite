@@ -28,13 +28,19 @@ The whole production site is one command from the repo root:
 
 **Two ways this gets triggered:**
 
-| Path | Trigger | Command that runs on the VPS |
-|------|---------|------------------------------|
-| **A — Genspark BYO-SSH tool** | you click "Deploy" | it SSHes in and runs `docker compose up -d --build` (or `./deploy.sh`) at the repo root |
-| **B — GitHub Actions** | push/merge to `main` | Actions SSHes in and runs `./deploy.sh` (see §4 / §4b) |
+| Path | Trigger | Repo location | Command on the VPS |
+|------|---------|---------------|--------------------|
+| **A — Genspark BYO-SSH tool** | you click "Deploy" | wherever the tool checks it out (working dir `/home/root` → e.g. `/home/root/HandlaNewWebsite`) | `PULL=0 ./deploy.sh` — see **[deploy/BYO-SSH.md](deploy/BYO-SSH.md)** |
+| **B — GitHub Actions** | push/merge to `main` | `/opt/handla` (you clone it there, §2) | `./deploy.sh` (SSHed by Actions, §4 / §4b) |
 
-Both paths converge on the exact same command and stack. Prereqs for either:
-Docker installed, `handla-backend/.env` present, TLS certs issued once (§5).
+Both paths converge on the **same `deploy.sh` and the same stack** — the script
+auto-detects the repo location, so it does not matter which folder it lives in.
+Prereqs for either: Docker installed, `handla-backend/.env` present, TLS certs
+issued once (§5), DNS pointed (§0).
+
+> **Using the BYO-SSH deploy panel?** Read **[deploy/BYO-SSH.md](deploy/BYO-SSH.md)**
+> — it maps this runbook to that tool's exact tabs (GitHub / Scripts / SSH) and
+> gives the precise command to paste.
 
 > **Note for the BYO-SSH tool:** if it deploys the *current uploaded working
 > tree* instead of doing a git pull, run it as `PULL=0 ./deploy.sh` (or set the
