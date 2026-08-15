@@ -93,10 +93,37 @@ After those, every deploy is just the one command in the Scripts tab.
 
 ---
 
+## ⚠️ If the VPS already runs Traefik (shared box)
+
+This VPS also serves another site (`tameerhome.tech`) behind a **Traefik**
+reverse proxy that already owns ports 80/443. Handla's own nginx+certbot cannot
+coexist with it. Use the **Traefik overlay** instead — Traefik terminates TLS and
+routes by hostname; Handla runs no nginx/certbot:
+
+```bash
+cd /opt/handla
+# proxy = Traefik's external docker network; letsencrypt = its ACME certresolver
+TRAEFIK_NETWORK=proxy TRAEFIK_CERTRESOLVER=letsencrypt ./deploy/deploy.traefik.sh
+```
+
+This:
+- attaches `handla_web` (port 3000) and `handla_api` (port 3001) to Traefik's
+  `proxy` network with labels routing `handla.tech`/`www` → web and
+  `api.handla.tech` → api, TLS via Traefik's existing `letsencrypt` resolver;
+- removes any conflicting `handla_nginx` / `handla_certbot` containers;
+- **touches nothing** in the other project — Traefik and tameerhome stay up.
+
+Skip DEPLOYMENT.md §5 (certbot bootstrap) entirely on a Traefik box — Traefik
+issues the certs. If Traefik's network/resolver/entrypoint are named
+differently, override `TRAEFIK_NETWORK`, `TRAEFIK_CERTRESOLVER`, and
+`TRAEFIK_ENTRYPOINT` (default `websecure`).
+
+---
+
 ## Verify after deploy
 
 ```bash
-cd /home/root/HandlaNewWebsite
+cd /opt/handla        # (or /home/root/HandlaNewWebsite)
 docker compose ps
 curl -s https://api.handla.tech/api/health
 # then open https://handla.tech in a browser

@@ -1,0 +1,95 @@
+# =============================================================================
+# Handla — Traefik overlay (for a VPS where Traefik already owns 80/443)
+# =============================================================================
+# Use this INSTEAD of the default nginx+certbot override when the box already
+# runs a Traefik reverse proxy (e.g. this VPS also serves tameerhome.tech).
+# Traefik terminates TLS and routes by Host rule; Handla runs NO nginx/certbot.
+#
+# Run it with an EXPLICIT file list so the auto-loaded docker-compose.override.yml
+# (nginx/certbot) is NOT applied:
+#
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml up -d --build
+#
+# Or via the helper:
+#
+#   ./deploy/deploy.traefik.sh
+#
+# Prereqs on the host (already true on this VPS):
+#   - a running Traefik with an external docker network (default here: "proxy")
+#   - a Traefik ACME/Let's Encrypt certresolver (default here: "letsencrypt")
+#   - Traefik configured with exposedbydefault=false (services opt in via labels)
+#
+# Override the network / resolver names if your Traefik differs:
+#   TRAEFIK_NETWORK=proxy  TRAEFIK_CERTRESOLVER=letsencrypt
+#     docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml up -d
+# =============================================================================
+
+networks:
+  # Handla's private network (mysql/redis/api/web talk here).
+  handla_net:
+    driver: bridge
+  # Traefik's existing external network — Handla web/api JOIN it so Traefik can
+  # reach them. It is NOT created by this stack (external: true).
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-proxy}
+
+services:
+
+  # ── API (NestJS) — routed by Traefik at api.handla.tech ─────────────────────
+  api:
+    networks:
+      - handla_net
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-proxy}"
+      # Router: api.handla.tech -> this service on port 3001 (websockets included)
+      - "traefik.http.routers.handla-api.rule=Host(`api.handla.tech`)"
+      - "traefik.http.routers.handla-api.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.handla-api.tls=true"
+      - "traefik.http.routers.handla-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.handla-api.loadbalancer.server.port=3001"
+
+  # ── Frontend (Next.js) — routed by Traefik at handla.tech + www ─────────────
+  web:
+    build:
+      context: ../handla-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL:    "https://api.handla.tech/api"
+        NEXT_PUBLIC_SOCKET_URL: "https://api.handla.tech"
+        NEXT_PUBLIC_APP_URL:    "https://handla.tech"
+    container_name: handla_web
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - handla_net
+      - proxy
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-proxy}"
+      # Apex + www -> Next.js on port 3000
+      - "traefik.http.routers.handla-web.rule=Host(`handla.tech`) || Host(`www.handla.tech`)"
+      - "traefik.http.routers.handla-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.handla-web.tls=true"
+      - "traefik.http.routers.handla-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.handla-web.loadbalancer.server.port=3000"
+      # Redirect www -> apex (Traefik middleware)
+      - "traefik.http.routers.handla-web.middlewares=handla-www-redirect"
+      - "traefik.http.middlewares.handla-www-redirect.redirectregex.regex=^https://www\\.handla\\.tech/(.*)"
+      - "traefik.http.middlewares.handla-www-redirect.redirectregex.replacement=https://handla.tech/$${1}"
+      - "traefik.http.middlewares.handla-www-redirect.redirectregex.permanent=true"
+
+  # ── Disable Handla's own nginx + certbot on a Traefik box ───────────────────
+  # These would fight Traefik for 80/443. We neutralise them so an accidental
+  # plain `docker compose up` can't start them. On a Traefik box, deploy with the
+  # explicit -f file list (see header) so the auto-override is never loaded; this
+  # block is a belt-and-braces safety net if both files are ever combined.
+  nginx:
+    profiles: ["disabled"]
+  certbot:
+    profiles: ["disabled"]
