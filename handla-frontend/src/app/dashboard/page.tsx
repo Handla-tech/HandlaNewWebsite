@@ -121,6 +121,132 @@ function apiErrMsg(err: unknown, fallback: string): string {
   return e?.response?.data?.message ?? fallback;
 }
 
+// ─── Contract Preview Modal (CLIENT — read the full contract) ─────────────────
+
+/**
+ * Full-screen readable preview of a contract for the CLIENT. Previously the row
+ * pushed the client to /erp/contracts/:id — a staff-only route they can't access
+ * — so they could neither read nor download the contract. This modal renders the
+ * full body + key structured details and lets them download a PDF (generated
+ * client-side, so it works for SENT contracts too, before any s3Key exists).
+ */
+function ContractPreviewModal({
+  isOpen, onClose, contract, onAccept, onReject,
+}: {
+  isOpen: boolean; onClose: () => void; contract: Contract;
+  onAccept: () => void; onReject: () => void;
+}) {
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const isSent = contract.status === 'SENT';
+  const d = contract.details;
+
+  const handleDownloadPdf = async () => {
+    if (pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      // Generate the PDF client-side from the contract object. Works regardless
+      // of status/s3Key, so a client can always download what they're signing.
+      const { downloadContractPdf } = await import('@/lib/pdf/contract-pdf');
+      await downloadContractPdf(contract);
+    } catch (err) {
+      console.error('Contract PDF generation failed:', err);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const fmtMoney = (v?: number, cur?: string) =>
+    v == null ? null : `${cur ?? ''} ${v.toLocaleString()}`.trim();
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-[#0d0d0d] shadow-2xl"
+            role="dialog" aria-modal="true"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 p-5 border-b border-white/10">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={cn('flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border', CONTRACT_STATUS_BADGE[contract.status])}>
+                    {contract.status}
+                  </span>
+                </div>
+                <h2 className="text-lg font-semibold text-white truncate">{contract.title}</h2>
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Key details grid */}
+              {d && (
+                <div className="grid grid-cols-2 gap-3">
+                  {d.contractType   && <PreviewField label="Contract Type"  value={String(d.contractType).replace(/_/g, ' ')} />}
+                  {d.projectName    && <PreviewField label="Project"        value={d.projectName} />}
+                  {d.estimatedDuration && <PreviewField label="Duration"    value={d.estimatedDuration} />}
+                  {fmtMoney(d.totalValue, d.currency) && <PreviewField label="Total Value" value={fmtMoney(d.totalValue, d.currency)!} />}
+                  {d.startDate      && <PreviewField label="Start Date"     value={formatDate(d.startDate)} />}
+                  {d.endDate        && <PreviewField label="End Date"       value={formatDate(d.endDate)} />}
+                </div>
+              )}
+
+              {/* Full contract body — readable, not truncated */}
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/30 mb-2">Contract Terms</p>
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                  <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap break-words">
+                    {contract.body || 'No contract text available.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer actions */}
+            <div className="p-5 border-t border-white/10 space-y-2">
+              <button onClick={handleDownloadPdf} disabled={pdfLoading}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-white/15 text-white/80 text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px] disabled:opacity-50">
+                {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {pdfLoading ? 'Preparing PDF…' : 'Download / Preview PDF'}
+              </button>
+              {isSent && (
+                <div className="flex gap-2">
+                  <button onClick={() => { onClose(); onReject(); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-colors min-h-[44px]">
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                  <button onClick={() => { onClose(); onAccept(); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#fbbf24] text-black text-sm font-semibold hover:bg-[#f59e0b] transition-colors min-h-[44px]">
+                    <FileSignature className="w-4 h-4" /> Accept
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function PreviewField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-white/30">{label}</p>
+      <p className="text-sm text-white/80 mt-0.5 break-words">{value}</p>
+    </div>
+  );
+}
+
 // ─── Contract Row (Contracts tab) ─────────────────────────────────────────────
 
 function AcceptModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: () => void; contract: Contract }) {
@@ -214,10 +340,10 @@ function RejectModal({ isOpen, onClose, contract }: { isOpen: boolean; onClose: 
 }
 
 function ContractRow({ contract }: { contract: Contract }) {
-  const router = useRouter();
   const qc = useQueryClient();
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const StatusIcon = CONTRACT_STATUS_ICON[contract.status] ?? FilePenLine;
   const isSent = contract.status === 'SENT';
@@ -228,14 +354,20 @@ function ContractRow({ contract }: { contract: Contract }) {
     if (pdfLoading) return;
     setPdfLoading(true);
     try {
-      const res: any = await contractsApi.getPdfUrl(contract.id);
-      const url = res?.data?.data?.url ?? res?.data?.url;
-      if (url) {
-        // Open the presigned URL directly — avoids CORS issues with fetch()
-        window.open(url, '_blank', 'noopener,noreferrer');
-      }
+      // Generate the PDF client-side so it works for any status (not just once
+      // an s3Key exists). Falls back to the stored presigned URL if generation
+      // somehow fails.
+      const { downloadContractPdf } = await import('@/lib/pdf/contract-pdf');
+      await downloadContractPdf(contract);
     } catch (err: any) {
-      console.error('Contract download failed:', err);
+      console.error('Contract PDF generation failed, trying stored URL:', err);
+      try {
+        const res: any = await contractsApi.getPdfUrl(contract.id);
+        const url = res?.data?.data?.url ?? res?.data?.url;
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (err2) {
+        console.error('Contract download fallback failed:', err2);
+      }
     } finally {
       setPdfLoading(false);
     }
@@ -244,7 +376,7 @@ function ContractRow({ contract }: { contract: Contract }) {
   return (
     <>
       <div
-        onClick={() => router.push(`/erp/contracts/${contract.id}`)}
+        onClick={() => setPreviewOpen(true)}
         className={cn(
           'group rounded-xl border p-4 cursor-pointer transition-colors',
           isSent
@@ -284,7 +416,8 @@ function ContractRow({ contract }: { contract: Contract }) {
           </div>
         )}
 
-        {/* PDF download for SIGNED contracts */}
+        {/* PDF download — available for SIGNED contracts (read the signed copy).
+            SENT contracts get their download inside the preview modal. */}
         {isSigned && (
           <div className="mt-3 pt-3 border-t border-emerald-500/10" onClick={e => e.stopPropagation()}>
             <button onClick={handleDownloadPdf} disabled={pdfLoading}
@@ -296,6 +429,13 @@ function ContractRow({ contract }: { contract: Contract }) {
         )}
       </div>
 
+      <ContractPreviewModal
+        isOpen={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        contract={contract}
+        onAccept={() => setAcceptOpen(true)}
+        onReject={() => setRejectOpen(true)}
+      />
       <AcceptModal isOpen={acceptOpen} onClose={() => setAcceptOpen(false)} contract={contract} />
       <RejectModal isOpen={rejectOpen} onClose={() => setRejectOpen(false)} contract={contract} />
     </>
