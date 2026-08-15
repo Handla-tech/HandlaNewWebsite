@@ -55,6 +55,17 @@ export class CollectEventDto {
   @IsOptional()
   screenWidth?: number;
 
+  /**
+   * Client-generated visitor id sent by the tracking script (analytics.js sets
+   * `payload.vid`). The server derives its own visitor hash and ignores this
+   * value, but it MUST be whitelisted here — the global ValidationPipe runs with
+   * forbidNonWhitelisted=true, so an unknown property would 400 the beacon.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  vid?: string;
+
   @IsOptional()
   @IsObject()
   meta?: Record<string, any>;

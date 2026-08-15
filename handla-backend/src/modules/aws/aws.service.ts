@@ -47,6 +47,14 @@ export class AwsService {
         accessKeyId: this.configService.get<string>('aws.accessKeyId') || '',
         secretAccessKey: this.configService.get<string>('aws.secretAccessKey') || '',
       },
+      // AWS SDK v3 (>= 3.729) defaults requestChecksumCalculation to
+      // 'WHEN_SUPPORTED', which bakes x-amz-checksum-crc32 +
+      // x-amz-sdk-checksum-algorithm into PRESIGNED PutObject URLs. Browsers
+      // uploading the raw file via a plain PUT do not (re)send that exact
+      // checksum header, so S3 rejects the upload with SignatureDoesNotMatch /
+      // a failed CORS preflight. Forcing 'WHEN_REQUIRED' keeps checksums out of
+      // presigned URLs so direct browser uploads work.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
     });
   }
 
