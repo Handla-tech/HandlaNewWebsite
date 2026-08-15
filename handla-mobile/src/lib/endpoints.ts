@@ -357,28 +357,33 @@ export interface ContractInput {
   details?: Record<string, unknown>;
 }
 
+// The backend wraps every single-contract response as `data: { contract }`
+// (only the list endpoint returns the paginated object directly). These types
+// must match that shape exactly — mistyping `data: Contract` made the mobile
+// detail screen read the wrapper object as the contract, so title/status/body
+// came back undefined and the contract appeared blank / unviewable.
 export const contractsApi = {
   list: (params?: ContractsQuery) =>
     api.get<{ message: string; data: PaginatedContracts }>('/erp/contracts', { params }),
   get: (id: string) =>
-    api.get<{ message: string; data: Contract }>(`/erp/contracts/${id}`),
+    api.get<{ message: string; data: { contract: Contract } }>(`/erp/contracts/${id}`),
   /** POST /erp/contracts — ADMIN/EMPLOYEE. */
   create: (body: ContractInput) =>
-    api.post<{ message: string; data: Contract }>('/erp/contracts', body),
+    api.post<{ message: string; data: { contract: Contract } }>('/erp/contracts', body),
   /** PATCH /erp/contracts/:id — ADMIN/EMPLOYEE. */
   update: (id: string, body: ContractInput) =>
-    api.patch<{ message: string; data: Contract }>(`/erp/contracts/${id}`, body),
+    api.patch<{ message: string; data: { contract: Contract } }>(`/erp/contracts/${id}`, body),
   /** DELETE /erp/contracts/:id — ADMIN. */
   remove: (id: string) => api.delete(`/erp/contracts/${id}`),
   /** POST /erp/contracts/:id/send — ADMIN/EMPLOYEE. */
   send: (id: string) =>
-    api.post<{ message: string; data: Contract }>(`/erp/contracts/${id}/send`),
+    api.post<{ message: string; data: { contract: Contract } }>(`/erp/contracts/${id}/send`),
   /** CLIENT — accept (sign) a sent contract. */
   accept: (id: string) =>
-    api.post<{ message: string; data: Contract }>(`/erp/contracts/${id}/accept`),
+    api.post<{ message: string; data: { contract: Contract } }>(`/erp/contracts/${id}/accept`),
   /** CLIENT — reject a sent contract. */
   reject: (id: string, reason?: string) =>
-    api.post<{ message: string; data: Contract }>(`/erp/contracts/${id}/reject`, { reason }),
+    api.post<{ message: string; data: { contract: Contract } }>(`/erp/contracts/${id}/reject`, { reason }),
   /** Presigned document URL (all roles). */
   pdfUrl: (id: string) =>
     api.get<{ message: string; data: { url: string } }>(`/erp/contracts/${id}/pdf-url`),

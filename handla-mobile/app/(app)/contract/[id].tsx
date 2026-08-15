@@ -42,7 +42,8 @@ export default function ContractDetailScreen() {
 
   const detail = useQuery({
     queryKey: ['contract', contractId],
-    queryFn: (): Promise<Contract> => contractsApi.get(contractId).then((r) => r.data.data),
+    queryFn: (): Promise<Contract> =>
+      contractsApi.get(contractId).then((r) => r.data.data.contract),
     enabled: !!contractId,
   });
   const c: Contract | undefined = detail.data;
@@ -53,15 +54,15 @@ export default function ContractDetailScreen() {
   };
 
   const accept = useMutation({
-    mutationFn: () => contractsApi.accept(contractId).then((r) => r.data.data),
+    mutationFn: () => contractsApi.accept(contractId).then((r) => r.data.data.contract),
     onSuccess: invalidate,
   });
   const reject = useMutation({
-    mutationFn: () => contractsApi.reject(contractId).then((r) => r.data.data),
+    mutationFn: () => contractsApi.reject(contractId).then((r) => r.data.data.contract),
     onSuccess: invalidate,
   });
   const send = useMutation({
-    mutationFn: () => contractsApi.send(contractId).then((r) => r.data.data),
+    mutationFn: () => contractsApi.send(contractId).then((r) => r.data.data.contract),
     onSuccess: invalidate,
     onError: (e: any) =>
       Alert.alert(t('contract.sendError'), e?.response?.data?.message ?? t('common.tryAgain')),
