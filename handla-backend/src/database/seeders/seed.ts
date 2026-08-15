@@ -21,7 +21,11 @@ import * as bcrypt from 'bcrypt';
 
 async function runSeeders(): Promise<void> {
   console.log('🌱 Connecting to database...');
-  await AppDataSource.initialize();
+  // Reuse an already-open connection (e.g. when invoked from db:reset) so we
+  // don't try to initialize twice; otherwise open our own.
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
   console.log('✅ Database connected');
 
   // MySQL: role enum values (ADMIN, EMPLOYEE, CLIENT, LEAD) are baked into
@@ -431,11 +435,25 @@ async function runSeeders(): Promise<void> {
     console.log(`ℹ️  Testimonials already exist (${testimonialCount}), skipping.`);
   }
 
-  await AppDataSource.destroy();
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
+  }
   console.log('🎉 Seeding complete!');
 }
 
-runSeeders().catch((err) => {
-  console.error('❌ Seeding failed:', err);
-  process.exit(1);
-});
+/**
+ * Public entry point so other scripts (e.g. db:reset) can run the seeder
+ * in-process. Safe to call whether or not the connection is already open.
+ */
+export async function runSeed(): Promise<void> {
+  await runSeeders();
+}
+
+// Only auto-run when this file is executed directly (`npm run seed`), not when
+// it's imported by another script such as reset.ts.
+if (require.main === module) {
+  runSeeders().catch((err) => {
+    console.error('❌ Seeding failed:', err);
+    process.exit(1);
+  });
+}

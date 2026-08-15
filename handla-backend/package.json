@@ -19,7 +19,8 @@
     "migration:generate": "ts-node --transpile-only ./node_modules/typeorm/cli migration:generate -d src/config/data-source.ts",
     "migration:run": "ts-node --transpile-only ./node_modules/typeorm/cli migration:run -d src/config/data-source.ts",
     "migration:revert": "ts-node --transpile-only ./node_modules/typeorm/cli migration:revert -d src/config/data-source.ts",
-    "seed": "ts-node --transpile-only src/database/seeders/seed.ts"
+    "seed": "ts-node --transpile-only src/database/seeders/seed.ts",
+    "db:reset": "ts-node --transpile-only src/database/reset.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
