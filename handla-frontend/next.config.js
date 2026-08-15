@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ─── Standalone output (self-contained server for Docker) ──────────────────
+  // Produces .next/standalone with a minimal node server + traced deps, so the
+  // production image does not need the full node_modules tree.
+  output: 'standalone',
+
   // ─── Image domains ─────────────────────────────────────────────────────────
   images: {
     remotePatterns: [

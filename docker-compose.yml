@@ -92,8 +92,11 @@ services:
       REDIS_PORT:        6379
       # Schema sync — reads from .env; safe to enable for local dev, never in real prod
       DATABASE_SYNCHRONIZE: ${DATABASE_SYNCHRONIZE:-false}
+    # Bind to loopback so the API is never exposed directly to the public
+    # internet. In production nginx proxies to it in-network (api:3001); in
+    # local dev you still reach it at http://localhost:3001.
     ports:
-      - "${PORT:-3001}:${PORT:-3001}"
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
     networks:
       - handla_net
     depends_on:

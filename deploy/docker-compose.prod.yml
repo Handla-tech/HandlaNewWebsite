@@ -1,0 +1,75 @@
+# =============================================================================
+# Handla — PRODUCTION stack for the Hostinger VPS
+# Services: mysql · redis · api · web (Next.js) · nginx (+ TLS) · certbot
+#
+# Run from the repo root on the VPS:
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+#
+# The base docker-compose.yml provides mysql + redis + api. This overlay:
+#   - pins api to NOT publish 3001 to the host (nginx proxies it internally)
+#   - adds the Next.js frontend (web)
+#   - adds nginx as the public TLS entrypoint for handla.tech + api.handla.tech
+#   - adds certbot for Let's Encrypt certificate issuance/renewal
+# =============================================================================
+
+volumes:
+  certbot_conf:
+    driver: local
+  certbot_www:
+    driver: local
+
+services:
+
+  # NOTE: the API port is already bound to 127.0.0.1 in the base
+  # docker-compose.yml, so it is not publicly reachable. nginx proxies to it
+  # in-network at api:3001. No api override needed here.
+
+  # ── Frontend (Next.js standalone) ───────────────────────────────────────────
+  web:
+    build:
+      context: ../handla-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL:    "https://api.handla.tech/api"
+        NEXT_PUBLIC_SOCKET_URL: "https://api.handla.tech"
+        NEXT_PUBLIC_APP_URL:    "https://handla.tech"
+    container_name: handla_web
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - handla_net
+    depends_on:
+      - api
+
+  # ── Nginx: public TLS entrypoint + reverse proxy ────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: handla_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    networks:
+      - handla_net
+    depends_on:
+      - api
+      - web
+
+  # ── Certbot: obtains + renews Let's Encrypt certs (webroot challenge) ───────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: handla_certbot
+    restart: unless-stopped
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    # Renew twice a day; nginx reload is handled by the host cron / redeploy.
+    entrypoint: >
+      sh -c 'trap exit TERM;
+      while :; do certbot renew --webroot -w /var/www/certbot --quiet;
+      sleep 12h & wait $${!}; done'
