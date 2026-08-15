@@ -268,17 +268,27 @@ export class AuthController {
   private setCookies(res: Response, accessToken: string, refreshToken: string): void {
     const isProd = this.configService.get('NODE_ENV') === 'production';
 
-    // Frontend (handla.tech) and API (api.handla.tech) are different registrable
-    // sub-origins, so the auth cookies travel cross-site on the XHR to the API.
-    // `SameSite=Strict`/`Lax` are NOT sent on those cross-site requests, which
-    // makes /auth/me return 401 right after login and the dashboard bounce back
-    // to /auth. Cross-site cookies over HTTPS require `SameSite=None; Secure`.
-    // In non-prod (http://localhost) we keep `Lax` since `None` requires Secure.
+    // Frontend (handla.tech) and API (api.handla.tech) are different sub-origins.
+    // Two things are required for the session cookie to work across them:
+    //
+    //  1. `SameSite=None; Secure` so the cookie is sent on the cross-site XHR
+    //     from handla.tech to api.handla.tech (Strict/Lax would be dropped).
+    //  2. `Domain=.handla.tech` so the cookie is ALSO sent to the apex host —
+    //     the Next.js middleware runs on handla.tech and gates /dashboard on the
+    //     presence of this cookie. Without a shared parent Domain the cookie is
+    //     scoped to api.handla.tech only, the middleware never sees it, and it
+    //     server-side redirects authenticated users back to /auth (the "stuck
+    //     on the OTP screen after verify" bug).
+    //
+    // COOKIE_DOMAIN is configurable; in prod it should be ".handla.tech".
+    // In non-prod (http://localhost) we keep `Lax` and no Domain.
+    const cookieDomain = (process.env.COOKIE_DOMAIN || '').trim();
     const baseOptions = {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? ('none' as const) : ('lax' as const),
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
 
     res.cookie(COOKIE_NAME, accessToken, {
@@ -295,12 +305,14 @@ export class AuthController {
 
   private clearCookies(res: Response): void {
     const isProd = this.configService.get('NODE_ENV') === 'production';
-    // Must mirror the attributes used in setCookies (SameSite/Secure), otherwise
-    // some browsers won't match and clear the cookie on logout.
+    // Must mirror the attributes used in setCookies (SameSite/Secure/Domain),
+    // otherwise some browsers won't match and clear the cookie on logout.
+    const cookieDomain = (process.env.COOKIE_DOMAIN || '').trim();
     const opts = {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? ('none' as const) : ('lax' as const),
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
     res.clearCookie(COOKIE_NAME, { ...opts, path: '/' });
     res.clearCookie(REFRESH_COOKIE_NAME, { ...opts, path: '/api/auth/refresh' });
