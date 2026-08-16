@@ -1,0 +1,147 @@
+'use client';
+
+/**
+ * FlagshipProducts — showcases Handla's three flagship products
+ * (Madar, Matjary, Manarah), each linking to its OWN landing page
+ * (/products/<slug>) with a distinct brand color.
+ *
+ * Rendered inside the landing "Products" section, above the DB-managed
+ * website products grid.
+ */
+
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowUpRight, Briefcase, ShoppingBag, GraduationCap } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
+
+interface Flagship {
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  catEn: string;
+  catAr: string;
+  descEn: string;
+  descAr: string;
+  icon: React.ReactNode;
+  accent: string;
+  gradFrom: string;
+  gradTo: string;
+}
+
+const FLAGSHIPS: Flagship[] = [
+  {
+    slug: 'madar',
+    nameEn: 'Madar',
+    nameAr: 'مُدار',
+    catEn: 'Business & Agency ERP',
+    catAr: 'نظام إدارة الأعمال والوكالات',
+    descEn: 'Clients, projects, quotations, contracts, invoices and financial reports — the full agency workflow.',
+    descAr: 'العملاء والمشاريع وعروض الأسعار والعقود والفواتير والتقارير المالية — دورة عمل الوكالة كاملة.',
+    icon: <Briefcase className="h-6 w-6" />,
+    accent: '#a78bfa',
+    gradFrom: '#7c6cff',
+    gradTo: '#a78bfa',
+  },
+  {
+    slug: 'matjary',
+    nameEn: 'Matjary',
+    nameAr: 'متجري',
+    catEn: 'Commerce Platform',
+    catAr: 'منصة التجارة',
+    descEn: 'Online storefront, POS, inventory, CRM, loyalty and analytics — sell everywhere from one place.',
+    descAr: 'متجر إلكتروني ونقطة بيع ومخزون وإدارة عملاء وولاء وتحليلات — بِع في كل مكان من مكان واحد.',
+    icon: <ShoppingBag className="h-6 w-6" />,
+    accent: '#34d399',
+    gradFrom: '#10b981',
+    gradTo: '#34d399',
+  },
+  {
+    slug: 'manarah',
+    nameEn: 'Manarah',
+    nameAr: 'منارة',
+    catEn: 'School Management System',
+    catAr: 'نظام إدارة المدارس',
+    descEn: 'Students, academics, attendance, grades, fees and transport — plus parent & student mobile apps.',
+    descAr: 'الطلاب والأكاديمي والحضور والدرجات والرسوم والنقل — بالإضافة إلى تطبيقي ولي الأمر والطالب.',
+    icon: <GraduationCap className="h-6 w-6" />,
+    accent: '#4ade80',
+    gradFrom: '#22c55e',
+    gradTo: '#4ade80',
+  },
+];
+
+export default function FlagshipProducts() {
+  const { locale, isRTL } = useTranslation();
+  const isAr = locale === 'ar';
+
+  return (
+    <div className="mb-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {FLAGSHIPS.map((p, i) => (
+        <motion.div
+          key={p.slug}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5, delay: Math.min(i * 0.1, 0.3) }}
+          whileHover={{ y: -6 }}
+        >
+          <Link
+            href={`/products/${p.slug}`}
+            aria-label={`${isAr ? p.nameAr : p.nameEn} — ${isAr ? p.catAr : p.catEn}`}
+            className="group relative flex h-full flex-col overflow-hidden rounded-2xl"
+            style={{
+              background: 'var(--surface-1)',
+              border: '1px solid var(--ov-med)',
+              boxShadow: 'var(--shadow-card)',
+            }}
+          >
+            {/* Colored top banner */}
+            <div
+              className="relative flex h-28 items-center justify-center overflow-hidden"
+              style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})` }}
+            >
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
+                  backgroundSize: '26px 26px',
+                }}
+              />
+              <div className="relative flex flex-col items-center gap-1 text-white">
+                <span>{p.icon}</span>
+                <span className="text-lg font-extrabold tracking-tight">
+                  {isAr ? p.nameAr : p.nameEn}
+                </span>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex flex-1 flex-col gap-3 p-6">
+              <span
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: p.accent }}
+              >
+                {isAr ? p.catAr : p.catEn}
+              </span>
+              <p className="flex-1 text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                {isAr ? p.descAr : p.descEn}
+              </p>
+              <span
+                className="inline-flex items-center gap-1.5 text-sm font-semibold"
+                style={{ color: p.accent }}
+              >
+                {isAr ? 'استكشف المنتج' : 'Explore product'}
+                <ArrowUpRight
+                  className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${
+                    isRTL ? 'group-hover:-translate-x-0.5 rotate-[-90deg]' : 'group-hover:translate-x-0.5'
+                  }`}
+                />
+              </span>
+            </div>
+          </Link>
+        </motion.div>
+      ))}
+    </div>
+  );
+}

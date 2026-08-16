@@ -9,6 +9,7 @@ import { websiteProductApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { WebsiteProduct } from '@/types';
 import ProductCard from './ProductCard';
+import FlagshipProducts from './FlagshipProducts';
 
 // ── Branded placeholder visual (used when a product has no image) ────────────
 function BrandedVisual({ label }: { label?: string | null }) {
@@ -245,6 +246,10 @@ export default function Products() {
             {t('products.subtitle')}
           </p>
         </motion.div>
+
+        {/* ── Flagship products — our three real products, each with its own
+            branded landing page + view-only live demo. ── */}
+        <FlagshipProducts />
 
         {/* Layout adapts to product count:
             1 → large featured layout · 2 → two-up · 3+ → responsive grid. */}
