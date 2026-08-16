@@ -2658,12 +2658,14 @@
     "subtitle": "Battle-tested platforms you can deploy today — built and maintained by our team, tailored to your business.",
     "viewAll": "View all products",
     "pageTitle": "Products & Solutions",
-    "pageSubtitle": "Explore our ready-made platforms — from School ERP to HR & Payroll and POS — built, maintained and ready to deploy.",
+    "pageSubtitle": "Explore our flagship platforms — Madar for agencies, Matjary for commerce and Manarah for schools — built, maintained and ready to deploy.",
     "all": "All",
     "empty": "No products to show yet. Check back soon.",
     "loadError": "Failed to load products.",
     "retry": "Retry",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "ctaText": "Not sure which platform fits? Tell us about your business and we'll guide you.",
+    "ctaButton": "Get started"
   }
 }

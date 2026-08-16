@@ -11,7 +11,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Briefcase, ShoppingBag, GraduationCap } from 'lucide-react';
+import { ArrowUpRight, Briefcase, ShoppingBag, GraduationCap, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface Flagship {
@@ -26,6 +26,7 @@ interface Flagship {
   accent: string;
   gradFrom: string;
   gradTo: string;
+  image: string;
 }
 
 const FLAGSHIPS: Flagship[] = [
@@ -41,6 +42,7 @@ const FLAGSHIPS: Flagship[] = [
     accent: '#a78bfa',
     gradFrom: '#7c6cff',
     gradTo: '#a78bfa',
+    image: '/products/madar-hero.webp',
   },
   {
     slug: 'matjary',
@@ -54,6 +56,7 @@ const FLAGSHIPS: Flagship[] = [
     accent: '#34d399',
     gradFrom: '#10b981',
     gradTo: '#34d399',
+    image: '/products/matjary-hero.webp',
   },
   {
     slug: 'manarah',
@@ -67,6 +70,7 @@ const FLAGSHIPS: Flagship[] = [
     accent: '#4ade80',
     gradFrom: '#22c55e',
     gradTo: '#4ade80',
+    image: '/products/manarah-hero.webp',
   },
 ];
 
@@ -85,9 +89,7 @@ export default function FlagshipProducts() {
           transition={{ duration: 0.5, delay: Math.min(i * 0.1, 0.3) }}
           whileHover={{ y: -6 }}
         >
-          <Link
-            href={`/products/${p.slug}`}
-            aria-label={`${isAr ? p.nameAr : p.nameEn} — ${isAr ? p.catAr : p.catEn}`}
+          <div
             className="group relative flex h-full flex-col overflow-hidden rounded-2xl"
             style={{
               background: 'var(--surface-1)',
@@ -95,26 +97,40 @@ export default function FlagshipProducts() {
               boxShadow: 'var(--shadow-card)',
             }}
           >
-            {/* Colored top banner */}
-            <div
-              className="relative flex h-28 items-center justify-center overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})` }}
+            {/* Hero image banner */}
+            <Link
+              href={`/products/${p.slug}`}
+              aria-label={`${isAr ? p.nameAr : p.nameEn} — ${isAr ? p.catAr : p.catEn}`}
+              className="relative block h-36 overflow-hidden"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.image}
+                alt={`${isAr ? p.nameAr : p.nameEn} — ${isAr ? p.catAr : p.catEn}`}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                loading="lazy"
+              />
+              {/* Brand tint + bottom fade so the badge stays legible */}
               <div
-                className="absolute inset-0 opacity-20"
+                className="absolute inset-0"
                 style={{
-                  backgroundImage:
-                    'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
-                  backgroundSize: '26px 26px',
+                  background: `linear-gradient(135deg, ${p.gradFrom}33, transparent 55%), linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.05) 55%)`,
                 }}
               />
-              <div className="relative flex flex-col items-center gap-1 text-white">
-                <span>{p.icon}</span>
-                <span className="text-lg font-extrabold tracking-tight">
+              {/* Product badge */}
+              <div className="absolute bottom-3 flex items-center gap-2 px-4 text-white"
+                   style={isRTL ? { right: 0 } : { left: 0 }}>
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})`, boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}
+                >
+                  {p.icon}
+                </span>
+                <span className="text-lg font-extrabold tracking-tight drop-shadow">
                   {isAr ? p.nameAr : p.nameEn}
                 </span>
               </div>
-            </div>
+            </Link>
 
             {/* Body */}
             <div className="flex flex-1 flex-col gap-3 p-6">
@@ -127,19 +143,32 @@ export default function FlagshipProducts() {
               <p className="flex-1 text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>
                 {isAr ? p.descAr : p.descEn}
               </p>
-              <span
-                className="inline-flex items-center gap-1.5 text-sm font-semibold"
-                style={{ color: p.accent }}
-              >
-                {isAr ? 'استكشف المنتج' : 'Explore product'}
-                <ArrowUpRight
-                  className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${
-                    isRTL ? 'group-hover:-translate-x-0.5 rotate-[-90deg]' : 'group-hover:translate-x-0.5'
-                  }`}
-                />
-              </span>
+
+              {/* Actions: explore + call-to-action */}
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <Link
+                  href={`/products/${p.slug}`}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold"
+                  style={{ color: p.accent }}
+                >
+                  {isAr ? 'استكشف المنتج' : 'Explore product'}
+                  <ArrowUpRight
+                    className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${
+                      isRTL ? 'group-hover:-translate-x-0.5 rotate-[-90deg]' : 'group-hover:translate-x-0.5'
+                    }`}
+                  />
+                </Link>
+                <Link
+                  href={`/#contact?product=${p.slug}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5"
+                  style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})` }}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {isAr ? 'ابدأ الآن' : 'Get started'}
+                </Link>
+              </div>
             </div>
-          </Link>
+          </div>
         </motion.div>
       ))}
     </div>

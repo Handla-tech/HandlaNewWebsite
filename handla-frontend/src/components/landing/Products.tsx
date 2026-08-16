@@ -131,55 +131,6 @@ function FeaturedProduct({ product }: { product: WebsiteProduct }) {
   return body;
 }
 
-// ─── Static fallback (shown while loading or when no products exist yet) ──────
-const FALLBACK: WebsiteProduct[] = [
-  {
-    id: 'fpr1',
-    name: 'School ERP',
-    tagline: 'All-in-one school management',
-    description: 'A complete school management platform covering admissions, attendance, grading, fees and parent communication.',
-    category: 'Education',
-    imageUrl: null,
-    productUrl: null,
-    price: null,
-    features: ['Student & staff management', 'Fees & billing', 'Bilingual (Arabic-first)'],
-    featured: true,
-    sortOrder: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'fpr2',
-    name: 'HR & Payroll',
-    tagline: 'People operations made simple',
-    description: 'Manage employees, attendance, leave, payroll and end-of-service — fully compliant and automated.',
-    category: 'HR',
-    imageUrl: null,
-    productUrl: null,
-    price: null,
-    features: ['Automated payroll', 'Leave & attendance', 'End-of-service calc'],
-    featured: true,
-    sortOrder: 1,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'fpr3',
-    name: 'POS & Inventory',
-    tagline: 'Retail, unified',
-    description: 'A fast point-of-sale with real-time inventory, multi-branch support and detailed sales reporting.',
-    category: 'Retail',
-    imageUrl: null,
-    productUrl: null,
-    price: null,
-    features: ['Real-time inventory', 'Multi-branch', 'Sales analytics'],
-    featured: true,
-    sortOrder: 2,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 export default function Products() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
@@ -206,9 +157,10 @@ export default function Products() {
     staleTime: 5 * 60_000,
   });
 
-  // Use real data whenever the API returns any products (featured or not).
-  // The hardcoded FALLBACK only shows while loading or when the DB is empty.
-  const items = (data && data.length > 0) ? data : FALLBACK;
+  // Only show the DB-managed website products grid when there is real content.
+  // The three flagship products above are always shown and cover the core
+  // offering, so we no longer render hardcoded placeholder cards when empty.
+  const items = data && data.length > 0 ? data : [];
 
   return (
     <section
@@ -251,55 +203,77 @@ export default function Products() {
             branded landing page + view-only live demo. ── */}
         <FlagshipProducts />
 
-        {/* Layout adapts to product count:
-            1 → large featured layout · 2 → two-up · 3+ → responsive grid. */}
-        {items.length === 1 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <FeaturedProduct product={items[0]} />
-          </motion.div>
-        ) : (
-          <div
-            className={`grid gap-6 ${
-              items.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'
-            }`}
-          >
-            {items.slice(0, 6).map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
-            ))}
-          </div>
+        {/* Additional DB-managed website products (only when real content exists).
+            Layout adapts to product count: 1 → featured · 2 → two-up · 3+ → grid. */}
+        {items.length > 0 && (
+          items.length === 1 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <FeaturedProduct product={items[0]} />
+            </motion.div>
+          ) : (
+            <div
+              className={`grid gap-6 ${
+                items.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
+              {items.slice(0, 6).map((product, i) => (
+                <ProductCard key={product.id} product={product} index={i} />
+              ))}
+            </div>
+          )
         )}
 
-        {/* View all button */}
+        {/* Closing call-to-action for all products */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 flex justify-center"
+          className="mt-14 flex flex-col items-center gap-4 text-center"
         >
-          <Link
-            href="/products"
-            className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
-            style={{
-              background: 'rgba(251,191,36,0.1)',
-              border: '1px solid rgba(251,191,36,0.25)',
-              color: '#fbbf24',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.16)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(251,191,36,0.18)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.1)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}
-          >
-            {t('products.viewAll')}
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
+          <p className="text-base" style={{ color: 'var(--ink-3)' }}>
+            {t('products.ctaText')}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/#contact"
+              className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all duration-200"
+              style={{
+                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                color: '#1a1a1a',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(251,191,36,0.35)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
+            >
+              {t('products.ctaButton')}
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
+            <Link
+              href="/products"
+              className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
+              style={{
+                background: 'rgba(251,191,36,0.1)',
+                border: '1px solid rgba(251,191,36,0.25)',
+                color: '#fbbf24',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.16)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(251,191,36,0.1)';
+              }}
+            >
+              {t('products.viewAll')}
+              <ArrowUpRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </Link>
+          </div>
         </motion.div>
       </div>
     </section>

@@ -12,11 +12,12 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Package, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import ProductCard from '@/components/landing/ProductCard';
+import FlagshipProducts from '@/components/landing/FlagshipProducts';
 import { websiteProductApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { WebsiteProduct } from '@/types';
@@ -101,6 +102,9 @@ export default function ProductsPage() {
         {/* Content */}
         <section className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-24">
 
+          {/* Flagship products — always shown so the catalog is never empty. */}
+          <FlagshipProducts />
+
           {/* Category filter chips */}
           {categories.length > 0 && (
             <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
@@ -155,17 +159,21 @@ export default function ProductsPage() {
             </div>
           )}
 
+          {/* Closing call-to-action (shown once the flagship catalog has rendered). */}
           {!isLoading && !isError && items.length === 0 && (
-            <div className="flex flex-col items-center gap-4 py-24 text-center">
-              <div
-                className="flex h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ border: '1px solid var(--ov-med)', background: 'var(--surface-1)' }}
-              >
-                <Package className="h-7 w-7" style={{ color: 'var(--ink-6)' }} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: 'var(--ink-5)' }}>
-                {t('products.empty')}
+            <div className="mt-16 flex flex-col items-center gap-4 rounded-2xl border py-14 text-center"
+                 style={{ borderColor: 'var(--ov-med)', background: 'var(--surface-1)' }}>
+              <p className="mx-auto max-w-xl px-6 text-base" style={{ color: 'var(--ink-3)' }}>
+                {t('products.ctaText')}
               </p>
+              <a
+                href="/#contact"
+                className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all duration-200"
+                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1a1a1a' }}
+              >
+                {t('products.ctaButton')}
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </a>
             </div>
           )}
 
