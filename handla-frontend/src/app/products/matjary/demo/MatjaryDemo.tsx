@@ -24,13 +24,18 @@ import { DemoProvider, DemoTheme, useDemo, Inert, StatCard, Badge, Panel } from 
 import { ErpShell, ErpModule } from '@/components/product-demos/ErpShell';
 import { DataTable } from '@/components/product-demos/DataTable';
 
-const theme: DemoTheme = {
-  accent: '#10b981',
-  accentSoft: 'rgba(16,185,129,0.14)',
-  accentBorder: 'rgba(16,185,129,0.32)',
+const ACCENT = '#10b981';
+const ACCENT_SOFT = 'rgba(16,185,129,0.14)';
+const ACCENT_BORDER = 'rgba(16,185,129,0.32)';
+
+const darkTheme: DemoTheme = {
+  accent: ACCENT,
+  accentSoft: ACCENT_SOFT,
+  accentBorder: ACCENT_BORDER,
   sidebar: '#0e1a17',
   canvas: '#081210',
   panel: '#0f1f1b',
+  subtle: '#0b1714',
   border: 'rgba(255,255,255,0.08)',
   ink: '#e6f2ee',
   inkMuted: '#9fc3b6',
@@ -38,6 +43,24 @@ const theme: DemoTheme = {
   nameEn: 'Matjary',
   nameAr: 'متجري',
 };
+
+const lightTheme: DemoTheme = {
+  accent: '#059669',
+  accentSoft: 'rgba(5,150,105,0.10)',
+  accentBorder: 'rgba(5,150,105,0.26)',
+  sidebar: '#ffffff',
+  canvas: '#f2f8f5',
+  panel: '#ffffff',
+  subtle: '#eef6f1',
+  border: 'rgba(6,78,59,0.10)',
+  ink: '#0b2a20',
+  inkMuted: '#3f6b5b',
+  inkFaint: '#8aa89c',
+  nameEn: 'Matjary',
+  nameAr: 'متجري',
+};
+
+const themeSet = { dark: darkTheme, light: lightTheme };
 
 const modules: ErpModule[] = [
   { id: 'dashboard', labelEn: 'Dashboard', labelAr: 'الرئيسية', icon: <LayoutDashboard size={17} />, groupEn: 'Overview', groupAr: 'نظرة عامة' },
@@ -63,27 +86,27 @@ const modules: ErpModule[] = [
 ];
 
 function Toolbar() {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      <Inert as="button" style={btn(true)}><Filter size={14} /> {t('Filter', 'تصفية')}</Inert>
-      <Inert as="button" style={btn(true)}><Download size={14} /> {t('Export', 'تصدير')}</Inert>
-      <Inert as="button" style={btn(false)}><Plus size={14} /> {t('New', 'إضافة')}</Inert>
+      <Inert as="button" style={btn(theme, true)}><Filter size={14} /> {t('Filter', 'تصفية')}</Inert>
+      <Inert as="button" style={btn(theme, true)}><Download size={14} /> {t('Export', 'تصدير')}</Inert>
+      <Inert as="button" style={btn(theme, false)}><Plus size={14} /> {t('New', 'إضافة')}</Inert>
     </div>
   );
 }
-function btn(ghost: boolean): React.CSSProperties {
+function btn(th: DemoTheme, ghost: boolean): React.CSSProperties {
   return {
     display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700,
     padding: '7px 13px', borderRadius: 9,
-    border: `1px solid ${ghost ? theme.border : theme.accentBorder}`,
-    background: ghost ? 'transparent' : theme.accent, color: ghost ? theme.inkMuted : '#04140f',
+    border: `1px solid ${ghost ? th.border : th.accentBorder}`,
+    background: ghost ? 'transparent' : th.accent, color: ghost ? th.inkMuted : '#ffffff',
   };
 }
 
 function Content({ active }: { active: string }) {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   const money = (n: string) => (locale === 'ar' ? `${n} ر.س` : `SAR ${n}`);
 
@@ -195,7 +218,7 @@ function Content({ active }: { active: string }) {
             <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: theme.ink }}>
               <span>{t('Total', 'الإجمالي')}</span><span>{money('398')}</span>
             </div>
-            <Inert as="button" style={{ ...btn(false), justifyContent: 'center', padding: '11px', marginTop: 6 }}>
+            <Inert as="button" style={{ ...btn(theme, false), justifyContent: 'center', padding: '11px', marginTop: 6 }}>
               {t('Charge', 'تحصيل')} {money('398')}
             </Inert>
           </div>
@@ -516,23 +539,31 @@ function Content({ active }: { active: string }) {
 }
 
 function MiniBars() {
+  const { theme } = useDemo();
   const data = [55, 72, 60, 88, 74, 96];
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 180, padding: 20 }}>
       {data.map((h, i) => (
-        <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg, #10b981, #059669)', borderRadius: '6px 6px 0 0' }} />
+        <div key={i} style={{ flex: 1, height: `${h}%`, background: `linear-gradient(180deg, ${theme.accent}, ${theme.accent})`, opacity: 0.9, borderRadius: '6px 6px 0 0' }} />
       ))}
     </div>
   );
 }
 
-export default function MatjaryDemo() {
+function MatjaryInner() {
+  const { theme } = useDemo();
   const [active, setActive] = useState('dashboard');
   return (
-    <DemoProvider theme={theme}>
-      <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
-        <Content active={active} />
-      </ErpShell>
+    <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
+      <Content active={active} />
+    </ErpShell>
+  );
+}
+
+export default function MatjaryDemo() {
+  return (
+    <DemoProvider themeSet={themeSet}>
+      <MatjaryInner />
     </DemoProvider>
   );
 }

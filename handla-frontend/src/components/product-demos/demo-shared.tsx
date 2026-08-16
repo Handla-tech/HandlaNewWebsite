@@ -23,6 +23,7 @@ import React, {
   useRef,
 } from 'react';
 import Link from 'next/link';
+import { Sun, Moon } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -40,6 +41,8 @@ export interface DemoTheme {
   canvas: string;
   /** Card / panel background. */
   panel: string;
+  /** A subtly-recessed surface (e.g. table header, chips) — optional. */
+  subtle?: string;
   /** Border color for panels. */
   border: string;
   /** Strong text. */
@@ -54,6 +57,43 @@ export interface DemoTheme {
   nameAr: string;
 }
 
+export type DemoMode = 'dark' | 'light';
+
+/**
+ * A product supplies BOTH a dark and light palette. The demo chrome lets the
+ * viewer flip between them, and it initializes from the shared Handla uiStore
+ * theme so the site-wide toggle carries through.
+ */
+export interface DemoThemeSet {
+  dark: DemoTheme;
+  light: DemoTheme;
+}
+
+/** Build a light DemoTheme from an accent + a few sensible defaults. */
+export function makeLightTheme(
+  accent: string,
+  accentSoft: string,
+  accentBorder: string,
+  nameEn: string,
+  nameAr: string,
+): DemoTheme {
+  return {
+    accent,
+    accentSoft,
+    accentBorder,
+    sidebar: '#ffffff',
+    canvas: '#f4f6fb',
+    panel: '#ffffff',
+    subtle: '#f1f4f9',
+    border: 'rgba(15,23,42,0.10)',
+    ink: '#0f172a',
+    inkMuted: '#475569',
+    inkFaint: '#94a3b8',
+    nameEn,
+    nameAr,
+  };
+}
+
 // ─── Locale ─────────────────────────────────────────────────────────────────
 
 type Locale = 'en' | 'ar';
@@ -62,6 +102,7 @@ interface DemoCtx {
   locale: Locale;
   isRTL: boolean;
   theme: DemoTheme;
+  mode: DemoMode;
   /** Fire the "view-only" feedback toast (called by inert controls). */
   notifyInert: () => void;
 }
@@ -83,27 +124,50 @@ export function useT() {
 // ─── Provider + chrome ──────────────────────────────────────────────────────
 
 interface DemoProviderProps {
-  theme: DemoTheme;
+  /** Either a single theme (dark-only, legacy) or a dark/light pair. */
+  theme?: DemoTheme;
+  themeSet?: DemoThemeSet;
   children: React.ReactNode;
 }
 
 /**
- * Wraps a demo, providing theme + locale + the inert-action toast.
- * Reads locale from the shared Handla uiStore so the language toggle on the
- * marketing site carries into the demo, but also renders its own toggle.
+ * Wraps a demo, providing theme + locale + light/dark mode + the inert toast.
+ * Reads locale AND theme from the shared Handla uiStore so the site-wide
+ * toggles carry into the demo, but also renders its own toggles.
  */
-export function DemoProvider({ theme, children }: DemoProviderProps) {
+export function DemoProvider({ theme: singleTheme, themeSet, children }: DemoProviderProps) {
   const storeLocale = useUIStore((s) => s.locale);
   const setStoreLocale = useUIStore((s) => s.setLocale);
+  const storeTheme = useUIStore((s) => s.theme);
+
+  // Resolve the theme pair. If only a single theme was given, derive a light
+  // sibling from its accent so light mode still works everywhere.
+  const set: DemoThemeSet = themeSet ?? {
+    dark: singleTheme!,
+    light: makeLightTheme(
+      singleTheme!.accent,
+      singleTheme!.accentSoft,
+      singleTheme!.accentBorder,
+      singleTheme!.nameEn,
+      singleTheme!.nameAr,
+    ),
+  };
+
   const [locale, setLocale] = useState<Locale>(storeLocale === 'ar' ? 'ar' : 'en');
+  const [mode, setMode] = useState<DemoMode>(storeTheme === 'light' ? 'light' : 'dark');
   const [toast, setToast] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep local demo locale synced from the store on mount.
+  // Keep local demo locale synced from the store on mount / change.
   useEffect(() => {
     setLocale(storeLocale === 'ar' ? 'ar' : 'en');
   }, [storeLocale]);
+  // Keep local demo mode synced from the store on mount / change.
+  useEffect(() => {
+    setMode(storeTheme === 'light' ? 'light' : 'dark');
+  }, [storeTheme]);
 
+  const theme = mode === 'light' ? set.light : set.dark;
   const isRTL = locale === 'ar';
 
   const notifyInert = useCallback(() => {
@@ -118,16 +182,20 @@ export function DemoProvider({ theme, children }: DemoProviderProps) {
     setStoreLocale(next);
   }, [locale, setStoreLocale]);
 
+  const toggleMode = useCallback(() => {
+    setMode((m) => (m === 'light' ? 'dark' : 'light'));
+  }, []);
+
   return (
-    <Ctx.Provider value={{ locale, isRTL, theme, notifyInert }}>
+    <Ctx.Provider value={{ locale, isRTL, theme, mode, notifyInert }}>
       <div
         dir={isRTL ? 'rtl' : 'ltr'}
         lang={locale}
-        style={{ background: theme.canvas, color: theme.ink, minHeight: '100vh' }}
+        style={{ background: theme.canvas, color: theme.ink, minHeight: '100vh', transition: 'background .2s ease, color .2s ease' }}
         className="antialiased"
       >
         {/* Top view-only ribbon — always visible, communicates the demo nature. */}
-        <DemoRibbon theme={theme} locale={locale} onToggleLocale={toggleLocale} />
+        <DemoRibbon theme={theme} locale={locale} mode={mode} onToggleLocale={toggleLocale} onToggleMode={toggleMode} />
         {children}
 
         {/* Inert-action toast */}
@@ -166,11 +234,15 @@ export function DemoProvider({ theme, children }: DemoProviderProps) {
 function DemoRibbon({
   theme,
   locale,
+  mode,
   onToggleLocale,
+  onToggleMode,
 }: {
   theme: DemoTheme;
   locale: Locale;
+  mode: DemoMode;
   onToggleLocale: () => void;
+  onToggleMode: () => void;
 }) {
   const name = locale === 'ar' ? theme.nameAr : theme.nameEn;
   const productSlug =
@@ -220,6 +292,25 @@ function DemoRibbon({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          type="button"
+          onClick={onToggleMode}
+          title={mode === 'light' ? 'Dark mode' : 'Light mode'}
+          aria-label={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: theme.ink,
+            background: theme.panel,
+            border: `1px solid ${theme.border}`,
+            borderRadius: 8,
+            padding: '5px 9px',
+            cursor: 'pointer',
+          }}
+        >
+          {mode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+        </button>
         <button
           type="button"
           onClick={onToggleLocale}

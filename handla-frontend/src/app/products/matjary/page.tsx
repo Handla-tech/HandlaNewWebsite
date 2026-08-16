@@ -17,33 +17,14 @@ const ACCENT = '#10b981';
 const ACCENT_SOFT = 'rgba(16,185,129,0.14)';
 const ACCENT_BORDER = 'rgba(16,185,129,0.32)';
 
-function HeroPreview() {
+function HeroImage() {
   return (
-    <div style={{ borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', background: '#0f1f1b', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-        <span style={{ marginInlineStart: 10, fontSize: 12, color: '#5f8377' }}>matjary.store</span>
-      </div>
-      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-          {[['Sales', 'SAR 18.2K', ACCENT], ['Orders', '142', '#38bdf8'], ['Customers', '3.4K', '#c084fc']].map(([l, v, c], i) => (
-            <div key={i} style={{ background: '#0b1714', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: '#5f8377' }}>{l}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: c as string }}>{v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: '#0b1714', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 96 }}>
-            {[55, 72, 60, 88, 74, 96].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg,#10b981,#059669)', borderRadius: '4px 4px 0 0' }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/products/matjary-hero.webp"
+      alt="Matjary commerce platform"
+      style={{ width: '100%', height: 'auto', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', display: 'block' }}
+    />
   );
 }
 
@@ -110,14 +91,14 @@ const content: ProductLandingContent = {
       icon: <CreditCard size={22} />,
       labelEn: 'POS Register',
       labelAr: 'نقطة البيع',
-      descEn: 'See the in-store point-of-sale register inside the admin demo.',
-      descAr: 'شاهد شاشة نقطة البيع داخل لوحة التحكم التجريبية.',
-      href: '/products/matjary/demo',
-      ctaEn: 'View POS',
-      ctaAr: 'عرض نقطة البيع',
+      descEn: 'A full in-store point-of-sale terminal — product grid, live cart, VAT and pay actions.',
+      descAr: 'شاشة نقطة بيع كاملة داخل المتجر — شبكة المنتجات وسلة حيّة وضريبة القيمة المضافة وإجراءات الدفع.',
+      href: '/products/matjary/demo/pos',
+      ctaEn: 'Open POS demo',
+      ctaAr: 'افتح نقطة البيع',
     },
   ],
-  heroPreview: <HeroPreview />,
+  heroPreview: <HeroImage />,
 };
 
 export default function MatjaryLandingPage() {

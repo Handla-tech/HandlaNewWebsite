@@ -18,44 +18,14 @@ const ACCENT_SOFT = 'rgba(124,108,255,0.14)';
 const ACCENT_BORDER = 'rgba(124,108,255,0.32)';
 
 // ── Hero preview: a small, static dashboard glimpse ──────────────────────────
-function HeroPreview() {
+function HeroImage() {
   return (
-    <div
-      style={{
-        borderRadius: 16,
-        border: '1px solid rgba(255,255,255,0.1)',
-        background: '#131424',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-        <span style={{ marginInlineStart: 10, fontSize: 12, color: '#6f7396' }}>madar.app / dashboard</span>
-      </div>
-      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-          {[['Revenue', 'SAR 284K', ACCENT], ['Projects', '18', '#38bdf8'], ['Invoices', '27', '#34d399']].map(([l, v, c], i) => (
-            <div key={i} style={{ background: '#171930', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: '#6f7396' }}>{l}</div>
-              <div style={{ fontSize: 19, fontWeight: 800, color: c as string }}>{v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: '#171930', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 96 }}>
-            {[62, 78, 55, 90, 72, 96].map((h, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', gap: 3, alignItems: 'flex-end', height: '100%' }}>
-                <div style={{ flex: 1, height: `${h}%`, background: ACCENT, borderRadius: '4px 4px 0 0' }} />
-                <div style={{ flex: 1, height: `${h * 0.6}%`, background: 'rgba(255,255,255,0.14)', borderRadius: '4px 4px 0 0' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/products/madar-hero.webp"
+      alt="Madar agency ERP"
+      style={{ width: '100%', height: 'auto', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', display: 'block' }}
+    />
   );
 }
 
@@ -112,14 +82,14 @@ const content: ProductLandingContent = {
       icon: <Globe size={22} />,
       labelEn: 'Public Website',
       labelAr: 'الموقع العام',
-      descEn: 'Madar also ships a public-facing website (about, projects, store) and printable client documents.',
-      descAr: 'يتضمن مُدار أيضاً موقعاً عاماً (من نحن، المشاريع، المتجر) ومستندات عملاء قابلة للطباعة.',
-      href: '/products/madar/demo',
-      ctaEn: 'See it in the demo',
-      ctaAr: 'شاهده في العرض',
+      descEn: 'A public-facing agency website — hero, services, portfolio projects and an online store.',
+      descAr: 'موقع عام للوكالة — واجهة رئيسية والخدمات ومعرض الأعمال ومتجر إلكتروني.',
+      href: '/products/madar/demo/website',
+      ctaEn: 'Open website demo',
+      ctaAr: 'افتح الموقع التجريبي',
     },
   ],
-  heroPreview: <HeroPreview />,
+  heroPreview: <HeroImage />,
 };
 
 export default function MadarLandingPage() {

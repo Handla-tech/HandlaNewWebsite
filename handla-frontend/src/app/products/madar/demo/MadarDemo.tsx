@@ -24,13 +24,18 @@ import { DemoProvider, DemoTheme, useDemo, Inert, StatCard, Badge, Panel } from 
 import { ErpShell, ErpModule } from '@/components/product-demos/ErpShell';
 import { DataTable } from '@/components/product-demos/DataTable';
 
-const theme: DemoTheme = {
-  accent: '#7c6cff',
-  accentSoft: 'rgba(124,108,255,0.14)',
-  accentBorder: 'rgba(124,108,255,0.32)',
+const ACCENT = '#7c6cff';
+const ACCENT_SOFT = 'rgba(124,108,255,0.14)';
+const ACCENT_BORDER = 'rgba(124,108,255,0.32)';
+
+const darkTheme: DemoTheme = {
+  accent: ACCENT,
+  accentSoft: ACCENT_SOFT,
+  accentBorder: ACCENT_BORDER,
   sidebar: '#131424',
   canvas: '#0d0e1a',
   panel: '#171930',
+  subtle: '#11121f',
   border: 'rgba(255,255,255,0.08)',
   ink: '#eceef8',
   inkMuted: '#a9adc7',
@@ -38,6 +43,24 @@ const theme: DemoTheme = {
   nameEn: 'Madar',
   nameAr: 'مُدار',
 };
+
+const lightTheme: DemoTheme = {
+  accent: ACCENT,
+  accentSoft: 'rgba(124,108,255,0.10)',
+  accentBorder: 'rgba(124,108,255,0.28)',
+  sidebar: '#ffffff',
+  canvas: '#f5f4fb',
+  panel: '#ffffff',
+  subtle: '#f1f0fa',
+  border: 'rgba(23,25,48,0.10)',
+  ink: '#1a1836',
+  inkMuted: '#5a5878',
+  inkFaint: '#9a98b5',
+  nameEn: 'Madar',
+  nameAr: 'مُدار',
+};
+
+const themeSet = { dark: darkTheme, light: lightTheme };
 
 const modules: ErpModule[] = [
   { id: 'dashboard', labelEn: 'Dashboard', labelAr: 'الرئيسية', icon: <LayoutDashboard size={17} />, groupEn: 'Overview', groupAr: 'نظرة عامة' },
@@ -59,7 +82,7 @@ const modules: ErpModule[] = [
 
 // ─── Inert toolbar (Add / Filter / Export) ────────────────────────────────────
 function Toolbar() {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   return (
     <div style={{ display: 'flex', gap: 8 }}>
@@ -94,7 +117,7 @@ function btn(th: DemoTheme, ghost: boolean): React.CSSProperties {
 // ─── Content per module ───────────────────────────────────────────────────────
 
 function Content({ active }: { active: string }) {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   const money = (n: string) => (locale === 'ar' ? `${n} ر.س` : `SAR ${n}`);
 
@@ -395,6 +418,8 @@ function Content({ active }: { active: string }) {
 
 // ─── Tiny chart + progress helpers ────────────────────────────────────────────
 function MiniBars() {
+  const { theme } = useDemo();
+  const track = theme.canvas === lightTheme.canvas ? 'rgba(23,25,48,0.10)' : 'rgba(255,255,255,0.14)';
   const data = [
     { rev: 62, exp: 40 }, { rev: 78, exp: 52 }, { rev: 55, exp: 48 },
     { rev: 90, exp: 60 }, { rev: 72, exp: 45 }, { rev: 96, exp: 58 },
@@ -403,8 +428,8 @@ function MiniBars() {
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 180, padding: 20 }}>
       {data.map((d, i) => (
         <div key={i} style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'flex-end', height: '100%' }}>
-          <div style={{ flex: 1, height: `${d.rev}%`, background: '#7c6cff', borderRadius: '5px 5px 0 0' }} />
-          <div style={{ flex: 1, height: `${d.exp}%`, background: 'rgba(255,255,255,0.14)', borderRadius: '5px 5px 0 0' }} />
+          <div style={{ flex: 1, height: `${d.rev}%`, background: theme.accent, borderRadius: '5px 5px 0 0' }} />
+          <div style={{ flex: 1, height: `${d.exp}%`, background: track, borderRadius: '5px 5px 0 0' }} />
         </div>
       ))}
     </div>
@@ -412,24 +437,33 @@ function MiniBars() {
 }
 
 function Bar({ pct }: { pct: number }) {
+  const { theme } = useDemo();
+  const track = theme.canvas === lightTheme.canvas ? 'rgba(23,25,48,0.10)' : 'rgba(255,255,255,0.1)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 110 }}>
-      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 999 }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: '#7c6cff', borderRadius: 999 }} />
+      <div style={{ flex: 1, height: 6, background: track, borderRadius: 999 }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: theme.accent, borderRadius: 999 }} />
       </div>
-      <span style={{ fontSize: 12, color: '#a9adc7', width: 32 }}>{pct}%</span>
+      <span style={{ fontSize: 12, color: theme.inkMuted, width: 32 }}>{pct}%</span>
     </div>
   );
 }
 
 // ─── Entry ────────────────────────────────────────────────────────────────────
-export default function MadarDemo() {
+function MadarInner() {
+  const { theme } = useDemo();
   const [active, setActive] = useState('dashboard');
   return (
-    <DemoProvider theme={theme}>
-      <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
-        <Content active={active} />
-      </ErpShell>
+    <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
+      <Content active={active} />
+    </ErpShell>
+  );
+}
+
+export default function MadarDemo() {
+  return (
+    <DemoProvider themeSet={themeSet}>
+      <MadarInner />
     </DemoProvider>
   );
 }

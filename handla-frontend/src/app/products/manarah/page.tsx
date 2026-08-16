@@ -18,33 +18,14 @@ const ACCENT = '#22c55e';
 const ACCENT_SOFT = 'rgba(34,197,94,0.14)';
 const ACCENT_BORDER = 'rgba(34,197,94,0.32)';
 
-function HeroPreview() {
+function HeroImage() {
   return (
-    <div style={{ borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', background: '#0e1c13', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-        <span style={{ marginInlineStart: 10, fontSize: 12, color: '#5e8570' }}>manarah.edu / dashboard</span>
-      </div>
-      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-          {[['Students', '1,248', ACCENT], ['Attendance', '96%', '#38bdf8'], ['Fees', '88%', '#c084fc']].map(([l, v, c], i) => (
-            <div key={i} style={{ background: '#0a160f', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: '#5e8570' }}>{l}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: c as string }}>{v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: '#0a160f', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 96 }}>
-            {[82, 88, 79, 94, 90, 96].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg,#22c55e,#16a34a)', borderRadius: '4px 4px 0 0' }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/products/manarah-hero.webp"
+      alt="Manarah school management system"
+      style={{ width: '100%', height: 'auto', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', display: 'block' }}
+    />
   );
 }
 
@@ -118,7 +99,7 @@ const content: ProductLandingContent = {
       ctaAr: 'افتح التطبيقات',
     },
   ],
-  heroPreview: <HeroPreview />,
+  heroPreview: <HeroImage />,
 };
 
 export default function ManarahLandingPage() {

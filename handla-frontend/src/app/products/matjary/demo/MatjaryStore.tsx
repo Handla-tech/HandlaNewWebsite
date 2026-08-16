@@ -11,13 +11,14 @@ import Link from 'next/link';
 import { Search, ShoppingCart, User, Heart, Menu } from 'lucide-react';
 import { DemoProvider, DemoTheme, useDemo, Inert, Badge } from '@/components/product-demos/demo-shared';
 
-const theme: DemoTheme = {
+const lightTheme: DemoTheme = {
   accent: '#10b981',
   accentSoft: 'rgba(16,185,129,0.14)',
   accentBorder: 'rgba(16,185,129,0.32)',
   sidebar: '#ffffff',
   canvas: '#f4f7f5',
   panel: '#ffffff',
+  subtle: '#eef6f1',
   border: 'rgba(0,0,0,0.09)',
   ink: '#0f2820',
   inkMuted: '#4b6a60',
@@ -25,6 +26,24 @@ const theme: DemoTheme = {
   nameEn: 'Matjary',
   nameAr: 'متجري',
 };
+
+const darkTheme: DemoTheme = {
+  accent: '#10b981',
+  accentSoft: 'rgba(16,185,129,0.16)',
+  accentBorder: 'rgba(16,185,129,0.34)',
+  sidebar: '#0e1a17',
+  canvas: '#081210',
+  panel: '#0f1f1b',
+  subtle: '#0b1714',
+  border: 'rgba(255,255,255,0.09)',
+  ink: '#e6f2ee',
+  inkMuted: '#9fc3b6',
+  inkFaint: '#5f8377',
+  nameEn: 'Matjary',
+  nameAr: 'متجري',
+};
+
+const themeSet = { dark: darkTheme, light: lightTheme };
 
 const CATS: [string, string][] = [
   ['All', 'الكل'], ['Audio', 'الصوتيات'], ['Wearables', 'الأجهزة القابلة للارتداء'],
@@ -43,8 +62,11 @@ const PRODUCTS: { en: string; ar: string; price: string; rating: number; cat: st
 ];
 
 function StoreInner() {
-  const { locale, isRTL } = useDemo();
+  const { locale, isRTL, theme, mode } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
+  const imgBg = mode === 'light'
+    ? 'linear-gradient(135deg, #e6f6f0, #d1f0e4)'
+    : 'linear-gradient(135deg, #0f2a22, #123a2e)';
   const money = (n: string) => (locale === 'ar' ? `${n} ر.س` : `SAR ${n}`);
   const [cat, setCat] = useState('All');
 
@@ -103,8 +125,8 @@ function StoreInner() {
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
           {list.map((p, i) => (
             <Inert key={i} style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 14, overflow: 'hidden' }}>
-              <div style={{ position: 'relative', height: 150, background: 'linear-gradient(135deg, #e6f6f0, #d1f0e4)', display: 'grid', placeItems: 'center' }}>
-                <ShoppingCart size={40} color="#10b981" opacity={0.5} />
+              <div style={{ position: 'relative', height: 150, background: imgBg, display: 'grid', placeItems: 'center' }}>
+                <ShoppingCart size={40} color={theme.accent} opacity={0.5} />
                 {p.badge && (
                   <span style={{ position: 'absolute', top: 10, [isRTL ? 'right' : 'left']: 10 }}>
                     <Badge color="#fff" bg={theme.accent}>{t(p.badge[0], p.badge[1])}</Badge>
@@ -145,7 +167,7 @@ const iconBtn: React.CSSProperties = { background: 'none', border: 'none', paddi
 
 export default function MatjaryStore() {
   return (
-    <DemoProvider theme={theme}>
+    <DemoProvider themeSet={themeSet}>
       <StoreInner />
     </DemoProvider>
   );

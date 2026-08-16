@@ -25,13 +25,14 @@ import { DemoProvider, DemoTheme, useDemo, Inert, StatCard, Badge, Panel } from 
 import { ErpShell, ErpModule } from '@/components/product-demos/ErpShell';
 import { DataTable } from '@/components/product-demos/DataTable';
 
-const theme: DemoTheme = {
+const darkTheme: DemoTheme = {
   accent: '#22c55e',
   accentSoft: 'rgba(34,197,94,0.14)',
   accentBorder: 'rgba(34,197,94,0.32)',
   sidebar: '#0c1810',
   canvas: '#07110b',
   panel: '#0e1c13',
+  subtle: '#0a1a10',
   border: 'rgba(255,255,255,0.08)',
   ink: '#e6f5ec',
   inkMuted: '#9dc4ac',
@@ -39,6 +40,24 @@ const theme: DemoTheme = {
   nameEn: 'Manarah',
   nameAr: 'منارة',
 };
+
+const lightTheme: DemoTheme = {
+  accent: '#16a34a',
+  accentSoft: 'rgba(22,163,74,0.10)',
+  accentBorder: 'rgba(22,163,74,0.26)',
+  sidebar: '#ffffff',
+  canvas: '#f2f9f4',
+  panel: '#ffffff',
+  subtle: '#eef7f1',
+  border: 'rgba(6,78,59,0.10)',
+  ink: '#0a2417',
+  inkMuted: '#3f6b53',
+  inkFaint: '#89a897',
+  nameEn: 'Manarah',
+  nameAr: 'منارة',
+};
+
+const themeSet = { dark: darkTheme, light: lightTheme };
 
 const modules: ErpModule[] = [
   { id: 'dashboard', labelEn: 'Dashboard', labelAr: 'الرئيسية', icon: <LayoutDashboard size={17} />, groupEn: 'Overview', groupAr: 'نظرة عامة' },
@@ -62,27 +81,27 @@ const modules: ErpModule[] = [
 ];
 
 function Toolbar() {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      <Inert as="button" style={btn(true)}><Filter size={14} /> {t('Filter', 'تصفية')}</Inert>
-      <Inert as="button" style={btn(true)}><Download size={14} /> {t('Export', 'تصدير')}</Inert>
-      <Inert as="button" style={btn(false)}><Plus size={14} /> {t('New', 'إضافة')}</Inert>
+      <Inert as="button" style={btn(theme, true)}><Filter size={14} /> {t('Filter', 'تصفية')}</Inert>
+      <Inert as="button" style={btn(theme, true)}><Download size={14} /> {t('Export', 'تصدير')}</Inert>
+      <Inert as="button" style={btn(theme, false)}><Plus size={14} /> {t('New', 'إضافة')}</Inert>
     </div>
   );
 }
-function btn(ghost: boolean): React.CSSProperties {
+function btn(th: DemoTheme, ghost: boolean): React.CSSProperties {
   return {
     display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700,
     padding: '7px 13px', borderRadius: 9,
-    border: `1px solid ${ghost ? theme.border : theme.accentBorder}`,
-    background: ghost ? 'transparent' : theme.accent, color: ghost ? theme.inkMuted : '#04140a',
+    border: `1px solid ${ghost ? th.border : th.accentBorder}`,
+    background: ghost ? 'transparent' : th.accent, color: ghost ? th.inkMuted : '#ffffff',
   };
 }
 
 function Content({ active }: { active: string }) {
-  const { locale } = useDemo();
+  const { locale, theme } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
   const money = (n: string) => (locale === 'ar' ? `${n} ر.س` : `SAR ${n}`);
 
@@ -495,23 +514,31 @@ function Content({ active }: { active: string }) {
 }
 
 function MiniBars() {
+  const { theme } = useDemo();
   const data = [82, 88, 79, 94, 90, 96];
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 180, padding: 20 }}>
       {data.map((h, i) => (
-        <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg, #22c55e, #16a34a)', borderRadius: '6px 6px 0 0' }} />
+        <div key={i} style={{ flex: 1, height: `${h}%`, background: theme.accent, opacity: 0.9, borderRadius: '6px 6px 0 0' }} />
       ))}
     </div>
   );
 }
 
-export default function ManarahDemo() {
+function ManarahInner() {
+  const { theme } = useDemo();
   const [active, setActive] = useState('dashboard');
   return (
-    <DemoProvider theme={theme}>
-      <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
-        <Content active={active} />
-      </ErpShell>
+    <ErpShell theme={theme} modules={modules} active={active} onSelect={setActive}>
+      <Content active={active} />
+    </ErpShell>
+  );
+}
+
+export default function ManarahDemo() {
+  return (
+    <DemoProvider themeSet={themeSet}>
+      <ManarahInner />
     </DemoProvider>
   );
 }

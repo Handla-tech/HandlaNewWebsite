@@ -11,13 +11,14 @@ import Link from 'next/link';
 import { GraduationCap, CalendarDays, Newspaper, Phone, ChevronRight, Menu } from 'lucide-react';
 import { DemoProvider, DemoTheme, useDemo, Inert } from '@/components/product-demos/demo-shared';
 
-const theme: DemoTheme = {
+const lightTheme: DemoTheme = {
   accent: '#16a34a',
   accentSoft: 'rgba(22,163,74,0.12)',
   accentBorder: 'rgba(22,163,74,0.3)',
   sidebar: '#ffffff',
   canvas: '#f4faf6',
   panel: '#ffffff',
+  subtle: '#eef7f1',
   border: 'rgba(0,0,0,0.09)',
   ink: '#0d2417',
   inkMuted: '#4a6b58',
@@ -26,9 +27,33 @@ const theme: DemoTheme = {
   nameAr: 'منارة',
 };
 
+const darkTheme: DemoTheme = {
+  accent: '#22c55e',
+  accentSoft: 'rgba(34,197,94,0.14)',
+  accentBorder: 'rgba(34,197,94,0.32)',
+  sidebar: '#0c1810',
+  canvas: '#07110b',
+  panel: '#0e1c13',
+  subtle: '#0a1a10',
+  border: 'rgba(255,255,255,0.09)',
+  ink: '#e6f5ec',
+  inkMuted: '#9dc4ac',
+  inkFaint: '#5e8570',
+  nameEn: 'Manarah',
+  nameAr: 'منارة',
+};
+
+const themeSet = { dark: darkTheme, light: lightTheme };
+
 function WebsiteInner() {
-  const { locale } = useDemo();
+  const { locale, theme, mode } = useDemo();
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
+  const imgBg = mode === 'light'
+    ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)'
+    : 'linear-gradient(135deg, #0f2a1c, #123a26)';
+  const cardImgBg = mode === 'light'
+    ? 'linear-gradient(135deg,#dcfce7,#bbf7d0)'
+    : 'linear-gradient(135deg,#0f2a1c,#123a26)';
 
   const nav: [string, string][] = [
     ['About', 'عن المدرسة'], ['Academics', 'الأكاديمي'], ['Admissions', 'القبول'],
@@ -89,8 +114,8 @@ function WebsiteInner() {
             ))}
           </div>
         </div>
-        <div style={{ borderRadius: 18, background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', minHeight: 280, display: 'grid', placeItems: 'center' }}>
-          <GraduationCap size={80} color="#16a34a" opacity={0.55} />
+        <div style={{ borderRadius: 18, background: imgBg, minHeight: 280, display: 'grid', placeItems: 'center' }}>
+          <GraduationCap size={80} color={theme.accent} opacity={0.55} />
         </div>
       </section>
 
@@ -124,8 +149,8 @@ function WebsiteInner() {
             [t('Inter-school Football Cup', 'كأس كرة القدم بين المدارس'), t('Oct 15', '15 أكتوبر')],
           ].map(([title, date], i) => (
             <Inert key={i} style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 14, overflow: 'hidden' }}>
-              <div style={{ height: 130, background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', display: 'grid', placeItems: 'center' }}>
-                <Newspaper size={34} color="#16a34a" opacity={0.5} />
+              <div style={{ height: 130, background: cardImgBg, display: 'grid', placeItems: 'center' }}>
+                <Newspaper size={34} color={theme.accent} opacity={0.5} />
               </div>
               <div style={{ padding: 16 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{date}</span>
@@ -164,7 +189,7 @@ function WebsiteInner() {
 
 export default function ManarahWebsite() {
   return (
-    <DemoProvider theme={theme}>
+    <DemoProvider themeSet={themeSet}>
       <WebsiteInner />
     </DemoProvider>
   );
