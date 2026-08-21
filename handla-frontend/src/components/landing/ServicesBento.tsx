@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Globe, BarChart3, Smartphone, Cloud, ArrowUpRight, Zap, Shield, Clock } from 'lucide-react';
+import { Globe, BarChart3, Smartphone, Cloud, Video, Mic, Palette, TrendingUp, ArrowUpRight, Zap, Shield, Clock } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const cardVariants = {
@@ -67,6 +67,38 @@ export default function ServicesBento() {
       desc: t('services.hosting.description'),
       pills: ['AWS', 'Docker', 'CI/CD'],
       accent: '#a78bfa',
+      span: 'col-span-1',
+    },
+    {
+      icon: Video,
+      title: t('services.videoEditing.title'),
+      desc: t('services.videoEditing.description'),
+      pills: ['Reels', 'Long Videos', 'Motion Graphics'],
+      accent: '#f472b6',
+      span: 'col-span-1',
+    },
+    {
+      icon: Mic,
+      title: t('services.podcastEditing.title'),
+      desc: t('services.podcastEditing.description'),
+      pills: ['Video Podcast', 'Audio', 'Short Clips'],
+      accent: '#22d3ee',
+      span: 'col-span-1',
+    },
+    {
+      icon: Palette,
+      title: t('services.design.title'),
+      desc: t('services.design.description'),
+      pills: ['Logo', 'Brand Identity', 'Social Design'],
+      accent: '#fb923c',
+      span: 'col-span-1',
+    },
+    {
+      icon: TrendingUp,
+      title: t('services.marketing.title'),
+      desc: t('services.marketing.description'),
+      pills: ['Brand Strategy', 'Marketing Plan', 'Launch Plan'],
+      accent: '#4ade80',
       span: 'col-span-1',
     },
   ];
