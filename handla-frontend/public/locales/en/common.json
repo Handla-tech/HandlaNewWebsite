@@ -105,6 +105,22 @@
     "consulting": {
       "title": "Tech Consulting",
       "description": "Strategic technology advice to help you make the right architectural and tooling decisions."
+    },
+    "videoEditing": {
+      "title": "Video Editing",
+      "description": "Professional video editing with engaging pacing and polished visual touches for every platform."
+    },
+    "podcastEditing": {
+      "title": "Podcast Editing",
+      "description": "Professional podcast editing and production focused on clear content and a consistent viewing experience."
+    },
+    "design": {
+      "title": "Design & Visual Identity",
+      "description": "Cohesive visual identities that give brands a distinctive, consistent presence across every touchpoint."
+    },
+    "marketing": {
+      "title": "Strategy & Marketing",
+      "description": "Clear strategies that define the right audience, content, and channels for sustainable growth."
     }
   },
   "solutions": {
