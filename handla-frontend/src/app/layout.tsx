@@ -23,7 +23,15 @@ const spaceGrotesk = Space_Grotesk({
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
+// Canonical site origin — always https://handla.tech (no www, no http).
+// `metadataBase` makes all relative canonical/OG URLs resolve against this host.
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://handla.tech').replace(/\/$/, '');
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: '/',
+  },
   title: {
     template: '%s | Handla',
     default:  'Handla — Software Services Platform',
