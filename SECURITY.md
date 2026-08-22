@@ -234,12 +234,13 @@ _Consolidated 2026-08-22. All numbers below are from the final commit on this br
 | CACHE-01    | API responses lacked no-store cache directives                 | Info     | —         | CWE-525  | Fixed (hardening)         |
 | DEF-01      | ProjectsService.findOne lacked service-layer deny-by-default   | Info     | —         | CWE-284  | Fixed (defense in depth)  |
 | FILE-KEY-01 | Chat presign key sanitizer only stripped whitespace            | Low      | 4.3       | CWE-22   | Fixed                     |
+| PROXY-01    | `trust proxy` unset → throttler keyed all visitors to nginx IP | Medium   | 5.3       | CWE-348  | Fixed                     |
 | INFO-01     | Public contract/invoice viewer exposes client email by UUID    | Info     | —         | CWE-200  | Accepted (capability URL) |
 | REDIR-01    | OAuth callback redirect could be user-controlled               | Info     | —         | CWE-601  | Verified safe (no vuln)   |
 | THROTTLE-*  | Rate-limit activation + IP-header-spoof resistance             | Info     | —         | CWE-307  | Verified working          |
 
 **Distinction of finding types (per report requirement):**
-- **Demonstrated vulnerabilities we fixed:** WS-01, WS-02, WS-03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01.
+- **Demonstrated vulnerabilities we fixed:** WS-01, WS-02, WS-03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01, PROXY-01.
 - **Hardening / defense-in-depth (no exploit demonstrated):** CACHE-01, DEF-01.
 - **Theoretical / accepted surface:** INFO-01 (requires leaking a 122-bit UUID; rate-limited).
 - **Controls that already worked (proven by tests, NOT vulnerabilities):** REDIR-01, THROTTLE-* (429 activation + header-spoof resistance), all AUTH/AUTHZ/IDOR/CORS/CSRF/injection/mass-assignment/file-MIME suites.
@@ -269,6 +270,13 @@ _Consolidated 2026-08-22. All numbers below are from the final commit on this br
 
 **FILE-KEY-01 — Chat presign key sanitizer (Low, CVSS 4.3, CWE-22)**
 - Key sanitizer now collapses any non-`[a-zA-Z0-9._-]` run, so a crafted `fileName` cannot inject `/` or `..` past the `chat/<uid>/` prefix. Regression: `file-upload.pentest.spec.ts` FILE-KEY-01 block. Fixed this session.
+
+**PROXY-01 — Reverse-proxy / client-IP trust for rate limiting (Medium, CVSS 5.3, CWE-348 Use of Less Trusted Source)**
+- **Component & topology (verified):** production traffic is `client → nginx (container "nginx", nginx:1.27-alpine, TLS via certbot, ports 80/443) → NestJS (api:3001, bound 127.0.0.1)` on Docker bridge `handla_net`. The **single trusted reverse proxy immediately in front of NestJS is nginx — exactly one hop.** No Cloudflare/CDN is in the documented topology. `deploy/nginx/conf.d/handla.conf` sets `X-Forwarded-For $proxy_add_x_forwarded_for` (appends the real peer `$remote_addr` as the **rightmost** XFF entry) and `X-Real-IP $remote_addr`.
+- **The real issue:** `main.ts` never set Express `trust proxy`. With it OFF, `@nestjs/throttler` v5's default tracker (`req.ip`) resolves to the **direct socket peer = the nginx container IP for every visitor** → all traffic collapses into one throttle bucket (global self-DoS / trivial limit exhaustion; CWE-348 relying on the wrong IP source).
+- **Why not `trust proxy = true`:** `true` trusts the entire XFF chain, so an attacker sending `X-Forwarded-For: <spoofed>` would have their spoofed leftmost value taken as the client IP, letting them **rotate spoofed IPs to mint unlimited fresh buckets** and bypass throttling.
+- **Fix (narrowest correct model):** `instance.set('trust proxy', <numeric hop count>)` — default **1** (env `TRUST_PROXY_HOPS`). With `trust proxy = 1`, Express takes the **(n+1)-th-from-right** XFF entry as the client IP, i.e. exactly the value nginx appended, and **ignores any attacker-prepended left entries**. This simultaneously (a) gives each real client its own bucket, (b) rejects arbitrary attacker `X-Forwarded-For`, and (c) defeats rotating spoofed forwarded-IP headers. Set `TRUST_PROXY_HOPS=2` only if a CDN/Cloudflare is later added in front of nginx; `0` to disable.
+- **Regression:** `rate-limit.pentest.spec.ts` → `PENTEST — Rate limiting behind a 1-hop proxy` block: (1) distinct real client IPs (rightmost XFF) get independent buckets; (2) prepending spoofed left XFF entries cannot mint a fresh bucket (429 still fires). Fix commit `e685890`.
 
 ### Attacker-minded direct-to-API/WS review (checklist)
 
