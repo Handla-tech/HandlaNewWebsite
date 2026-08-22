@@ -29,9 +29,11 @@ const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://handla.tech').repl
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: '/',
-  },
+  // NOTE: No root-level `alternates.canonical` here on purpose. A canonical
+  // set at the root layout is inherited by every child route, which would
+  // wrongly canonicalize /projects, /products, /products/* to the homepage.
+  // Each public page instead declares its OWN self-referencing canonical
+  // (see src/app/page.tsx and the per-route layout.tsx files).
   title: {
     template: '%s | Handla',
     default:  'Handla — Software Services Platform',
