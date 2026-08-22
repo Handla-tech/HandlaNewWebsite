@@ -3,7 +3,9 @@ import { Space_Grotesk } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { Providers } from '@/components/Providers';
-import { JsonLd, organizationSchema, softwareServicesSchema } from '@/components/JsonLd';
+// NOTE: Organization / WebSite / Services JSON-LD moved to the homepage
+// (src/app/page.tsx) so those site-level entities are declared once on the
+// home document rather than on every route.
 
 // ─── Analytics endpoint (self-hosted tracker) ──────────────────────────────────
 // NEXT_PUBLIC_API_URL already includes the `/api` prefix (e.g. http://host/api),
@@ -53,11 +55,18 @@ export const metadata: Metadata = {
     siteName:    'Handla',
     title:       'Handla — Software Services Platform',
     description: 'Professional software services connecting clients with expert solutions.',
+    // Site-wide default social image (1200×630). Individual pages override
+    // both the text and, where they have real artwork, the image. Resolved
+    // against `metadataBase`.
+    images: [
+      { url: '/og-image.png', width: 1200, height: 630, alt: 'Handla' },
+    ],
   },
   twitter: {
     card:  'summary_large_image',
     title: 'Handla — Software Services Platform',
     description: 'Professional software services connecting clients with expert solutions.',
+    images: ['/og-image.png'],
   },
   robots: {
     index:  true,
@@ -96,9 +105,6 @@ export default function RootLayout({
           {`(function(){try{var t='dark',l='en';var raw=localStorage.getItem('handla-ui');if(raw){var s=JSON.parse(raw);if(s&&s.state){if(s.state.theme)t=s.state.theme;if(s.state.locale)l=s.state.locale;}}var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');r.lang=l;r.dir=l==='ar'?'rtl':'ltr';}catch(e){document.documentElement.classList.add('dark');}})();`}
         </Script>
 
-        {/* JSON-LD structured data — Organization + Services */}
-        <JsonLd data={organizationSchema} />
-        <JsonLd data={softwareServicesSchema} />
       </head>
       <body className={`${spaceGrotesk.variable} font-sans antialiased`}>
         {/* ── Skip-to-content — first focusable element, visible on Tab ── */}
