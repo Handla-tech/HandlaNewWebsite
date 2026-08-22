@@ -44,6 +44,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('User no longer exists');
     }
 
+    // SECURITY: a token stays valid until it expires, so we must re-check the
+    // account state on EVERY request — not just at login. Otherwise a user who
+    // is disabled/archived (or whose role was revoked) keeps full access with
+    // their existing access token until it happens to expire. Rejecting here
+    // makes disable/archive take effect immediately.
+    if (user.isDisabled || user.isArchived) {
+      throw new UnauthorizedException('Your account has been disabled.');
+    }
+
     return user;
   }
 }
