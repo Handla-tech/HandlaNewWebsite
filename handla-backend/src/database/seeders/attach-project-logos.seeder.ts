@@ -120,13 +120,14 @@ export async function attachProjectLogos(): Promise<void> {
     const body = readFileSync(assetPath);
     const physicalKey = withPrefix(keyPrefix, logo.s3Key);
 
+    // No ACL — the bucket has ACLs disabled ("Bucket owner enforced").
+    // Public read access is granted by a bucket policy on the website prefix.
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: physicalKey,
         Body: body,
         ContentType: logo.contentType,
-        ACL: 'public-read',
       }),
     );
 
