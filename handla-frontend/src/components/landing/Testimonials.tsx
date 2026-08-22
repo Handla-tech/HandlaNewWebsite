@@ -28,7 +28,12 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function getInitials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  return (name || '')
+    .split(' ')
+    .map((n) => n[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 // Avatar gradient colors
@@ -78,8 +83,14 @@ export default function Testimonials() {
   // never fabricate reviews. All hooks above run unconditionally first.
   if (items.length === 0) return null;
 
-  const current = items[index];
-  const avatarStyle = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  // Defensive: `index` can briefly point past the array during auto-play /
+  // data-refresh transitions. Clamp so `current` is always a valid record —
+  // an out-of-range `current` (undefined) would throw while reading
+  // current.content and crash the whole section into a blank space.
+  const safeIndex = ((index % items.length) + items.length) % items.length;
+  const current = items[safeIndex];
+  if (!current) return null;
+  const avatarStyle = AVATAR_COLORS[safeIndex % AVATAR_COLORS.length];
 
   return (
     <section
@@ -151,11 +162,11 @@ export default function Testimonials() {
               {/* Quote icon + stars on one row for a tighter header */}
               <div className="flex items-center justify-between mb-4">
                 <Quote className="w-7 h-7" style={{ color: 'rgba(251,191,36,0.35)' }} />
-                <StarRating rating={current.rating} />
+                <StarRating rating={Number(current.rating) || 0} />
               </div>
 
               <blockquote className="text-lg sm:text-xl font-medium leading-relaxed text-white relative">
-                &ldquo;{current.content}&rdquo;
+                &ldquo;{current.content ?? ''}&rdquo;
               </blockquote>
 
               <div className="mt-6 flex items-center gap-4 pt-5" style={{ borderTop: '1px solid var(--ov-soft)' }}>
@@ -168,7 +179,7 @@ export default function Testimonials() {
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  {getInitials(current.clientName)}
+                  {getInitials(current.clientName ?? '')}
                 </div>
                 <div>
                   <div className="font-semibold text-white">{current.clientName}</div>
@@ -212,9 +223,9 @@ export default function Testimonials() {
                   onClick={() => setIndex(i)}
                   className="h-1.5 rounded-full transition-all duration-300"
                   style={{
-                    width: i === index ? '1.75rem' : '0.375rem',
-                    background: i === index ? '#fbbf24' : 'var(--ov-border)',
-                    boxShadow: i === index ? '0 0 8px rgba(251,191,36,0.5)' : 'none',
+                    width: i === safeIndex ? '1.75rem' : '0.375rem',
+                    background: i === safeIndex ? '#fbbf24' : 'var(--ov-border)',
+                    boxShadow: i === safeIndex ? '0 0 8px rgba(251,191,36,0.5)' : 'none',
                   }}
                   aria-label={`Testimonial ${i + 1}`}
                 />

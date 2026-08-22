@@ -15,6 +15,7 @@ import About         from '@/components/landing/About';
 import ServicesBento from '@/components/landing/ServicesBento';
 import Process       from '@/components/landing/Process';
 import Footer        from '@/components/landing/Footer';
+import SectionErrorBoundary from '@/components/landing/SectionErrorBoundary';
 
 // ── Client-only sections (API-driven) ─────────────────────────────────────────
 const Projects = dynamic(() => import('@/components/landing/Projects'), {
@@ -68,14 +69,16 @@ export default function LocalizedLandingPage({ params }: { params: { locale: str
 
       <Navbar />
       <main>
-        <Hero />
-        <About />
-        <ServicesBento />
-        <Process />
-        <Projects />
-        <Products />
-        <Testimonials />
-        <Contact />
+        {/* Each section is isolated: a render/hydration crash in ONE section
+            can no longer unmount the whole page (the "blank <main>" bug). */}
+        <SectionErrorBoundary name="Hero"><Hero /></SectionErrorBoundary>
+        <SectionErrorBoundary name="About"><About /></SectionErrorBoundary>
+        <SectionErrorBoundary name="ServicesBento"><ServicesBento /></SectionErrorBoundary>
+        <SectionErrorBoundary name="Process"><Process /></SectionErrorBoundary>
+        <SectionErrorBoundary name="Projects"><Projects /></SectionErrorBoundary>
+        <SectionErrorBoundary name="Products"><Products /></SectionErrorBoundary>
+        <SectionErrorBoundary name="Testimonials"><Testimonials /></SectionErrorBoundary>
+        <SectionErrorBoundary name="Contact"><Contact /></SectionErrorBoundary>
       </main>
       <Footer />
     </div>
