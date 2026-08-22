@@ -131,6 +131,14 @@ export class ChatGateway
     const user = this.socketUserMap.get(client.id);
     if (!user) throw new WsException('Not authenticated');
 
+    // SECURITY/ROBUSTNESS: a malformed frame (null / primitive / array) must not
+    // crash the handler with a raw TypeError that escapes as an unhandled error.
+    // Coerce anything that is not a plain object to {} so class-validator can
+    // reject it cleanly as a WsException (fail-closed, no message persisted).
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new WsException('Invalid message payload');
+    }
+
     // Validate payload
     const dto = plainToInstance(SendMessageDto, payload);
     const errors = await validate(dto);
@@ -218,6 +226,11 @@ export class ChatGateway
   async handleTyping(@ConnectedSocket() client: Socket, @MessageBody() payload: any) {
     const user = this.socketUserMap.get(client.id);
     if (!user) throw new WsException('Not authenticated');
+
+    // Fail-closed on malformed frames (best-effort UX path: return silently).
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+      return;
+    }
 
     const dto = plainToInstance(TypingDto, payload);
     const errors = await validate(dto);
