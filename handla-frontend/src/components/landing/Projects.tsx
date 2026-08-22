@@ -7,6 +7,7 @@ import { ArrowRight, ArrowUpRight, FolderGit2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { websiteProjectApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref } from '@/hooks/useLocalizedHref';
 import type { WebsiteProject } from '@/types';
 import ProjectCard from './ProjectCard';
 
@@ -182,6 +183,7 @@ export default function Projects() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   const { t } = useTranslation();
+  const lh = useLocalizedHref();
 
   const { data } = useQuery({
     queryKey: ['website-projects-featured'],
@@ -275,7 +277,7 @@ export default function Projects() {
           className="mt-12 flex justify-center"
         >
           <Link
-            href="/projects"
+            href={lh('/projects')}
             className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
             style={{
               background: 'rgba(251,191,36,0.1)',

@@ -10,11 +10,15 @@
  * Two variants:
  *   • "icon"  (default) — Globe + short code (EN / ع), for tight top-bars.
  *   • "full"            — Globe + the *other* language's native name, for menus.
+ *
+ * Toggling uses useLocaleSwitch: on private routes (ERP top-bar) it flips the
+ * persisted uiStore locale (client-side RTL); on public URL-driven routes it
+ * would navigate to the equivalent /{locale}/… URL. Currently rendered only in
+ * the ERP shell, but locale-source-aware so it is safe to reuse on public pages.
  */
 
-import { useCallback } from 'react';
 import { Globe } from 'lucide-react';
-import { useUIStore } from '@/store/uiStore';
+import { useLocaleSwitch } from '@/hooks/useLocalizedHref';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
@@ -26,11 +30,8 @@ export default function LanguageSwitcher({
   className?: string;
 }) {
   const { t, locale } = useTranslation();
-  const setLocale = useUIStore((s) => s.setLocale);
-
-  const toggle = useCallback(() => {
-    setLocale(locale === 'en' ? 'ar' : 'en');
-  }, [locale, setLocale]);
+  const { switchLocale } = useLocaleSwitch();
+  const toggle = switchLocale;
 
   // Label always advertises the language you'll switch TO.
   const nextLabel =

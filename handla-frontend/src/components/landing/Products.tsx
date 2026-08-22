@@ -7,6 +7,7 @@ import { ArrowRight, ArrowUpRight, Package, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { websiteProductApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref } from '@/hooks/useLocalizedHref';
 import type { WebsiteProduct } from '@/types';
 import ProductCard from './ProductCard';
 import FlagshipProducts from './FlagshipProducts';
@@ -135,6 +136,7 @@ export default function Products() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   const { t } = useTranslation();
+  const lh = useLocalizedHref();
 
   const { data } = useQuery({
     queryKey: ['website-products-featured'],
@@ -239,7 +241,7 @@ export default function Products() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/#contact"
+              href={lh('/#contact')}
               className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all duration-200"
               style={{
                 background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
@@ -256,7 +258,7 @@ export default function Products() {
               <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
             <Link
-              href="/products"
+              href={lh('/products')}
               className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
               style={{
                 background: 'rgba(251,191,36,0.1)',

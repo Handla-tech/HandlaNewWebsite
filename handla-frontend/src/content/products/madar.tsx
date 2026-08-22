@@ -11,7 +11,7 @@ import {
   Users, FolderKanban, ReceiptText, FileCheck2, BarChart3, ShieldCheck,
   Globe, LayoutDashboard, ScrollText, Wallet,
 } from 'lucide-react';
-import { ProductLanding, ProductLandingContent } from '@/components/product-demos/ProductLanding';
+import type { ProductLandingContent } from '@/components/product-demos/ProductLanding';
 
 const ACCENT = '#7c6cff';
 const ACCENT_SOFT = 'rgba(124,108,255,0.14)';
@@ -29,7 +29,7 @@ function HeroImage() {
   );
 }
 
-const content: ProductLandingContent = {
+export const madarContent: ProductLandingContent = {
   slug: 'madar',
   nameEn: 'Madar',
   nameAr: 'مُدار',
@@ -92,6 +92,3 @@ const content: ProductLandingContent = {
   heroPreview: <HeroImage />,
 };
 
-export default function MadarLandingPage() {
-  return <ProductLanding content={content} />;
-}

@@ -31,11 +31,25 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   },
 
-  // ─── i18n routing ──────────────────────────────────────────────────────────
-  i18n: {
-    locales: ['en', 'ar'],
-    defaultLocale: 'en',
-    localeDetection: false,
+  // ─── Legacy → localized permanent redirects (308) ──────────────────────────
+  // Public SEO pages now live under /[locale]/… (en|ar). Old non-localized
+  // public URLs are permanently redirected to their English equivalent with a
+  // 308 (method + body preserving). These run server-side BEFORE routing, so
+  // they never create a redirect *chain* (each old URL maps directly to its
+  // final /en/… destination). '/' → '/en' is deterministic: no browser-language
+  // or IP-based locale detection.
+  //
+  // Private routes (/auth, /dashboard, /erp, /profile, …) are intentionally NOT
+  // redirected — they stay on their current non-localized paths.
+  async redirects() {
+    return [
+      { source: '/',                   destination: '/en',                   permanent: true },
+      { source: '/products',           destination: '/en/products',          permanent: true },
+      { source: '/products/manarah',   destination: '/en/products/manarah',  permanent: true },
+      { source: '/products/madar',     destination: '/en/products/madar',    permanent: true },
+      { source: '/products/matjary',   destination: '/en/products/matjary',  permanent: true },
+      { source: '/projects',           destination: '/en/projects',          permanent: true },
+    ];
   },
 
   // ─── Webpack / transpile ────────────────────────────────────────────────────
