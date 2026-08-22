@@ -73,24 +73,45 @@ fi
 log "Building images..."
 docker compose $COMPOSE_FILES build
 
-# Bring the existing stack DOWN before UP.
+# Recreate the stack in place (no full `down`) to avoid a network race.
 #
 # Why: an interrupted previous `up -d` can leave a half-renamed container
 # behind (e.g. "53532e2b81e8_handla_api") that still holds the "handla_api"
-# name. The next `up` then fails with:
-#   Conflict. The container name "/…_handla_api" is already in use…
-# `down --remove-orphans` clears those leftovers so `up` always gets a clean
-# slate. A few seconds of downtime here is acceptable for a deploy step and is
-# far preferable to a wedged, half-updated stack.
-log "Stopping existing stack (clears any half-renamed/orphaned containers)..."
-docker compose $COMPOSE_FILES down --remove-orphans || true
+# name. A stale name then makes the next `up` fail with:
+#   Conflict. The container name "/handla_mysql" is already in use…
+#
+# We previously did `down --remove-orphans` then `up`. But `down` DELETES the
+# compose network, and `up` immediately recreates it — occasionally the network
+# teardown/recreate races with container creation and `up` conflicts with a
+# container it just created in the SAME invocation. To avoid that race we:
+#   1. force-remove the known fixed-name containers up front (clears stale
+#      names WITHOUT tearing the network down), and
+#   2. use `up -d --remove-orphans --force-recreate`, which recreates the
+#      service containers in place and keeps the network stable, and
+#   3. retry ONCE if a transient name Conflict still slips through (belt &
+#      braces), force-removing the fixed names again before the retry.
+#
+# A few seconds of downtime here is acceptable for a deploy step and is far
+# preferable to a wedged, half-updated stack.
+FIXED_NAMES="handla_api handla_web handla_mysql handla_redis"
 
-# Belt-and-braces: force-remove the known fixed-name containers in case a
-# leftover from a NON-matching compose project still squats the name.
-docker rm -f handla_api handla_web handla_mysql handla_redis >/dev/null 2>&1 || true
+log "Force-removing any stale fixed-name containers (keeps the network up)..."
+# shellcheck disable=SC2086
+docker rm -f $FIXED_NAMES >/dev/null 2>&1 || true
+
+bring_up() {
+  # shellcheck disable=SC2086
+  docker compose $COMPOSE_FILES up -d --remove-orphans --force-recreate
+}
 
 log "Starting/updating the stack (routed via Traefik)..."
-docker compose $COMPOSE_FILES up -d
+if ! bring_up; then
+  log "First 'up' failed (likely a transient container-name Conflict). Clearing and retrying once..."
+  # shellcheck disable=SC2086
+  docker rm -f $FIXED_NAMES >/dev/null 2>&1 || true
+  sleep 3
+  bring_up
+fi
 
 log "Pruning dangling images..."
 docker image prune -f >/dev/null 2>&1 || true
