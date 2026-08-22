@@ -253,7 +253,7 @@ function ProjectModal({
               {imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={imageUrl} alt={t('erp.webProjects.modal.preview')}
-                  className="h-16 w-16 flex-shrink-0 rounded-lg border border-[#2a2a2a] bg-[#141414] object-contain p-1"
+                  className="h-16 w-16 flex-shrink-0 rounded-lg border border-[#2a2a2a] bg-white object-contain p-1.5"
                   onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
               ) : (
                 <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]">
@@ -367,10 +367,14 @@ function ProjectRow({ p, onEdit, onDelete }: { p: WebsiteProject; onEdit: () => 
         </button>
       </div>
 
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#141414]">
+      <div
+        className="relative aspect-[16/9] w-full overflow-hidden"
+        style={{ background: p.imageUrl && !p.imageUrl.startsWith('/projects/') ? '#ffffff' : '#141414' }}
+      >
         {p.imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={p.imageUrl} alt={p.title} className="h-full w-full object-cover"
+          <img src={p.imageUrl} alt={p.title}
+            className={`h-full w-full ${p.imageUrl.startsWith('/projects/') ? 'object-cover' : 'object-contain p-4'}`}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

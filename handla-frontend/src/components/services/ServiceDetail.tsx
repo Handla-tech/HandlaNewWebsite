@@ -142,7 +142,12 @@ function RelevantProjects({
               {p.imageUrl && (
                 <div
                   className="relative flex items-center justify-center overflow-hidden"
-                  style={{ aspectRatio: '16 / 9', background: 'var(--surface-3)' }}
+                  style={{
+                    aspectRatio: '16 / 9',
+                    background: p.imageUrl.startsWith('/projects/')
+                      ? 'var(--surface-3)'
+                      : '#ffffff',
+                  }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -152,7 +157,7 @@ function RelevantProjects({
                     className={`h-full w-full ${
                       p.imageUrl.startsWith('/projects/')
                         ? 'object-cover'
-                        : 'object-contain p-4'
+                        : 'object-contain p-6'
                     } transition-transform duration-500 group-hover:scale-[1.03]`}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
