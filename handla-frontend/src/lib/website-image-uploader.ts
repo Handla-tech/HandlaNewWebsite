@@ -8,9 +8,9 @@
  * Steps:
  *   1. Validate the file locally (size + MIME) — fast fail.
  *   2. POST /website/projects/image-upload → presigned S3 PUT URL (ADMIN only).
- *   3. PUT the file directly to S3 with `x-amz-acl: public-read` so the object
- *      is world-readable and the public marketing site can render it in an
- *      <img> without a signed URL.
+ *   3. PUT the file directly to S3 (Content-Type only — NO x-amz-acl header).
+ *      Public reachability is granted by a bucket policy on the website prefix,
+ *      so the marketing site can render it in an <img> without a signed URL.
  *   4. Return the permanent public fileUrl.
  */
 import axios from 'axios';
@@ -72,12 +72,12 @@ export async function uploadWebsiteImage(
   const presigned: PresignedUrlResult =
     presignedRes.data?.data ?? presignedRes.data;
 
-  // 3 — PUT directly to S3. The ACL header MUST match the presigned command's
-  //     ACL ('public-read') or S3 rejects the PUT with SignatureDoesNotMatch.
+  // 3 — PUT directly to S3. Only Content-Type is signed; do NOT send an
+  //     x-amz-acl header (the bucket has ACLs disabled — public access comes
+  //     from a bucket policy). Sending an unsigned header → SignatureDoesNotMatch.
   await axios.put(presigned.url, file, {
     headers: {
       'Content-Type': file.type,
-      'x-amz-acl': 'public-read',
     },
     signal,
     onUploadProgress: (event) => {

@@ -75,28 +75,37 @@ export class AwsService {
 
   // ─── Generate Presigned Upload URL ───────────────────────────────────────────
   /**
-   * @param publicRead When true the presigned PUT includes `x-amz-acl: public-read`
-   *   so the uploaded object is world-readable via its plain S3 URL. Used for
-   *   PUBLIC website assets (project/product cover images) that the marketing
-   *   site renders directly in an <img> without a short-lived signed URL. The
-   *   browser MUST send the matching `x-amz-acl: public-read` header on the PUT.
-   *   Requires the bucket to allow object ACLs (ObjectOwnership=BucketOwnerPreferred
-   *   with "Block public access → ACLs" disabled). Defaults to false (private).
+   * @param publicRead Marks the upload as a PUBLIC website asset (project /
+   *   product cover images) that the marketing site renders directly in an
+   *   <img> via its plain S3 URL. Public reachability is granted by a BUCKET
+   *   POLICY on the public prefix (e.g. `handla/website/*`) — NOT by an object
+   *   ACL — so this works with modern buckets that have ACLs disabled
+   *   ("Bucket owner enforced"). No `x-amz-acl` header is sent, so the browser
+   *   PUT must NOT send one either. Defaults to false (private object; served
+   *   later via a short-lived presigned GET URL).
+   *
+   *   Required one-time bucket policy for public website assets:
+   *     {
+   *       "Effect": "Allow", "Principal": "*", "Action": "s3:GetObject",
+   *       "Resource": "arn:aws:s3:::<bucket>/<prefix>/website/*"
+   *     }
    */
   async generatePresignedUrl(
     key: string,
     contentType: string,
     expiresInOverride?: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     publicRead = false,
   ): Promise<PresignedUrlResult> {
     const expiry = expiresInOverride ?? this.expiresIn;
     const physicalKey = this.withPrefix(key);
 
+    // NOTE: intentionally NO `ACL` — public access is granted by a bucket
+    // policy on the public prefix, so uploads succeed on ACL-disabled buckets.
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: physicalKey,
       ContentType: contentType,
-      ...(publicRead ? { ACL: 'public-read' as const } : {}),
     });
 
     const url = await getSignedUrl(this.s3Client, command, { expiresIn: expiry });
