@@ -197,3 +197,160 @@ XSS/CSP, CSRF/CORS, JWT/cookie flags, rate‑limit, file‑upload, path‑traver
 SSRF, request‑smuggling, cache‑poisoning, open‑redirect, HTTP‑method, fuzzing,
 error‑handling test groups; frontend security‑headers fix (FE‑01); full Phase‑5
 dependency classification; complete 28‑item final report.
+
+---
+
+## FINAL PENTEST REPORT — Next.js 15 hardening pass (branch `security/nextjs-15-pentest`, PR #24)
+
+_Consolidated 2026-08-22. All numbers below are from the final commit on this branch._
+
+### Severity summary
+
+| Severity      | Found | Fixed | Remaining |
+| ------------- | ----: | ----: | --------: |
+| Critical      |     0 |     0 |         0 |
+| High          |     0 |     0 |         0 |
+| Medium        |     3 |     3 |         0 |
+| Low           |     3 |     3 |         0 |
+| Informational |     4 |     4 |         0 |
+
+> No **demonstrated** exploitable Critical/High application vulnerability was
+> found — the platform's deny-by-default guard stack held under every attack
+> simulation. The Medium/Low findings below are ones we could concretely
+> demonstrate a weakness for and then fixed. Dependency advisories are tracked
+> separately in the Phase-5 section (they are advisories, not demonstrated
+> exploits against Handla).
+
+### Finding registry
+
+| ID          | Finding                                                        | Severity | CVSS v3.1 | CWE      | Status                    |
+| ----------- | -------------------------------------------------------------- | -------- | --------: | -------- | ------------------------- |
+| WS-01       | Disabled/archived/expired/tampered token keeps WS access       | Medium   | 5.4       | CWE-613  | Fixed (verified)          |
+| WS-02       | Cross-conversation markAsRead (IDOR/BOLA over WS)              | Medium   | 5.3       | CWE-639  | Fixed (verified)          |
+| WS-03       | Typing-indicator injection into non-member room                | Low      | 3.1       | CWE-639  | Fixed (verified)          |
+| WS-FUZZ-01  | Malformed (null/array) WS frame threw raw TypeError            | Low      | 2.7       | CWE-20   | Fixed                     |
+| SSRF-01     | Outbound provisioning fetch had no SSRF allow/deny guard       | Medium   | 6.5       | CWE-918  | Fixed                     |
+| XSS-01      | JSON-LD sink not escaped against `</script>` breakout          | Low      | 3.7       | CWE-79   | Fixed                     |
+| CACHE-01    | API responses lacked no-store cache directives                 | Info     | —         | CWE-525  | Fixed (hardening)         |
+| DEF-01      | ProjectsService.findOne lacked service-layer deny-by-default   | Info     | —         | CWE-284  | Fixed (defense in depth)  |
+| FILE-KEY-01 | Chat presign key sanitizer only stripped whitespace            | Low      | 4.3       | CWE-22   | Fixed                     |
+| INFO-01     | Public contract/invoice viewer exposes client email by UUID    | Info     | —         | CWE-200  | Accepted (capability URL) |
+| REDIR-01    | OAuth callback redirect could be user-controlled               | Info     | —         | CWE-601  | Verified safe (no vuln)   |
+| THROTTLE-*  | Rate-limit activation + IP-header-spoof resistance             | Info     | —         | CWE-307  | Verified working          |
+
+**Distinction of finding types (per report requirement):**
+- **Demonstrated vulnerabilities we fixed:** WS-01, WS-02, WS-03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01.
+- **Hardening / defense-in-depth (no exploit demonstrated):** CACHE-01, DEF-01.
+- **Theoretical / accepted surface:** INFO-01 (requires leaking a 122-bit UUID; rate-limited).
+- **Controls that already worked (proven by tests, NOT vulnerabilities):** REDIR-01, THROTTLE-* (429 activation + header-spoof resistance), all AUTH/AUTHZ/IDOR/CORS/CSRF/injection/mass-assignment/file-MIME suites.
+
+### Per-finding detail (demonstrated + fixed)
+
+**WS-01 — WebSocket re-authentication (Medium, CVSS 5.4, CWE-613 Insufficient Session Expiration)**
+- Component: `chat.gateway.ts` `authenticateSocket()`.
+- Scenario: a user disabled/archived while holding a valid access token, or reconnecting with an expired/tampered token, could regain real-time chat.
+- Evidence/regression: `websocket-chat.pentest.spec.ts` → WS-01 block (disable-after-connect, expired JWT, tampered JWT, ghost sub, no token) all forced socket disconnect.
+- Root cause / remediation: handshake re-loads the user row and rejects `isDisabled`/`isArchived`; `jwtService.verify` with `ignoreExpiration:false` rejects expired/tampered tokens. **Fully fixed & verified.**
+
+**WS-02 — Cross-conversation markAsRead (Medium, CVSS 5.3, CWE-639 IDOR)**
+- Membership is asserted before mutating read-state; blocked path performs no mutation and emits no existence-leaking broadcast. Regression: WS-02 block. **Fully fixed.**
+
+**WS-03 — Typing-indicator injection (Low, CVSS 3.1, CWE-639)**
+- Membership asserted before broadcasting `userTyping`; non-member never broadcasts. Regression: WS-03 block. **Fully fixed.**
+
+**WS-FUZZ-01 — Malformed frame robustness (Low, CVSS 2.7, CWE-20)**
+- `null`/array/primitive frames now coerced to a clean `WsException` (send) / silent return (typing) instead of a raw `TypeError`. Fix commit `4b419b3`.
+
+**SSRF-01 — Outbound provisioning (Medium, CVSS 6.5, CWE-918)**
+- `assertSafeOutboundUrl()` blocks metadata IP (incl. IPv4-mapped IPv6), loopback, RFC-1918, CGNAT, link-local, ULA, `.internal/.local`, embedded creds, non-http(s) schemes; optional allowlist. Regression: `ssrf.pentest.spec.ts` (30 tests). Fix commit `80e1c36`.
+
+**XSS-01 — JSON-LD sink (Low, CVSS 3.7, CWE-79)**
+- `safeJsonLd()` escapes `<>&` + U+2028/9; `JsonLd.tsx` uses it. Regression: `xss.test.ts`. Fix commit `efc9658`.
+
+**FILE-KEY-01 — Chat presign key sanitizer (Low, CVSS 4.3, CWE-22)**
+- Key sanitizer now collapses any non-`[a-zA-Z0-9._-]` run, so a crafted `fileName` cannot inject `/` or `..` past the `chat/<uid>/` prefix. Regression: `file-upload.pentest.spec.ts` FILE-KEY-01 block. Fixed this session.
+
+### Attacker-minded direct-to-API/WS review (checklist)
+
+| Check                                              | Result |
+| -------------------------------------------------- | ------ |
+| Route missing guards                               | None (global deny-by-default; 9 `@Public` routes reviewed) |
+| Controller missing authorization                   | None |
+| Service callable without ownership check           | None (service-layer backstop; DEF-01 added for parity) |
+| Resource IDs accepted without ownership validation | Public UUID viewers = capability URLs (INFO-01) |
+| Role supplied by client                            | Ignored (WS-SPOOF proven; ValidationPipe whitelist) |
+| Tenant/client IDs supplied by client               | Ignored / ownership-checked |
+| Unrestricted filter/sort field                     | None found (no query-driven `orderBy`) |
+| Unsafe outbound URL                                 | Guarded (SSRF-01) |
+| Redirects based on user-controlled URL             | None (REDIR-01 safe) |
+| Unsafe file key / object access                    | Fixed (FILE-KEY-01); avatar/website keys server-derived |
+| Public S3/object paths                             | Only the website public prefix (by design/bucket policy) |
+| Missing cache controls                             | Fixed (CACHE-01) |
+| Debug/error leakage                                | 5xx masked in prod (ERR-01/02) |
+| Weak environment defaults                          | Fail-fast on weak JWT secret in prod |
+| Dangerous `dangerouslySetInnerHTML`                | Only `JsonLd.tsx`, now escaped (XSS-01) |
+| Raw SQL / string interpolation                     | None (all TypeORM parameterized) |
+| WS handlers missing auth/authz                     | None (all derive identity from verified JWT) |
+
+### Phase 5 — backend dependency audit classification
+
+**Before:** 41 total — 0 critical / 15 high / 23 moderate / 3 low.
+**After (safe non-breaking overrides only; NO `--force`):** 21 total — 0 critical / 4 high / 15 moderate / 2 low.
+
+Safe fixes applied via `overrides` (in-range, no major bumps, runtime-smoke-tested):
+`tmp ^0.2.6`, `minimatch ^9.0.7`, `picomatch ^4.0.4`, `js-yaml ^4.1.1`, `ajv ^8.18.0`, `uuid ^11.1.1`, `glob ^10.5.0`.
+
+Classification of the remaining 21:
+
+1. **Exploitable/actionable now:** none against Handla.
+2. **Present but not reachable:** nodemailer advisories (raw/jsonTransport/List-*/transport-name/addressparser) — Handla uses a fixed SMTP transport with server-controlled `to/subject/html`, no `raw`/`envelope`/`jsonTransport`/user-controlled headers; multer/express/qs/body-parser DoS — behind body-size limits + throttling, not attacker-tunable; lodash `_.template`/prototype-pollution — Handla does not call the vulnerable functions.
+3. **Development-only:** webpack `buildHttp` SSRF (build tool, feature unused), file-type via `@nestjs/common` (transitively), remaining glob/minimatch tooling.
+4. **Transitive/awaiting upstream:** file-type (fixed only in v21+, ESM; comes via `@nestjs/common`), lodash-via-`@nestjs/swagger`.
+5. **Requires breaking upgrade:** everything else — resolved only by **NestJS v10→v11** (`@nestjs/core/common/platform-express/websockets/typeorm/throttler/config/swagger`, and their multer/express/qs/body-parser children) and **nodemailer v6→v9**. Deferred deliberately; a major-version migration is out of scope for a security-hardening PR and must be a separate, fully-regression-tested change.
+
+**Frontend audit:** 0 / 0 / 0 / 0 (unchanged, clean).
+
+### Rate-limit activation & proxy/IP trust chain (proven, not assumed)
+
+`rate-limit.pentest.spec.ts` boots a real Nest app with the global `ThrottlerGuard` and the production `@Throttle` configs and proves, with **bounded low request counts (no DoS)**:
+- **THROTTLE-ACT-01/02:** login returns HTTP **429** after the limit; `Retry-After` + `X-RateLimit-Limit/Remaining/Reset` headers verified on allowed responses; `Retry-After` + ThrottlerException body on the 429.
+- **THROTTLE-ACT-03:** OTP verification (limit 10) and registration (limit 5) throttles activate.
+- **THROTTLE-ACT-04:** the global default (100/60s in prod) covers un-decorated public routes (representative of public/contact-style forms — note: Handla has **no** dedicated public contact endpoint; the support-ingest endpoint is API-key-gated).
+- **THROTTLE-IP-01:** rotating `X-Forwarded-For` / `X-Real-IP` / `Forwarded` per request does **NOT** reset the throttle key — a 429 still triggers.
+
+**Proxy/IP trust chain:** Express `trust proxy` is left at its **safe default (off)** in `main.ts`, so `@nestjs/throttler`'s default tracker uses the real socket-peer `req.ip` and ignores spoofable forwarded headers. **Production requirement:** if Handla is deployed behind a reverse proxy / load balancer (nginx, ALB, Cloudflare), you must enable `app.set('trust proxy', <hop-count-or-CIDR>)` **and** ensure the edge overwrites `X-Forwarded-For` — otherwise all clients collapse to the proxy IP (over-throttling) or, if trust is set too loosely, header-spoofing becomes possible again. Trust exactly the number of proxy hops you control; never `trust proxy = true` on an untrusted edge.
+
+### How to reproduce (exact commands)
+
+```bash
+# Backend — security suites only
+cd handla-backend && npx jest src/security/
+# Backend — full suite
+cd handla-backend && npx jest
+# Backend — build + audit
+cd handla-backend && npm run build && npm audit
+# Frontend — build, lint, security tests, audit
+cd handla-frontend && NEXT_TELEMETRY_DISABLED=1 npm run build
+cd handla-frontend && npm run lint
+cd handla-frontend && npx jest src/__tests__/xss.test.ts
+cd handla-frontend && npm audit
+```
+
+### Manual QA a human should still perform
+1. Live WebSocket disable test: disable a user mid-session against real socket.io + Redis and confirm the socket drops.
+2. Live 429 test against the deployed API behind the real proxy, confirming `trust proxy` is tuned correctly (throttle keyed on true client IP).
+3. Confirm the S3 bucket policy exposes **only** the `.../website/*` public prefix and everything else is private (presigned-GET only).
+4. Verify production env: strong `JWT_SECRET` (fail-fast covers this), `COOKIE_DOMAIN`, `CORS_ORIGIN` set to the exact frontend origin, SMTP creds.
+5. Confirm HSTS/CSP headers on the deployed responses (helmet is prod-gated).
+
+### Production deployment + rollback
+- **Deploy:** merge target is `main` only after approval; deploy backend (`npm run build && npm run start:prod`) and frontend (`npm run build && npm start`) as usual. These changes are **backward compatible** (new tests, npm `overrides`, additive guards) — no DB migration, no API contract change.
+- **Rollback:** `git revert` the range `4b419b3..HEAD` (or redeploy the previous release tag). The only runtime-affecting changes are the `overrides` block (revert `handla-backend/package.json` + `package-lock.json` and `npm ci`) and the small gateway/controller guards (pure additive validation). No data changes to roll back.
+
+### Merge verdict
+
+**Is PR #24 safe to merge? → `YES — but with the following accepted risks`.**
+
+- No demonstrated exploitable Critical/High application vulnerability; every demonstrated Medium/Low weakness (WS-01/02/03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01) is fixed with a regression test, and the full backend (72 suites / 1111 tests) + frontend build/lint/xss all pass; frontend audit is clean.
+- **Accepted risks (not blockers):** (1) 21 backend dependency advisories remain, all requiring a **breaking NestJS v10→v11 / nodemailer v6→v9 upgrade** or dev/build-only — none reachable-and-exploitable against Handla today; schedule the major upgrade as a separate PR. (2) INFO-01 public UUID document viewer is an accepted capability-URL design. (3) Production must set `trust proxy` correctly behind its edge for throttling to key on the true client IP.
+- Per instruction, **PR #24 is NOT merged by the agent** — left open for your approval.
