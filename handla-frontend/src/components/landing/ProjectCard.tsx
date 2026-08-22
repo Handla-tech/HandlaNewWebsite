@@ -42,7 +42,11 @@ export default function ProjectCard({
   //    is never cropped. This is the safe default.
   const img = project.imageUrl ?? '';
   const isLocalBanner = img.startsWith('/projects/');
-  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-5';
+  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-3';
+  // Contained brand logos usually carry a white/transparent background, so we
+  // sit them on a clean light panel — this makes them look integrated instead
+  // of like a floating cutout on the dark card. Banners keep the dark surface.
+  const imageBg = isLocalBanner ? 'var(--ov-soft)' : '#ffffff';
 
   const CardInner = (
     <motion.div
@@ -67,7 +71,7 @@ export default function ProjectCard({
       />
 
       {/* Cover image */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden" style={{ background: 'var(--ov-soft)' }}>
+      <div className="relative aspect-[16/10] w-full overflow-hidden" style={{ background: imageBg }}>
         {project.imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img

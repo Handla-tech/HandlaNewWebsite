@@ -65,7 +65,7 @@ export default function Contact() {
     <section
       id="contact"
       ref={ref}
-      className="relative py-24 sm:py-32 overflow-hidden"
+      className="relative pt-16 pb-24 sm:pt-20 sm:pb-32 overflow-hidden"
       style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
