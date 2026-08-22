@@ -93,7 +93,7 @@ export default function Footer() {
               alt="Handla"
               width={922}
               height={503}
-              className="logo-dark h-8 w-auto select-none"
+              className="logo-dark h-10 w-auto select-none"
               draggable={false}
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,7 +102,7 @@ export default function Footer() {
               alt="Handla"
               width={922}
               height={503}
-              className="logo-light h-8 w-auto select-none"
+              className="logo-light h-10 w-auto select-none"
               draggable={false}
             />
           </Link>

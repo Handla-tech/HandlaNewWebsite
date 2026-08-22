@@ -277,7 +277,7 @@ export default function Navbar() {
                   alt="Handla"
                   width={922}
                   height={503}
-                  className="logo-dark h-9 w-auto select-none"
+                  className="logo-dark h-11 sm:h-12 w-auto select-none"
                   draggable={false}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -286,7 +286,7 @@ export default function Navbar() {
                   alt="Handla"
                   width={922}
                   height={503}
-                  className="logo-light h-9 w-auto select-none"
+                  className="logo-light h-11 sm:h-12 w-auto select-none"
                   draggable={false}
                 />
               </motion.span>
