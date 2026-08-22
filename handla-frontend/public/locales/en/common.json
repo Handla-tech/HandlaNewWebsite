@@ -2625,12 +2625,18 @@
         "tagsPlaceholder": "Next.js, NestJS, MySQL",
         "projectUrl": "Project URL",
         "urlPlaceholder": "https://… (optional)",
-        "imageUrl": "Cover Image URL",
+        "imageUrl": "Cover Image",
         "preview": "preview",
         "featuredOn": "Featured on landing page",
         "notFeatured": "Not featured",
         "genericError": "Something went wrong. Please try again.",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "titleAr": "Title (Arabic)",
+        "summaryAr": "Summary (Arabic)",
+        "descriptionAr": "Description (Arabic)",
+        "categoryAr": "Category (Arabic)",
+        "uploadImage": "Upload image",
+        "uploading": "Uploading… {{pct}}%"
       },
       "delete": {
         "title": "Delete Project?",

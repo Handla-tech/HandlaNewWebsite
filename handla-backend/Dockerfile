@@ -44,6 +44,11 @@ COPY --from=builder /app/dist ./dist
 # Copy Handlebars email templates (not included in nest build output by default)
 COPY --from=builder /app/src/modules/email/templates ./dist/modules/email/templates
 
+# Copy seed-asset images (real project logos) used by the attach-project-logos
+# seeder. These are UPLOAD SOURCE ONLY — the seeder pushes them to S3 and stores
+# the resulting public URL on the DB row; the app never serves them directly.
+COPY --from=builder /app/scripts ./scripts
+
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh

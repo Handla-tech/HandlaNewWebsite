@@ -18,10 +18,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FolderGit2, Plus, Pencil, Trash2, X, Loader2, AlertCircle,
   RefreshCw, ImageIcon, CheckCircle2, Search, ChevronLeft, ChevronRight, Star,
+  Upload,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { websiteProjectApi } from '@/lib/api';
+import { safeUploadWebsiteImage } from '@/lib/website-image-uploader';
 import { cn } from '@/lib/utils';
 import type { WebsiteProject } from '@/types';
 
@@ -30,16 +32,20 @@ type TFn = (key: string, params?: Record<string, any>) => string;
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
 const makeSchema = (t: TFn) => z.object({
-  title:       z.string().min(2, t('erp.webProjects.validation.titleRequired')),
-  clientName:  z.string().optional(),
-  summary:     z.string().optional(),
-  description: z.string().min(10, t('erp.webProjects.validation.descriptionMin')),
-  category:    z.string().optional(),
-  imageUrl:    z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
-  projectUrl:  z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
-  tagsCsv:     z.string().optional(),
-  featured:    z.boolean(),
-  sortOrder:   z.number().min(0),
+  title:          z.string().min(2, t('erp.webProjects.validation.titleRequired')),
+  titleAr:        z.string().optional(),
+  clientName:     z.string().optional(),
+  summary:        z.string().optional(),
+  summaryAr:      z.string().optional(),
+  description:    z.string().min(10, t('erp.webProjects.validation.descriptionMin')),
+  descriptionAr:  z.string().optional(),
+  category:       z.string().optional(),
+  categoryAr:     z.string().optional(),
+  imageUrl:       z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
+  projectUrl:     z.string().url(t('erp.webProjects.validation.invalidUrl')).optional().or(z.literal('')),
+  tagsCsv:        z.string().optional(),
+  featured:       z.boolean(),
+  sortOrder:      z.number().min(0),
 });
 
 type FormData = z.infer<ReturnType<typeof makeSchema>>;
@@ -89,22 +95,46 @@ function ProjectModal({
   } = useForm<FormData>({
     resolver: zodResolver(makeSchema(t)),
     defaultValues: {
-      title:       initial?.title       ?? '',
-      clientName:  initial?.clientName  ?? '',
-      summary:     initial?.summary     ?? '',
-      description: initial?.description  ?? '',
-      category:    initial?.category    ?? '',
-      imageUrl:    initial?.imageUrl    ?? '',
-      projectUrl:  initial?.projectUrl  ?? '',
-      tagsCsv:     (initial?.tags ?? []).join(', '),
-      featured:    initial?.featured    ?? false,
-      sortOrder:   initial?.sortOrder   ?? 0,
+      title:          initial?.title          ?? '',
+      titleAr:        initial?.titleAr         ?? '',
+      clientName:     initial?.clientName      ?? '',
+      summary:        initial?.summary         ?? '',
+      summaryAr:      initial?.summaryAr        ?? '',
+      description:    initial?.description      ?? '',
+      descriptionAr:  initial?.descriptionAr    ?? '',
+      category:       initial?.category        ?? '',
+      categoryAr:     initial?.categoryAr       ?? '',
+      imageUrl:       initial?.imageUrl        ?? '',
+      projectUrl:     initial?.projectUrl      ?? '',
+      tagsCsv:        (initial?.tags ?? []).join(', '),
+      featured:       initial?.featured        ?? false,
+      sortOrder:      initial?.sortOrder       ?? 0,
     },
   });
 
   const imageUrl = watch('imageUrl');
   const featured = watch('featured');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    setUploadProgress(0);
+    const { url, error } = await safeUploadWebsiteImage({
+      file,
+      onProgress: setUploadProgress,
+    });
+    setUploading(false);
+    if (error) { setUploadError(error); return; }
+    if (url) setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true });
+  };
 
   const onSubmit = async (data: FormData) => {
     setSubmitError(null);
@@ -113,16 +143,20 @@ function ProjectModal({
       .map((s) => s.trim())
       .filter(Boolean);
     const payload = {
-      title:       data.title,
-      clientName:  data.clientName || null,
-      summary:     data.summary || null,
-      description: data.description,
-      category:    data.category || null,
-      imageUrl:    data.imageUrl || null,
-      projectUrl:  data.projectUrl || null,
-      tags:        tags.length ? tags : null,
-      featured:    data.featured,
-      sortOrder:   data.sortOrder,
+      title:          data.title,
+      titleAr:        data.titleAr || null,
+      clientName:     data.clientName || null,
+      summary:        data.summary || null,
+      summaryAr:      data.summaryAr || null,
+      description:    data.description,
+      descriptionAr:  data.descriptionAr || null,
+      category:       data.category || null,
+      categoryAr:     data.categoryAr || null,
+      imageUrl:       data.imageUrl || null,
+      projectUrl:     data.projectUrl || null,
+      tags:           tags.length ? tags : null,
+      featured:       data.featured,
+      sortOrder:      data.sortOrder,
     };
     try {
       if (isEdit) await websiteProjectApi.update(initial!.id, payload);
@@ -165,49 +199,81 @@ function ProjectModal({
             <Field label={t('erp.webProjects.modal.title')} error={errors.title?.message}>
               <input {...register('title')} placeholder="TechFlow SaaS Platform" className={inputClass} />
             </Field>
-            <Field label={t('erp.webProjects.modal.clientName')} error={errors.clientName?.message}>
-              <input {...register('clientName')} placeholder={t('erp.webProjects.modal.clientNamePlaceholder')} className={inputClass} />
+            <Field label={t('erp.webProjects.modal.titleAr')}>
+              <input dir="rtl" {...register('titleAr')} placeholder="اسم المشروع بالعربية" className={inputClass} />
             </Field>
           </div>
 
-          <Field label={t('erp.webProjects.modal.summary')} error={errors.summary?.message}>
-            <input {...register('summary')} placeholder={t('erp.webProjects.modal.summaryPlaceholder')} className={inputClass} />
+          <Field label={t('erp.webProjects.modal.clientName')} error={errors.clientName?.message}>
+            <input {...register('clientName')} placeholder={t('erp.webProjects.modal.clientNamePlaceholder')} className={inputClass} />
           </Field>
 
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('erp.webProjects.modal.summary')} error={errors.summary?.message}>
+              <input {...register('summary')} placeholder={t('erp.webProjects.modal.summaryPlaceholder')} className={inputClass} />
+            </Field>
+            <Field label={t('erp.webProjects.modal.summaryAr')}>
+              <input dir="rtl" {...register('summaryAr')} placeholder="ملخص قصير بالعربية" className={inputClass} />
+            </Field>
+          </div>
+
           <Field label={t('erp.webProjects.modal.description')} error={errors.description?.message}>
-            <textarea {...register('description')} rows={4} placeholder={t('erp.webProjects.modal.descriptionPlaceholder')} className={cn(inputClass, 'resize-none')} />
+            <textarea {...register('description')} rows={3} placeholder={t('erp.webProjects.modal.descriptionPlaceholder')} className={cn(inputClass, 'resize-none')} />
+          </Field>
+
+          <Field label={t('erp.webProjects.modal.descriptionAr')}>
+            <textarea dir="rtl" {...register('descriptionAr')} rows={3} placeholder="وصف المشروع بالعربية" className={cn(inputClass, 'resize-none')} />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('erp.webProjects.modal.category')} error={errors.category?.message}>
               <input {...register('category')} placeholder={t('erp.webProjects.modal.categoryPlaceholder')} className={inputClass} />
             </Field>
-            <Field label={t('erp.webProjects.modal.sortOrder')} error={errors.sortOrder?.message}>
-              <input type="number" {...register('sortOrder', { valueAsNumber: true })} className={inputClass} />
+            <Field label={t('erp.webProjects.modal.categoryAr')}>
+              <input dir="rtl" {...register('categoryAr')} placeholder="التصنيف بالعربية" className={inputClass} />
             </Field>
           </div>
 
-          <Field label={t('erp.webProjects.modal.tags')} error={errors.tagsCsv?.message}>
-            <input {...register('tagsCsv')} placeholder="Next.js, NestJS, MySQL" className={inputClass} />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('erp.webProjects.modal.sortOrder')} error={errors.sortOrder?.message}>
+              <input type="number" {...register('sortOrder', { valueAsNumber: true })} className={inputClass} />
+            </Field>
+            <Field label={t('erp.webProjects.modal.tags')} error={errors.tagsCsv?.message}>
+              <input {...register('tagsCsv')} placeholder="Next.js, NestJS, MySQL" className={inputClass} />
+            </Field>
+          </div>
 
           <Field label={t('erp.webProjects.modal.projectUrl')} error={errors.projectUrl?.message}>
             <input {...register('projectUrl')} placeholder={t('erp.webProjects.modal.urlPlaceholder')} className={inputClass} />
           </Field>
 
-          <Field label={t('erp.webProjects.modal.imageUrl')} error={errors.imageUrl?.message}>
-            <div className="flex gap-2">
-              <input {...register('imageUrl')} placeholder={t('erp.webProjects.modal.urlPlaceholder')} className={cn(inputClass, 'flex-1')} />
+          <Field label={t('erp.webProjects.modal.imageUrl')} error={errors.imageUrl?.message ?? uploadError ?? undefined}>
+            <div className="flex items-start gap-3">
+              {/* Preview */}
               {imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={imageUrl} alt={t('erp.webProjects.modal.preview')}
-                  className="h-10 w-10 flex-shrink-0 rounded-lg border border-[#2a2a2a] object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  className="h-16 w-16 flex-shrink-0 rounded-lg border border-[#2a2a2a] bg-[#141414] object-contain p-1"
+                  onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
               ) : (
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]">
-                  <ImageIcon className="h-4 w-4 text-[#555]" />
+                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414]">
+                  <ImageIcon className="h-5 w-5 text-[#555]" />
                 </div>
               )}
+
+              <div className="flex-1 space-y-2">
+                {/* Hidden native file input + visible upload button */}
+                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden" onChange={handleFilePick} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20 disabled:cursor-wait disabled:opacity-60">
+                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {uploading ? t('erp.webProjects.modal.uploading', { pct: uploadProgress }) : t('erp.webProjects.modal.uploadImage')}
+                </button>
+                {/* Optional: paste a URL directly too */}
+                <input {...register('imageUrl')} placeholder={t('erp.webProjects.modal.urlPlaceholder')}
+                  className={cn(inputClass, 'text-[11px]')} />
+              </div>
             </div>
           </Field>
 

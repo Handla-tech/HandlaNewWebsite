@@ -2625,12 +2625,18 @@
         "tagsPlaceholder": "Next.js, NestJS, MySQL",
         "projectUrl": "رابط المشروع",
         "urlPlaceholder": "https://… (اختياري)",
-        "imageUrl": "رابط صورة الغلاف",
+        "imageUrl": "صورة الغلاف",
         "preview": "معاينة",
         "featuredOn": "مميّز في الصفحة الرئيسية",
         "notFeatured": "غير مميّز",
         "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-        "saveChanges": "حفظ التغييرات"
+        "saveChanges": "حفظ التغييرات",
+        "titleAr": "العنوان (بالعربية)",
+        "summaryAr": "الملخص (بالعربية)",
+        "descriptionAr": "الوصف (بالعربية)",
+        "categoryAr": "الفئة (بالعربية)",
+        "uploadImage": "رفع صورة",
+        "uploading": "جارٍ الرفع… {{pct}}%"
       },
       "delete": {
         "title": "حذف المشروع؟",

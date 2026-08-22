@@ -21,6 +21,7 @@
     "migration:revert": "ts-node --transpile-only ./node_modules/typeorm/cli migration:revert -d src/config/data-source.ts",
     "seed": "ts-node --transpile-only src/database/seeders/seed.ts",
     "seed:website-projects": "ts-node --transpile-only src/database/seeders/website-projects.seeder.ts",
+    "seed:project-logos": "ts-node --transpile-only src/database/seeders/attach-project-logos.seeder.ts",
     "db:reset": "ts-node --transpile-only src/database/reset.ts"
   },
   "dependencies": {

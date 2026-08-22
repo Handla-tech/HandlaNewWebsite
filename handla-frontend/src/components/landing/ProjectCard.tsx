@@ -33,6 +33,17 @@ export default function ProjectCard({
   const blurb = projectBlurb(project, locale);
   const featuredLabel = locale === 'ar' ? 'مميز' : 'Featured';
 
+  // Image fit heuristic:
+  //  • Full-bleed banner art bundled with the site (a relative /projects/…
+  //    path, e.g. the Emdad visual-identity banner) fills the card edge-to-edge
+  //    with `cover`.
+  //  • Everything else — square brand logos uploaded to S3 (Tameer, Homy) and
+  //    admin uploads — is shown whole & centered with `contain` + padding so it
+  //    is never cropped. This is the safe default.
+  const img = project.imageUrl ?? '';
+  const isLocalBanner = img.startsWith('/projects/');
+  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-5';
+
   const CardInner = (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -62,7 +73,7 @@ export default function ProjectCard({
           <img
             src={project.imageUrl}
             alt={title}
-            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            className={`h-full w-full ${imageClass} transition-transform duration-500 group-hover:scale-105`}
             loading="lazy"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />

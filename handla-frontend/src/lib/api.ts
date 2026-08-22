@@ -218,6 +218,9 @@ export const websiteProjectApi = {
   update:  (id: string, data: object) => api.patch(`/website/projects/${id}`, data),
   /** DELETE /website/projects/:id — ADMIN */
   remove:  (id: string)               => api.delete(`/website/projects/${id}`),
+  /** POST /website/projects/image-upload — ADMIN → presigned S3 PUT URL */
+  getImageUploadUrl: (data: { fileName: string; contentType: string }) =>
+    api.post('/website/projects/image-upload', data),
 };
 
 // ─── Website Content — Products (public showcase) ────────────────────────────
