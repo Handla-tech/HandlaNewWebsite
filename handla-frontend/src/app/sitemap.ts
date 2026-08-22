@@ -17,8 +17,14 @@ import type { MetadataRoute } from 'next';
 export default function sitemap(): MetadataRoute.Sitemap {
   // Canonical host — always https://handla.tech (no www, no http).
   const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://handla.tech').replace(/\/$/, '');
-  const lastModified = new Date();
 
+  // NOTE on `lastModified`: intentionally OMITTED.
+  // Previously this used `new Date()` for every URL, which reported every page
+  // as freshly modified on every deployment — a fake freshness signal that
+  // misleads crawlers. There is no reliable per-page modification timestamp
+  // available yet, and it is better to omit `lastModified` than to fabricate
+  // one. When real content timestamps exist (e.g. CMS/DB `updatedAt` for
+  // projects/products), set `lastModified` per URL from that real value.
   const routes: Array<{ path: string; changeFrequency: 'weekly'; priority: number }> = [
     { path: '/',                  changeFrequency: 'weekly', priority: 1.0 },
     { path: '/projects',          changeFrequency: 'weekly', priority: 0.8 },
@@ -30,7 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return routes.map(({ path, changeFrequency, priority }) => ({
     url:             `${baseUrl}${path}`,
-    lastModified,
     changeFrequency,
     priority,
   }));

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import Navbar       from '@/components/landing/Navbar';
 import Hero          from '@/components/landing/Hero';
@@ -61,6 +62,14 @@ const Contact = dynamic(
 );
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
+// Self-referencing canonical for the homepage → https://handla.tech/
+// (Resolved against `metadataBase` from the root layout.)
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)', color: 'var(--ink-1)' }}>
