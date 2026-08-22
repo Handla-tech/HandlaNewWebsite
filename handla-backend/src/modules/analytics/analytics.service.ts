@@ -244,6 +244,23 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Columns that topBy() is allowed to group by. This is a strict allow-list
+   * of known, safe entity column names. Even though every current caller
+   * passes a hard-coded literal, `column` is interpolated straight into the
+   * SQL (TypeORM cannot parameterize identifiers), so validating it here is a
+   * defence-in-depth guard against a future caller accidentally forwarding
+   * user input and opening a SQL-injection hole.
+   */
+  private static readonly TOP_BY_COLUMNS = new Set<string>([
+    'path',
+    'referrer_host',
+    'device_type',
+    'browser',
+    'country',
+    'event_name',
+  ]);
+
   /** Generic "top N by a dimension" helper. */
   private async topBy(
     query: AnalyticsQueryDto,
@@ -251,6 +268,10 @@ export class AnalyticsService {
     label: string,
     onlyPageviews = true,
   ): Promise<any> {
+    if (!AnalyticsService.TOP_BY_COLUMNS.has(column)) {
+      // Never interpolate an unrecognised identifier into SQL.
+      throw new Error(`topBy: disallowed column "${column}"`);
+    }
     const { from, to } = this.resolveRange(query);
     const qb = this.eventRepo
       .createQueryBuilder('e')
