@@ -7,6 +7,8 @@
  * Rendered server-side — no 'use client' needed.
  */
 
+import { safeJsonLd } from '@/lib/json-ld';
+
 interface JsonLdProps {
   data: Record<string, unknown>;
 }
@@ -15,8 +17,8 @@ export function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled server-side data
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON is HTML-escaped by safeJsonLd (XSS-01)
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }
