@@ -19,7 +19,7 @@ const itemVariants = {
 export default function About() {
   const ref    = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
-  const { t }  = useTranslation();
+  const { t, isRTL }  = useTranslation();
 
   const STATS = [
     { value: t('about.stats.projects'),   label: t('about.stats.projectsLabel'),   icon: Rocket,      color: '#fbbf24' },
@@ -159,10 +159,16 @@ export default function About() {
             </div>
 
             {/* Floating checkmarks */}
-            {[
-              { text: 'Certified Team', delay: 1.0 },
-              { text: 'ISO Compliant',  delay: 1.2 },
-            ].map(({ text, delay }, i) => (
+            {(isRTL
+              ? [
+                  { text: 'الأمان من أساس التصميم', delay: 1.0 },
+                  { text: 'مصمم للنمو',            delay: 1.2 },
+                ]
+              : [
+                  { text: 'Secure by Design', delay: 1.0 },
+                  { text: 'Built for Growth', delay: 1.2 },
+                ]
+            ).map(({ text, delay }, i) => (
               <motion.div
                 key={text}
                 className="absolute flex items-center gap-2 px-3 py-2 rounded-lg"

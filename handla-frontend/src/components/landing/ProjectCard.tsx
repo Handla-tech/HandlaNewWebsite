@@ -3,10 +3,21 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight, FolderGit2 } from 'lucide-react';
 import type { WebsiteProject } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
+import {
+  projectTitle,
+  projectCategory,
+  projectBlurb,
+} from '@/lib/website-project';
 
 /**
  * ProjectCard — shared card used by the landing "Projects" featured section
- * and the public /projects page. Purely presentational.
+ * and the public /projects page. Purely presentational, locale-aware and
+ * RTL-safe. Renders genuine, database-backed website projects only.
+ *
+ * When a project has no `projectUrl` (e.g. the confidential Emdad visual
+ * identity), the card is NOT wrapped in an external link and shows no
+ * "open project" affordance — the card itself is the full presentation.
  */
 export default function ProjectCard({
   project,
@@ -15,6 +26,13 @@ export default function ProjectCard({
   project: WebsiteProject;
   index?: number;
 }) {
+  const { locale, isRTL } = useTranslation();
+
+  const title = projectTitle(project, locale);
+  const category = projectCategory(project, locale);
+  const blurb = projectBlurb(project, locale);
+  const featuredLabel = locale === 'ar' ? 'مميز' : 'Featured';
+
   const CardInner = (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -43,8 +61,8 @@ export default function ProjectCard({
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={project.imageUrl}
-            alt={project.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            alt={title}
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
@@ -67,7 +85,7 @@ export default function ProjectCard({
             >
               <FolderGit2 className="h-5 w-5" style={{ color: '#fbbf24' }} />
             </div>
-            <span className="relative font-mono text-xs font-bold tracking-tight">
+            <span className="relative font-mono text-xs font-bold tracking-tight" dir="ltr">
               <span className="text-white">&lt;Handla </span>
               <span style={{ color: '#fbbf24' }}>/</span>
               <span className="text-white">&gt;</span>
@@ -76,22 +94,22 @@ export default function ProjectCard({
         )}
 
         {/* Category chip */}
-        {project.category && (
+        {category && (
           <span
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+            className={`absolute top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${isRTL ? 'right-3' : 'left-3'}`}
             style={{ background: 'rgba(0,0,0,0.6)', color: '#fbbf24', backdropFilter: 'blur(6px)' }}
           >
-            {project.category}
+            {category}
           </span>
         )}
 
         {/* Featured badge */}
         {project.featured && (
           <span
-            className="absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold"
+            className={`absolute top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold ${isRTL ? 'left-3' : 'right-3'}`}
             style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)', backdropFilter: 'blur(6px)' }}
           >
-            Featured
+            {featuredLabel}
           </span>
         )}
       </div>
@@ -100,11 +118,11 @@ export default function ProjectCard({
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-bold text-white group-hover:text-[#fbbf24] transition-colors">
-            {project.title}
+            {title}
           </h3>
           {project.projectUrl && (
             <ArrowUpRight
-              className="h-4 w-4 flex-shrink-0 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              className={`h-4 w-4 flex-shrink-0 opacity-0 transition-all duration-300 group-hover:opacity-100 ${isRTL ? 'group-hover:-translate-x-0.5 rotate-[-90deg]' : 'group-hover:translate-x-0.5'} group-hover:-translate-y-0.5`}
               style={{ color: '#fbbf24' }}
             />
           )}
@@ -117,10 +135,10 @@ export default function ProjectCard({
         )}
 
         <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--ink-3)' }}>
-          {project.summary || project.description}
+          {blurb}
         </p>
 
-        {/* Tags */}
+        {/* Tags / roles */}
         {project.tags && project.tags.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
             {project.tags.slice(0, 4).map((tag) => (
@@ -138,15 +156,16 @@ export default function ProjectCard({
     </motion.div>
   );
 
-  // Wrap in an external link when a project URL is present.
+  // Wrap in an external link ONLY when a genuine project URL is present.
   if (project.projectUrl) {
+    const openLabel = locale === 'ar' ? `${title} — فتح المشروع` : `${title} — open project`;
     return (
       <a
         href={project.projectUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="block h-full"
-        aria-label={`${project.title} — open project`}
+        aria-label={openLabel}
       >
         {CardInner}
       </a>

@@ -310,6 +310,16 @@
     outline-offset: 2px;
   }
 
+  /* ── Theme-adaptive brand logo ───────────────────────────────────────────
+     Two logo images are rendered; CSS shows exactly one based on the active
+     theme class on <html>. Default (dark theme) shows the dark-surface logo
+     (white "andla"); html.light shows the light-surface logo (black "andla").
+     Pure CSS = no hydration flash, works with SSR. */
+  .logo-dark { display: block; }
+  .logo-light { display: none; }
+  html.light .logo-dark { display: none; }
+  html.light .logo-light { display: block; }
+
   /* ── Grid background ─────────────────────────────────────────────────── */
   .bg-site-grid {
     background-image:

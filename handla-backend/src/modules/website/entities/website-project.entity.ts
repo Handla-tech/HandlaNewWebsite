@@ -25,25 +25,41 @@ export class WebsiteProject {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  /** Project / case-study title */
+  /** Project / case-study title (English / default) */
   @Column({ type: 'varchar', length: 160 })
   title: string;
+
+  /** Optional Arabic title — falls back to `title` on /ar when NULL */
+  @Column({ name: 'title_ar', type: 'varchar', length: 160, nullable: true })
+  titleAr: string | null;
 
   /** Optional client / company the project was delivered for */
   @Column({ name: 'client_name', type: 'varchar', length: 150, nullable: true })
   clientName: string | null;
 
-  /** Short one-line tagline shown on cards */
+  /** Short one-line tagline shown on cards (English / default) */
   @Column({ type: 'varchar', length: 255, nullable: true })
   summary: string | null;
 
-  /** Full rich description (shown on the detail / projects page) */
+  /** Optional Arabic summary — falls back to `summary` on /ar when NULL */
+  @Column({ name: 'summary_ar', type: 'varchar', length: 255, nullable: true })
+  summaryAr: string | null;
+
+  /** Full rich description (shown on the detail / projects page — English / default) */
   @Column({ type: 'text' })
   description: string;
 
-  /** Category / project type label (e.g. "Web App", "ERP", "Mobile") */
+  /** Optional Arabic description — falls back to `description` on /ar when NULL */
+  @Column({ name: 'description_ar', type: 'text', nullable: true })
+  descriptionAr: string | null;
+
+  /** Category / project type label (e.g. "Web App", "ERP", "Mobile" — English / default) */
   @Column({ type: 'varchar', length: 80, nullable: true })
   category: string | null;
+
+  /** Optional Arabic category label — falls back to `category` on /ar when NULL */
+  @Column({ name: 'category_ar', type: 'varchar', length: 80, nullable: true })
+  categoryAr: string | null;
 
   /** Cover image URL */
   @Column({ name: 'image_url', type: 'varchar', length: 2048, nullable: true })

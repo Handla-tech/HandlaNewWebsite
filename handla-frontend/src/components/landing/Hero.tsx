@@ -652,14 +652,21 @@ export default function Hero() {
               className="flex items-center gap-5 mt-8 pt-6"
               style={{ borderTop: '1px solid var(--ov-soft)' }}
             >
-              {[
-                { value: '200+', label: 'Projects Delivered' },
-                { value: '98%',  label: 'Client Satisfaction' },
-                { value: '24/7', label: 'Support' },
-              ].map((stat, i) => (
+              {(isRTL
+                ? [
+                    { title: 'حلول مخصصة',        desc: 'مبنية حسب احتياجك' },
+                    { title: 'بنية قابلة للتوسع', desc: 'مصممة للنمو' },
+                    { title: 'دعم تقني مستمر',    desc: 'إلى جانبك دائماً' },
+                  ]
+                : [
+                    { title: 'Custom-Built',        desc: 'Tailored solutions' },
+                    { title: 'Scalable',            desc: 'Built for growth' },
+                    { title: 'Ongoing Support',     desc: 'Always available' },
+                  ]
+              ).map((stat, i) => (
                 <div key={i} className="flex flex-col">
-                  <span className="text-base font-extrabold" style={{ color: '#fbbf24' }}>{stat.value}</span>
-                  <span className="text-xs" style={{ color: 'var(--ink-4)' }}>{stat.label}</span>
+                  <span className="text-base font-extrabold" style={{ color: '#fbbf24' }}>{stat.title}</span>
+                  <span className="text-xs" style={{ color: 'var(--ink-4)' }}>{stat.desc}</span>
                 </div>
               ))}
             </motion.div>

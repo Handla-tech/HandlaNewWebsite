@@ -50,14 +50,14 @@
     "mission": "مهمتنا",
     "missionText": "جعل تطوير البرمجيات عالمي المستوى في متناول الشركات بجميع أحجامها.",
     "stats": {
-      "projects": "+150",
-      "projectsLabel": "مشروع مُنجز",
-      "industries": "+30",
-      "industriesLabel": "قطاع تم خدمته",
-      "support": "24/7",
-      "supportLabel": "توفر الدعم",
-      "uptime": "99.9%",
-      "uptimeLabel": "موثوقية النظام"
+      "projects": "حلول مخصصة",
+      "projectsLabel": "مبنية حسب احتياجك",
+      "industries": "بنية قابلة للتوسع",
+      "industriesLabel": "مصممة للنمو",
+      "support": "دعم تقني مستمر",
+      "supportLabel": "إلى جانبك دائماً",
+      "uptime": "الأمان",
+      "uptimeLabel": "من أساس التصميم"
     },
     "features": {
       "innovation": "الابتكار أولاً",

@@ -19,12 +19,13 @@ import Footer from '@/components/landing/Footer';
 import ProjectCard from '@/components/landing/ProjectCard';
 import { websiteProjectApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { projectCategory } from '@/lib/website-project';
 import type { WebsiteProject } from '@/types';
 
 const PAGE_SIZE = 12;
 
 export default function ProjectsCatalog() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<string | null>(null);
 
@@ -53,11 +54,19 @@ export default function ProjectsCatalog() {
 
   // Derive category filter chips from the loaded items (best-effort; the
   // authoritative list would need a dedicated endpoint, this keeps it simple).
+  //
+  // The API filters on the canonical English `category` column, so each chip
+  // carries the English `value` (sent to the API) plus a locale-aware `label`
+  // shown to the user (Arabic on /ar, English otherwise).
   const categories = useMemo(() => {
-    const set = new Set<string>();
-    items.forEach((p) => { if (p.category) set.add(p.category); });
-    return Array.from(set);
-  }, [items]);
+    const map = new Map<string, string>(); // enValue -> localized label
+    items.forEach((p) => {
+      if (p.category && !map.has(p.category)) {
+        map.set(p.category, projectCategory(p, locale) ?? p.category);
+      }
+    });
+    return Array.from(map, ([value, label]) => ({ value, label }));
+  }, [items, locale]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)', color: 'var(--ink-1)' }}>
@@ -119,17 +128,17 @@ export default function ProjectsCatalog() {
               </button>
               {categories.map((c) => (
                 <button
-                  key={c}
+                  key={c.value}
                   type="button"
-                  onClick={() => { setCategory(c); setPage(1); }}
+                  onClick={() => { setCategory(c.value); setPage(1); }}
                   className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-all"
                   style={{
-                    background: category === c ? 'rgba(251,191,36,0.15)' : 'var(--ov-soft)',
-                    color: category === c ? '#fbbf24' : 'var(--ink-4)',
-                    border: `1px solid ${category === c ? 'rgba(251,191,36,0.3)' : 'var(--ov-med)'}`,
+                    background: category === c.value ? 'rgba(251,191,36,0.15)' : 'var(--ov-soft)',
+                    color: category === c.value ? '#fbbf24' : 'var(--ink-4)',
+                    border: `1px solid ${category === c.value ? 'rgba(251,191,36,0.3)' : 'var(--ov-med)'}`,
                   }}
                 >
-                  {c}
+                  {c.label}
                 </button>
               ))}
             </div>

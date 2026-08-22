@@ -124,10 +124,18 @@ export interface Testimonial {
 export interface WebsiteProject {
   id: string;
   title: string;
+  /** Optional Arabic title — falls back to `title` when null. */
+  titleAr?: string | null;
   clientName: string | null;
   summary: string | null;
+  /** Optional Arabic summary — falls back to `summary` when null. */
+  summaryAr?: string | null;
   description: string;
+  /** Optional Arabic description — falls back to `description` when null. */
+  descriptionAr?: string | null;
   category: string | null;
+  /** Optional Arabic category — falls back to `category` when null. */
+  categoryAr?: string | null;
   imageUrl: string | null;
   projectUrl: string | null;
   tags: string[] | null;

@@ -28,10 +28,14 @@ export class WebsiteProjectService {
   async create(dto: CreateWebsiteProjectDto, adminId: string): Promise<WebsiteProject> {
     const project = this.repo.create({
       title: dto.title,
+      titleAr: dto.titleAr ?? null,
       clientName: dto.clientName ?? null,
       summary: dto.summary ?? null,
+      summaryAr: dto.summaryAr ?? null,
       description: dto.description,
+      descriptionAr: dto.descriptionAr ?? null,
       category: dto.category ?? null,
+      categoryAr: dto.categoryAr ?? null,
       imageUrl: dto.imageUrl ?? null,
       projectUrl: dto.projectUrl ?? null,
       tags: dto.tags ?? null,
@@ -84,10 +88,14 @@ export class WebsiteProjectService {
     const project = await this.findOne(id); // throws if not found
 
     if (dto.title !== undefined) project.title = dto.title;
+    if (dto.titleAr !== undefined) project.titleAr = dto.titleAr ?? null;
     if (dto.clientName !== undefined) project.clientName = dto.clientName ?? null;
     if (dto.summary !== undefined) project.summary = dto.summary ?? null;
+    if (dto.summaryAr !== undefined) project.summaryAr = dto.summaryAr ?? null;
     if (dto.description !== undefined) project.description = dto.description;
+    if (dto.descriptionAr !== undefined) project.descriptionAr = dto.descriptionAr ?? null;
     if (dto.category !== undefined) project.category = dto.category ?? null;
+    if (dto.categoryAr !== undefined) project.categoryAr = dto.categoryAr ?? null;
     if (dto.imageUrl !== undefined) project.imageUrl = dto.imageUrl ?? null;
     if (dto.projectUrl !== undefined) project.projectUrl = dto.projectUrl ?? null;
     if (dto.tags !== undefined) project.tags = dto.tags ?? null;

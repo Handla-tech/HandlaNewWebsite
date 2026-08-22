@@ -92,3 +92,8 @@ ormconfig.json
 .cache/
 .turbo/
 *.tsbuildinfo
+
+# Confidential brand assets — NEVER commit source brand-guideline PDFs
+*Brand Guidelines*
+*brand-guidelines*.pdf
+Emdad*.pdf
