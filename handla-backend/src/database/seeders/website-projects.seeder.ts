@@ -94,7 +94,7 @@ const SEED_PROJECTS: WebsiteProjectSeed[] = [
     categoryAr: 'الهوية البصرية',
     // Approved logo asset served from the FRONTEND /public directory. This
     // is the ONLY Emdad asset that is public — never the source PDF.
-    imageUrl: 'https://handla.tech/projects/emdad/logo.png',
+    imageUrl: '/projects/emdad/logo.png',
     projectUrl: null,
     tags: ['Visual Identity', 'Brand Identity', 'Logo Design'],
     featured: true,

@@ -86,7 +86,17 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 py-8">
 
           {/* Logo */}
-          <Link href={lh('/')} className="flex items-center group flex-shrink-0" aria-label="Handla — Home">
+          <Link href={lh('/')} className="flex items-center gap-2 group flex-shrink-0" aria-label="Handla — Home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/handla-mark.png"
+              alt=""
+              aria-hidden="true"
+              width={26}
+              height={30}
+              className="h-7 w-auto select-none"
+              draggable={false}
+            />
             <span className="font-mono font-bold text-base tracking-tight">
               <span className="text-white">&lt;Handla </span>
               <span

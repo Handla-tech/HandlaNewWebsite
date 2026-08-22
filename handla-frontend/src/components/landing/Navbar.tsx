@@ -265,7 +265,18 @@ export default function Navbar() {
           <div className="flex h-16 items-center justify-between">
 
             {/* ── Logo ──────────────────────────────────────────────────── */}
-            <Link href={lh('/')} className="flex items-center group" aria-label="Handla — Home">
+            <Link href={lh('/')} className="flex items-center gap-2 group" aria-label="Handla — Home">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/handla-mark.png"
+                alt=""
+                aria-hidden="true"
+                width={30}
+                height={34}
+                className="h-8 w-auto select-none"
+                style={{ filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.35))' }}
+                draggable={false}
+              />
               <motion.span
                 className="font-mono font-bold text-lg tracking-tight"
                 whileHover={{ scale: 1.03 }}
