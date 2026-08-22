@@ -22,7 +22,8 @@
     "seed": "ts-node --transpile-only src/database/seeders/seed.ts",
     "seed:website-projects": "ts-node --transpile-only src/database/seeders/website-projects.seeder.ts",
     "seed:project-logos": "ts-node --transpile-only src/database/seeders/attach-project-logos.seeder.ts",
-    "db:reset": "ts-node --transpile-only src/database/reset.ts"
+    "db:reset": "ts-node --transpile-only src/database/reset.ts",
+    "seed:ai-knowledge": "ts-node --transpile-only src/database/seeders/ai-knowledge.seeder.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
