@@ -42,7 +42,7 @@ export default function ProjectCard({
   //    is never cropped. This is the safe default.
   const img = project.imageUrl ?? '';
   const isLocalBanner = img.startsWith('/projects/');
-  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-8';
+  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-3';
   // Contained brand logos usually carry a white/transparent background, so we
   // sit them on a clean light panel — this makes them look integrated instead
   // of like a floating cutout on the dark card. Banners keep the dark surface.

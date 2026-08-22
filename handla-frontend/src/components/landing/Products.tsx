@@ -168,7 +168,7 @@ export default function Products() {
     <section
       id="products"
       ref={ref}
-      className="relative py-24 sm:py-32 overflow-hidden"
+      className="relative pt-24 pb-16 sm:pt-32 sm:pb-20 overflow-hidden"
       style={{ background: 'var(--page-bg)' }}
     >
       {/* Top separator */}
