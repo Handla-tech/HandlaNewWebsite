@@ -31,8 +31,8 @@ export default function ServicesIndex() {
   const heading = locale === 'ar' ? 'خدماتنا' : 'Our Services';
   const sub =
     locale === 'ar'
-      ? 'حلول برمجية شاملة من التطوير إلى البنية السحابية — مصمّمة حول احتياجات عملك.'
-      : 'End-to-end software solutions, from development to cloud infrastructure — built around your business needs.';
+      ? 'من تطوير الويب والتطبيقات وأنظمة ERP إلى المونتاج والتصميم والتسويق — حلول متكاملة مصمّمة حول احتياجات عملك.'
+      : 'From web, apps and ERP systems to editing, design and marketing — end-to-end solutions built around your business needs.';
   const homeLabel = locale === 'ar' ? 'الرئيسية' : 'Home';
   const servicesLabel = locale === 'ar' ? 'الخدمات' : 'Services';
 

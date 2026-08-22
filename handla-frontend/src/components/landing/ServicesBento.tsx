@@ -38,10 +38,11 @@ export default function ServicesBento() {
   const { t }  = useTranslation();
   const lh     = useLocalizedHref();
 
-  // `slug` links a card to its dedicated /[locale]/services/[slug] landing
-  // page (internal SEO linking). Only services with genuine detail content
-  // get a slug; media services (video/podcast/design/marketing) have no
-  // detail page yet, so they render as non-linked cards (no fabricated pages).
+  // The canonical 8 Handla services. Each card links to its dedicated
+  // /[locale]/services/[slug] landing page (internal SEO linking). All 8 are
+  // genuine services with real detail content (see i18n/services-data.ts), so
+  // every card carries a `slug` and links to a real detail page — the visible
+  // catalog and the structured/sitemap catalog stay in sync.
   const SERVICES = [
     {
       icon: Globe,
@@ -69,7 +70,7 @@ export default function ServicesBento() {
       pills: ['iOS', 'Android', 'React Native'],
       accent: '#34d399',
       span: 'col-span-1',
-      slug: 'mobile-app-development',
+      slug: 'mobile-applications',
     },
     {
       icon: Cloud,
@@ -87,6 +88,7 @@ export default function ServicesBento() {
       pills: ['Reels', 'Long Videos', 'Motion Graphics'],
       accent: '#f472b6',
       span: 'col-span-1',
+      slug: 'video-editing',
     },
     {
       icon: Mic,
@@ -95,6 +97,7 @@ export default function ServicesBento() {
       pills: ['Video Podcast', 'Audio', 'Short Clips'],
       accent: '#22d3ee',
       span: 'col-span-1',
+      slug: 'podcast-editing',
     },
     {
       icon: Palette,
@@ -103,6 +106,7 @@ export default function ServicesBento() {
       pills: ['Logo', 'Brand Identity', 'Social Design'],
       accent: '#fb923c',
       span: 'col-span-1',
+      slug: 'design-visual-identity',
     },
     {
       icon: TrendingUp,
@@ -111,6 +115,7 @@ export default function ServicesBento() {
       pills: ['Brand Strategy', 'Marketing Plan', 'Launch Plan'],
       accent: '#4ade80',
       span: 'col-span-1',
+      slug: 'strategy-marketing',
     },
   ];
 
