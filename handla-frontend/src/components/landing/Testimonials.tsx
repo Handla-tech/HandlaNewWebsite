@@ -99,7 +99,8 @@ export default function Testimonials() {
     staleTime: 5 * 60_000,
   });
 
-  const items = (data && data.length > 0) ? data : FALLBACK;
+  const items = (data && data.length > 0) ? data : [];
+  if (!items.length) return null;
   const prev = useCallback(() => setIndex((i) => (i - 1 + items.length) % items.length), [items.length]);
   const next = useCallback(() => setIndex((i) => (i + 1) % items.length), [items.length]);
   const current = items[index];

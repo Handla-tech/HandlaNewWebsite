@@ -14,11 +14,18 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWebsiteProjectDto {
-  @ApiProperty({ description: 'Project title', maxLength: 160 })
+  @ApiProperty({ description: 'Project title (English / default)', maxLength: 160 })
   @IsString()
   @MinLength(2)
   @MaxLength(160)
   title: string;
+
+  @ApiPropertyOptional({ description: 'Arabic project title (null to clear)', maxLength: 160 })
+  @IsOptional()
+  @ValidateIf((o) => o.titleAr !== null)
+  @IsString()
+  @MaxLength(160)
+  titleAr?: string | null;
 
   @ApiPropertyOptional({ description: 'Client / company name (null to clear)', maxLength: 150 })
   @IsOptional()
@@ -27,24 +34,44 @@ export class CreateWebsiteProjectDto {
   @MaxLength(150)
   clientName?: string | null;
 
-  @ApiPropertyOptional({ description: 'Short one-line summary (null to clear)', maxLength: 255 })
+  @ApiPropertyOptional({ description: 'Short one-line summary (English / default, null to clear)', maxLength: 255 })
   @IsOptional()
   @ValidateIf((o) => o.summary !== null)
   @IsString()
   @MaxLength(255)
   summary?: string | null;
 
-  @ApiProperty({ description: 'Full project description', minLength: 10 })
+  @ApiPropertyOptional({ description: 'Arabic one-line summary (null to clear)', maxLength: 255 })
+  @IsOptional()
+  @ValidateIf((o) => o.summaryAr !== null)
+  @IsString()
+  @MaxLength(255)
+  summaryAr?: string | null;
+
+  @ApiProperty({ description: 'Full project description (English / default)', minLength: 10 })
   @IsString()
   @MinLength(10)
   description: string;
 
-  @ApiPropertyOptional({ description: 'Category label (null to clear)', maxLength: 80 })
+  @ApiPropertyOptional({ description: 'Arabic project description (null to clear)' })
+  @IsOptional()
+  @ValidateIf((o) => o.descriptionAr !== null)
+  @IsString()
+  descriptionAr?: string | null;
+
+  @ApiPropertyOptional({ description: 'Category label (English / default, null to clear)', maxLength: 80 })
   @IsOptional()
   @ValidateIf((o) => o.category !== null)
   @IsString()
   @MaxLength(80)
   category?: string | null;
+
+  @ApiPropertyOptional({ description: 'Arabic category label (null to clear)', maxLength: 80 })
+  @IsOptional()
+  @ValidateIf((o) => o.categoryAr !== null)
+  @IsString()
+  @MaxLength(80)
+  categoryAr?: string | null;
 
   @ApiPropertyOptional({ description: 'Cover image URL (null to clear)', maxLength: 2048 })
   @IsOptional()

@@ -208,7 +208,7 @@ export default function Projects() {
 
   // Use real data whenever the API returns any projects (featured or not).
   // The hardcoded FALLBACK only shows while loading or when the DB is empty.
-  const items = (data && data.length > 0) ? data : FALLBACK;
+  const items = (data && data.length > 0) ? data : [];
 
   return (
     <section
