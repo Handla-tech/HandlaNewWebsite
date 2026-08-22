@@ -97,13 +97,13 @@ export const MATJARY_SEO: Bilingual = {
 
 export const SERVICES_SEO: Bilingual = {
   en: {
-    title: 'Software Development Services | Handla',
+    title: 'Services | Handla',
     description:
-      'Handla software services: custom software, web and mobile development, ERP & CRM systems, and cloud infrastructure — built for businesses and organizations.',
+      'Handla services: web development, ERP & CRM systems, mobile applications, cloud infrastructure, video editing, podcast editing, design & visual identity, and strategy & marketing.',
   },
   ar: {
-    title: 'خدمات تطوير البرمجيات | هاندلا',
+    title: 'خدماتنا | هاندلا',
     description:
-      'خدمات هاندلا البرمجية: تطوير البرمجيات المخصّصة، وتطوير الويب وتطبيقات الجوال، وأنظمة ERP وCRM، والبنية السحابية — للشركات والمؤسسات.',
+      'خدمات هاندلا: تطوير الويب، وأنظمة ERP وCRM، وتطبيقات الجوال، والبنية السحابية، ومونتاج الفيديو، ومونتاج البودكاست، والتصميم والهوية البصرية، والاستراتيجية والتسويق.',
   },
 };

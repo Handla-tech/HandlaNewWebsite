@@ -49,6 +49,23 @@ const nextConfig = {
       { source: '/products/madar',     destination: '/en/products/madar',    permanent: true },
       { source: '/products/matjary',   destination: '/en/products/matjary',  permanent: true },
       { source: '/projects',           destination: '/en/projects',          permanent: true },
+
+      // ─── Service-catalog corrections (single-hop 308, no chains) ───────────
+      // The canonical Handla catalog is 8 real services. Two slugs from the SEO
+      // migration are no longer canonical and permanently redirect to the
+      // closest real service page. Each source maps DIRECTLY to its final
+      // localized destination (no redirect chain), for both the localized
+      // (/en, /ar) and the legacy non-localized forms.
+      //
+      // "Custom Software" is NOT a standalone service — its content was folded
+      // into ERP & CRM Systems, so it redirects to /services/erp-crm.
+      { source: '/en/services/custom-software', destination: '/en/services/erp-crm', permanent: true },
+      { source: '/ar/services/custom-software', destination: '/ar/services/erp-crm', permanent: true },
+      { source: '/services/custom-software',    destination: '/en/services/erp-crm', permanent: true },
+      // "mobile-app-development" was renamed to the canonical "mobile-applications".
+      { source: '/en/services/mobile-app-development', destination: '/en/services/mobile-applications', permanent: true },
+      { source: '/ar/services/mobile-app-development', destination: '/ar/services/mobile-applications', permanent: true },
+      { source: '/services/mobile-app-development',    destination: '/en/services/mobile-applications', permanent: true },
     ];
   },
 
