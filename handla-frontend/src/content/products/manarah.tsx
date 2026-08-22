@@ -12,7 +12,7 @@ import {
   BookMarked, MessageSquare, LayoutDashboard, Globe, Smartphone,
   CalendarDays,
 } from 'lucide-react';
-import { ProductLanding, ProductLandingContent } from '@/components/product-demos/ProductLanding';
+import type { ProductLandingContent } from '@/components/product-demos/ProductLanding';
 
 const ACCENT = '#22c55e';
 const ACCENT_SOFT = 'rgba(34,197,94,0.14)';
@@ -29,7 +29,7 @@ function HeroImage() {
   );
 }
 
-const content: ProductLandingContent = {
+export const manarahContent: ProductLandingContent = {
   slug: 'manarah',
   nameEn: 'Manarah',
   nameAr: 'منارة',
@@ -102,6 +102,3 @@ const content: ProductLandingContent = {
   heroPreview: <HeroImage />,
 };
 
-export default function ManarahLandingPage() {
-  return <ProductLanding content={content} />;
-}

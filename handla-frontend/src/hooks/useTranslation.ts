@@ -15,6 +15,7 @@
 
 import { useMemo } from 'react';
 import { useUIStore } from '@/store/uiStore';
+import { useLocaleContext } from '@/i18n/LocaleProvider';
 
 // ─── Static locale bundles ────────────────────────────────────────────────────
 // Import at build time so they are bundled, not fetched at runtime.
@@ -68,7 +69,18 @@ function interpolate(
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useTranslation() {
-  const locale = useUIStore((s) => s.locale) as Locale;
+  // ── Locale resolution order ──────────────────────────────────────────────
+  //  1. URL-driven LocaleProvider context (public /[locale]/… pages). This is
+  //     a SERVER-known value passed as a prop, so the initial server render
+  //     already produces the correct language — no localStorage dependency.
+  //  2. uiStore (persisted) — fallback for private application routes
+  //     (/auth, /dashboard, /erp, /profile) that render outside the provider.
+  //
+  // Selecting the store value unconditionally (then overriding) keeps the
+  // Zustand subscription stable so private routes still re-render on toggle.
+  const urlLocale   = useLocaleContext();
+  const storeLocale = useUIStore((s) => s.locale) as Locale;
+  const locale: Locale = urlLocale ?? storeLocale;
   const isRTL  = locale === 'ar';
 
   const bundle = BUNDLES[locale] ?? BUNDLES.en;

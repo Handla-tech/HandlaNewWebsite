@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUIStore } from '@/store/uiStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref, useLocaleSwitch } from '@/hooks/useLocalizedHref';
+import { LOCALES, type Locale } from '@/i18n/config';
 import { useAuthStore } from '@/store/authStore';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ProfileMenu from '@/components/ui/ProfileMenu';
@@ -75,7 +77,13 @@ export default function Navbar() {
 
   const router = useRouter();
   const pathname = usePathname();
-  const onLanding = pathname === '/';
+  // The landing page is now locale-prefixed (/en or /ar). Treat the bare
+  // locale root (and, defensively, '/') as "on the landing page" so the
+  // scroll-spy and same-page anchor scrolling behave correctly.
+  const pathSegs = (pathname || '/').split('/').filter(Boolean);
+  const onLanding =
+    pathname === '/' ||
+    (pathSegs.length === 1 && LOCALES.includes(pathSegs[0] as Locale));
 
   // ── Auth ─────────────────────────────────────────────────────────────────
   const { isLoggedIn, user, logout } = useAuthStore();
@@ -83,7 +91,8 @@ export default function Navbar() {
 
   // ── i18n ─────────────────────────────────────────────────────────────────
   const { t, locale, isRTL } = useTranslation();
-  const setLocale             = useUIStore((s) => s.setLocale);
+  const lh                    = useLocalizedHref();
+  const { switchLocale }      = useLocaleSwitch();
   const theme                 = useUIStore((s) => s.theme);
   const toggleTheme           = useUIStore((s) => s.toggleTheme);
 
@@ -212,16 +221,20 @@ export default function Navbar() {
   );
 
   // ── Locale toggle ────────────────────────────────────────────────────────
+  // On public routes this NAVIGATES to the equivalent locale URL
+  // (/en/products/manarah ↔ /ar/products/manarah); on private routes it falls
+  // back to the client-side store toggle (handled inside useLocaleSwitch).
   const toggleLocale = useCallback(() => {
-    setLocale(locale === 'en' ? 'ar' : 'en');
-  }, [locale, setLocale]);
+    setMobileOpen(false);
+    switchLocale();
+  }, [switchLocale]);
 
   // ── Mobile logout ────────────────────────────────────────────────────────
   const handleMobileLogout = useCallback(async () => {
     setMobileOpen(false);
     await logout();
-    router.push('/');
-  }, [logout, router]);
+    router.push(lh('/'));
+  }, [logout, router, lh]);
 
   const dashboardHref  = isAdmin ? '/erp' : '/dashboard';
   const dashboardLabel = isAdmin ? 'ERP Portal' : 'Go to Chat';
@@ -252,7 +265,7 @@ export default function Navbar() {
           <div className="flex h-16 items-center justify-between">
 
             {/* ── Logo ──────────────────────────────────────────────────── */}
-            <Link href="/" className="flex items-center group" aria-label="Handla — Home">
+            <Link href={lh('/')} className="flex items-center group" aria-label="Handla — Home">
               <motion.span
                 className="font-mono font-bold text-lg tracking-tight"
                 whileHover={{ scale: 1.03 }}
@@ -278,7 +291,7 @@ export default function Navbar() {
                 //    anchors are inactive.
                 const isActive = onLanding
                   ? activeSection === link.section
-                  : link.type === 'page' && pathname === link.href;
+                  : link.type === 'page' && pathname === lh(link.href);
 
                 const className = `relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
                   isRTL ? 'font-[family-name:var(--font-space-grotesk)]' : ''
@@ -305,13 +318,13 @@ export default function Navbar() {
                 );
 
                 return link.type === 'page' ? (
-                  <Link key={link.href} href={link.href} className={className}>
+                  <Link key={link.href} href={lh(link.href)} className={className}>
                     {inner}
                   </Link>
                 ) : (
                   <a
                     key={link.href}
-                    href={link.href}
+                    href={lh(link.href)}
                     onClick={(e) => handleAnchorClick(e, link.hash)}
                     className={className}
                   >
@@ -517,7 +530,7 @@ export default function Navbar() {
                 {NAV_KEYS.map((link, i) => {
                   const isActive = onLanding
                     ? activeSection === link.section
-                    : link.type === 'page' && pathname === link.href;
+                    : link.type === 'page' && pathname === lh(link.href);
 
                   const style = {
                     color: isActive ? '#fbbf24' : 'var(--ink-3)',
@@ -546,7 +559,7 @@ export default function Navbar() {
                       transition={{ delay: i * 0.05 }}
                     >
                       <Link
-                        href={link.href}
+                        href={lh(link.href)}
                         onClick={() => setMobileOpen(false)}
                         className={cls}
                         style={style}
@@ -559,7 +572,7 @@ export default function Navbar() {
                   ) : (
                     <motion.a
                       key={link.href}
-                      href={link.href}
+                      href={lh(link.href)}
                       onClick={(e) => handleAnchorClick(e, link.hash)}
                       initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
                       animate={{ opacity: 1, x: 0 }}

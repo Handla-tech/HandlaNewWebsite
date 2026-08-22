@@ -18,6 +18,15 @@ const AUTH_ROUTES = ['/auth/signin', '/auth/signup', '/auth'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── Expose the request pathname to Server Components ─────────────────────
+  // The root layout (which owns the single <html>) reads this header to set
+  // lang/dir server-side for the URL locale (/ar → rtl, /en → ltr), so the
+  // FIRST server render already has the correct language & direction — no
+  // client-side localStorage flip needed for public localized pages.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+  const pass = () => NextResponse.next({ request: { headers: requestHeaders } });
+
   // Presence of access_token cookie is our "is logged in" signal.
   // The actual JWT verification happens in the NestJS backend;
   // here we only gate navigation to avoid unnecessary page flashes.
@@ -53,19 +62,19 @@ export function middleware(request: NextRequest) {
   //   2. The /admin dashboard itself (useAuth().isAdmin check)
   // The middleware intentionally doesn't decode the JWT to keep it lightweight.
 
-  return NextResponse.next();
+  return pass();
 }
 
-// ─── Matcher — only run middleware on relevant paths ─────────────────────────
-
+// ─── Matcher ─────────────────────────────────────────────────────────────────
+//
+// Runs on all routes EXCEPT static assets and Next internals, so that:
+//   1. protected routes are auth-gated (as before), and
+//   2. every rendered document carries the `x-pathname` header the root
+//      layout uses to set <html lang/dir> from the URL locale.
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/erp/:path*',
-    '/profile/:path*',
-    '/settings/:path*',
-    '/auth/signin',
-    '/auth/signup',
-    '/auth',
+    // Everything except _next internals, the API proxy, and files with an
+    // extension (og-image.png, analytics.js, favicon, sitemap.xml, etc.).
+    '/((?!_next/static|_next/image|api|.*\\.[\\w]+$).*)',
   ],
 };

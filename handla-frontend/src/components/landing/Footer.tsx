@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref } from '@/hooks/useLocalizedHref';
+import { LOCALES, type Locale } from '@/i18n/config';
 
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
@@ -38,12 +41,23 @@ const SOCIALS = [
 
 export default function Footer() {
   const { t } = useTranslation();
+  const lh     = useLocalizedHref();
+  const pathname = usePathname();
   const year   = new Date().getFullYear();
 
+  // On the locale-root landing page (/en or /ar) hash links smooth-scroll;
+  // elsewhere they navigate to /{locale}#hash so the browser jumps to the
+  // section after loading the homepage.
+  const pathSegs = (pathname || '/').split('/').filter(Boolean);
+  const onLanding =
+    pathname === '/' ||
+    (pathSegs.length === 1 && LOCALES.includes(pathSegs[0] as Locale));
+
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // In-page hash links → smooth-scroll. Page routes (e.g. /projects) → let
-    // the browser navigate normally.
+    // In-page hash links → smooth-scroll only while already on the landing
+    // page. Page routes and cross-page hash links → let the browser navigate.
     if (!href.startsWith('#')) return;
+    if (!onLanding) return; // allow default navigation to /{locale}#hash
     e.preventDefault();
     document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -72,7 +86,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 py-8">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center group flex-shrink-0" aria-label="Handla — Home">
+          <Link href={lh('/')} className="flex items-center group flex-shrink-0" aria-label="Handla — Home">
             <span className="font-mono font-bold text-base tracking-tight">
               <span className="text-white">&lt;Handla </span>
               <span
@@ -91,7 +105,7 @@ export default function Footer() {
             {LINK_KEYS.map((link) => (
               <a
                 key={link.href}
-                href={link.href}
+                href={lh(link.href)}
                 onClick={(e) => handleClick(e, link.href)}
                 className="text-sm transition-colors py-1 min-h-[44px] flex items-center"
                 style={{ color: 'var(--ink-3)' }}

@@ -11,7 +11,7 @@ import {
   Package, ShoppingBag, Store, Users2, Boxes, Truck, Gift,
   BarChart3, LayoutDashboard, Globe, CreditCard,
 } from 'lucide-react';
-import { ProductLanding, ProductLandingContent } from '@/components/product-demos/ProductLanding';
+import type { ProductLandingContent } from '@/components/product-demos/ProductLanding';
 
 const ACCENT = '#10b981';
 const ACCENT_SOFT = 'rgba(16,185,129,0.14)';
@@ -28,7 +28,7 @@ function HeroImage() {
   );
 }
 
-const content: ProductLandingContent = {
+export const matjaryContent: ProductLandingContent = {
   slug: 'matjary',
   nameEn: 'Matjary',
   nameAr: 'متجري',
@@ -101,6 +101,3 @@ const content: ProductLandingContent = {
   heroPreview: <HeroImage />,
 };
 
-export default function MatjaryLandingPage() {
-  return <ProductLanding content={content} />;
-}

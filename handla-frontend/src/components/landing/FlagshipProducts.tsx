@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Briefcase, ShoppingBag, GraduationCap, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref } from '@/hooks/useLocalizedHref';
 
 interface Flagship {
   slug: string;
@@ -76,6 +77,7 @@ const FLAGSHIPS: Flagship[] = [
 
 export default function FlagshipProducts() {
   const { locale, isRTL } = useTranslation();
+  const lh = useLocalizedHref();
   const isAr = locale === 'ar';
 
   return (
@@ -99,7 +101,7 @@ export default function FlagshipProducts() {
           >
             {/* Hero image banner */}
             <Link
-              href={`/products/${p.slug}`}
+              href={lh(`/products/${p.slug}`)}
               aria-label={`${isAr ? p.nameAr : p.nameEn} — ${isAr ? p.catAr : p.catEn}`}
               className="relative block h-36 overflow-hidden"
             >
@@ -147,7 +149,7 @@ export default function FlagshipProducts() {
               {/* Actions: explore + call-to-action */}
               <div className="mt-1 flex flex-wrap items-center gap-3">
                 <Link
-                  href={`/products/${p.slug}`}
+                  href={lh(`/products/${p.slug}`)}
                   className="inline-flex items-center gap-1.5 text-sm font-semibold"
                   style={{ color: p.accent }}
                 >
@@ -159,7 +161,7 @@ export default function FlagshipProducts() {
                   />
                 </Link>
                 <Link
-                  href={`/#contact?product=${p.slug}`}
+                  href={lh(`/#contact?product=${p.slug}`)}
                   className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5"
                   style={{ background: `linear-gradient(135deg, ${p.gradFrom}, ${p.gradTo})` }}
                 >

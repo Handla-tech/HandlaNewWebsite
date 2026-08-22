@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef } from 'react';
+import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
-import { Globe, BarChart3, Smartphone, Cloud, Video, Mic, Palette, TrendingUp, ArrowUpRight, Zap, Shield, Clock } from 'lucide-react';
+import { Globe, BarChart3, Smartphone, Cloud, Video, Mic, Palette, TrendingUp, ArrowUpRight, ArrowRight, Zap, Shield, Clock } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalizedHref } from '@/hooks/useLocalizedHref';
 
 const cardVariants = {
   hidden:  { opacity: 0, y: 28 },
@@ -34,7 +36,12 @@ export default function ServicesBento() {
   const ref    = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   const { t }  = useTranslation();
+  const lh     = useLocalizedHref();
 
+  // `slug` links a card to its dedicated /[locale]/services/[slug] landing
+  // page (internal SEO linking). Only services with genuine detail content
+  // get a slug; media services (video/podcast/design/marketing) have no
+  // detail page yet, so they render as non-linked cards (no fabricated pages).
   const SERVICES = [
     {
       icon: Globe,
@@ -43,6 +50,7 @@ export default function ServicesBento() {
       pills: ['React', 'Next.js', 'TypeScript'],
       accent: '#60a5fa',
       span: 'col-span-1',
+      slug: 'web-development',
     },
     {
       icon: BarChart3,
@@ -52,6 +60,7 @@ export default function ServicesBento() {
       accent: '#fbbf24',
       span: 'col-span-1',
       featured: true,
+      slug: 'erp-crm',
     },
     {
       icon: Smartphone,
@@ -60,6 +69,7 @@ export default function ServicesBento() {
       pills: ['iOS', 'Android', 'React Native'],
       accent: '#34d399',
       span: 'col-span-1',
+      slug: 'mobile-app-development',
     },
     {
       icon: Cloud,
@@ -68,6 +78,7 @@ export default function ServicesBento() {
       pills: ['AWS', 'Docker', 'CI/CD'],
       accent: '#a78bfa',
       span: 'col-span-1',
+      slug: 'cloud-infrastructure',
     },
     {
       icon: Video,
@@ -104,9 +115,9 @@ export default function ServicesBento() {
   ];
 
   const HIGHLIGHTS = [
-    { icon: Zap,    label: 'Fast Delivery', value: '6 weeks avg' },
-    { icon: Shield, label: 'Secure & Reliable', value: '99.9% uptime' },
-    { icon: Clock,  label: '24/7 Support', value: 'Always online' },
+    { icon: Zap,    label: t('services.highlights.delivery.label'),  value: t('services.highlights.delivery.value')  },
+    { icon: Shield, label: t('services.highlights.security.label'),  value: t('services.highlights.security.value')  },
+    { icon: Clock,  label: t('services.highlights.support.label'),   value: t('services.highlights.support.value')   },
   ];
 
   return (
@@ -152,75 +163,121 @@ export default function ServicesBento() {
 
         {/* ── Bento grid ───────────────────────────────────────────────── */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {SERVICES.map(({ icon: Icon, title, desc, pills, accent, featured }, i) => (
-            <motion.div
-              key={title}
-              custom={i}
-              variants={cardVariants}
-              initial="hidden"
-              animate={inView ? 'visible' : 'hidden'}
-              className="group relative rounded-2xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
-              style={{
-                background: featured
-                  ? 'linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%)'
-                  : 'var(--surface-1)',
-                border: featured
-                  ? '1px solid rgba(251,191,36,0.18)'
-                  : '1px solid var(--ov-med)',
-                boxShadow: 'var(--shadow-card)',
-              }}
-              whileHover={{
-                borderColor: `${accent}40`,
-                boxShadow: 'var(--shadow-md)',
-                y: -3,
-              }}
-            >
-              {/* Featured gold top border */}
-              {featured && (
-                <div
-                  className="absolute top-0 left-0 right-0 h-px"
-                  style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }}
-                />
-              )}
-
-              {/* Inner glow on hover */}
-              <div
-                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
-                style={{ background: `radial-gradient(ellipse at top left, ${accent}05 0%, transparent 60%)` }}
-              />
-
-              <div className="relative">
-                {/* Icon + arrow row */}
-                <div className="flex items-start justify-between mb-5">
+          {SERVICES.map(({ icon: Icon, title, desc, pills, accent, featured, slug }, i) => {
+            const cardInner = (
+              <>
+                {/* Featured gold top border */}
+                {featured && (
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
-                    style={{
-                      background: `${accent}12`,
-                      border: `1px solid ${accent}20`,
-                      color: accent,
-                    }}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <ArrowUpRight
-                    className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    style={{ color: 'var(--ink-8)' }}
+                    className="absolute top-0 left-0 right-0 h-px"
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }}
                   />
-                </div>
+                )}
 
-                <h3 className="text-lg font-bold text-white mb-2 leading-tight">{title}</h3>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-3)' }}>{desc}</p>
+                {/* Inner glow on hover */}
+                <div
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300"
+                  style={{ background: `radial-gradient(ellipse at top left, ${accent}05 0%, transparent 60%)` }}
+                />
 
-                {/* Pills */}
-                <div className="flex flex-wrap gap-1.5">
-                  {pills.map((pill) => (
-                    <FeaturePill key={pill} text={pill} />
-                  ))}
+                <div className="relative">
+                  {/* Icon + arrow row */}
+                  <div className="flex items-start justify-between mb-5">
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+                      style={{
+                        background: `${accent}12`,
+                        border: `1px solid ${accent}20`,
+                        color: accent,
+                      }}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <ArrowUpRight
+                      className="w-4 h-4 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      style={{ color: 'var(--ink-8)' }}
+                    />
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white mb-2 leading-tight">{title}</h3>
+                  <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-3)' }}>{desc}</p>
+
+                  {/* Pills */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {pills.map((pill) => (
+                      <FeaturePill key={pill} text={pill} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </>
+            );
+
+            const cardClass =
+              'group relative block rounded-2xl p-6 overflow-hidden transition-all duration-300 h-full';
+            const cardStyle = {
+              background: featured
+                ? 'linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%)'
+                : 'var(--surface-1)',
+              border: featured
+                ? '1px solid rgba(251,191,36,0.18)'
+                : '1px solid var(--ov-med)',
+              boxShadow: 'var(--shadow-card)',
+            } as const;
+            const hover = {
+              borderColor: `${accent}40`,
+              boxShadow: 'var(--shadow-md)',
+              y: -3,
+            };
+
+            return (
+              <motion.div
+                key={title}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                animate={inView ? 'visible' : 'hidden'}
+                whileHover={hover}
+                className="h-full"
+              >
+                {slug ? (
+                  <Link
+                    href={lh(`/services/${slug}`)}
+                    className={`${cardClass} cursor-pointer`}
+                    style={cardStyle}
+                    aria-label={title}
+                  >
+                    {cardInner}
+                  </Link>
+                ) : (
+                  <div className={cardClass} style={cardStyle}>
+                    {cardInner}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
+
+        {/* ── Explore all services CTA ─────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="mb-6 flex justify-center"
+        >
+          <Link
+            href={lh('/services')}
+            className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200"
+            style={{
+              background: 'rgba(251,191,36,0.1)',
+              border: '1px solid rgba(251,191,36,0.25)',
+              color: '#fbbf24',
+            }}
+          >
+            {t('services.viewAll')}
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+          </Link>
+        </motion.div>
 
         {/* ── Highlights strip ─────────────────────────────────────────── */}
         <motion.div

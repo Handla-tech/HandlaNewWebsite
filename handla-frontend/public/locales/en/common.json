@@ -121,7 +121,22 @@
     "marketing": {
       "title": "Strategy & Marketing",
       "description": "Clear strategies that define the right audience, content, and channels for sustainable growth."
-    }
+    },
+    "highlights": {
+      "delivery": {
+        "label": "Agile Delivery",
+        "value": "Iterative sprints"
+      },
+      "security": {
+        "label": "Secure by Design",
+        "value": "Best-practice security"
+      },
+      "support": {
+        "label": "Ongoing Support",
+        "value": "Maintenance & updates"
+      }
+    },
+    "viewAll": "Explore all services"
   },
   "solutions": {
     "title": "Solutions For Every Scale",

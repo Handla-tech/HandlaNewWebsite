@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import './globals.css';
 import { Providers } from '@/components/Providers';
+import { toLocale, dirFor, type Locale } from '@/i18n/config';
 // NOTE: Organization / WebSite / Services JSON-LD moved to the homepage
 // (src/app/page.tsx) so those site-level entities are declared once on the
 // home document rather than on every route.
@@ -85,24 +87,44 @@ export const viewport: Viewport = {
 
 // ─── Root Layout ─────────────────────────────────────────────────────────────
 
+/**
+ * Derive the document locale from the request path (injected by middleware as
+ * `x-pathname`). Public SEO pages live under /en/… or /ar/…, so the FIRST
+ * segment determines <html lang/dir> at SERVER render time — Arabic pages ship
+ * `lang="ar" dir="rtl"` in the initial HTML, before any JS runs.
+ *
+ * Non-localized routes (/, /auth, /dashboard, /erp, /profile) resolve to the
+ * default locale (en / ltr); `/` is 308-redirected to `/en` by next.config.
+ */
+function localeFromPath(pathname: string): Locale {
+  const seg = pathname.split('/').filter(Boolean)[0];
+  return toLocale(seg);
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = headers().get('x-pathname') || '/';
+  const locale   = localeFromPath(pathname);
+  const dir      = dirFor(locale);
+
   return (
     <html
-      lang="en"
-      dir="ltr"
-      // uiStore re-applies lang/dir/dark class on client after hydration
+      lang={locale}
+      dir={dir}
+      // Theme (dark/light) is still applied client-side from persisted uiStore
+      // via the anti-FOUC script below; suppress the resulting className diff.
       suppressHydrationWarning
     >
       <head>
-        {/* Anti-FOUC: apply persisted theme + locale before first paint so a
-            light-mode user never sees a dark flash (and vice-versa). Reads the
-            same `handla-ui` zustand-persist key the store uses. */}
+        {/* Anti-FOUC: apply the persisted THEME (dark/light) before first paint
+            so a light-mode user never sees a dark flash. Locale is NOT touched
+            here anymore — lang/dir are already correct in the server HTML from
+            the URL locale above, so this only manages the theme class. */}
         <Script id="handla-theme-init" strategy="beforeInteractive">
-          {`(function(){try{var t='dark',l='en';var raw=localStorage.getItem('handla-ui');if(raw){var s=JSON.parse(raw);if(s&&s.state){if(s.state.theme)t=s.state.theme;if(s.state.locale)l=s.state.locale;}}var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');r.lang=l;r.dir=l==='ar'?'rtl':'ltr';}catch(e){document.documentElement.classList.add('dark');}})();`}
+          {`(function(){try{var t='dark';var raw=localStorage.getItem('handla-ui');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.theme)t=s.state.theme;}var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');}catch(e){document.documentElement.classList.add('dark');}})();`}
         </Script>
 
       </head>

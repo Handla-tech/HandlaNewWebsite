@@ -33,9 +33,7 @@ const queryClient = new QueryClient({
 function AppInitializer() {
   const router    = useRouter();
   const theme     = useUIStore((s) => s.theme);
-  const locale    = useUIStore((s) => s.locale);
   const setTheme  = useUIStore((s) => s.setTheme);
-  const setLocale = useUIStore((s) => s.setLocale);
   const getMe     = useAuthStore((s) => s.getMe);
   const setUser   = useAuthStore((s) => s.setUser);
 
@@ -69,10 +67,15 @@ function AppInitializer() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Apply stored theme + locale ──────────────────────────────────────────
+  // ── Apply stored theme ────────────────────────────────────────────────────
+  // Only the THEME is re-applied to <html> here. Locale (lang/dir) is owned by
+  // the server from the URL (/en → ltr, /ar → rtl) so we must NOT let the
+  // persisted store locale overwrite <html lang/dir> after hydration — doing so
+  // would fight the URL locale on public pages. `setLocale` is intentionally
+  // not called; the store value is still used by private routes via
+  // useTranslation's fallback.
   useEffect(() => {
     setTheme(theme);
-    setLocale(locale);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

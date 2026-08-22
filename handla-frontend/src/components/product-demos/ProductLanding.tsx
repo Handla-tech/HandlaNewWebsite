@@ -15,9 +15,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Play, Globe } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
+import { otherLocale, type Locale } from '@/i18n/config';
 
 // ─── Content shape ────────────────────────────────────────────────────────────
 
@@ -80,15 +82,43 @@ export interface ProductLandingContent {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ProductLanding({ content }: { content: ProductLandingContent }) {
+export function ProductLanding({
+  content,
+  initialLocale,
+}: {
+  content: ProductLandingContent;
+  /**
+   * When rendered by a localized route (/[locale]/products/…), the URL locale
+   * is passed here so the FIRST server render already produces the correct
+   * language (Arabic on /ar/…). In that mode the language button NAVIGATES to
+   * the equivalent URL in the other locale instead of flipping local state.
+   * When omitted (legacy/standalone use), it falls back to the persisted store.
+   */
+  initialLocale?: Locale;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
   const storeLocale = useUIStore((s) => s.locale);
   const setStoreLocale = useUIStore((s) => s.setLocale);
-  const [locale, setLocale] = useState<'en' | 'ar'>(storeLocale === 'ar' ? 'ar' : 'en');
+  const urlMode = initialLocale !== undefined;
+  const [locale, setLocale] = useState<'en' | 'ar'>(
+    initialLocale ?? (storeLocale === 'ar' ? 'ar' : 'en'),
+  );
   const isRTL = locale === 'ar';
   const t = (en: string, ar: string) => (locale === 'ar' ? ar : en);
 
   const toggle = () => {
-    const next = locale === 'ar' ? 'en' : 'ar';
+    const next = otherLocale(locale);
+    if (urlMode) {
+      // Navigate to the equivalent URL in the other locale, preserving the path
+      // (/ar/products/manarah ⇄ /en/products/manarah).
+      const segs = (pathname || '').split('/');
+      if (segs[1] === 'en' || segs[1] === 'ar') {
+        segs[1] = next;
+        router.push(segs.join('/') || `/${next}`);
+        return;
+      }
+    }
     setLocale(next);
     setStoreLocale(next);
   };
@@ -119,7 +149,7 @@ export function ProductLanding({ content }: { content: ProductLandingContent }) 
         }}
       >
         <Link
-          href="/#products"
+          href={urlMode ? `/${locale}#products` : '/#products'}
           style={{
             display: 'flex',
             alignItems: 'center',

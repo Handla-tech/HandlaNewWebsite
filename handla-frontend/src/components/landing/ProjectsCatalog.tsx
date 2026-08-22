@@ -1,47 +1,46 @@
 'use client';
 
 /**
- * Public Products page (/products)
+ * ProjectsCatalog — public Projects listing (used by /[locale]/projects)
  *
- * Shows the full website products/solutions catalog (paginated, optional
- * category filter). Linked from the landing "Products" section and the navbar.
+ * Shows the full website project portfolio (paginated, optional category
+ * filter). Linked from the landing "Projects" section and the navbar.
  *
- * NOTE: these are WEBSITE showcase products — marketing content managed by
- * admins via /erp/website/products, entirely separate from ERP/SaaS entities.
+ * NOTE: these are WEBSITE showcase projects — entirely separate from ERP
+ * projects (/erp/projects).
  */
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Loader2, FolderGit2, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
-import ProductCard from '@/components/landing/ProductCard';
-import FlagshipProducts from '@/components/landing/FlagshipProducts';
-import { websiteProductApi } from '@/lib/api';
+import ProjectCard from '@/components/landing/ProjectCard';
+import { websiteProjectApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { WebsiteProduct } from '@/types';
+import type { WebsiteProject } from '@/types';
 
 const PAGE_SIZE = 12;
 
-export default function ProductsPage() {
+export default function ProjectsCatalog() {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['website-products-all', page, category],
+    queryKey: ['website-projects-all', page, category],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, limit: PAGE_SIZE };
       if (category) params.category = category;
-      const res = await websiteProductApi.getAll(params);
+      const res = await websiteProjectApi.getAll(params);
       const payload = res.data?.data as {
-        products?: WebsiteProduct[];
+        projects?: WebsiteProject[];
         total?: number;
         pages?: number;
       };
       return {
-        items: Array.isArray(payload?.products) ? payload!.products! : [],
+        items: Array.isArray(payload?.projects) ? payload!.projects! : [],
         total: payload?.total ?? 0,
         pages: payload?.pages ?? 1,
       };
@@ -52,7 +51,8 @@ export default function ProductsPage() {
   const items = useMemo(() => data?.items ?? [], [data?.items]);
   const totalPages = data?.pages ?? 1;
 
-  // Derive category filter chips from the loaded items (best-effort).
+  // Derive category filter chips from the loaded items (best-effort; the
+  // authoritative list would need a dedicated endpoint, this keeps it simple).
   const categories = useMemo(() => {
     const set = new Set<string>();
     items.forEach((p) => { if (p.category) set.add(p.category); });
@@ -77,7 +77,7 @@ export default function ProductsPage() {
               transition={{ duration: 0.5 }}
               className="h-label mb-3"
             >
-              {t('products.label')}
+              {t('projects.label')}
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -85,7 +85,7 @@ export default function ProductsPage() {
               transition={{ duration: 0.6, delay: 0.05 }}
               className="text-4xl sm:text-5xl font-extrabold text-white mb-4"
             >
-              {t('products.pageTitle')}
+              {t('projects.pageTitle')}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -94,16 +94,13 @@ export default function ProductsPage() {
               className="mx-auto max-w-2xl text-base"
               style={{ color: 'var(--ink-5)' }}
             >
-              {t('products.pageSubtitle')}
+              {t('projects.pageSubtitle')}
             </motion.p>
           </div>
         </section>
 
         {/* Content */}
         <section className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-24">
-
-          {/* Flagship products — always shown so the catalog is never empty. */}
-          <FlagshipProducts />
 
           {/* Category filter chips */}
           {categories.length > 0 && (
@@ -118,7 +115,7 @@ export default function ProductsPage() {
                   border: `1px solid ${category === null ? 'rgba(251,191,36,0.3)' : 'var(--ov-med)'}`,
                 }}
               >
-                {t('products.all')}
+                {t('projects.all')}
               </button>
               {categories.map((c) => (
                 <button
@@ -147,40 +144,36 @@ export default function ProductsPage() {
           {isError && (
             <div className="flex flex-col items-center gap-3 py-24 text-center">
               <AlertCircle className="h-8 w-8 text-red-400" />
-              <p className="text-sm" style={{ color: 'var(--ink-5)' }}>{t('products.loadError')}</p>
+              <p className="text-sm" style={{ color: 'var(--ink-5)' }}>{t('projects.loadError')}</p>
               <button
                 type="button"
                 onClick={() => refetch()}
                 className="rounded-xl border px-4 py-2 text-xs text-[#aaa] hover:text-white"
                 style={{ borderColor: 'var(--ov-med)' }}
               >
-                {t('products.retry')}
+                {t('projects.retry')}
               </button>
             </div>
           )}
 
-          {/* Closing call-to-action (shown once the flagship catalog has rendered). */}
           {!isLoading && !isError && items.length === 0 && (
-            <div className="mt-16 flex flex-col items-center gap-4 rounded-2xl border py-14 text-center"
-                 style={{ borderColor: 'var(--ov-med)', background: 'var(--surface-1)' }}>
-              <p className="mx-auto max-w-xl px-6 text-base" style={{ color: 'var(--ink-3)' }}>
-                {t('products.ctaText')}
-              </p>
-              <a
-                href="/#contact"
-                className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1a1a1a' }}
+            <div className="flex flex-col items-center gap-4 py-24 text-center">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                style={{ border: '1px solid var(--ov-med)', background: 'var(--surface-1)' }}
               >
-                {t('products.ctaButton')}
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-              </a>
+                <FolderGit2 className="h-7 w-7" style={{ color: 'var(--ink-6)' }} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: 'var(--ink-5)' }}>
+                {t('projects.empty')}
+              </p>
             </div>
           )}
 
           {!isLoading && !isError && items.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((product, i) => (
-                <ProductCard key={product.id} product={product} index={i} />
+              {items.map((project, i) => (
+                <ProjectCard key={project.id} project={project} index={i} />
               ))}
             </div>
           )}
@@ -195,7 +188,7 @@ export default function ProductsPage() {
                 className="rounded-xl border px-4 py-2 text-xs font-medium text-[#aaa] transition-all hover:text-white disabled:opacity-40"
                 style={{ borderColor: 'var(--ov-med)' }}
               >
-                {t('products.prev')}
+                {t('projects.prev')}
               </button>
               <span className="text-xs" style={{ color: 'var(--ink-6)' }}>
                 {page} / {totalPages}
@@ -207,7 +200,7 @@ export default function ProductsPage() {
                 className="rounded-xl border px-4 py-2 text-xs font-medium text-[#aaa] transition-all hover:text-white disabled:opacity-40"
                 style={{ borderColor: 'var(--ov-med)' }}
               >
-                {t('products.next')}
+                {t('projects.next')}
               </button>
             </div>
           )}
