@@ -83,7 +83,7 @@ function makeServer() {
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
-  let chatService: { getConversationById: jest.Mock; saveMessage: jest.Mock; markAllAsRead: jest.Mock; markMessageAsRead: jest.Mock };
+  let chatService: { getConversationById: jest.Mock; saveMessage: jest.Mock; markAllAsRead: jest.Mock; markMessageAsRead: jest.Mock; assertConversationMembership: jest.Mock };
   let jwtService: { verify: jest.Mock };
   let configService: { get: jest.Mock };
   let notificationService: { createMessageNotification: jest.Mock };
@@ -96,6 +96,9 @@ describe('ChatGateway', () => {
       saveMessage: jest.fn(),
       markAllAsRead: jest.fn().mockResolvedValue(undefined),
       markMessageAsRead: jest.fn(),
+      // Defaults to "is a member" so pre-existing happy-path tests are unaffected;
+      // the dedicated security specs override this to simulate an outsider.
+      assertConversationMembership: jest.fn().mockResolvedValue(undefined),
     };
     jwtService = { verify: jest.fn() };
     configService = { get: jest.fn() };

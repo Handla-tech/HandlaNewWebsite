@@ -119,3 +119,81 @@ google libs) on a branch and running the backend test suite.
 - [ ] `NODE_ENV=production` (enables CSP, HSTS, secure cookies, error masking).
 - [ ] TLS terminated at Traefik; HSTS is served by the API.
 - [ ] Re-run `npm audit` before each release and schedule the Next.js 15 upgrade.
+
+---
+
+# Penetration Test Report — Next.js 15 Upgrade + AppSec Pass (branch `security/nextjs-15-pentest`)
+
+**Scope:** Next.js 14→15 security upgrade + controlled security validation.
+**Method:** static review + automated adversarial Jest tests exercising the real
+code paths (guards, DTO whitelist, service access checks, WebSocket gateway
+auth, analytics allow‑list). No production data touched; no live DB required.
+
+## Findings
+
+### 🟠 HIGH — WS-01 Disabled/archived user retains WebSocket (chat) access
+- **Component:** backend `chat.gateway.ts` `authenticateSocket()`
+- **Attack scenario:** a user disabled/archived mid‑session (or reconnecting)
+  keeps a valid access token; the HTTP `JwtStrategy` rejects them on every
+  request, but the socket handshake only did `findOne({id})` and admitted them,
+  so they kept sending/reading chat in real time.
+- **Root cause:** the `isDisabled || isArchived` check added to `JwtStrategy`
+  (PR #23) was never mirrored on the WebSocket auth path.
+- **Fix:** `authenticateSocket()` now rejects (`return null` → disconnect) when
+  `user.isDisabled || user.isArchived`, matching the HTTP guard.
+- **Regression test:** `src/security/websocket-chat.pentest.spec.ts` → CHAT-01.
+
+### 🟡 MEDIUM — WS-02 Cross-conversation IDOR/BOLA via `markAsRead`
+- **Component:** backend `chat.gateway.ts` `handleMarkAsRead` + `chat.service.ts` `markAllAsRead`
+- **Attack scenario:** an authenticated user emits `markAsRead {conversationId:<victim>}`;
+  `markAllAsRead` had no membership check, so it cleared another user's unread
+  state and broadcast `messagesRead` into that room (integrity tamper + existence leak).
+- **Root cause:** `markAllAsRead` trusted the caller; the WS handler did not
+  assert membership (unlike the `messageId` branch, which does).
+- **Fix:** new `ChatService.assertConversationMembership()` is invoked in the
+  `conversationId` branch before mutating; denies non‑members with `WsException`.
+- **Regression test:** `src/security/websocket-chat.pentest.spec.ts` → CHAT-02.
+
+### 🟢 LOW — WS-03 Typing‑indicator spoofing into arbitrary rooms
+- **Component:** backend `chat.gateway.ts` `handleTyping`
+- **Attack scenario:** authenticated user broadcasts "X is typing…" into a
+  conversation room they are not part of. (Impact limited: socket.io only
+  delivers to sockets already joined to that room.)
+- **Fix:** `handleTyping` now calls `assertConversationMembership()` and fails
+  closed (silent return) for non‑members.
+- **Regression test:** `src/security/websocket-chat.pentest.spec.ts` → CHAT-03.
+
+### ℹ️ INFO — FE-01 No security headers on Next.js HTML responses
+- **Component:** frontend `next.config.js` (no `headers()` block)
+- **Observation:** helmet protects API responses, but HTML pages served by Next
+  carry no CSP / X‑Content‑Type‑Options / Referrer‑Policy / Permissions‑Policy /
+  X‑Frame‑Options. `poweredByHeader:false` is set (no X‑Powered‑By).
+- **Status:** documented; recommended Phase‑4 fix is a `headers()` block in
+  `next.config.js` (not yet applied — see "Remaining work").
+
+## Verified‑secure (no defect found)
+- WebSocket identity is derived from the verified JWT, never from client
+  `senderId`/`userId`/`role` (CHAT-04 proves overposting is ignored).
+- Analytics dynamic group‑by column is allow‑listed → SQLi rejected (SQLI-01/02/03).
+- Global `ValidationPipe {whitelist, forbidNonWhitelisted}` strips/blocks
+  mass‑assignment; guard chain Jwt→Roles→Ownership is deny‑by‑default.
+
+## Dependency audit
+- **Frontend:** 5 high (pre‑upgrade) → **0** after Next 15.5.23 + `overrides`
+  (`sharp ^0.35.3`, `postcss ^8.5.26`). No Next 16 required.
+- **Backend:** 41 findings (3 low / 23 moderate / 15 high), all transitive/dev
+  (e.g. lodash prototype pollution). Unchanged this pass; full per‑finding
+  classification is the remaining Phase‑5 deliverable.
+
+## Automated security tests added
+- `src/security/websocket-chat.pentest.spec.ts` (CHAT-01..05)
+- `src/security/injection.pentest.spec.ts` (SQLI-01..03)
+- Run: `cd handla-backend && npx jest src/security/`
+- Full suite: `cd handla-backend && npx jest` → 63 suites / 894 tests green.
+
+## Remaining work (tracked, not yet done on this branch)
+Auth (24‑case), authorization/IDOR across all modules, role‑escalation/overposting,
+XSS/CSP, CSRF/CORS, JWT/cookie flags, rate‑limit, file‑upload, path‑traversal,
+SSRF, request‑smuggling, cache‑poisoning, open‑redirect, HTTP‑method, fuzzing,
+error‑handling test groups; frontend security‑headers fix (FE‑01); full Phase‑5
+dependency classification; complete 28‑item final report.
