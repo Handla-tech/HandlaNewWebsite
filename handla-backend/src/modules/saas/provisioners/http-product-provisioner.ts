@@ -8,6 +8,7 @@ import {
 } from './product-provisioner.interface';
 import { ProvisioningAction } from '../../../common/enums';
 import type { SaasConfig } from '../../../config/saas.config';
+import { assertSafeOutboundUrl, UnsafeUrlError } from '../../../common/security/safe-url';
 
 /**
  * SAAS-1 — Default provisioner that talks to a product's service-to-service
@@ -129,9 +130,31 @@ export class HttpProductProvisioner implements ProductProvisioner {
       };
     }
 
+    const url = `${base}${path}`;
+
+    // SSRF-01 defence-in-depth: even though provisioningBaseUrl is ADMIN-only,
+    // refuse to fetch internal/private/loopback targets (cloud metadata, RFC-1918,
+    // loopback, link-local) or non-http(s) schemes. An optional exact-host
+    // allow-list (SAAS_PROVISION_HOST_ALLOWLIST, comma-separated) pins outbound
+    // provisioning to known product hosts. Private targets are only permitted in
+    // non-production (local product stacks bind to localhost).
+    const allowlist = (process.env.SAAS_PROVISION_HOST_ALLOWLIST || '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean);
+    const allowPrivate = (process.env.NODE_ENV || 'development') !== 'production';
+    try {
+      assertSafeOutboundUrl(url, { allowlist, allowPrivate });
+    } catch (e) {
+      if (e instanceof UnsafeUrlError) {
+        this.logger.warn(`${action} blocked (SSRF guard): ${e.message} [${url}]`);
+        return { ok: false, error: `Blocked outbound target: ${e.message}` };
+      }
+      throw e;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.cfg.timeoutMs);
-    const url = `${base}${path}`;
 
     try {
       const res = await fetch(url, {
