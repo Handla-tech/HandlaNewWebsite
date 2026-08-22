@@ -73,6 +73,22 @@ fi
 log "Building images..."
 docker compose $COMPOSE_FILES build
 
+# Bring the existing stack DOWN before UP.
+#
+# Why: an interrupted previous `up -d` can leave a half-renamed container
+# behind (e.g. "53532e2b81e8_handla_api") that still holds the "handla_api"
+# name. The next `up` then fails with:
+#   Conflict. The container name "/…_handla_api" is already in use…
+# `down --remove-orphans` clears those leftovers so `up` always gets a clean
+# slate. A few seconds of downtime here is acceptable for a deploy step and is
+# far preferable to a wedged, half-updated stack.
+log "Stopping existing stack (clears any half-renamed/orphaned containers)..."
+docker compose $COMPOSE_FILES down --remove-orphans || true
+
+# Belt-and-braces: force-remove the known fixed-name containers in case a
+# leftover from a NON-matching compose project still squats the name.
+docker rm -f handla_api handla_web handla_mysql handla_redis >/dev/null 2>&1 || true
+
 log "Starting/updating the stack (routed via Traefik)..."
 docker compose $COMPOSE_FILES up -d
 
