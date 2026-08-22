@@ -2487,6 +2487,8 @@
         "contentPlaceholder": "ماذا قال العميل…",
         "imageUrl": "رابط صورة الأفاتار",
         "imageUrlPlaceholder": "https://… (اختياري)",
+        "uploadImage": "رفع صورة",
+        "uploading": "جارٍ الرفع… {{pct}}٪",
         "preview": "معاينة",
         "rating": "التقييم *",
         "ratingOutOf": "{{rating}} / 5",

@@ -21,10 +21,12 @@ import {
   Star, Plus, Pencil, Trash2, X, Loader2,
   AlertCircle, Quote, RefreshCw, ImageIcon,
   CheckCircle2, Search, ChevronLeft, ChevronRight,
+  Upload,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { testimonialApi } from '@/lib/api';
+import { safeUploadWebsiteImage } from '@/lib/website-image-uploader';
 import { cn } from '@/lib/utils';
 import type { Testimonial } from '@/types';
 
@@ -168,6 +170,28 @@ function TestimonialModal({
   const imageUrl = watch('imageUrl');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // ─── Avatar image upload → S3 (same pipeline as the projects modal) ──────────
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    setUploadProgress(0);
+    const { url, error } = await safeUploadWebsiteImage({
+      file,
+      onProgress: setUploadProgress,
+    });
+    setUploading(false);
+    if (error) { setUploadError(error); return; }
+    if (url) setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true });
+  };
+
   const onSubmit = async (data: TestimonialFormData) => {
     setSubmitError(null);
     const payload = {
@@ -267,26 +291,39 @@ function TestimonialModal({
             />
           </Field>
 
-          <Field label={t('erp.testimonials.modal.imageUrl')} error={errors.imageUrl?.message}>
-            <div className="flex gap-2">
-              <input
-                {...register('imageUrl')}
-                placeholder={t('erp.testimonials.modal.imageUrlPlaceholder')}
-                className={cn(inputClass, 'flex-1')}
-              />
+          <Field label={t('erp.testimonials.modal.imageUrl')} error={errors.imageUrl?.message ?? uploadError ?? undefined}>
+            <div className="flex items-start gap-3">
+              {/* Avatar preview */}
               {imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={imageUrl}
                   alt={t('erp.testimonials.modal.preview')}
-                  className="h-10 w-10 flex-shrink-0 rounded-full border border-[#2a2a2a] object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  className="h-12 w-12 flex-shrink-0 rounded-full border border-[#2a2a2a] bg-white object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
                 />
               ) : (
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] bg-[#141414]">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] bg-[#141414]">
                   <ImageIcon className="h-4 w-4 text-[#555]" />
                 </div>
               )}
+
+              <div className="flex-1 space-y-2">
+                {/* Hidden native file input + visible upload button */}
+                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden" onChange={handleFilePick} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-2 text-xs font-semibold text-[#fbbf24] transition-all hover:bg-[#fbbf24]/20 disabled:cursor-wait disabled:opacity-60">
+                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {uploading ? t('erp.testimonials.modal.uploading', { pct: uploadProgress }) : t('erp.testimonials.modal.uploadImage')}
+                </button>
+                {/* Optional: paste a URL directly too */}
+                <input
+                  {...register('imageUrl')}
+                  placeholder={t('erp.testimonials.modal.imageUrlPlaceholder')}
+                  className={cn(inputClass, 'text-[11px]')}
+                />
+              </div>
             </div>
           </Field>
 

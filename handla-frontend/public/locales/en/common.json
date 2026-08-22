@@ -2487,6 +2487,8 @@
         "contentPlaceholder": "What the client said…",
         "imageUrl": "Avatar Image URL",
         "imageUrlPlaceholder": "https://… (optional)",
+        "uploadImage": "Upload image",
+        "uploading": "Uploading… {{pct}}%",
         "preview": "preview",
         "rating": "Rating *",
         "ratingOutOf": "{{rating}} / 5",
