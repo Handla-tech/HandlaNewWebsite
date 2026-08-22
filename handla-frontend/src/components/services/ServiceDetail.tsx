@@ -149,7 +149,11 @@ function RelevantProjects({
                     src={p.imageUrl}
                     alt={title}
                     loading="lazy"
-                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                    className={`h-full w-full ${
+                      p.imageUrl.startsWith('/projects/')
+                        ? 'object-cover'
+                        : 'object-contain p-4'
+                    } transition-transform duration-500 group-hover:scale-[1.03]`}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
                     }}

@@ -74,10 +74,20 @@ export class AwsService {
   }
 
   // ─── Generate Presigned Upload URL ───────────────────────────────────────────
+  /**
+   * @param publicRead When true the presigned PUT includes `x-amz-acl: public-read`
+   *   so the uploaded object is world-readable via its plain S3 URL. Used for
+   *   PUBLIC website assets (project/product cover images) that the marketing
+   *   site renders directly in an <img> without a short-lived signed URL. The
+   *   browser MUST send the matching `x-amz-acl: public-read` header on the PUT.
+   *   Requires the bucket to allow object ACLs (ObjectOwnership=BucketOwnerPreferred
+   *   with "Block public access → ACLs" disabled). Defaults to false (private).
+   */
   async generatePresignedUrl(
     key: string,
     contentType: string,
     expiresInOverride?: number,
+    publicRead = false,
   ): Promise<PresignedUrlResult> {
     const expiry = expiresInOverride ?? this.expiresIn;
     const physicalKey = this.withPrefix(key);
@@ -86,6 +96,7 @@ export class AwsService {
       Bucket: this.bucket,
       Key: physicalKey,
       ContentType: contentType,
+      ...(publicRead ? { ACL: 'public-read' as const } : {}),
     });
 
     const url = await getSignedUrl(this.s3Client, command, { expiresIn: expiry });

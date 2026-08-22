@@ -12,23 +12,55 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 
 import { WebsiteProjectService } from './website-project.service';
 import { CreateWebsiteProjectDto } from './dto/create-website-project.dto';
 import { UpdateWebsiteProjectDto } from './dto/update-website-project.dto';
 import { WebsiteProjectQueryDto } from './dto/website-project-query.dto';
+import { WebsiteImageUploadDto } from './dto/website-image-upload.dto';
 import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
+import { AwsService } from '../aws/aws.service';
 
 @ApiTags('website-content')
 @Controller('website/projects')
 export class WebsiteProjectController {
-  constructor(private readonly service: WebsiteProjectService) {}
+  constructor(
+    private readonly service: WebsiteProjectService,
+    private readonly awsService: AwsService,
+  ) {}
+
+  // ─── POST /api/website/projects/image-upload  (ADMIN only) ───────────────────
+  // Presigned S3 PUT URL for uploading a website project/product cover image.
+  // The browser then PUTs the file directly to S3 and stores the returned
+  // fileUrl on the project's imageUrl. Restricted to image MIME types only.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('image-upload')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Request a presigned S3 URL to upload a website image (ADMIN only)' })
+  @ApiBody({ type: WebsiteImageUploadDto })
+  @ApiResponse({ status: 200, description: 'Presigned upload URL generated' })
+  @ApiResponse({ status: 403, description: 'Admin role required' })
+  async getImageUploadUrl(@Body() dto: WebsiteImageUploadDto) {
+    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const key = `website/projects/${Date.now()}-${safeName}`;
+    // publicRead=true → object is world-readable so the public marketing site can
+    // render it directly in an <img> (no short-lived signed URL needed).
+    const result = await this.awsService.generatePresignedUrl(
+      key,
+      dto.contentType,
+      undefined,
+      true,
+    );
+    return { message: 'Website image upload URL generated', data: result };
+  }
 
   // ─── GET /api/website/projects  (PUBLIC) ─────────────────────────────────────
   @Public()

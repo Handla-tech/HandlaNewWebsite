@@ -7,6 +7,7 @@ import { WebsiteProjectController } from './website-project.controller';
 import { WebsiteProductController } from './website-product.controller';
 import { WebsiteProjectService } from './website-project.service';
 import { WebsiteProductService } from './website-product.service';
+import { AwsModule } from '../aws/aws.module';
 
 /**
  * WebsiteModule — the "Website Content" umbrella.
@@ -22,7 +23,7 @@ import { WebsiteProductService } from './website-product.service';
  * ⚠️  Website Projects are NOT related to ERP `Project`s (modules/projects).
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([WebsiteProject, WebsiteProduct])],
+  imports: [TypeOrmModule.forFeature([WebsiteProject, WebsiteProduct]), AwsModule],
   controllers: [WebsiteProjectController, WebsiteProductController],
   providers: [WebsiteProjectService, WebsiteProductService],
   exports: [WebsiteProjectService, WebsiteProductService],
