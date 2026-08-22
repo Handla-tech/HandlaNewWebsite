@@ -17,6 +17,17 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T
     const response = httpContext.getResponse();
     const statusCode = response.statusCode;
 
+    // CACHE-01 — every API response is dynamic, per-user, cookie-authenticated
+    // JSON. Mark it non-cacheable so no shared/intermediary/browser cache can
+    // ever serve one user's authenticated payload to another (web cache
+    // poisoning / cross-user cache leakage). `Vary: Cookie, Authorization`
+    // additionally keys any private cache on the credential.
+    if (response.setHeader) {
+      response.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      response.setHeader('Pragma', 'no-cache');
+      response.setHeader('Vary', 'Cookie, Authorization');
+    }
+
     return next.handle().pipe(
       map((data) => ({
         success: true,
