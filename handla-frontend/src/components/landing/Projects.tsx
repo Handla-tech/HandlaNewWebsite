@@ -130,54 +130,10 @@ function FeaturedProject({ project }: { project: WebsiteProject }) {
   return body;
 }
 
-// ─── Static fallback (shown when no featured projects exist yet) ──────────────
-const FALLBACK: WebsiteProject[] = [
-  {
-    id: 'fp1',
-    title: 'TechFlow SaaS Platform',
-    clientName: 'TechFlow',
-    summary: 'A multi-tenant SaaS platform with billing, analytics and a real-time dashboard, launched in 6 weeks.',
-    description: 'A multi-tenant SaaS platform with billing, analytics and a real-time dashboard.',
-    category: 'SaaS',
-    imageUrl: null,
-    projectUrl: null,
-    tags: ['Next.js', 'NestJS', 'Stripe', 'PostgreSQL'],
-    featured: true,
-    sortOrder: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'fp2',
-    title: 'RetailPro ERP',
-    clientName: 'RetailPro Arabia',
-    summary: 'An enterprise ERP handling 10,000+ daily transactions across inventory, sales and accounting.',
-    description: 'An enterprise ERP handling 10,000+ daily transactions.',
-    category: 'ERP',
-    imageUrl: null,
-    projectUrl: null,
-    tags: ['React', 'Node.js', 'MySQL', 'Redis'],
-    featured: true,
-    sortOrder: 1,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'fp3',
-    title: 'HealthBridge Patient Portal',
-    clientName: 'HealthBridge Clinic',
-    summary: 'A bilingual (Arabic-first) patient portal with appointment booking and secure records.',
-    description: 'A bilingual patient portal with appointment booking and secure records.',
-    category: 'Healthcare',
-    imageUrl: null,
-    projectUrl: null,
-    tags: ['Next.js', 'RTL', 'TypeScript'],
-    featured: true,
-    sortOrder: 2,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// NOTE: No hardcoded fallback projects. The homepage projects section renders
+// ONLY genuine, admin-managed records from the Website Projects API/DB. When the
+// API is empty the section shows a truthful empty state — we never substitute
+// fabricated portfolio entries.
 
 export default function Projects() {
   const ref = useRef<HTMLDivElement>(null);
@@ -206,8 +162,8 @@ export default function Projects() {
     staleTime: 5 * 60_000,
   });
 
-  // Use real data whenever the API returns any projects (featured or not).
-  // The hardcoded FALLBACK only shows while loading or when the DB is empty.
+  // Genuine, admin-managed Website Projects only.
+  // Empty API -> truthful empty state (handled below); never fabricated cards.
   const items = (data && data.length > 0) ? data : [];
 
   return (

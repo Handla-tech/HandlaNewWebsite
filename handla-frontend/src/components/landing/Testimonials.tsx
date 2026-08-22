@@ -2,55 +2,16 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Star, Quote, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { testimonialApi } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Testimonial } from '@/types';
 
-// ─── Static fallback testimonials ─────────────────────────────────────────────
-const FALLBACK: Testimonial[] = [
-  {
-    id: 'f1',
-    clientName: 'Sarah Al-Rashid',
-    clientCompany: 'TechFlow SaaS',
-    content: 'Handla transformed our idea into a production-ready SaaS platform in just 6 weeks. The quality and attention to detail were outstanding. Our investors were impressed.',
-    imageUrl: null,
-    rating: 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'f2',
-    clientName: 'Omar Al-Khatib',
-    clientCompany: 'RetailPro Arabia',
-    content: 'The ERP system they built for us handles 10,000+ daily transactions without a hiccup. Professional team, on-time delivery, and excellent post-launch support.',
-    imageUrl: null,
-    rating: 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'f3',
-    clientName: 'Leila Mansour',
-    clientCompany: 'HealthBridge Clinic',
-    content: 'Their bilingual team was perfect for our Arabic-first patient portal. Lightning fast, and the RTL support is flawless. Highly recommended.',
-    imageUrl: null,
-    rating: 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'f4',
-    clientName: 'Ahmed Benali',
-    clientCompany: 'GovDigital',
-    content: 'Handla built our ministry portal with exceptional security and accessibility standards. They navigated regulatory requirements like experts. Truly impressive.',
-    imageUrl: null,
-    rating: 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// NOTE: No hardcoded fallback testimonials. Client testimonials are shown ONLY
+// when the backend API returns genuine, admin-managed records. When the API is
+// empty the entire section is hidden (see the early return in the component) —
+// we never fabricate reviews, names, companies, or ratings.
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -100,20 +61,24 @@ export default function Testimonials() {
   });
 
   const items = (data && data.length > 0) ? data : [];
-  if (!items.length) return null;
-  const prev = useCallback(() => setIndex((i) => (i - 1 + items.length) % items.length), [items.length]);
-  const next = useCallback(() => setIndex((i) => (i + 1) % items.length), [items.length]);
-  const current = items[index];
+  const safeLen = items.length || 1;
+  const prev = useCallback(() => setIndex((i) => (i - 1 + safeLen) % safeLen), [safeLen]);
+  const next = useCallback(() => setIndex((i) => (i + 1) % safeLen), [safeLen]);
 
   // Auto-play every 5s
   useEffect(() => {
-    if (paused) return;
+    if (paused || items.length === 0) return;
     const id = setInterval(() => {
       setIndex((i) => (i + 1) % items.length);
     }, 5000);
     return () => clearInterval(id);
   }, [items.length, paused]);
 
+  // Hide the whole section when the API returns no genuine testimonials —
+  // never fabricate reviews. All hooks above run unconditionally first.
+  if (items.length === 0) return null;
+
+  const current = items[index];
   const avatarStyle = AVATAR_COLORS[index % AVATAR_COLORS.length];
 
   return (
@@ -212,14 +177,6 @@ export default function Testimonials() {
                   )}
                 </div>
 
-                {/* Gold verified badge */}
-                <div
-                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-                  style={{ background: 'rgba(251,191,36,0.08)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.18)' }}
-                >
-                  <BadgeCheck className="w-3.5 h-3.5" />
-                  Verified Client
-                </div>
               </div>
             </motion.div>
           </AnimatePresence>
