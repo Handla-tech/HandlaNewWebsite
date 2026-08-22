@@ -85,26 +85,26 @@ export default function Footer() {
         {/* ── Top row: logo + nav + socials ──────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 py-8">
 
-          {/* Logo */}
-          <Link href={lh('/')} className="flex items-center gap-2 group flex-shrink-0" aria-label="Handla — Home">
+          {/* Logo (theme-adaptive full lockup) */}
+          <Link href={lh('/')} className="flex items-center group flex-shrink-0" aria-label="Handla — Home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/handla-mark.png"
-              alt=""
-              aria-hidden="true"
-              width={26}
-              height={30}
-              className="h-7 w-auto select-none"
+              src="/handla-logo-dark.png"
+              alt="Handla"
+              width={922}
+              height={503}
+              className="logo-dark h-8 w-auto select-none"
               draggable={false}
             />
-            <span className="font-mono font-bold text-base tracking-tight">
-              <span className="text-white">&lt;Handla </span>
-              <span
-                className="transition-all duration-300"
-                style={{ color: '#fbbf24' }}
-              >/</span>
-              <span className="text-white">&gt;</span>
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/handla-logo-light.png"
+              alt="Handla"
+              width={922}
+              height={503}
+              className="logo-light h-8 w-auto select-none"
+              draggable={false}
+            />
           </Link>
 
           {/* Nav links */}

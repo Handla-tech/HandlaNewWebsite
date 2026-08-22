@@ -264,30 +264,31 @@ export default function Navbar() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
 
-            {/* ── Logo ──────────────────────────────────────────────────── */}
-            <Link href={lh('/')} className="flex items-center gap-2 group" aria-label="Handla — Home">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/handla-mark.png"
-                alt=""
-                aria-hidden="true"
-                width={30}
-                height={34}
-                className="h-8 w-auto select-none"
-                style={{ filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.35))' }}
-                draggable={false}
-              />
+            {/* ── Logo (theme-adaptive full lockup) ─────────────────────── */}
+            <Link href={lh('/')} className="flex items-center group" aria-label="Handla — Home">
               <motion.span
-                className="font-mono font-bold text-lg tracking-tight"
+                className="inline-flex"
                 whileHover={{ scale: 1.03 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               >
-                <span className="text-white">&lt;Handla </span>
-                <span
-                  className="transition-all duration-300"
-                  style={{ color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.6)' }}
-                >/</span>
-                <span className="text-white">&gt;</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/handla-logo-dark.png"
+                  alt="Handla"
+                  width={922}
+                  height={503}
+                  className="logo-dark h-9 w-auto select-none"
+                  draggable={false}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/handla-logo-light.png"
+                  alt="Handla"
+                  width={922}
+                  height={503}
+                  className="logo-light h-9 w-auto select-none"
+                  draggable={false}
+                />
               </motion.span>
             </Link>
 
