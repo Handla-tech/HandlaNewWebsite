@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { testimonialApi } from '@/lib/api';
@@ -45,8 +45,6 @@ const AVATAR_COLORS = [
 ];
 
 export default function Testimonials() {
-  const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const { t }  = useTranslation();
@@ -95,7 +93,6 @@ export default function Testimonials() {
   return (
     <section
       id="testimonials"
-      ref={ref}
       className="relative py-24 sm:py-32 overflow-hidden"
       style={{ background: 'var(--page-bg)' }}
     >
@@ -117,10 +114,18 @@ export default function Testimonials() {
         onMouseLeave={() => setPaused(false)}
       >
 
-        {/* Section header */}
+        {/* Section header
+            Uses whileInView (self-contained per element) instead of a shared
+            `inView ? … : {}` gate. The old gate could leave the content stuck
+            at opacity:0 forever if the section's IntersectionObserver never
+            fired (e.g. Safari timing, or jumping straight to the section) —
+            producing a rendered-but-invisible card (the "empty testimonials"
+            bug). whileInView + `once` reveals reliably and, if the observer
+            never fires, the content is still laid out (no permanent invisibility). */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
@@ -136,7 +141,8 @@ export default function Testimonials() {
         {/* Card */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <AnimatePresence mode="wait">

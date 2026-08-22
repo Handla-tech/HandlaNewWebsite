@@ -34,19 +34,41 @@ export default function ProjectCard({
   const featuredLabel = locale === 'ar' ? 'مميز' : 'Featured';
 
   // Image fit heuristic:
-  //  • Full-bleed banner art bundled with the site (a relative /projects/…
-  //    path, e.g. the Emdad visual-identity banner) fills the card edge-to-edge
-  //    with `cover`.
+  //  • The Emdad visual-identity banner is shown WHOLE (contain) so its
+  //    wordmark is never cropped, and the letterbox margins are filled with
+  //    Emdad's own brand teal (#155166) so the panel reads as intentional
+  //    brand colour rather than empty white/grey.
+  //  • Other bundled banner art (a relative /projects/… path) fills the card
+  //    edge-to-edge with `cover`.
   //  • Everything else — square brand logos uploaded to S3 (Tameer, Homy) and
-  //    admin uploads — is shown whole & centered with `contain` + padding so it
-  //    is never cropped. This is the safe default.
+  //    admin uploads — is shown whole & centered with `contain` + padding on a
+  //    clean white panel so the logo is never cropped. This is the safe default.
   const img = project.imageUrl ?? '';
   const isLocalBanner = img.startsWith('/projects/');
-  const imageClass = isLocalBanner ? 'object-cover' : 'object-contain p-3';
-  // Contained brand logos usually carry a white/transparent background, so we
-  // sit them on a clean light panel — this makes them look integrated instead
-  // of like a floating cutout on the dark card. Banners keep the dark surface.
-  const imageBg = isLocalBanner ? 'var(--ov-soft)' : '#ffffff';
+  // Detect Emdad by its brand identity (title), not by image path — the banner
+  // may be a bundled /projects/emdad/… asset OR an admin S3 upload; either way
+  // it is the wide teal visual-identity banner that should sit on brand teal.
+  const isEmdadBanner =
+    project.title?.trim().toLowerCase() === 'emdad' ||
+    project.titleAr?.trim() === 'إمداد' ||
+    img.includes('/projects/emdad/');
+
+  let imageClass: string;
+  let imageBg: string;
+  if (isEmdadBanner) {
+    // Emdad brand teal fills the letterbox area behind the contained banner.
+    imageClass = 'object-contain p-3';
+    imageBg = '#155166';
+  } else if (isLocalBanner) {
+    imageClass = 'object-cover';
+    imageBg = 'var(--ov-soft)';
+  } else {
+    // Contained brand logos usually carry a white/transparent background, so we
+    // sit them on a clean light panel — this makes them look integrated instead
+    // of like a floating cutout on the dark card.
+    imageClass = 'object-contain p-3';
+    imageBg = '#ffffff';
+  }
 
   const CardInner = (
     <motion.div

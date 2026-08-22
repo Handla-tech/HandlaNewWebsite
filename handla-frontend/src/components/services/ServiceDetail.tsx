@@ -139,32 +139,39 @@ function RelevantProjects({
               className="group h-card h-card-interactive flex h-full flex-col overflow-hidden rounded-2xl"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
-              {p.imageUrl && (
-                <div
-                  className="relative flex items-center justify-center overflow-hidden"
-                  style={{
-                    aspectRatio: '16 / 9',
-                    background: p.imageUrl.startsWith('/projects/')
-                      ? 'var(--surface-3)'
-                      : '#ffffff',
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.imageUrl}
-                    alt={title}
-                    loading="lazy"
-                    className={`h-full w-full ${
-                      p.imageUrl.startsWith('/projects/')
-                        ? 'object-cover'
-                        : 'object-contain p-6'
-                    } transition-transform duration-500 group-hover:scale-[1.03]`}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+              {p.imageUrl && (() => {
+                // Emdad visual-identity banner: show WHOLE (contain) with its
+                // brand teal (#155166) filling the letterbox margins. Other
+                // bundled banners fill edge-to-edge; logos sit on a white panel.
+                const isEmdad =
+                  p.title?.trim().toLowerCase() === 'emdad' ||
+                  p.titleAr?.trim() === 'إمداد' ||
+                  p.imageUrl.includes('/projects/emdad/');
+                const isBanner = p.imageUrl.startsWith('/projects/');
+                const bg = isEmdad ? '#155166' : isBanner ? 'var(--surface-3)' : '#ffffff';
+                const fit = isEmdad
+                  ? 'object-contain p-6'
+                  : isBanner
+                    ? 'object-cover'
+                    : 'object-contain p-6';
+                return (
+                  <div
+                    className="relative flex items-center justify-center overflow-hidden"
+                    style={{ aspectRatio: '16 / 9', background: bg }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.imageUrl}
+                      alt={title}
+                      loading="lazy"
+                      className={`h-full w-full ${fit} transition-transform duration-500 group-hover:scale-[1.03]`}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                );
+              })()}
               <div className="flex flex-1 flex-col gap-2 p-5">
                 {cat && (
                   <span
