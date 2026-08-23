@@ -42,6 +42,27 @@ export class Invoice {
   @Column({ name: 'invoice_number', type: 'varchar', length: 50, unique: true })
   invoiceNumber: string;
 
+  // ─── Public capability token (INFO-01) ──────────────────────────────────────
+  // Opaque, high-entropy token — independent of `id`. Used by the secure public
+  // route /erp/invoices/public/token/:token. NULL until a public link is
+  // generated. The legacy /public/:id (raw UUID) route remains supported for a
+  // transitional window (see PUBLIC_DOC_LEGACY_ID_LINKS) for pre-existing links.
+  @Column({ name: 'public_token', type: 'varchar', length: 64, nullable: true, unique: true })
+  @Index('idx_invoices_public_token')
+  publicToken: string | null;
+
+  /** When the current token expires. NULL = never expires (permanent link). */
+  @Column({ name: 'public_token_expires_at', type: 'datetime', nullable: true })
+  publicTokenExpiresAt: Date | null;
+
+  /** When the current token was explicitly revoked. NULL = not revoked. */
+  @Column({ name: 'public_token_revoked_at', type: 'datetime', nullable: true })
+  publicTokenRevokedAt: Date | null;
+
+  /** When the current token was generated / last rotated (audit). */
+  @Column({ name: 'public_token_created_at', type: 'datetime', nullable: true })
+  publicTokenCreatedAt: Date | null;
+
   // ─── FK: Client (CASCADE) ─────────────────────────────────────────────────
   @Column({ name: 'client_id', type: 'varchar', length: 36 })
   @Index('idx_invoices_client_id')

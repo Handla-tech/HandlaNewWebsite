@@ -19,7 +19,19 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow:     '/',
-        disallow:  ['/auth', '/dashboard/', '/admin/', '/erp/', '/api/'],
+        // INFO-01 — kept in sync with public/robots.txt. Public capability
+        // document families are disallowed as defence-in-depth (primary guard
+        // is `noindex, nofollow` on each /*/public layout).
+        disallow:  [
+          '/auth',
+          '/dashboard/',
+          '/admin/',
+          '/erp/',
+          '/api/',
+          '/invoice/public/',
+          '/quotation/public/',
+          '/contract/public/',
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

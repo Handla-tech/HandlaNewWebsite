@@ -8,6 +8,34 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+/**
+ * INFO-01 — Redact public capability tokens from any URL before it is logged or
+ * echoed back to a client. The public routes carry the token as the last path
+ * segment: `/erp/{invoices,quotations,contracts}/public/token/<TOKEN>` and the
+ * legacy quotation route `/erp/quotations/public/<TOKEN>`. If the token is not
+ * masked, an invalid-token 404/410 would write the probed token into the app
+ * log and the JSON error body. We replace the token segment with [REDACTED].
+ *
+ * NOTE: reverse-proxy (Traefik) access logs may still record the raw request
+ * path — that is out of scope for this application-layer fix and treated as
+ * operational residual risk (documented in SECURITY.md).
+ */
+export function redactPublicToken(url: string): string {
+  if (typeof url !== 'string' || url.length === 0) return url;
+  // Split off any query string so we only touch the path.
+  const [path, ...rest] = url.split('?');
+  const suffix = rest.length ? `?${rest.join('?')}` : '';
+  const redacted = path
+    // /public/token/<token>  → /public/token/[REDACTED]
+    .replace(/(\/public\/token\/)[^/]+/gi, '$1[REDACTED]')
+    // legacy /quotations/public/<token>[/accept|/reject] → mask the token seg
+    .replace(
+      /(\/quotations\/public\/)(?!token\/)[^/]+/gi,
+      '$1[REDACTED]',
+    );
+  return redacted + suffix;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -58,8 +86,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = isProd ? 'Internal server error' : exception.message;
     }
 
+    // INFO-01 — redact any public capability token from the logged URL.
+    const safeUrl = redactPublicToken(request.url);
+
     this.logger.error(
-      `[${request.method}] ${request.url} → ${status}: ${internalMessage}`,
+      `[${request.method}] ${safeUrl} → ${status}: ${internalMessage}`,
       exception instanceof Error ? exception.stack : undefined,
     );
 
@@ -81,7 +112,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ...(exposeCode && retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
       ...(errors ? { errors } : {}),
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path: safeUrl,
     });
   }
 }

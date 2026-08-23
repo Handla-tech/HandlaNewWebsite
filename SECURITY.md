@@ -235,7 +235,7 @@ _Consolidated 2026-08-22. All numbers below are from the final commit on this br
 | DEF-01      | ProjectsService.findOne lacked service-layer deny-by-default   | Info     | —         | CWE-284  | Fixed (defense in depth)  |
 | FILE-KEY-01 | Chat presign key sanitizer only stripped whitespace            | Low      | 4.3       | CWE-22   | Fixed                     |
 | PROXY-01    | `trust proxy` unset → throttler keyed all visitors to nginx IP | Medium   | 5.3       | CWE-348  | Fixed                     |
-| INFO-01     | Public contract/invoice viewer exposes client email by UUID    | Info     | —         | CWE-200  | Accepted (capability URL) |
+| INFO-01     | Public contract/invoice viewer exposes client email by UUID    | Info     | —         | CWE-200  | Mitigated — legacy compatibility temporarily enabled |
 | REDIR-01    | OAuth callback redirect could be user-controlled               | Info     | —         | CWE-601  | Verified safe (no vuln)   |
 | THROTTLE-*  | Rate-limit activation + IP-header-spoof resistance             | Info     | —         | CWE-307  | Verified working          |
 | PT-01       | Chat responses serialized raw User entities incl. passwordHash | High     | 7.5       | CWE-359  | Fixed (verified)          |
@@ -245,7 +245,32 @@ _Consolidated 2026-08-22. All numbers below are from the final commit on this br
 **Distinction of finding types (per report requirement):**
 - **Demonstrated vulnerabilities we fixed:** WS-01, WS-02, WS-03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01, PROXY-01.
 - **Hardening / defense-in-depth (no exploit demonstrated):** CACHE-01, DEF-01.
-- **Theoretical / accepted surface:** INFO-01 (requires leaking a 122-bit UUID; rate-limited).
+- **Theoretical / accepted surface:** INFO-01 — see the dedicated mitigation section below.
+
+### INFO-01 — Public capability link hardening (Mitigated — legacy compatibility temporarily enabled)
+
+Status is **Mitigated**, not fully Fixed, because `PUBLIC_DOC_LEGACY_ID_LINKS` defaults to `true` so raw-UUID legacy viewers remain reachable during the transition window.
+
+- **Original risk:** public invoice/contract viewers were permanent capability URLs keyed by the raw entity UUID (`/public/:id`); quotations used a permanent, non-rotatable token. A leaked URL granted indefinite access exposing client PII (email). No expiry, revocation, or rotation.
+- **New model:** opaque 256-bit token — `crypto.randomBytes(32).toString('base64url')` (43 chars), independent of entity id. Canonical backend routes `/erp/{invoices,quotations,contracts}/public/token/:token`; frontend `/{invoice,contract,quotation}/public/token/:token`.
+- **Lifecycle:** `assertActive` → NOT_FOUND→404, REVOKED/EXPIRED→410 Gone. Expiry (`public_token_expires_at`), revocation (`public_token_revoked_at`), and rotation (rotate invalidates old token → old 404, new works) all enforced and covered by integration tests.
+- **Public action validation:** quotation accept/reject go through the token route and re-validate token state on each mutation.
+- **Management authorization / BOLA:** management endpoints require `@Roles(ADMIN, EMPLOYEE)` via RolesGuard (CLIENT/LEAD → 403); ids validated with `ParseUUIDPipe`; cross-document isolation verified.
+- **Token URL redaction:** capability tokens are redacted from exception logs and error bodies; `assignFreshToken` logs a message with **no token value**.
+- **Caching:** global TransformInterceptor sets `Cache-Control: no-store, no-cache, must-revalidate, private` + Pragma + Vary on every response — shared/proxy caches cannot retain capability content.
+- **Indexing:** `{type}/public/layout.tsx` emits `robots: noindex,nofollow` (inherited by the token subroute) and `sitemap.ts` excludes capability docs.
+- **Token-only new share generation:** all share-link builders (PDF QR, quotation copy-link, ERP detail PDF download) now build `/public/token/:token`; no new raw-UUID URLs are generated.
+- **Rate limiting:** public token routes carry `@Throttle` metadata (verified via reflection).
+- **Lazy token generation:** the migration does NOT backfill tokens. Existing invoices/contracts keep `public_token = NULL` after deployment; their pre-existing raw-UUID links keep working only while `PUBLIC_DOC_LEGACY_ID_LINKS=true`. A secure token is minted the first time an admin generates/shares a link (or on first PDF download).
+- **Legacy transition flag `PUBLIC_DOC_LEGACY_ID_LINKS`:** `(process.env.PUBLIC_DOC_LEGACY_ID_LINKS ?? 'true') !== 'false'`. When `false`, `findOnePublic` throws `ResourceNotFoundException` → raw-UUID invoice/contract routes 404 while token routes stay functional. This flag is **TEMPORARY**, not permanent architecture.
+- **Removal criterion (5 conditions, not a calendar date) — disable legacy access after:**
+  1. secure-token migration has run in production successfully;
+  2. all active/recent invoice & contract documents have generated token links;
+  3. customers have had a compatibility window to re-open old links;
+  4. production logs show no meaningful legacy raw-ID route use;
+  5. product/admin team approves removal.
+- **Test coverage:** `public-token.spec.ts`, `public-token-integration.spec.ts` (39), `public-token-legacy-flag.spec.ts` (9), `redact-public-token.spec.ts`, frontend `public-link-builders.test.ts` (7), `robots-sitemap.test.ts`.
+- **Residual transitional risk:** while the flag defaults `true`, pre-existing raw-UUID links remain valid (and, being pre-token, are not subject to expiry/revocation/rotation). This is the accepted transitional surface until the 5-condition removal criterion is met and the flag is flipped to `false`.
 - **Controls that already worked (proven by tests, NOT vulnerabilities):** REDIR-01, THROTTLE-* (429 activation + header-spoof resistance), all AUTH/AUTHZ/IDOR/CORS/CSRF/injection/mass-assignment/file-MIME suites.
 
 ### Per-finding detail (demonstrated + fixed)

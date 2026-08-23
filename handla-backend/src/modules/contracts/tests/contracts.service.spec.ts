@@ -17,6 +17,7 @@ import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
 import { ChatService } from '../../chat/chat.service';
 import { AwsService } from '../../aws/aws.service';
+import { makePublicTokenTestProviders } from '../../../common/public-token/testing/public-token-test-providers';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,8 @@ describe('ContractsService', () => {
         { provide: EmailService,                      useValue: mockEmailService },
         { provide: ChatService,                      useValue: mockChatService },
         { provide: AwsService,                       useValue: mockAwsService },
+        // INFO-01 — PublicTokenService (real) + mock ConfigService.
+        ...makePublicTokenTestProviders(),
       ],
     }).compile();
 

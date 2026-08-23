@@ -40,10 +40,25 @@ export class Quotation {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  // ─── Public token for accept/reject link ───────────────────────────────────
+  // ─── Public token for accept/reject link (INFO-01) ──────────────────────────
+  // Opaque, high-entropy capability token — independent of the row id. Used by
+  // the public /public/token/:token read + accept/reject routes.
   @Column({ name: 'public_token', type: 'varchar', length: 64, unique: true })
   @Index('idx_quotations_public_token')
   publicToken: string;
+
+  // ─── Public token lifecycle (INFO-01) ───────────────────────────────────────
+  /** When the current token expires. NULL = never expires (permanent link). */
+  @Column({ name: 'public_token_expires_at', type: 'datetime', nullable: true })
+  publicTokenExpiresAt: Date | null;
+
+  /** When the current token was explicitly revoked. NULL = not revoked. */
+  @Column({ name: 'public_token_revoked_at', type: 'datetime', nullable: true })
+  publicTokenRevokedAt: Date | null;
+
+  /** When the current token was generated / last rotated (audit). */
+  @Column({ name: 'public_token_created_at', type: 'datetime', nullable: true })
+  publicTokenCreatedAt: Date | null;
 
   // ─── FK: Client (CASCADE) ──────────────────────────────────────────────────
   @Column({ name: 'client_id', type: 'varchar', length: 36 })

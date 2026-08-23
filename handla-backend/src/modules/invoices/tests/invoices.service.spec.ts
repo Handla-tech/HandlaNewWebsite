@@ -20,6 +20,7 @@ import { ExpensesService } from '../../expenses/expenses.service';
 import { LineItemDto } from '../dto/line-item.dto';
 import { Conversation } from '../../chat/entities/conversation.entity';
 import { ChatService } from '../../chat/chat.service';
+import { makePublicTokenTestProviders } from '../../../common/public-token/testing/public-token-test-providers';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -191,6 +192,8 @@ describe('InvoicesService', () => {
         { provide: ChatService,                         useValue: chatService      },
         { provide: DataSource,                          useValue: dataSource       },
         { provide: ExpensesService,                     useValue: expensesService  },
+        // INFO-01 — PublicTokenService (real) + mock ConfigService.
+        ...makePublicTokenTestProviders(),
       ],
     }).compile();
 

@@ -7,6 +7,13 @@ Disallow: /dashboard/
 Disallow: /admin/
 Disallow: /erp/
 Disallow: /api/
+# INFO-01 — public capability document pages are un-enumerable and carry
+# `noindex, nofollow` metadata; these families are additionally disallowed here
+# as defence-in-depth so crawlers never fetch a capability URL that leaked into
+# a referrer/history. Individual capability URLs are intentionally NOT listed.
+Disallow: /invoice/public/
+Disallow: /quotation/public/
+Disallow: /contract/public/
 
 # Sitemap
 Sitemap: https://handla.tech/sitemap.xml

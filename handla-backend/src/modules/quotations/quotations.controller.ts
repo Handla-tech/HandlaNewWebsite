@@ -20,11 +20,14 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 
+import { Throttle } from '@nestjs/throttler';
+
 import { QuotationsService } from './quotations.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { QuotationsQueryDto } from './dto/quotations-query.dto';
 import { RejectQuotationDto } from './dto/reject-quotation.dto';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -42,13 +45,64 @@ export class QuotationsController {
   // ── PUBLIC token routes (no auth) ─────────────────────────────────────
   // Declared BEFORE `:id` so the two-segment path is matched first.
 
+  // Unified INFO-01 token route (/public/token/:token) — preferred going forward.
+  @Get('public/token/:token')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Public read-only quotation view via capability token (no auth). Preferred route.',
+  })
+  @ApiResponse({ status: 200, description: 'Sanitized quotation payload' })
+  @ApiResponse({ status: 404, description: 'Invalid or unknown token' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
+  @ApiParam({ name: 'token', type: String })
+  async findByPublicTokenV2(@Param('token') token: string) {
+    return this.quotationsService.findByPublicToken(token);
+  }
+
+  @Post('public/token/:token/accept')
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Client accepts a quotation via capability token (SENT → ACCEPTED)' })
+  @ApiResponse({ status: 200, description: 'Quotation accepted' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
+  @ApiParam({ name: 'token', type: String })
+  async acceptByTokenV2(@Param('token') token: string) {
+    const q = await this.quotationsService.acceptByToken(token);
+    return { id: q.id, quoteNumber: q.quoteNumber, status: q.status };
+  }
+
+  @Post('public/token/:token/reject')
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Client rejects a quotation via capability token (SENT → REJECTED)' })
+  @ApiResponse({ status: 200, description: 'Quotation rejected' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
+  @ApiResponse({ status: 422, description: 'Not in SENT state' })
+  @ApiParam({ name: 'token', type: String })
+  async rejectByTokenV2(
+    @Param('token') token: string,
+    @Body() dto: RejectQuotationDto,
+  ) {
+    const q = await this.quotationsService.rejectByToken(token, dto?.reason);
+    return { id: q.id, quoteNumber: q.quoteNumber, status: q.status };
+  }
+
+  // Legacy /public/:token routes (kept for links already in circulation). These
+  // now ALSO run full lifecycle validation via the service, so a revoked/expired
+  // token fails here identically to the unified route.
   @Get('public/:token')
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({
     summary: 'Public read-only quotation view (no auth). Used by the accept/reject link.',
   })
   @ApiResponse({ status: 200, description: 'Sanitized quotation payload' })
   @ApiResponse({ status: 404, description: 'Quotation not found' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
   @ApiParam({ name: 'token', type: String })
   async findByPublicToken(@Param('token') token: string) {
     return this.quotationsService.findByPublicToken(token);
@@ -56,9 +110,11 @@ export class QuotationsController {
 
   @Post('public/:token/accept')
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Client accepts a quotation via public link (SENT → ACCEPTED)' })
   @ApiResponse({ status: 200, description: 'Quotation accepted' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
   @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'token', type: String })
   async acceptByToken(@Param('token') token: string) {
@@ -68,9 +124,11 @@ export class QuotationsController {
 
   @Post('public/:token/reject')
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Client rejects a quotation via public link (SENT → REJECTED)' })
   @ApiResponse({ status: 200, description: 'Quotation rejected' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
   @ApiResponse({ status: 422, description: 'Not in SENT state' })
   @ApiParam({ name: 'token', type: String })
   async rejectByToken(
@@ -79,6 +137,58 @@ export class QuotationsController {
   ) {
     const q = await this.quotationsService.rejectByToken(token, dto?.reason);
     return { id: q.id, quoteNumber: q.quoteNumber, status: q.status };
+  }
+
+  // ── Public-link management (INFO-01 Phase 7) ──────────────────────────
+  @Post(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Generate a public capability link for a quotation (ADMIN/owning EMPLOYEE)' })
+  @ApiResponse({ status: 201, description: 'Public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async generatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.quotationsService.generatePublicLink(id, dto, user);
+  }
+
+  @Post(':id/public-link/rotate')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Rotate (regenerate) the public link; old token stops working immediately' })
+  @ApiResponse({ status: 201, description: 'New public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async rotatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.quotationsService.rotatePublicLink(id, dto, user);
+  }
+
+  @Delete(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Revoke the public link; view + accept/reject stop working immediately' })
+  @ApiResponse({ status: 200, description: 'Revoked link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async revokePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.quotationsService.revokePublicLink(id, user);
+  }
+
+  @Patch(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Set / change / clear the public link expiry' })
+  @ApiResponse({ status: 200, description: 'Updated link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async setPublicLinkExpiry(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.quotationsService.setPublicLinkExpiry(id, dto, user);
   }
 
   // ── POST /erp/quotations/recalculate-expired (ADMIN) ──────────────────

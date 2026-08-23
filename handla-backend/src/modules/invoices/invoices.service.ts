@@ -23,12 +23,44 @@ import { EmailService } from '../email/email.service';
 import { ExpensesService } from '../expenses/expenses.service';
 import { ChatService } from '../chat/chat.service';
 import { Conversation } from '../chat/entities/conversation.entity';
+import { ConfigService } from '@nestjs/config';
+import { PublicTokenService } from '../../common/public-token/public-token.service';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
+import {
+  PublicDocumentType,
+  PublicLinkManagementResult,
+} from '../../common/public-token/public-token.types';
 
 export interface PaginatedInvoices {
   invoices: Invoice[];
   total: number;
   page: number;
   pages: number;
+}
+
+/** INFO-01 — sanitized public projection returned by the public invoice routes. */
+export interface PublicInvoiceProjection {
+  id: string;
+  invoiceNumber: string;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  currency: string;
+  paymentStatus: InvoicePaymentStatus;
+  dueDate: string | null;
+  paidAt: Date | null;
+  createdAt: Date;
+  notes: string | null;
+  lineItems: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }>;
+  client: { name: string | null; company: string | null; email: string | null } | null;
+  issuer: { name: string | null } | null;
 }
 
 /**
@@ -74,6 +106,9 @@ export class InvoicesService {
 
     @Inject(forwardRef(() => ExpensesService))
     private readonly expensesService: ExpensesService,
+
+    private readonly publicTokenService: PublicTokenService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ─── generateInvoiceNumber ────────────────────────────────────────────────
@@ -185,52 +220,47 @@ export class InvoicesService {
     return invoice;
   }
 
-  // ─── findOnePublic ───────────────────────────────────────────────────────
+  // ─── findOnePublic (LEGACY raw-id route) ───────────────────────────────────
   /**
-   * Public read-only invoice lookup used by the QR-code scanning flow.
+   * INFO-01 — LEGACY public invoice lookup by raw entity UUID.
    *
-   * Security considerations:
-   *  - Only exposes a sanitized projection (no internal notes, no owner email
-   *    metadata beyond a display name, no raw user objects).
-   *  - The endpoint is rate-limited via the global ThrottlerModule and the
-   *    invoice `id` is a UUID v4 — non-enumerable in practice.
-   *  - Never returns the soft-deleted columns, raw user passwords, etc.
+   * This path predates the secure capability-token model. It stays available
+   * ONLY while PUBLIC_DOC_LEGACY_ID_LINKS=true (default), so invoice links
+   * already circulating (emails / PDFs / bookmarks) keep working during the
+   * transition. When the flag is false the controller rejects the legacy route
+   * with 404 and only the token route remains. New sharing always uses tokens.
    */
-  async findOnePublic(id: string): Promise<{
-    id: string;
-    invoiceNumber: string;
-    subtotal: number;
-    taxRate: number;
-    taxAmount: number;
-    total: number;
-    currency: string;
-    paymentStatus: InvoicePaymentStatus;
-    dueDate: string | null;
-    paidAt: Date | null;
-    createdAt: Date;
-    notes: string | null;
-    lineItems: Array<{
-      id: string;
-      description: string;
-      quantity: number;
-      unitPrice: number;
-      lineTotal: number;
-    }>;
-    client: {
-      name: string | null;
-      company: string | null;
-      email: string | null;
-    } | null;
-    issuer: {
-      name: string | null;
-    } | null;
-  }> {
+  async findOnePublic(id: string): Promise<PublicInvoiceProjection> {
+    if (!this.configService.get<boolean>('publicDoc.legacyIdLinks')) {
+      // Legacy raw-id access disabled — behave as if the route does not exist.
+      throw new ResourceNotFoundException('Invoice', id);
+    }
     const invoice = await this.invoiceRepo.findOne({
       where: { id },
       relations: ['client', 'client.user', 'owner', 'lineItems'],
     });
     if (!invoice) throw new ResourceNotFoundException('Invoice', id);
+    return this.toPublicProjection(invoice);
+  }
 
+  // ─── findOnePublicByToken (SECURE token route) ─────────────────────────────
+  /**
+   * INFO-01 — Secure public invoice lookup by opaque capability token.
+   * Looks up strictly by `public_token` (document-type-scoped), then funnels
+   * through the centralized lifecycle validator: invalid/mismatch → 404 (no
+   * existence oracle), revoked/expired → 410 Gone.
+   */
+  async findOnePublicByToken(token: string): Promise<PublicInvoiceProjection> {
+    const invoice = await this.invoiceRepo.findOne({
+      where: { publicToken: token },
+      relations: ['client', 'client.user', 'owner', 'lineItems'],
+    });
+    // assertActive handles null entity + structural + lifecycle checks safely.
+    this.publicTokenService.assertActive(invoice, token);
+    return this.toPublicProjection(invoice as Invoice);
+  }
+
+  private toPublicProjection(invoice: Invoice): PublicInvoiceProjection {
     return {
       id:             invoice.id,
       invoiceNumber:  invoice.invoiceNumber,
@@ -663,5 +693,109 @@ export class InvoicesService {
     }
 
     throw new InsufficientPermissionsException('access invoices');
+  }
+
+  // ─── INFO-01 Public-link management (Phase 7) ──────────────────────────────
+
+  /**
+   * Authorization gate for public-link MANAGEMENT (generate/rotate/revoke/expiry).
+   * Distinct from `assertAccess` (which permits CLIENT read access): a CLIENT or
+   * LEAD may VIEW an invoice they own but must NEVER mint/revoke a public
+   * capability link. Only ADMIN or the owning EMPLOYEE may manage links. Route
+   * guards already block anonymous + LEAD/CLIENT by role; this enforces the same
+   * rule at the service layer (defence-in-depth) AND applies per-record
+   * ownership scoping for EMPLOYEE (BOLA protection).
+   */
+  private assertManageAccess(invoice: Invoice, user: User): void {
+    if (user.role === UserRole.ADMIN) return;
+    if (user.role === UserRole.EMPLOYEE) {
+      if (invoice.ownerId !== user.id) throw new OwnershipViolationException();
+      return;
+    }
+    throw new InsufficientPermissionsException('manage public links for this invoice');
+  }
+
+  private async loadForManage(id: string, user: User): Promise<Invoice> {
+    const invoice = await this.invoiceRepo.findOne({ where: { id } });
+    if (!invoice) throw new ResourceNotFoundException('Invoice', id);
+    this.assertManageAccess(invoice, user);
+    return invoice;
+  }
+
+  private buildResult(invoice: Invoice, now: Date): PublicLinkManagementResult {
+    return this.publicTokenService.buildManagementResult(
+      PublicDocumentType.INVOICE,
+      invoice.id,
+      invoice,
+      this.configService.get<string>('auth.frontendUrl') ?? '',
+      now,
+    );
+  }
+
+  /**
+   * Generate (or return the existing active) public link for an invoice.
+   * Idempotent: an active token is reused; otherwise a fresh one is minted with
+   * the requested expiry policy.
+   */
+  async generatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const invoice = await this.loadForManage(id, user);
+    const created = this.publicTokenService.ensureToken(invoice, now);
+    if (created) {
+      const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+      invoice.publicTokenExpiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    }
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`Public link generated for invoice ${invoice.invoiceNumber} by user ${user.id}`);
+    return this.buildResult(invoice, now);
+  }
+
+  /**
+   * Rotate (regenerate) the invoice's public link. The old token stops working
+   * immediately; a brand-new token is issued. Never leaves two valid tokens.
+   */
+  async rotatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const invoice = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.rotateToken(invoice, { expiresAt }, now);
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`Public link rotated for invoice ${invoice.invoiceNumber} by user ${user.id}`);
+    return this.buildResult(invoice, now);
+  }
+
+  /** Revoke the invoice's public link. The link stops working immediately. */
+  async revokePublicLink(id: string, user: User): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const invoice = await this.loadForManage(id, user);
+    this.publicTokenService.revokeToken(invoice, now);
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`Public link revoked for invoice ${invoice.invoiceNumber} by user ${user.id}`);
+    return this.buildResult(invoice, now);
+  }
+
+  /** Set / change / clear the expiry of the invoice's current public link. */
+  async setPublicLinkExpiry(
+    id: string,
+    dto: ManagePublicLinkDto,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const invoice = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.setExpiry(invoice, expiresAt);
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`Public link expiry updated for invoice ${invoice.invoiceNumber} by user ${user.id}`);
+    return this.buildResult(invoice, now);
   }
 }

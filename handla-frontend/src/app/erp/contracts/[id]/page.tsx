@@ -649,8 +649,20 @@ export default function ContractDetailPage() {
     setPdfDlLoading(true);
     setPdfDlError(null);
     try {
+      // INFO-01 — ensure a public capability token exists so the printed QR
+      // targets the opaque token route rather than the raw contract id.
+      // Idempotent server-side (returns the existing active link if present).
+      let publicToken: string | null = contract.publicToken ?? null;
+      if (!publicToken) {
+        try {
+          const res = await contractsApi.generatePublicLink(contract.id);
+          publicToken = (res.data?.data ?? res.data)?.token ?? null;
+        } catch {
+          // Non-fatal: fall back to the legacy raw-id QR (still backend-gated).
+        }
+      }
       const { downloadContractPdf } = await import('@/lib/pdf/contract-pdf');
-      await downloadContractPdf(contract);
+      await downloadContractPdf(contract, { publicToken });
     } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error('Contract PDF generation failed', e);

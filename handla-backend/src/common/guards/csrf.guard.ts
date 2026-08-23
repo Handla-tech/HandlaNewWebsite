@@ -9,6 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import { redactPublicToken } from '../filters/http-exception.filter';
 
 /**
  * Opt-out marker for the CSRF guard. Apply `@SkipCsrf()` to a handler/controller
@@ -161,14 +162,14 @@ export class CsrfGuard implements CanActivate {
 
     if (!candidate) {
       this.logger.warn(
-        `CSRF: rejected ${method} ${req.originalUrl || req.url} — missing/invalid Origin & Referer on a cookie-authenticated request (origin=${String(originHeader)})`,
+        `CSRF: rejected ${method} ${redactPublicToken(req.originalUrl || req.url)} — missing/invalid Origin & Referer on a cookie-authenticated request (origin=${String(originHeader)})`,
       );
       throw new ForbiddenException('CSRF validation failed: request origin could not be verified');
     }
 
     if (!this.allowedOrigins.has(candidate)) {
       this.logger.warn(
-        `CSRF: rejected ${method} ${req.originalUrl || req.url} — origin ${candidate} is not approved`,
+        `CSRF: rejected ${method} ${redactPublicToken(req.originalUrl || req.url)} — origin ${candidate} is not approved`,
       );
       throw new ForbiddenException('CSRF validation failed: request origin is not allowed');
     }

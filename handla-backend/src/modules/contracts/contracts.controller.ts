@@ -20,10 +20,13 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 
+import { Throttle } from '@nestjs/throttler';
+
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { ContractsQueryDto } from './dto/contracts-query.dto';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { OwnedResource } from '../../common/decorators/owned-resource.decorator';
@@ -56,6 +59,77 @@ export class ContractsController {
   async findOnePublic(@Param('id', ParseUUIDPipe) id: string) {
     const contract = await this.contractsService.findOnePublic(id);
     return { message: 'Public contract retrieved', data: { contract } };
+  }
+
+  // ── GET /erp/contracts/public/token/:token ─────────────────────────────
+  // INFO-01 — SECURE public read via opaque capability token. Declared before
+  // `:id`. Invalid → 404 (no existence oracle), revoked/expired → 410 Gone.
+  @Get('public/token/:token')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Public read-only contract view via capability token (no auth). Preferred over the legacy raw-id route.',
+  })
+  @ApiResponse({ status: 200, description: 'Sanitized contract payload' })
+  @ApiResponse({ status: 404, description: 'Invalid or unknown token' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
+  @ApiParam({ name: 'token', type: String })
+  async findOnePublicByToken(@Param('token') token: string) {
+    const contract = await this.contractsService.findOnePublicByToken(token);
+    return { message: 'Public contract retrieved', data: { contract } };
+  }
+
+  // ── Public-link management (INFO-01 Phase 7) ──────────────────────────
+  @Post(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Generate a public capability link for a contract (ADMIN/owning EMPLOYEE)' })
+  @ApiResponse({ status: 201, description: 'Public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async generatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.contractsService.generatePublicLink(id, dto, user);
+  }
+
+  @Post(':id/public-link/rotate')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Rotate (regenerate) the public link; old token stops working immediately' })
+  @ApiResponse({ status: 201, description: 'New public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async rotatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.contractsService.rotatePublicLink(id, dto, user);
+  }
+
+  @Delete(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Revoke the public link; it stops working immediately' })
+  @ApiResponse({ status: 200, description: 'Revoked link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async revokePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.contractsService.revokePublicLink(id, user);
+  }
+
+  @Patch(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Set / change / clear the public link expiry' })
+  @ApiResponse({ status: 200, description: 'Updated link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async setPublicLinkExpiry(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.contractsService.setPublicLinkExpiry(id, dto, user);
   }
 
   // ── GET /erp/contracts ──────────────────────────────────────────────────
