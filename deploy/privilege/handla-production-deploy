@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# =============================================================================
+# handla-production-deploy  —  root-owned fixed production deployment wrapper
+# =============================================================================
+# INSTALLED AT (on the VPS):  /usr/local/sbin/handla-production-deploy
+# OWNER/MODE:                 root:root 0755  (handla-deploy has NO write access)
+# INVOKED BY:                 handla-deploy, via a single narrow sudo rule:
+#     handla-deploy ALL=(root) NOPASSWD: /usr/local/sbin/handla-production-deploy
+#
+# PURPOSE
+#   Replace `handla-deploy`'s membership of the `docker` group (which is
+#   root-equivalent on the host) with the ability to run EXACTLY ONE fixed,
+#   root-owned production-deploy sequence. The deploy user cannot:
+#     - run arbitrary docker/compose commands
+#     - pass arbitrary arguments, paths, branches, or compose files
+#     - modify the code this script executes (trusted checkout is root-owned)
+#
+# TRUST BOUNDARY (Phase 7 — CRITICAL)
+#   The application working tree at /opt/handla is WRITABLE by handla-deploy.
+#   Executing deploy logic from there as root would re-introduce root code
+#   execution for handla-deploy. Therefore this wrapper deploys ONLY from a
+#   SEPARATE, ROOT-OWNED trusted checkout at $TRUSTED_DIR, which it fetches and
+#   hard-resets to origin/main itself. handla-deploy cannot write to it.
+#
+#   The security boundary becomes:
+#       authorization to push to GitHub 'main'  ->  production deployment
+#   NOT:
+#       SSH as handla-deploy  ->  arbitrary root code execution
+#
+# HARD-CODED, NON-OVERRIDABLE POLICY
+#   - Repository : $EXPECTED_REMOTE   (verified every run)
+#   - Branch     : main               (never a parameter)
+#   - Directory  : /opt/handla-production (root-owned; never a parameter)
+#   This script accepts NO positional arguments and NO deploy-controlling env.
+# =============================================================================
+
+set -euo pipefail
+
+# ---- 0. Sanitised, fixed execution environment -----------------------------
+# Explicit safe PATH (absolute, root-controlled dirs only). Do NOT inherit the
+# caller's PATH — that would allow PATH hijacking of git/docker/etc.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+umask 022
+# Drop anything that could redirect git/ssh/compose behaviour from the caller.
+unset BASH_ENV ENV CDPATH IFS \
+      GIT_DIR GIT_WORK_TREE GIT_SSH GIT_SSH_COMMAND GIT_CONFIG GIT_CONFIG_GLOBAL \
+      GIT_EXEC_PATH GIT_TEMPLATE_DIR GIT_ALTERNATE_OBJECT_DIRECTORIES \
+      DOCKER_HOST DOCKER_CONFIG DOCKER_CONTEXT DOCKER_CERT_PATH DOCKER_TLS_VERIFY \
+      LD_PRELOAD LD_LIBRARY_PATH PYTHONPATH NODE_OPTIONS \
+      COMPOSE_FILE COMPOSE_PROJECT_NAME HANDLA_DIR PULL DEPLOY_BRANCH \
+      BASH_FUNC_docker%% BASH_FUNC_git%% 2>/dev/null || true
+
+# ---- 1. Reject ALL arguments (no attacker-controlled input) ----------------
+if [ "$#" -ne 0 ]; then
+  echo "[handla-production-deploy] FATAL: this command takes no arguments." >&2
+  echo "[handla-production-deploy]        It always deploys origin/main from the trusted checkout." >&2
+  exit 64
+fi
+
+# ---- 2. Fixed policy constants (NOT overridable from the environment) ------
+readonly EXPECTED_REMOTE="https://github.com/Handla-tech/HandlaNewWebsite.git"
+readonly BRANCH="main"
+readonly TRUSTED_DIR="/opt/handla-production"
+readonly SECRETS_ENV="/opt/handla-production-secrets/backend.env"   # root:root 600
+readonly BACKEND_ENV_REL="handla-backend/.env"
+readonly COMPOSE_FILES=( -f docker-compose.yml -f deploy/docker-compose.traefik.yml )
+readonly GIT=/usr/bin/git
+readonly DOCKER=/usr/bin/docker
+readonly TRAEFIK_NETWORK="proxy"
+
+CALLER="${SUDO_USER:-$(id -un)}"
+log() { echo "[handla-production-deploy] $*"; }
+
+log "Initiated by user='${CALLER}' (uid=$(id -u)) at $(date -u +%FT%TZ)"
+
+# ---- 3. Must run as root (via sudo) ----------------------------------------
+if [ "$(id -u)" -ne 0 ]; then
+  echo "[handla-production-deploy] FATAL: must run as root (via sudo)." >&2
+  exit 1
+fi
+
+# ---- 4. Ensure/repair the root-owned trusted checkout ----------------------
+# The trusted checkout and its parent MUST be root-owned and not writable by
+# handla-deploy. We verify this every run and refuse to proceed otherwise.
+if [ ! -d "$TRUSTED_DIR/.git" ]; then
+  log "Trusted checkout missing; creating a fresh clone of ${BRANCH}..."
+  install -d -m 0755 -o root -g root "$TRUSTED_DIR"
+  "$GIT" -c safe.directory="$TRUSTED_DIR" clone --branch "$BRANCH" --single-branch \
+        "$EXPECTED_REMOTE" "$TRUSTED_DIR"
+fi
+
+# Ownership / writability guard on the trusted checkout (defence in depth).
+owner="$(stat -c '%U' "$TRUSTED_DIR")"
+if [ "$owner" != "root" ]; then
+  echo "[handla-production-deploy] FATAL: trusted checkout '$TRUSTED_DIR' is owned by '$owner', not root." >&2
+  exit 3
+fi
+# Refuse if group/other-writable, or if handla-deploy owns any tracked path.
+if find "$TRUSTED_DIR" -maxdepth 2 \( -perm -0020 -o -perm -0002 \) -print -quit | grep -q .; then
+  echo "[handla-production-deploy] FATAL: trusted checkout contains group/other-writable paths." >&2
+  exit 3
+fi
+
+cd "$TRUSTED_DIR"
+export GIT_CONFIG_GLOBAL=/dev/null   # ignore any global git config for these ops
+GITC=("$GIT" -c safe.directory="$TRUSTED_DIR" -c core.hooksPath=/dev/null)
+
+# ---- 5. Verify the remote is the expected repository -----------------------
+actual_remote="$("${GITC[@]}" remote get-url origin 2>/dev/null || echo none)"
+if [ "$actual_remote" != "$EXPECTED_REMOTE" ]; then
+  log "Remote mismatch ('$actual_remote'); pinning origin to expected repository."
+  "${GITC[@]}" remote set-url origin "$EXPECTED_REMOTE"
+fi
+
+# ---- 6. Fetch and hard-reset to origin/main (trusted content only) ---------
+# core.hooksPath=/dev/null ⇒ no repo-controlled git hooks execute here.
+log "Fetching origin/${BRANCH}..."
+"${GITC[@]}" fetch --prune --no-tags origin "$BRANCH"
+log "Hard-resetting trusted checkout to origin/${BRANCH}..."
+"${GITC[@]}" checkout -B "$BRANCH" "origin/$BRANCH"
+"${GITC[@]}" reset --hard "origin/$BRANCH"
+# Remove untracked files (e.g. a planted executable) but KEEP nothing user-supplied.
+"${GITC[@]}" clean -ffd
+DEPLOY_SHA="$("${GITC[@]}" rev-parse --short HEAD)"
+log "Trusted checkout now at ${BRANCH}@${DEPLOY_SHA}"
+
+# ---- 7. Provision backend secrets into the trusted checkout ----------------
+# Secrets are NOT in git. The authoritative copy is root-owned at $SECRETS_ENV
+# (handla-deploy cannot modify it). Copy it into the trusted tree at 600.
+if [ ! -f "$SECRETS_ENV" ]; then
+  echo "[handla-production-deploy] FATAL: root-owned secrets file '$SECRETS_ENV' is missing." >&2
+  echo "[handla-production-deploy]        Seed it once from the previous handla-backend/.env (root:root 0600)." >&2
+  exit 4
+fi
+install -D -m 0600 -o root -g root "$SECRETS_ENV" "$TRUSTED_DIR/$BACKEND_ENV_REL"
+log "Backend .env provisioned from root-owned secrets store."
+
+# ---- 8. Run the fixed production deploy sequence ---------------------------
+# We execute the Docker operations here (from the trusted, root-owned tree),
+# mirroring deploy/deploy.traefik.sh but WITHOUT sourcing the user-writable
+# copy. PULL=0 because this wrapper already controls the git state itself.
+export TRAEFIK_NETWORK TRAEFIK_CERTRESOLVER="letsencrypt" TRAEFIK_ENTRYPOINT="websecure"
+
+log "Verifying backend .env exists..."
+[ -f "$BACKEND_ENV_REL" ] || { echo "[handla-production-deploy] FATAL: backend .env missing after provisioning." >&2; exit 4; }
+
+log "Generating root ./.env for Docker Compose interpolation..."
+get() { grep -E "^$1=" "$BACKEND_ENV_REL" | tail -n1 | cut -d= -f2- || true; }
+{
+  echo "# AUTO-GENERATED by handla-production-deploy (root wrapper) from $BACKEND_ENV_REL"
+  echo "PORT=$(get PORT)"
+  echo "DATABASE_NAME=$(get DATABASE_NAME)"
+  echo "DATABASE_USER=$(get DATABASE_USER)"
+  echo "DATABASE_PASSWORD=$(get DATABASE_PASSWORD)"
+  echo "DATABASE_ROOT_PASSWORD=$(get DATABASE_ROOT_PASSWORD)"
+  echo "DATABASE_SYNCHRONIZE=$(get DATABASE_SYNCHRONIZE)"
+  echo "REDIS_USERNAME=$(get REDIS_USERNAME)"
+  echo "REDIS_PASSWORD=$(get REDIS_PASSWORD)"
+} > .env
+grep -q '^REDIS_USERNAME=.\+'      .env || sed -i 's|^REDIS_USERNAME=.*|REDIS_USERNAME=handla_app|' .env
+grep -q '^PORT=.\+'                .env || sed -i 's|^PORT=.*|PORT=3001|'                           .env
+grep -q '^DATABASE_NAME=.\+'       .env || sed -i 's|^DATABASE_NAME=.*|DATABASE_NAME=handla_db|'    .env
+grep -q '^DATABASE_USER=.\+'       .env || sed -i 's|^DATABASE_USER=.*|DATABASE_USER=handla|'       .env
+grep -q '^DATABASE_SYNCHRONIZE=.\+' .env || sed -i 's|^DATABASE_SYNCHRONIZE=.*|DATABASE_SYNCHRONIZE=false|' .env
+chmod 600 .env
+
+log "Removing Handla's own nginx/certbot if present (Traefik handles TLS)..."
+"$DOCKER" rm -f handla_nginx handla_certbot >/dev/null 2>&1 || true
+
+log "Verifying Traefik external network '${TRAEFIK_NETWORK}' exists..."
+if ! "$DOCKER" network inspect "${TRAEFIK_NETWORK}" >/dev/null 2>&1; then
+  echo "[handla-production-deploy] FATAL: external network '${TRAEFIK_NETWORK}' not found." >&2
+  exit 5
+fi
+
+log "Building images..."
+"$DOCKER" compose "${COMPOSE_FILES[@]}" build
+
+FIXED_NAMES=(handla_api handla_web handla_mysql handla_redis)
+log "Force-removing any stale fixed-name containers (keeps the network up)..."
+"$DOCKER" rm -f "${FIXED_NAMES[@]}" >/dev/null 2>&1 || true
+
+bring_up() { "$DOCKER" compose "${COMPOSE_FILES[@]}" up -d --remove-orphans --force-recreate; }
+
+log "Starting/updating the stack (routed via Traefik)..."
+if ! bring_up; then
+  log "First 'up' failed (transient name Conflict?). Clearing and retrying once..."
+  "$DOCKER" rm -f "${FIXED_NAMES[@]}" >/dev/null 2>&1 || true
+  sleep 3
+  bring_up
+fi
+
+log "Pruning dangling images..."
+"$DOCKER" image prune -f >/dev/null 2>&1 || true
+
+log "Current status:"
+"$DOCKER" compose "${COMPOSE_FILES[@]}" ps
+
+log "Done ✓  Deployed ${BRANCH}@${DEPLOY_SHA} (initiated by '${CALLER}')."
