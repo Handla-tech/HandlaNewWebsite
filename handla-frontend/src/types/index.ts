@@ -319,6 +319,8 @@ export interface Contract {
   pdfUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  /** INFO-01 — opaque public capability token (present when a share link exists). */
+  publicToken?: string | null;
   client?: Client & { user?: User };
   owner?: User | null;
 }
@@ -358,6 +360,8 @@ export interface Invoice {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  /** INFO-01 — opaque public capability token (present when a share link exists). */
+  publicToken?: string | null;
   client?: Client & { user?: User };
   owner?: User | null;
   lineItems?: InvoiceLineItem[];

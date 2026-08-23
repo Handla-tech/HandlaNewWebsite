@@ -350,10 +350,17 @@ export const contractsApi = {
   rejectContract:       (id: string)                          => api.post(`/erp/contracts/${id}/reject`),
   /** GET /erp/contracts/:id/pdf-url — presigned download URL */
   getPdfUrl:            (id: string)                          => api.get(`/erp/contracts/${id}/pdf-url`),
-  /** GET /erp/contracts/public/:id — public sanitized contract (no auth, QR code target) */
+  /** GET /erp/contracts/public/:id — LEGACY raw-id public route (transitional, gated by PUBLIC_DOC_LEGACY_ID_LINKS). Prefer the token route. */
   getPublicContract:    (id: string)                          => api.get(`/erp/contracts/public/${id}`),
+  /** GET /erp/contracts/public/token/:token — INFO-01 canonical public sanitized contract via opaque capability token (no auth). */
+  getPublicContractByToken: (token: string)                   => api.get(`/erp/contracts/public/token/${token}`),
   /** GET /erp/clients/:clientId/contracts */
   getContractsByClient: (clientId: string)                    => api.get(`/erp/clients/${clientId}/contracts`),
+  // INFO-01 — public capability-link management (ADMIN / owning EMPLOYEE).
+  generatePublicLink:   (id: string, data?: object)           => api.post(`/erp/contracts/${id}/public-link`, data ?? {}),
+  rotatePublicLink:     (id: string, data?: object)           => api.post(`/erp/contracts/${id}/public-link/rotate`, data ?? {}),
+  revokePublicLink:     (id: string)                          => api.delete(`/erp/contracts/${id}/public-link`),
+  setPublicLinkExpiry:  (id: string, data: object)            => api.patch(`/erp/contracts/${id}/public-link`, data),
 };
 
 // ─── ERP-7: Invoices ──────────────────────────────────────────────────────────
@@ -375,8 +382,15 @@ export const invoicesApi = {
   recalculateOverdue:   ()                                    => api.post('/erp/invoices/recalculate-overdue'),
   /** POST /erp/invoices/:id/submit-payment — CLIENT submits payment proof */
   submitPaymentProof:   (id: string, data: object)            => api.post(`/erp/invoices/${id}/submit-payment`, data),
-  /** GET /erp/invoices/public/:id — public sanitized invoice (no auth, QR code target) */
+  /** GET /erp/invoices/public/:id — LEGACY raw-id public route (transitional, gated by PUBLIC_DOC_LEGACY_ID_LINKS). Prefer the token route. */
   getPublicInvoice:     (id: string)                          => api.get(`/erp/invoices/public/${id}`),
+  /** GET /erp/invoices/public/token/:token — INFO-01 canonical public sanitized invoice via opaque capability token (no auth). */
+  getPublicInvoiceByToken: (token: string)                    => api.get(`/erp/invoices/public/token/${token}`),
+  // INFO-01 — public capability-link management (ADMIN / owning EMPLOYEE).
+  generatePublicLink:   (id: string, data?: object)           => api.post(`/erp/invoices/${id}/public-link`, data ?? {}),
+  rotatePublicLink:     (id: string, data?: object)           => api.post(`/erp/invoices/${id}/public-link/rotate`, data ?? {}),
+  revokePublicLink:     (id: string)                          => api.delete(`/erp/invoices/${id}/public-link`),
+  setPublicLinkExpiry:  (id: string, data: object)            => api.patch(`/erp/invoices/${id}/public-link`, data),
 };
 
 // ─── Expenses API (ERP-8) ─────────────────────────────────────────────────────
@@ -511,12 +525,17 @@ export const quotationsApi = {
   convertQuotation:  (id: string)               => api.post(`/erp/quotations/${id}/convert`),
   /** POST /erp/quotations/recalculate-expired — ADMIN manual trigger */
   recalculateExpired:()                         => api.post('/erp/quotations/recalculate-expired'),
-  /** GET /erp/quotations/public/:token — public view (no auth) */
-  getPublicQuotation:(token: string)            => api.get(`/erp/quotations/public/${token}`),
-  /** POST /erp/quotations/public/:token/accept — public accept (no auth) */
-  publicAccept:      (token: string)            => api.post(`/erp/quotations/public/${token}/accept`),
-  /** POST /erp/quotations/public/:token/reject — public reject (no auth) */
-  publicReject:      (token: string)            => api.post(`/erp/quotations/public/${token}/reject`),
+  /** GET /erp/quotations/public/token/:token — INFO-01 canonical public view (no auth). */
+  getPublicQuotation:(token: string)            => api.get(`/erp/quotations/public/token/${token}`),
+  /** POST /erp/quotations/public/token/:token/accept — canonical public accept (no auth). */
+  publicAccept:      (token: string)            => api.post(`/erp/quotations/public/token/${token}/accept`),
+  /** POST /erp/quotations/public/token/:token/reject — canonical public reject (no auth). */
+  publicReject:      (token: string)            => api.post(`/erp/quotations/public/token/${token}/reject`),
+  // INFO-01 — public capability-link management (ADMIN / owning EMPLOYEE).
+  generatePublicLink:(id: string, data?: object)=> api.post(`/erp/quotations/${id}/public-link`, data ?? {}),
+  rotatePublicLink:  (id: string, data?: object)=> api.post(`/erp/quotations/${id}/public-link/rotate`, data ?? {}),
+  revokePublicLink:  (id: string)               => api.delete(`/erp/quotations/${id}/public-link`),
+  setPublicLinkExpiry:(id: string, data: object)=> api.patch(`/erp/quotations/${id}/public-link`, data),
 };
 
 // ─── NEW-5: Support / Ticketing ───────────────────────────────────────────────

@@ -109,6 +109,14 @@ export interface InvoicePdfOptions {
   /** Base URL the QR code should point at — usually window.location.origin. */
   baseUrl?: string;
 
+  /**
+   * INFO-01 — opaque public capability token. When provided, the QR code
+   * targets the canonical token route (/invoice/public/token/:token) instead
+   * of the legacy raw-id route. Callers should ensure a token exists (via
+   * invoicesApi.generatePublicLink) before rendering a shareable PDF.
+   */
+  publicToken?: string | null;
+
   issuerName?:    string;
   issuerEmail?:   string;
   issuerPhone?:   string;
@@ -134,7 +142,14 @@ export async function downloadInvoicePdf(
   const baseUrl =
     options.baseUrl ??
     (typeof window !== 'undefined' ? window.location.origin : 'https://handla.com');
-  const qrTarget = `${baseUrl.replace(/\/$/, '')}/invoice/public/${invoice.id}`;
+  const root = baseUrl.replace(/\/$/, '');
+  // INFO-01 — prefer the opaque capability-token route for NEW share links.
+  // Fall back to the legacy raw-id route only when no token is available
+  // (that route stays gated on the backend by PUBLIC_DOC_LEGACY_ID_LINKS).
+  const token = options.publicToken ?? invoice.publicToken ?? null;
+  const qrTarget = token
+    ? `${root}/invoice/public/token/${token}`
+    : `${root}/invoice/public/${invoice.id}`;
 
   const qrDataUrl = await QRCode.toDataURL(qrTarget, {
     errorCorrectionLevel: 'H',

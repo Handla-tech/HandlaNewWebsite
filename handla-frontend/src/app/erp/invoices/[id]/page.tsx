@@ -183,8 +183,20 @@ export default function InvoiceDetailPage() {
     setPdfLoading(true);
     setPdfError('');
     try {
+      // INFO-01 — ensure a public capability token exists so the printed QR
+      // targets the opaque token route rather than the raw invoice id. This is
+      // idempotent server-side (returns the existing active link if present).
+      let publicToken: string | null = invoice.publicToken ?? null;
+      if (!publicToken) {
+        try {
+          const res = await invoicesApi.generatePublicLink(invoice.id);
+          publicToken = (res.data?.data ?? res.data)?.token ?? null;
+        } catch {
+          // Non-fatal: fall back to the legacy raw-id QR (still backend-gated).
+        }
+      }
       const { downloadInvoicePdf } = await import('@/lib/pdf/invoice-pdf');
-      await downloadInvoicePdf(invoice);
+      await downloadInvoicePdf(invoice, { publicToken });
     } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error('PDF generation failed', e);

@@ -281,7 +281,8 @@ export default function QuotationsPage() {
   });
 
   function copyLink(q: Quotation) {
-    const url = `${window.location.origin}/quotation/public/${q.publicToken}`;
+    // INFO-01 — canonical capability-token route (opaque token, not the raw id).
+    const url = `${window.location.origin}/quotation/public/token/${q.publicToken}`;
     navigator.clipboard?.writeText(url).then(() => { setToast(t('erp.quotations.toast.linkCopied')); setTimeout(() => setToast(null), 2500); });
   }
 

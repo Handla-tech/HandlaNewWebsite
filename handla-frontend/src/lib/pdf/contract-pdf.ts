@@ -435,8 +435,16 @@ function drawBulletList(ctx: DrawContext, label: string, items: string[]) {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export interface ContractPdfOptions {
-  /** Base URL the QR code should point at. Final target = ${baseUrl}/contract/public/${id}. */
+  /** Base URL the QR code should point at. */
   baseUrl?: string;
+
+  /**
+   * INFO-01 — opaque public capability token. When provided, the QR code
+   * targets the canonical token route (/contract/public/token/:token) instead
+   * of the legacy raw-id route. Callers should ensure a token exists (via
+   * contractsApi.generatePublicLink) before rendering a shareable PDF.
+   */
+  publicToken?: string | null;
 
   /** Issuer overrides — fall back to contract.owner when not provided. */
   issuerName?:    string;
@@ -463,7 +471,14 @@ export async function downloadContractPdf(
   const baseUrl =
     options.baseUrl ??
     (typeof window !== 'undefined' ? window.location.origin : 'https://handla.com');
-  const qrTarget = `${baseUrl.replace(/\/$/, '')}/contract/public/${contract.id}`;
+  const root = baseUrl.replace(/\/$/, '');
+  // INFO-01 — prefer the opaque capability-token route for NEW share links.
+  // Fall back to the legacy raw-id route only when no token is available
+  // (that route stays gated on the backend by PUBLIC_DOC_LEGACY_ID_LINKS).
+  const token = options.publicToken ?? contract.publicToken ?? null;
+  const qrTarget = token
+    ? `${root}/contract/public/token/${token}`
+    : `${root}/contract/public/${contract.id}`;
 
   const qrDataUrl = await QRCode.toDataURL(qrTarget, {
     errorCorrectionLevel: 'H',
