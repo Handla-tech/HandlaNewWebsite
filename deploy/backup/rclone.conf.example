@@ -1,0 +1,30 @@
+# /etc/handla-backup/rclone.conf   (root:root 0600)  —  TEMPLATE, NO SECRETS
+# Defines the off-host object-storage remote for backups.
+# Pick ONE provider block, fill real values, delete the others.
+
+# ---------- AWS S3 (dedicated backup bucket, NOT handla-uploads) ----------
+[handlabackup]
+type = s3
+provider = AWS
+access_key_id = REPLACE_BACKUP_ACCESS_KEY
+secret_access_key = REPLACE_BACKUP_SECRET_KEY
+region = eu-north-1
+# Dedicated backup IAM user with s3:PutObject/GetObject/ListBucket ONLY on
+# arn:aws:s3:::handla-production-backups/*  (no DeleteObject if using Object Lock).
+storage_class = STANDARD_IA
+
+# ---------- Backblaze B2 (alternative) ----------
+# [handlabackup]
+# type = b2
+# account = REPLACE_B2_KEY_ID
+# key = REPLACE_B2_APPLICATION_KEY
+# hard_delete = false
+
+# ---------- Cloudflare R2 (alternative) ----------
+# [handlabackup]
+# type = s3
+# provider = Cloudflare
+# access_key_id = REPLACE_R2_ACCESS_KEY
+# secret_access_key = REPLACE_R2_SECRET_KEY
+# endpoint = https://<accountid>.r2.cloudflarestorage.com
+# region = auto

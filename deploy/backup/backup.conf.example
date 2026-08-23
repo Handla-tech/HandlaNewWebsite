@@ -1,0 +1,27 @@
+# /etc/handla-backup/backup.conf   (root:root 0600)  —  TEMPLATE, NO SECRETS
+# Copy to /etc/handla-backup/backup.conf on the VPS and fill in real values.
+# This file is sourced by /usr/local/sbin/handla-backup.
+
+# --- MySQL (admin credential is read from the container env at runtime) ---
+MYSQL_CONTAINER=handla_mysql
+MYSQL_DB=handla_db
+
+# --- age encryption: PUBLIC recipient key only (safe to store on VPS) ---
+# Generate the keypair OFF the VPS:   age-keygen -o handla-backup.key
+# Put ONLY the "public key: age1..." value here. Keep the private key OFF-host.
+AGE_RECIPIENT=age1REPLACE_WITH_PUBLIC_RECIPIENT
+
+# --- rclone off-host remote (S3 / B2 / R2). Config lives in a root-only file ---
+# RCLONE_REMOTE is "<remote-name>:<bucket>" as defined in RCLONE_CONFIG.
+RCLONE_REMOTE=handlabackup:handla-production-backups
+RCLONE_CONFIG=/etc/handla-backup/rclone.conf
+
+# --- config/secret files to include in the encrypted config archive ---
+# Space-separated. Only production-only, non-reconstructable secrets.
+CONFIG_FILES=/opt/handla-production-secrets/backend.env
+
+# --- retention ---
+KEEP_LOCAL=3          # encrypted copies kept on the VPS
+RETAIN_DAILY=7        # off-host daily retention (days); ignored if remote is immutable
+RETAIN_WEEKLY=4
+RETAIN_MONTHLY=3

@@ -1,0 +1,15 @@
+# /etc/systemd/system/handla-backup.timer
+# Runs the encrypted off-host backup daily at 02:30 UTC (off-peak).
+[Unit]
+Description=Daily Handla off-host backup timer
+
+[Timer]
+# Daily at 02:30 UTC. Persistent=true runs a missed backup after downtime.
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+# Spread load / avoid exact-minute stampede across hosts.
+RandomizedDelaySec=300
+Unit=handla-backup.service
+
+[Install]
+WantedBy=timers.target
