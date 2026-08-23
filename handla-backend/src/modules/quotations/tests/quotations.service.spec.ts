@@ -11,6 +11,7 @@ import { InvoicesService } from '../../invoices/invoices.service';
 import { NotificationService } from '../../notifications/notification.service';
 import { QuotationStatus, UserRole } from '../../../common/enums';
 import { User } from '../../auth/entities/user.entity';
+import { makePublicTokenTestProviders } from '../../../common/public-token/testing/public-token-test-providers';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return { id: 'u-1', role: UserRole.ADMIN, ...overrides } as User;
@@ -70,6 +71,8 @@ describe('QuotationsService', () => {
         { provide: ContractsService, useValue: contractsService },
         { provide: InvoicesService, useValue: invoicesService },
         { provide: NotificationService, useValue: notificationService },
+        // INFO-01 — PublicTokenService (real) + mock ConfigService.
+        ...makePublicTokenTestProviders(),
       ],
     }).compile();
 
@@ -109,10 +112,22 @@ describe('QuotationsService', () => {
     });
   });
 
+  // INFO-01 — a well-formed, ACTIVE capability token. Public read/action now
+  // funnel through PublicTokenService.assertActive, so the mocked entity must
+  // carry a matching, non-expired, non-revoked token.
+  const VALID_TOKEN = 'abcDEF123_-ghiJKL456mnoPQR789stuVWX012yz';
+  const activeToken = {
+    publicToken: VALID_TOKEN,
+    publicTokenExpiresAt: null,
+    publicTokenRevokedAt: null,
+    publicTokenCreatedAt: new Date(),
+  };
+
   describe('findByPublicToken', () => {
     it('returns a sanitized projection (no owner/internal ids leaked)', async () => {
       quotationRepo.findOne.mockResolvedValue({
         id: 'q-1',
+        ...activeToken,
         quoteNumber: 'QUO-2026-0001',
         title: 'Website build',
         status: QuotationStatus.SENT,
@@ -131,7 +146,7 @@ describe('QuotationsService', () => {
         owner: { name: 'Staff' },
       });
 
-      const result = await service.findByPublicToken('tok-1');
+      const result = await service.findByPublicToken(VALID_TOKEN);
       expect(result.quoteNumber).toBe('QUO-2026-0001');
       expect(result.client).toEqual({ name: 'Acme', company: 'Acme Inc' });
       expect(result.issuer).toEqual({ name: 'Staff' });
@@ -155,11 +170,12 @@ describe('QuotationsService', () => {
     it('flips SENT → ACCEPTED and notifies owner', async () => {
       quotationRepo.findOne.mockResolvedValue({
         id: 'q-1',
+        ...activeToken,
         quoteNumber: 'QUO-2026-0001',
         status: QuotationStatus.SENT,
         ownerId: 'u-1',
       });
-      const result = await service.acceptByToken('tok-1');
+      const result = await service.acceptByToken(VALID_TOKEN);
       expect(result.status).toBe(QuotationStatus.ACCEPTED);
       expect(result.acceptedAt).toBeInstanceOf(Date);
       expect(notificationService.createErpNotification).toHaveBeenCalled();
@@ -168,10 +184,11 @@ describe('QuotationsService', () => {
     it('rejects accept when not SENT', async () => {
       quotationRepo.findOne.mockResolvedValue({
         id: 'q-1',
+        ...activeToken,
         status: QuotationStatus.DRAFT,
         ownerId: 'u-1',
       });
-      await expect(service.acceptByToken('tok-1')).rejects.toBeDefined();
+      await expect(service.acceptByToken(VALID_TOKEN)).rejects.toBeDefined();
     });
   });
 
@@ -179,12 +196,13 @@ describe('QuotationsService', () => {
     it('flips SENT → REJECTED and appends reason to notes', async () => {
       quotationRepo.findOne.mockResolvedValue({
         id: 'q-1',
+        ...activeToken,
         quoteNumber: 'QUO-2026-0001',
         status: QuotationStatus.SENT,
         ownerId: 'u-1',
         notes: null,
       });
-      const result = await service.rejectByToken('tok-1', 'too expensive');
+      const result = await service.rejectByToken(VALID_TOKEN, 'too expensive');
       expect(result.status).toBe(QuotationStatus.REJECTED);
       expect(result.rejectedAt).toBeInstanceOf(Date);
       expect(result.notes).toContain('too expensive');
