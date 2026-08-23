@@ -1,0 +1,18 @@
+# /etc/sudoers.d/handla-deploy
+# Narrow, single-command sudo rule for the least-privilege deployment user.
+#
+# handla-deploy may run EXACTLY the fixed, root-owned production-deploy wrapper
+# and nothing else. It may NOT run docker, compose, bash, sh, env, tee, cp,
+# chmod, chown, systemctl, an editor, or any interpreter. No NOPASSWD: ALL.
+#
+# The wrapper itself takes no arguments and hard-codes repo/branch/dir, so this
+# rule cannot be turned into arbitrary root execution.
+#
+# Validate after install with:  visudo -cf /etc/sudoers.d/handla-deploy
+#
+# Defence-in-depth sudo options:
+#   !setenv           -> deny `sudo VAR=... cmd` and -E; caller cannot inject env
+#   secure_path       -> wrapper runs with a fixed PATH (anti PATH-hijack)
+Defaults:handla-deploy !setenv, secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+handla-deploy ALL=(root) NOPASSWD: /usr/local/sbin/handla-production-deploy
