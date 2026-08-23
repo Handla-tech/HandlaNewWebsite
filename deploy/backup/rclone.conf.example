@@ -2,16 +2,20 @@
 # Defines the off-host object-storage remote for backups.
 # Pick ONE provider block, fill real values, delete the others.
 
-# ---------- AWS S3 (dedicated backup bucket, NOT handla-uploads) ----------
-[handlabackup]
+# ---------- AWS S3 (PRODUCTION — dedicated backup bucket, NOT handla-uploads) ----------
+# Remote name MUST be handla-backups-aws (matches RCLONE_REMOTE in backup.conf).
+[handla-backups-aws]
 type = s3
 provider = AWS
+env_auth = false
 access_key_id = REPLACE_BACKUP_ACCESS_KEY
 secret_access_key = REPLACE_BACKUP_SECRET_KEY
 region = eu-north-1
-# Dedicated backup IAM user with s3:PutObject/GetObject/ListBucket ONLY on
-# arn:aws:s3:::handla-production-backups/*  (no DeleteObject if using Object Lock).
-storage_class = STANDARD_IA
+location_constraint = eu-north-1
+acl = private
+# Dedicated backup IAM user (handla-backup) with s3:PutObject/GetObject/ListBucket
+# ONLY on arn:aws:s3:::handla-production-backups/*  — NO DeleteObject (Object Lock).
+# Uploads run with --s3-no-check-bucket (the credential cannot CreateBucket).
 
 # ---------- Backblaze B2 (alternative) ----------
 # [handlabackup]

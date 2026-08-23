@@ -13,7 +13,8 @@ AGE_RECIPIENT=age1REPLACE_WITH_PUBLIC_RECIPIENT
 
 # --- rclone off-host remote (S3 / B2 / R2). Config lives in a root-only file ---
 # RCLONE_REMOTE is "<remote-name>:<bucket>" as defined in RCLONE_CONFIG.
-RCLONE_REMOTE=handlabackup:handla-production-backups
+# PRODUCTION uses the real AWS remote below (NOT the MinIO stand-in 'handlabackup').
+RCLONE_REMOTE=handla-backups-aws:handla-production-backups
 RCLONE_CONFIG=/etc/handla-backup/rclone.conf
 
 # --- config/secret files to include in the encrypted config archive ---
@@ -22,6 +23,10 @@ CONFIG_FILES=/opt/handla-production-secrets/backend.env
 
 # --- retention ---
 KEEP_LOCAL=3          # encrypted copies kept on the VPS
-RETAIN_DAILY=7        # off-host daily retention (days); ignored if remote is immutable
+RETAIN_DAILY=7        # off-host daily retention (days) — only used if OFFHOST_PRUNE=true
 RETAIN_WEEKLY=4
 RETAIN_MONTHLY=3
+# OFFHOST_PRUNE=false for an immutable remote (AWS Object Lock + no-DELETE cred):
+# client-side deletion is skipped; expiry is handled by an AWS lifecycle policy.
+# Set true ONLY for a remote whose credential legitimately grants delete.
+OFFHOST_PRUNE=false

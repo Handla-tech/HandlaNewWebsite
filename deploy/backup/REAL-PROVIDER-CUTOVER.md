@@ -1,98 +1,79 @@
-# Handla — Real Off-Host Provider Cutover (OPERATOR ACTION REQUIRED)
+# Handla — Real Off-Host Provider Cutover (VERIFIED — AWS S3)
 
-> **Status: BLOCKED — awaiting operator-supplied credentials for a real,
-> independent object-storage provider.**
->
-> The backup + restore pipeline is fully implemented and proven end-to-end
-> against a loopback MinIO S3-compatible stand-in. It **cannot** be pointed at a
-> real independent provider by the agent because **no such credentials exist on
-> the VPS**, and the only cloud key present (the app's AWS IAM user) is
-> deliberately least-privileged and **cannot create or manage a backup bucket**.
-> Per policy, credentials were **not fabricated** and the app IAM policy was
-> **not weakened**.
+> **Status: DONE — production backups now go to a real, independent AWS S3
+> bucket with versioning + Object Lock. Cutover verified end-to-end
+> (backup → real-AWS restore drill).** No secret values appear in this document.
 
-## Why the cutover is blocked (evidence)
+## Verified configuration
 
-Searched the VPS (root) — none of the following exist:
-- `/root/.aws/credentials` / `/root/.aws/config` — **absent**
-- `/root/.config/rclone/rclone.conf` — **absent** (only `/etc/handla-backup/rclone.conf`, still the MinIO stand-in)
-- `/root/.b2_account_info`, `/root/.config/b2` — **absent**
-- No `B2_*`, `R2_*`, `BACKBLAZE`, `CLOUDFLARE_R2`, Hostinger object-storage, or
-  `BACKUP_*` provider env in shell profiles, `/etc/environment`, or `/opt`.
-
-The only real cloud credential on the box is the **app** IAM user
-`arn:aws:iam::914773267354:user/handla-backend`. AWS itself confirms it is
-scoped and cannot manage a backup bucket:
-
-```
-s3:CreateBucket  handla-production-backups  -> 403 AccessDenied (no policy allows it)
-s3:ListAllMyBuckets                         -> 403 AccessDenied
-```
-
-It is also forbidden to reuse `handla-uploads` (Phase 2) or to broaden the app
-policy. Therefore a real independent provider must be provisioned out-of-band.
-
-## EXACT information the operator must provide
-
-Pick ONE independent provider (must be OUTSIDE this VPS's disk/failure domain).
-Fill in and hand back these values (secret key via a secure channel, **never** in git):
-
-| Field | Value needed |
+| Field | Value |
 |---|---|
-| Provider | AWS S3 / Backblaze B2 / Cloudflare R2 / Hostinger Object Storage / other S3-compatible |
-| Endpoint | e.g. `https://<accountid>.r2.cloudflarestorage.com` (R2), `https://s3.<region>.backblazeb2.com` (B2), native for AWS |
-| Region | e.g. `eu-north-1`, `eu-central-003`, `auto` |
-| Bucket name | `handla-production-backups` (or unique equivalent; NOT `handla-uploads`) |
-| Access key ID | dedicated **backup** credential (see privilege model below) |
-| Secret access key | (supply via secure channel — not committed, not logged) |
-| Object Lock capable? | yes/no — **strongly prefer yes** |
-| Versioning capable? | yes/no |
+| Provider | AWS S3 |
+| Region | `eu-north-1` |
+| Bucket | `handla-production-backups` (separate from the app bucket `handla-uploads`) |
+| rclone remote | `handla-backups-aws` |
+| Backup destination | `handla-backups-aws:handla-production-backups` |
+| IAM user | `handla-backup` (dedicated; distinct from the app user `handla-backend`) |
+| Credential location | `/etc/handla-backup/rclone.conf` on the VPS (root:root 0600) |
+| Encryption | `age` client-side asymmetric, **before** upload |
+| Private decryption key | **off-VPS only** (operator vault) — NOT on the production host |
+| Versioning | Enabled (verified: objects return a non-null S3 `VersionId`) |
+| Object Lock | Enabled — Governance mode, 30-day default retention (operator-configured at bucket creation) |
+| Block Public Access | Enabled (verified: `PutBucketAcl public-read` denied by BPA) |
 
-## Provider setup the operator must perform (matches Phases 2–4)
+## Credential privilege model (least privilege)
 
-1. **Create a dedicated bucket** `handla-production-backups`:
-   - Private; **block all public access**; no anonymous GET/LIST.
-   - **Encryption at rest** enabled (SSE-S3/SSE-KMS or provider equivalent).
-   - **Versioning enabled**.
-   - **Object Lock enabled at creation** (AWS S3 requires enabling Object Lock
-     when the bucket is created) — Compliance mode preferred; Governance mode
-     acceptable if a separate admin can still perform emergency legal-hold ops.
-     Set a retention period aligned with the retention baseline (below).
-2. **Create a dedicated backup credential** (NOT the app key) scoped to that
-   bucket only, with **least privilege**:
-   - Allow: `s3:PutObject`, `s3:GetObject`, `s3:ListBucket`
-     (+ multipart: `s3:AbortMultipartUpload`, `s3:ListMultipartUploadParts` if needed).
-   - **Deny / omit**: `s3:DeleteObject`, `s3:DeleteObjectVersion`,
-     `s3:PutBucketPolicy`, `s3:PutObject*Acl`, `s3:DeleteBucket`, any IAM/admin.
-   - Retention/expiry handled by **provider-side lifecycle policy**, NOT by the
-     backup credential's DELETE rights.
-3. **Retention baseline** (implement via lifecycle + Object Lock, adjust to
-   provider): 7 daily / 4 weekly / 3 monthly. With Object Lock, objects cannot be
-   deleted before their retention expires even by an admin (Compliance mode).
+The `handla-backup` IAM user is scoped to `PUT / GET / LIST` on the backup bucket
+only. Verified by direct AWS calls returning `403 AccessDenied`:
 
-## Agent steps once credentials are provided (Phases 5–20, ready to run)
+- `s3:DeleteObject` → **denied** (delete of a test object refused; object survived)
+- `s3:CreateBucket` → **denied**
+- `s3:PutBucketPolicy`, `s3:PutBucketAcl` → **denied** (ACL also blocked by BPA)
+- `s3:GetBucketVersioning`, `s3:ListBucketVersions`, `s3:GetObjectRetention`,
+  `s3:GetObjectLockConfiguration` → **denied** (intentionally; not needed for backup)
+- `s3:BypassGovernanceRetention` → **not granted**
+- Cross-bucket: `handla-backup` cannot access `handla-uploads`; the app user
+  `handla-backend` cannot access `handla-production-backups` (both 403).
 
-The pipeline is already coded for this; only the remote config changes.
+Do **not** add any of the denied permissions. Bucket-lock/versioning inspection
+is done with an operator/admin credential, not the VPS backup key.
 
-1. Write `/etc/handla-backup/rclone.conf` (root:root 0600) using the provider
-   block in `rclone.conf.example` (AWS/B2/R2 templates included). Remote name
-   stays `handlabackup`. Remove the MinIO block from the production config.
-2. Connectivity test with a disposable object: LIST, PUT, GET, checksum compare;
-   confirm DELETE is denied (expected for the no-DELETE credential).
-3. Unauthenticated access test → expect `403 AccessDenied`.
-4. `handla-backup` (real provider) → record ts / DB size / config size / duration.
-5. Verify remote object: exists, size, checksum, version ID, Object-Lock metadata.
-6. `handla-restore-drill` sourcing **from the real provider** → 36 tables,
-   migrations rows, indexes/FKs validated in a throwaway MySQL 8 container.
-7. Config restore check (filenames only), then shred temp files.
-8. Immutability test (delete denied) + versioning test (v1/v2 recover) on a
-   disposable object.
-9. Confirm systemd timer still points at the (now real) `handla-backup`.
-10. Re-run the failure simulation; then update this doc + `DISASTER-RECOVERY.md`
-    + `README.md` to name the real provider and its immutability posture.
+## Retention model (reconciled with 30-day Object Lock)
 
-## What is already proven (unchanged, do not redo)
-Encrypted-before-upload (age, VPS holds public key only), SHA-256 integrity,
-fail-closed pipeline, systemd daily timer, local + off-host retention logic,
-restore drill (36 tables / 23 migrations / 153 indexes / 22 FKs), failure
-simulation, permissions lockdown. See `README.md`.
+The VPS credential has **no delete rights**, and objects are immutable for the
+30-day Object Lock window. Client-side deletion-based retention is therefore
+**disabled** (`OFFHOST_PRUNE=false` in `backup.conf`); the backup script logs
+that expiry is delegated to AWS.
+
+- **Local staging:** `KEEP_LOCAL=3` encrypted copies on the VPS (safe to delete
+  locally; local files are not under Object Lock).
+- **Off-host expiry:** an **AWS S3 Lifecycle policy** (operator-managed on the
+  bucket) expires/transitions old versions **after** the 30-day Object Lock
+  retention permits it. A 7-daily / 4-weekly / 3-monthly *deletion* schedule
+  **cannot** be honored earlier than 30 days while objects are locked — this is
+  by design (immutability wins). Recommended lifecycle: expire noncurrent and
+  current backup object versions at an age ≥ 30 days that satisfies the desired
+  daily/weekly/monthly footprint (e.g. expire daily objects at 35–40 days).
+  Do **not** attempt client-side deletion to implement 7-day retention; it would
+  fail (no permission) and is incompatible with the lock.
+
+## Restore procedure (tested)
+
+Restore decryption uses the **off-VPS** age private identity on a trusted machine
+that is **not** the production host. The DR drill downloads the latest encrypted
+DB artifact from AWS, verifies SHA-256, decrypts with the identity, verifies gzip,
+and imports into a throwaway MySQL 8 container (never production). Verified
+result on the real AWS artifact: 36 tables, 23 migrations, 153 indexes, 22 FKs.
+
+```
+AGE_IDENTITY=/secure/offhost/handla-backup-identity.key \
+RCLONE_CONFIG=/etc/handla-backup/rclone.conf \
+RCLONE_REMOTE=handla-backups-aws:handla-production-backups \
+  /usr/local/sbin/handla-restore-drill
+```
+
+> Operational note: during this cutover exercise the only trusted environment
+> available was the production host itself, so the drill decryption ran there and
+> the private identity was **securely removed afterward** (`shred -u`). In a real
+> DR event, perform decryption on a separate trusted machine per this runbook;
+> never leave the private identity on the VPS.

@@ -3,19 +3,22 @@
 > Rebuild Handla production from an off-host, encrypted backup after total VPS
 > loss/compromise. **No secret values appear in this document.**
 >
-> **Off-host target status:** the real independent provider cutover is **pending
-> operator-supplied credentials** — see `REAL-PROVIDER-CUTOVER.md`. Until then the
-> proven off-host target is a MinIO S3-compatible stand-in (loopback on the VPS),
-> which is NOT an independent failure domain. The restore steps below are
-> provider-agnostic (rclone remote `handlabackup:`); they apply unchanged once the
-> real provider is wired.
+> **Off-host target status:** LIVE on **AWS S3** — bucket
+> `handla-production-backups` (region `eu-north-1`), rclone remote
+> `handla-backups-aws`, versioning + Object Lock (Governance, 30d), Block Public
+> Access. Dedicated IAM user `handla-backup` (PUT/GET/LIST, no DELETE). Cutover
+> verified end-to-end (backup → real-AWS restore). See `REAL-PROVIDER-CUTOVER.md`.
+> Restore steps below are provider-agnostic; the active remote is
+> `handla-backups-aws:handla-production-backups`.
 
 ## 0. Recovery inputs you must have OFF the VPS
 - **age private identity** (`handla-backup-identity.key`) — decrypts every backup.
   Stored in the team password manager / offline vault, **never only on the VPS**.
-- **Off-host object-store credentials** for the backup remote (`handlabackup:`).
+- **AWS backup credentials** for the `handla-backup` IAM user / rclone remote
+  `handla-backups-aws` (PUT/GET/LIST on `handla-production-backups`). For a
+  restore you additionally need GET on the bucket (the backup key already has it).
 - GitHub access to `Handla-tech/HandlaNewWebsite` (source of truth for code/infra).
-- Provider consoles: AWS (S3 `handla-uploads`), DNS, SMTP/OAuth.
+- Provider consoles: AWS (S3 `handla-uploads` + `handla-production-backups`), DNS, SMTP/OAuth.
 
 ## 1. RPO / RTO
 - **RPO:** 24h (daily 02:30 UTC DB + config backup). Loss window ≤ last successful run.
@@ -34,7 +37,7 @@
 ## 3. Restore production config/secrets
 ```
 # bring the age identity to a secure workstation (NOT the new VPS long-term)
-rclone copyto handlabackup:handla-production-backups/daily/<TS>/handla-config-prod_<TS>.tar.gz.age ./cfg.age
+rclone copyto handla-backups-aws:handla-production-backups/daily/<TS>/handla-config-prod_<TS>.tar.gz.age ./cfg.age
 sha256sum -c handla-config-prod_<TS>.tar.gz.age.sha256
 age -d -i handla-backup-identity.key ./cfg.age | tar -tzvf -     # inspect members
 age -d -i handla-backup-identity.key ./cfg.age | tar -xzf - -C /restore
@@ -43,7 +46,7 @@ age -d -i handla-backup-identity.key ./cfg.age | tar -xzf - -C /restore
 
 ## 4. Restore the database
 ```
-rclone copyto handlabackup:handla-production-backups/daily/<TS>/handla-db-prod_<TS>.sql.gz.age ./db.age
+rclone copyto handla-backups-aws:handla-production-backups/daily/<TS>/handla-db-prod_<TS>.sql.gz.age ./db.age
 sha256sum -c handla-db-prod_<TS>.sql.gz.age.sha256
 age -d -i handla-backup-identity.key ./db.age | gunzip -c > dump.sql   # 0600, temp
 # import into the NEW production MySQL (only during rebuild, never over live data):

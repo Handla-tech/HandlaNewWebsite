@@ -92,13 +92,22 @@ log "starting throwaway MySQL 8 (isolated, no production link)"
 docker run -d --name "$CONT" --network "$NET" \
   -e MYSQL_ROOT_PASSWORD="$TMP_PW" \
   mysql:8.0 >/dev/null
-# wait for readiness
-for i in $(seq 1 60); do
-  if docker exec -e MYSQL_PWD="$TMP_PW" "$CONT" mysqladmin -uroot ping >/dev/null 2>&1; then break; fi
+# wait for readiness — require an AUTHENTICATED query to succeed, not just a
+# ping. MySQL 8's entrypoint briefly runs a temp server before the root password
+# is finalized; pinging too early lets the import race the auth setup and fail
+# with "Access denied for user 'root'". We poll a real SELECT with the password.
+READY=0
+for i in $(seq 1 90); do
+  if docker exec -e MYSQL_PWD="$TMP_PW" "$CONT" \
+       mysql -uroot -N -e "SELECT 1;" >/dev/null 2>&1; then
+    READY=1; break
+  fi
   sleep 2
-  [ "$i" -eq 60 ] && { log "FATAL: temp MySQL did not become ready"; exit 1; }
 done
-log "temp MySQL ready"
+[ "$READY" -eq 1 ] || { log "FATAL: temp MySQL did not become ready (authenticated)"; exit 1; }
+# small settle so the entrypoint has fully swapped from temp server to final one
+sleep 2
+log "temp MySQL ready (authenticated)"
 
 # ── 7. import dump ──────────────────────────────────────────────────────────
 set +e

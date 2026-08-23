@@ -185,12 +185,21 @@ prune_local "handla-db-prod_*.sql.gz.age" "$KEEP_LOCAL"
 prune_local "handla-config-prod_*.tar.gz.age" "$KEEP_LOCAL"
 
 # ── 10. OFF-HOST RETENTION (age-based on the daily/ prefix) ─────────────────
-# Delete daily backups older than RETAIN_DAILY days. Only runs if the remote
-# grants delete; if delete is denied (immutability model), rclone logs a
-# warning and we DO NOT fail the run (immutability is the stronger posture).
-rclone delete --config "$RCLONE_CONFIG" --min-age "${RETAIN_DAILY}d" \
-      "$RCLONE_REMOTE/daily/" --rmdirs --log-file "$LOG" --log-level INFO \
-  || log "NOTE: off-host retention prune skipped/denied (immutable remote?) — continuing"
+# The production AWS backup credential intentionally has NO DeleteObject /
+# DeleteObjectVersion, and objects are held under Object Lock. Client-side
+# deletion is therefore neither possible nor desirable — expiration is handled
+# by an AWS bucket LIFECYCLE policy (operator-managed), after Object Lock
+# retention permits it. Set OFFHOST_PRUNE=false (default) for such immutable
+# remotes to skip the futile, always-denied delete attempt. Set to true only
+# for a remote whose credential legitimately grants delete (e.g. MinIO test).
+OFFHOST_PRUNE="${OFFHOST_PRUNE:-false}"
+if [ "$OFFHOST_PRUNE" = "true" ]; then
+  rclone delete --config "$RCLONE_CONFIG" --min-age "${RETAIN_DAILY}d" \
+        "$RCLONE_REMOTE/daily/" --rmdirs --log-file "$LOG" --log-level INFO \
+    || log "NOTE: off-host retention prune skipped/denied (immutable remote?) — continuing"
+else
+  log "off-host retention: client-side prune DISABLED (immutable remote); expiry handled by AWS lifecycle + Object Lock"
+fi
 
 # ── 11. SUCCESS MARKER (only reached if EVERYTHING above succeeded) ─────────
 printf '%s\n' "$RUN_TS" > "$SUCCESS_MARKER"

@@ -51,18 +51,27 @@ protects against accidental/malicious object deletion). Do not make the bucket p
   credential scoped to `PUT/LIST/GET` only (no `DELETE`) and enable **Object Lock /
   immutable retention / versioning**. Templates already note this.
 
-## Real-provider cutover (BLOCKED — currently a stand-in)
-The pipeline is proven end-to-end against a **loopback-only MinIO S3-compatible
-stand-in** (identical rclone S3 code path). Going live on a real independent
-provider is **blocked pending operator-supplied credentials**: no dedicated
-backup-provider credentials exist on the VPS, and the app's AWS IAM user is
-least-privileged and cannot create/manage a backup bucket
-(`s3:CreateBucket` / `s3:ListAllMyBuckets` → 403 AccessDenied). Credentials were
-not fabricated and the app IAM policy was not changed.
+## Off-host provider — LIVE on AWS S3 (verified)
+Production backups upload to a **real, independent AWS S3 bucket**:
 
-**See `REAL-PROVIDER-CUTOVER.md`** for the exact provider/bucket/credential
-requirements the operator must supply, and the ready-to-run agent steps once
-they are provided.
+- Provider **AWS S3**, region **eu-north-1**, bucket **`handla-production-backups`**
+  (separate from the app bucket `handla-uploads`).
+- rclone remote **`handla-backups-aws`**; destination
+  `handla-backups-aws:handla-production-backups`.
+- Dedicated IAM user **`handla-backup`**, scoped **PUT/GET/LIST only** — no
+  DELETE, no CreateBucket, no bucket admin, no Object Lock bypass.
+- **Versioning enabled**, **Object Lock** (Governance, 30 days), **Block Public
+  Access** enabled.
+- All uploads use `--s3-no-check-bucket` (the credential cannot CreateBucket).
+
+Cutover verified end-to-end: real AWS backup → real-AWS restore drill
+(36 tables / 23 migrations / 153 indexes / 22 FKs) → delete-denial + public-access
++ cross-bucket-isolation tests. See `REAL-PROVIDER-CUTOVER.md` for the full model.
+
+The loopback **MinIO** remote (`handlabackup`) is retained only as a marked
+**TEST / STAND-IN ONLY** entry in `rclone.conf` and is **not** the production
+target. There is no silent fallback: if the AWS upload fails the backup job fails
+and the last-success marker is not updated.
 
 ## Operate
 ```
