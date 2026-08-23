@@ -580,6 +580,14 @@ export class EmailService {
     html: string;
     text?: string;
   }): Promise<void> {
+    // Defense-in-depth: reject recipients containing CR/LF or other control
+    // characters BEFORE handing off to the SMTP layer. Recipient addresses are
+    // already validated upstream by class-validator `@IsEmail` at the DTO
+    // boundary, but this explicit mail-layer guard ensures a malformed/injected
+    // recipient can never be parsed into an unintended envelope recipient or
+    // smuggled header — independent of any single upstream validator.
+    this.assertSafeRecipient(options.to);
+
     try {
       const info = await this.transporter.sendMail({
         from: this.from,
@@ -593,6 +601,29 @@ export class EmailService {
     } catch (err) {
       this.logger.error(`Failed to send email to ${options.to}: ${err.message}`, err.stack);
       throw err; // re-throw so Bull can retry
+    }
+  }
+
+  /**
+   * Reject a recipient string that contains CR/LF or other control characters.
+   *
+   * This is an explicit mail-layer defense against email header injection: a
+   * value such as `victim@example.com\r\nBcc: attacker@evil.com` must never be
+   * handed to the transport, where an address parser could otherwise fold it
+   * into an unintended envelope recipient or a smuggled header. The bare
+   * address is NOT further shape-validated here (nodemailer/SMTP still own that)
+   * — this guard exists purely to block control-character injection.
+   *
+   * Throws a generic error that leaks no SMTP credentials or connection detail.
+   */
+  private assertSafeRecipient(to: unknown): void {
+    if (typeof to !== 'string' || to.length === 0) {
+      throw new Error('Invalid email recipient');
+    }
+    // Any CR, LF, NUL or other C0/C1 control character is disallowed.
+    // eslint-disable-next-line no-control-regex
+    if (/[\r\n\u0000-\u001f\u007f]/.test(to)) {
+      throw new Error('Invalid email recipient');
     }
   }
 

@@ -477,3 +477,53 @@ upgrades, infra, or UI changes).
   correctly attaching `Origin` on `SameSite=None` cross-site sends (true for all
   current major browsers); a future move to per-request CSRF tokens would be an
   orthogonal hardening, not a prerequisite.
+
+---
+
+## Dependency security — Nodemailer 6 → 9 upgrade (branch `security/nodemailer-9-upgrade`)
+
+Isolated security-maintenance pass. **No** NestJS/Express/DB/Redis/other changes.
+PT-01/PT-02/PT-04 remain closed (unchanged); their history above is preserved.
+
+- **Old version:** `nodemailer@6.10.1` (declared `^6.9.7`), `@types/nodemailer@6.4.23`.
+- **New version:** `nodemailer@9.0.5` (declared `^9.0.5`), `@types/nodemailer@8.0.1`.
+- **Node runtime:** v20 (dev + `node:20-alpine`); nodemailer engines `>=6.0.0` satisfied.
+
+### Advisories addressed (all 8 direct nodemailer advisories removed)
+| Advisory | Severity | Note |
+| --- | --- | --- |
+| GHSA-p6gq-j5cr-w38f | HIGH | `raw`-option file read / full-response SSRF (Handla never uses `raw`) |
+| GHSA-rcmh-qjqh-p98v | HIGH | addressparser recursive DoS |
+| GHSA-mm7p-fcc7-pg87 | MODERATE | email to unintended domain (interpretation conflict) |
+| GHSA-vvjj-xcjg-gr5g | MODERATE | SMTP command injection via CRLF in transport `name` |
+| GHSA-268h-hp4c-crq3 | MODERATE | CRLF injection in List-* header comments |
+| GHSA-wqvq-jvpq-h66f | MODERATE | jsonTransport disableFile/UrlAccess bypass |
+| GHSA-r7g4-qg5f-qqm2 | MODERATE | improper TLS cert validation in OAuth2 token fetch |
+| GHSA-c7w3-x93f-qmm8 | LOW | SMTP command injection via `envelope.size` |
+
+### Breaking-change assessment (6→9)
+- **7.0.0** removed old SES SDK v2/v3 → SESv2. Handla uses plain SMTP transport, **not** the SES transport → no impact.
+- **8.0.0** renamed error code `NoAuth`→`ENOAUTH`, standardized codes. Handla never string-matches nodemailer error codes (errors wrapped in `EmailDeliveryException`, Bull retries generically) → no impact.
+- **9.0.0** HTTPS remote-content fetch (attachment href/path, OAuth2 endpoints, HTTP/HTTPS proxy CONNECT) now validates TLS certs by default. Handla uses **none** of these paths → no impact.
+- **9.0.5** additional mime/header control-char hardening → beneficial, no API change.
+- **API surface used by Handla** (`createTransport({host,port,secure,auth})` + `sendMail({from,replyTo,to,subject,html,text})`) is **unchanged** across 6→9. Build + all email tests pass with **no functional code change** required.
+
+### Code changes
+- `EmailService.sendMail` now calls a new `assertSafeRecipient(to)` guard that **fails closed** on any CR/LF/NUL/control character in the recipient, with a generic `Invalid email recipient` error (leaks no SMTP credential/host). This is defense-in-depth on top of the existing upstream `@IsEmail` DTO validation. `from`/`replyTo` remain 100% server-controlled from env config; no user-controlled `from`/headers/`raw`.
+
+### Security regression coverage (added, all green on v9)
+- `email.security.spec.ts` — sender config server-controlled; no user-controlled `raw`/headers/attachments/cc/bcc/envelope; CRLF/header-injection recipients rejected fail-closed; subject/header safety; Handlebars auto-escaping of user-controlled template fields; transport errors re-thrown without leaking secrets.
+- `email.processor.spec.ts` — Bull queue: successful processing, failure re-throw → retry, failed-job path, no double-send, 3-attempt/exponential-backoff policy pinned.
+- Backend suite: **76 suites / 1187 tests pass**. Dedicated security/pentest suites: **13 suites / 273 tests pass** (PT-01/02/04, SSRF, WebSocket, CORS, rate-limit, file, injection). Auth flows: **56 tests pass**.
+
+### Audit before/after (backend)
+| | total | critical | high | moderate | low |
+| --- | --- | --- | --- | --- | --- |
+| Before | 21 | 0 | 4 | 15 | 2 |
+| After | 20 | 0 | 3 | 15 | 2 |
+
+- **Removed:** all 8 direct `nodemailer` advisories (2 HIGH + 5 MODERATE + 1 LOW); nodemailer no longer flagged.
+- **Remaining (deferred):** transitive advisories via `@nestjs/cli`→`webpack` and `express`→`qs`. These require the **separate NestJS 11 phase** and are intentionally **not** touched here. Frontend audit: 0 findings.
+
+### Why NestJS findings remain deferred
+Fixing them requires `@nestjs/cli@11`/framework major bumps (`npm audit fix --force`), which is explicitly out of scope for this isolated blast-radius-minimal upgrade and is tracked as a distinct phase.
