@@ -527,3 +527,85 @@ PT-01/PT-02/PT-04 remain closed (unchanged); their history above is preserved.
 
 ### Why NestJS findings remain deferred
 Fixing them requires `@nestjs/cli@11`/framework major bumps (`npm audit fix --force`), which is explicitly out of scope for this isolated blast-radius-minimal upgrade and is tracked as a distinct phase.
+
+---
+
+# Dependency Modernization — NestJS 10 → 11 Security Migration (branch `security/nestjs-11-upgrade`)
+
+This isolated pass resolves the framework/transitive advisories that the Nodemailer pass (above) explicitly deferred to "the separate NestJS 11 phase." No product behavior or security control was redesigned; the goal was purely to eliminate the remaining NestJS/Express/transitive advisories while preserving every existing control (PT-01 / PT-02 / PT-04 / PROXY-01 remain fixed and verified).
+
+### Versions before / after
+
+| Component | Before | After |
+| --- | --- | --- |
+| `@nestjs/common` / `core` / `platform-express` | 10.4.22 | 11.2.1 |
+| `@nestjs/websockets` / `platform-socket.io` | 10.4.22 | 11.2.1 |
+| `@nestjs/testing` (dev) | 10.4.22 | 11.2.1 |
+| `@nestjs/config` | 3.x | 4.0.4 |
+| `@nestjs/typeorm` | 10.x | 11.0.3 |
+| `@nestjs/throttler` | 5.x | 6.5.0 |
+| `@nestjs/bull` | 10.x | 11.0.5 |
+| `@nestjs/jwt` | 10.x | 11.0.2 |
+| `@nestjs/passport` | 10.x | 11.0.5 |
+| `@nestjs/swagger` | 7.x | 11.4.7 |
+| `@nestjs/cli` / `schematics` (dev) | 10.x | 11.0.24 / 11.1.0 |
+| Express (transitive via platform-express) | 4.x | 5.2.1 |
+| body-parser / qs (transitive) | 1.x / 6.x | 2.3.0 / 6.15.3 |
+| path-to-regexp (transitive) | 0.1.x / 3.x | 8.4.2 |
+| multer (transitive) | 1.x | 2.2.0 |
+| Socket.IO | 4.8.x | 4.8.3 (unchanged) |
+| TypeORM | 0.3.31 | 0.3.31 (unchanged) |
+| reflect-metadata | 0.1.x | 0.2.2 |
+| `@types/express` (dev) | 4.17.x | 5.0.0 |
+| Node.js | 20.20.2 | 20.20.2 (unchanged) |
+| TypeScript | 5.9.3 | 5.9.3 (unchanged) |
+
+### Advisories eliminated
+
+Backend `npm audit` went from **20 → 0**. The upgrade removed the entire NestJS/Express transitive cluster:
+
+- **HIGH** — `@nestjs/platform-express` (via express / body-parser / multer / qs), `lodash` (`_.template` code injection + `_.unset`/`_.omit` prototype pollution, via `@nestjs/config` + `@nestjs/swagger`), `multer` (multiple DoS: incomplete cleanup, resource exhaustion, uncontrolled recursion, deeply-nested field names).
+- **MODERATE** — `@nestjs/core` ("Improperly Neutralizes Special Elements" injection) and every package that flagged transitively through it (`bull`/`bull-shared`, `common`→`file-type`, `platform-socket.io`, `swagger`, `testing`, `throttler`, `typeorm`, `websockets`); `body-parser` (limit-bypass DoS); `express`→`qs`; `file-type` (ASF infinite loop + ZIP decompression bomb); `qs` (stringify DoS).
+- **LOW** — `@nestjs/cli`→`webpack` (buildHttp `allowedUris` allow-list bypass / SSRF).
+
+Frontend `npm audit` remained **0 → 0**.
+
+| Severity | Before | After |
+| -------- | -----: | ----: |
+| Critical |      0 |     0 |
+| High     |      3 |     0 |
+| Moderate |     15 |     0 |
+| Low      |      2 |     0 |
+| **Total**|   **20** | **0** |
+
+### Compatibility changes made
+
+- **Zero application source changes were required.** `nest build` and the full backend suite compiled and passed on v11/Express 5 unmodified. This is a direct consequence of the pre-upgrade inventory (Phase 1/2):
+  - **Routing** — no controller uses a bare `*` / `/*` wildcard, unnamed wildcard, `:param?` optional param, or inline regex path (all removed/renamed in path-to-regexp v6+/v8). Handla uses only named `:id` params and static segments, so the Express 5 router swap is a no-op for us.
+  - **Middleware** — Handla registers no `MiddlewareConsumer`/`NestMiddleware`; all cross-cutting logic lives in global guards/interceptors/filters, so the Express 5 middleware-matcher changes do not apply.
+  - **Throttler v6** — Handla already used the modern `throttlers: [{ ttl, limit }]` array API (the hard v4→v5 migration was done previously) and the **default** `ThrottlerGuard` with no `getTracker`/`skipIf`/custom-storage override. v6's default tracker still returns `req.ip`, so the `trust proxy` hop-count model (PROXY-01) is preserved unchanged. Rate-limit header names (`x-ratelimit-limit`/`-remaining`/`-reset`, `retry-after`) are unchanged in v6.
+  - **File uploads** — no `multer`/`FileInterceptor` usage (uploads go through S3 presigned URLs), so the Express 5 multipart + multer 2.x changes have zero direct impact.
+  - **Adapter watch-points** — `app.getHttpAdapter().getInstance()` on the Express 5 adapter still exposes `.disable('x-powered-by')` and `.set('trust proxy', n)`; verified at runtime (see new smoke test below).
+  - **Global guard order** (`CsrfGuard → JwtAuthGuard → RolesGuard → OwnershipGuard`), `ValidationPipe` (`whitelist`/`forbidNonWhitelisted`/`transform`/`enableImplicitConversion`), `AllExceptionsFilter` 5xx masking, Helmet CSP/HSTS, CORS origin-restriction, and Swagger-disabled-in-production are all unchanged and re-verified.
+
+### Security regression coverage (added, all green on v11)
+
+- `nestjs11-migration-baseline.spec.ts` (9 tests) — source-level invariants pinned across the migration: no Express-5-incompatible route patterns; no `MiddlewareConsumer.forRoutes/exclude`; guard order strictly `Csrf→Jwt→Roles→Ownership`; numeric trust-proxy hop-count (never `trust proxy', true`); Swagger only outside production; `x-powered-by` disabled; `ValidationPipe` whitelist/forbidNonWhitelisted/transform; `throttlers[]` array form + `ThrottlerGuard` APP_GUARD; `AllExceptionsFilter` masks 5xx in production.
+- `nestjs11-bootstrap-runtime.spec.ts` (8 tests) — boots a real `NestExpressApplication` on the Express 5 adapter and proves at runtime: adapter `.disable()`/`.set()`/`.get()` work; helmet headers emitted + `x-powered-by` removed; numeric trust-proxy derives `req.ip` from the right-most XFF (a prepended spoofed IP is ignored) and distinct real IPs get distinct `req.ip`; credentialed CORS reflects only approved origins (never `ACAO:*` with credentials); `setGlobalPrefix('api')` routing intact.
+
+Re-run and green on v11 (unchanged from their pre-migration behavior): rate-limit pentest (7), WebSocket adversarial (`websocket-chat.pentest` + `chat.gateway` + `socket.guard` = 82), auth pentest / authorization-IDOR / idor-matrix / mass-assignment / CSRF guard (91), PT-02 file-ownership + chat controller/service + file-upload / injection / http-boundary / perimeter / SSRF pentests (171), email security + processor + chat-notification (58).
+
+- **Backend suite: 78 suites / 1204 tests pass** (was 76/1187 pre-phase; +1 suite/9 tests migration-baseline, +1 suite/8 tests runtime-bootstrap).
+- **Backend build:** `nest build` passes. **Frontend:** lint ✓, build ✓, audit 0.
+
+### Remaining dependency findings
+
+**None.** Backend `npm audit` = 0 (0 critical / 0 high / 0 moderate / 0 low); frontend `npm audit` = 0. No advisory was suppressed or hidden — the count reached zero by upgrading, not by ignoring.
+
+### DB / environment / deployment
+
+- **No database migration** was required or performed; TypeORM stayed at 0.3.31, `DATABASE_SYNCHRONIZE=false` in production is unchanged.
+- **No environment/config changes.** `TRUST_PROXY_HOPS=1` and all other env contracts are unchanged.
+- **No production deployment changes.** The reverse-proxy topology (`Internet → Traefik/nginx → NestJS`, one trusted hop) and the numeric trust-proxy model are preserved byte-for-byte.
+
+Previous pentest/remediation history (Next.js 15 pass / PR #24, PT-01/PT-02/PT-04 / PR #25, Nodemailer 6→9 / PR #26) is retained above and remains accurate; this phase reopened none of it.
