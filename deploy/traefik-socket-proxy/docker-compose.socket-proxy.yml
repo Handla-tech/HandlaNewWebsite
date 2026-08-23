@@ -1,0 +1,88 @@
+# =============================================================================
+# Docker Socket Proxy for the shared Traefik reverse proxy
+# =============================================================================
+# Purpose: Traefik must NOT mount /var/run/docker.sock directly. A :ro bind mount
+# only makes the socket FILE read-only — it does NOT make the Docker API
+# read-only, so a Traefik compromise could still POST to the daemon (create
+# privileged containers, mount /, etc.). This dedicated, audited HAProxy-based
+# proxy exposes ONLY the handful of read endpoints Traefik needs for Docker
+# provider discovery, and denies every mutation / admin endpoint.
+#
+# Security boundary = the proxy's HTTP allow-list (NOT the :ro mount).
+#
+# Deployment (managed as its own project, independent of app stacks):
+#   docker compose -p socketproxy -f docker-compose.socket-proxy.yml up -d
+#
+# Traefik then uses:  --providers.docker.endpoint=tcp://docker-socket-proxy:2375
+# and joins the 'socketproxy_net' network below (in addition to 'proxy').
+#
+# NOTHING here publishes a host port. The proxy is reachable ONLY from the
+# internal socketproxy_net network (Traefik ↔ proxy).
+# =============================================================================
+
+networks:
+  # Internal-only control network: Traefik <-> socket proxy. `internal: true`
+  # means Docker adds NO gateway / NAT, so it is not reachable off-host and app
+  # containers that are not attached simply cannot route to it.
+  socketproxy_net:
+    name: socketproxy_net
+    driver: bridge
+    internal: true
+
+services:
+  docker-socket-proxy:
+    # Pinned, audited HAProxy-based allow-list proxy (not :latest).
+    # digest: sha256:9e4b9e7517a6b660f2cc903a19b257b1852d5b3344794e3ea334ff00ae677ac2
+    image: tecnativa/docker-socket-proxy:0.3.0
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    # The proxy process itself needs to READ/WRITE the unix socket at the
+    # filesystem level (HAProxy forwards bytes); API restriction is enforced by
+    # the allow-list env vars below, NOT by this mount mode. Mounted :ro anyway
+    # as defence in depth (works for tecnativa on standalone Docker).
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - socketproxy_net
+    # NO ports: — never published to the host.
+    environment:
+      # ---- ALLOWED (read-only, exactly what Traefik v2.11 discovery needs) ----
+      CONTAINERS: 1   # GET /containers/json, /containers/{id}/json
+      NETWORKS: 1     # GET /networks, /networks/{id}
+      EVENTS: 1       # GET /events   (live provider updates)
+      INFO: 1         # GET /info
+      VERSION: 1      # GET /version  (API negotiation)
+      PING: 1         # GET /_ping    (health)
+      # ---- DENIED (defaults are 0, listed explicitly for auditability) --------
+      POST: 0         # master switch: block ALL write/mutation verbs
+      AUTH: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 0
+      NODES: 0        # swarm — not used (standalone Docker)
+      PLUGINS: 0
+      SECRETS: 0
+      SERVICES: 0     # swarm — not used
+      SESSION: 0
+      SWARM: 0        # not used
+      SYSTEM: 0
+      TASKS: 0        # swarm — not used
+      VOLUMES: 0
+    security_opt:
+      - no-new-privileges:true
+    # NOTE: read_only:true is intentionally NOT set. tecnativa's entrypoint
+    # regenerates /usr/local/etc/haproxy/haproxy.cfg from a template that lives in
+    # the SAME directory, so neither a read-only rootfs nor a tmpfs over that dir
+    # is compatible (the tmpfs hides the baked-in template). The security boundary
+    # is the HTTP allow-list + no-new-privileges + the internal network, not the
+    # rootfs mode. cap_drop ALL further reduces the container's host capability.
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
