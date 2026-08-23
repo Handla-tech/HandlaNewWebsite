@@ -41,6 +41,7 @@ describe('ChatController', () => {
     createOrGetConversation: jest.Mock;
     markMessageAsRead: jest.Mock;
     updateStatus: jest.Mock;
+    getSignedFileUrlForMessage: jest.Mock;
   };
   let chatGateway: {
     broadcastMessage: jest.Mock;
@@ -61,6 +62,7 @@ describe('ChatController', () => {
       createOrGetConversation: jest.fn(),
       markMessageAsRead: jest.fn(),
       updateStatus: jest.fn(),
+      getSignedFileUrlForMessage: jest.fn(),
     };
     chatGateway = {
       broadcastMessage: jest.fn(),
@@ -219,6 +221,30 @@ describe('ChatController', () => {
       expect(keyArg).toMatch(/^chat\/u-99\/\d+-My_Big_File\.pdf$/);
       expect(ctArg).toBe('application/pdf');
       expect(res.data).toEqual({ url: 'https://s3', fileUrl: 'https://cdn' });
+    });
+  });
+
+  // ── GET /messages/:id/file-url (PT-02) ────────────────────────────────────
+  describe('getMessageFileUrl (PT-02 signed download)', () => {
+    it('resolves the signed URL by messageId (never accepts a client key)', async () => {
+      const user = makeUser({ id: 'u-1' });
+      chatService.getSignedFileUrlForMessage.mockResolvedValue('https://s3/chat/u-1/x.pdf?X-Amz-Signature=abc');
+
+      const res = await controller.getMessageFileUrl(validUuid, user);
+
+      // The controller forwards ONLY the trusted messageId + the auth'd user.
+      expect(chatService.getSignedFileUrlForMessage).toHaveBeenCalledWith(validUuid, user);
+      expect(res).toEqual({
+        message: 'Signed URL generated',
+        data: { url: 'https://s3/chat/u-1/x.pdf?X-Amz-Signature=abc' },
+      });
+    });
+
+    it('propagates the service authorization error (no signing on denial)', async () => {
+      const user = makeUser({ id: 'u-2' });
+      chatService.getSignedFileUrlForMessage.mockRejectedValue(new Error('denied'));
+
+      await expect(controller.getMessageFileUrl(validUuid, user)).rejects.toThrow('denied');
     });
   });
 
