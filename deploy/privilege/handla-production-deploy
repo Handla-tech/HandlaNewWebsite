@@ -67,6 +67,13 @@ readonly COMPOSE_FILES=( -f docker-compose.yml -f deploy/docker-compose.traefik.
 readonly GIT=/usr/bin/git
 readonly DOCKER=/usr/bin/docker
 readonly TRAEFIK_NETWORK="proxy"
+# Pin the Compose PROJECT NAME explicitly. Compose otherwise derives it from the
+# working-directory basename; because the trusted checkout lives in
+# /opt/handla-production (not /opt/handla), an un-pinned project name would
+# create a SEPARATE stack ("handla-production_*") with fresh, empty mysql/redis
+# volumes and a new network — a silent data-separation regression. Pin it to the
+# original production project so the existing handla_* volumes/network are reused.
+readonly COMPOSE_PROJECT="handla"
 
 CALLER="${SUDO_USER:-$(id -un)}"
 log() { echo "[handla-production-deploy] $*"; }
@@ -140,6 +147,9 @@ log "Backend .env provisioned from root-owned secrets store."
 # mirroring deploy/deploy.traefik.sh but WITHOUT sourcing the user-writable
 # copy. PULL=0 because this wrapper already controls the git state itself.
 export TRAEFIK_NETWORK TRAEFIK_CERTRESOLVER="letsencrypt" TRAEFIK_ENTRYPOINT="websecure"
+# Force the original production project name so existing handla_* volumes and the
+# handla_handla_net network are reused (see COMPOSE_PROJECT rationale above).
+export COMPOSE_PROJECT_NAME="$COMPOSE_PROJECT"
 
 log "Verifying backend .env exists..."
 [ -f "$BACKEND_ENV_REL" ] || { echo "[handla-production-deploy] FATAL: backend .env missing after provisioning." >&2; exit 4; }
@@ -174,13 +184,16 @@ if ! "$DOCKER" network inspect "${TRAEFIK_NETWORK}" >/dev/null 2>&1; then
 fi
 
 log "Building images..."
-"$DOCKER" compose "${COMPOSE_FILES[@]}" build
+# -p pins the project name explicitly (redundant with COMPOSE_PROJECT_NAME, kept
+# for clarity and to be robust against env sanitising).
+COMPOSE_ARGS=( -p "$COMPOSE_PROJECT" "${COMPOSE_FILES[@]}" )
+"$DOCKER" compose "${COMPOSE_ARGS[@]}" build
 
 FIXED_NAMES=(handla_api handla_web handla_mysql handla_redis)
 log "Force-removing any stale fixed-name containers (keeps the network up)..."
 "$DOCKER" rm -f "${FIXED_NAMES[@]}" >/dev/null 2>&1 || true
 
-bring_up() { "$DOCKER" compose "${COMPOSE_FILES[@]}" up -d --remove-orphans --force-recreate; }
+bring_up() { "$DOCKER" compose "${COMPOSE_ARGS[@]}" up -d --remove-orphans --force-recreate; }
 
 log "Starting/updating the stack (routed via Traefik)..."
 if ! bring_up; then
@@ -194,6 +207,6 @@ log "Pruning dangling images..."
 "$DOCKER" image prune -f >/dev/null 2>&1 || true
 
 log "Current status:"
-"$DOCKER" compose "${COMPOSE_FILES[@]}" ps
+"$DOCKER" compose "${COMPOSE_ARGS[@]}" ps
 
 log "Done ✓  Deployed ${BRANCH}@${DEPLOY_SHA} (initiated by '${CALLER}')."
