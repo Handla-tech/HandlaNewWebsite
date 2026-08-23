@@ -265,4 +265,62 @@ describe('AwsService', () => {
       expect(prefixed.getKeyFromUrl(url)).toBe(logical);
     });
   });
+
+  // ─── PT-02: resolveLogicalKey + isKeyInNamespace ────────────────────────────
+  describe('resolveLogicalKey (PT-02)', () => {
+    it('extracts the logical key from a full in-bucket URL', () => {
+      const url = 'https://handla-uploads.s3.us-east-1.amazonaws.com/chat/u-1/1-a.pdf';
+      expect(service.resolveLogicalKey(url)).toBe('chat/u-1/1-a.pdf');
+    });
+
+    it('returns the bare key unchanged (minus leading slash)', () => {
+      expect(service.resolveLogicalKey('/chat/u-1/x.pdf')).toBe('chat/u-1/x.pdf');
+    });
+
+    it('returns null for an external URL (not our bucket)', () => {
+      expect(service.resolveLogicalKey('https://evil.example.com/x.pdf')).toBeNull();
+    });
+
+    it('returns null for an already-presigned URL (opaque, cannot re-validate)', () => {
+      expect(
+        service.resolveLogicalKey(
+          'https://handla-uploads.s3.us-east-1.amazonaws.com/chat/u-1/x.pdf?X-Amz-Signature=abc',
+        ),
+      ).toBeNull();
+    });
+
+    it('returns null for empty/nullish input', () => {
+      expect(service.resolveLogicalKey('')).toBeNull();
+      expect(service.resolveLogicalKey(null)).toBeNull();
+      expect(service.resolveLogicalKey(undefined)).toBeNull();
+    });
+  });
+
+  describe('isKeyInNamespace (PT-02)', () => {
+    it('accepts a key inside the chat namespace', () => {
+      expect(service.isKeyInNamespace('chat/u-1/x.pdf', ['chat'])).toBe(true);
+    });
+
+    it('rejects a key in a different namespace', () => {
+      expect(service.isKeyInNamespace('contracts/secret.pdf', ['chat'])).toBe(false);
+    });
+
+    it('rejects a path-traversal key', () => {
+      expect(service.isKeyInNamespace('chat/u-1/../u-2/x.pdf', ['chat'])).toBe(false);
+    });
+
+    it('rejects absolute and backslash keys', () => {
+      expect(service.isKeyInNamespace('/chat/x.pdf', ['chat'])).toBe(false);
+      expect(service.isKeyInNamespace('chat\\x.pdf', ['chat'])).toBe(false);
+    });
+
+    it('rejects null/empty', () => {
+      expect(service.isKeyInNamespace(null, ['chat'])).toBe(false);
+      expect(service.isKeyInNamespace('', ['chat'])).toBe(false);
+    });
+
+    it('does not treat a namespace-prefixed lookalike as inside (chatx/ ≠ chat/)', () => {
+      expect(service.isKeyInNamespace('chatx/u-1/x.pdf', ['chat'])).toBe(false);
+    });
+  });
 });

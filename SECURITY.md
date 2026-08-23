@@ -238,6 +238,9 @@ _Consolidated 2026-08-22. All numbers below are from the final commit on this br
 | INFO-01     | Public contract/invoice viewer exposes client email by UUID    | Info     | —         | CWE-200  | Accepted (capability URL) |
 | REDIR-01    | OAuth callback redirect could be user-controlled               | Info     | —         | CWE-601  | Verified safe (no vuln)   |
 | THROTTLE-*  | Rate-limit activation + IP-header-spoof resistance             | Info     | —         | CWE-307  | Verified working          |
+| PT-01       | Chat responses serialized raw User entities incl. passwordHash | High     | 7.5       | CWE-359  | Fixed (verified)          |
+| PT-02       | S3 presign signed any in-bucket key with no per-user authz     | High     | 8.1       | CWE-639  | Fixed (verified)          |
+| PT-04       | Cookie-auth state-changing routes lacked CSRF origin control   | Medium   | 6.5       | CWE-352  | Fixed (verified)          |
 
 **Distinction of finding types (per report requirement):**
 - **Demonstrated vulnerabilities we fixed:** WS-01, WS-02, WS-03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01, PROXY-01.
@@ -362,3 +365,115 @@ cd handla-frontend && npm audit
 - No demonstrated exploitable Critical/High application vulnerability; every demonstrated Medium/Low weakness (WS-01/02/03, WS-FUZZ-01, SSRF-01, XSS-01, FILE-KEY-01) is fixed with a regression test, and the full backend (72 suites / 1111 tests) + frontend build/lint/xss all pass; frontend audit is clean.
 - **Accepted risks (not blockers):** (1) 21 backend dependency advisories remain, all requiring a **breaking NestJS v10→v11 / nodemailer v6→v9 upgrade** or dev/build-only — none reachable-and-exploitable against Handla today; schedule the major upgrade as a separate PR. (2) INFO-01 public UUID document viewer is an accepted capability-URL design. (3) Production must set `trust proxy` correctly behind its edge for throttling to key on the true client IP.
 - Per instruction, **PR #24 is NOT merged by the agent** — left open for your approval.
+
+---
+
+## REMEDIATION PASS — chat / files / CSRF (branch `security/remediate-chat-files-csrf`)
+
+This section documents the remediation of three findings confirmed by the
+completed Handla pentest. **The historical pentest results above are preserved
+unchanged** — these findings were genuinely demonstrated before being fixed.
+Scope was strictly PT-01, PT-02, PT-04 (no unrelated refactoring, dependency
+upgrades, infra, or UI changes).
+
+### PT-01 — Chat response data minimization (High, CWE-359 Exposure of Private Information) — **Fixed**
+- **Root cause:** the chat REST/WebSocket read and write paths serialized raw
+  TypeORM `User` entities as the conversation `admin`/`client`/`assignedEmployee`
+  relations and each `message.sender`. Those entities carried every column,
+  including the credential-bearing `passwordHash`. The `@Exclude()` decorator on
+  `passwordHash` was **inert** because no `ClassSerializerInterceptor` was ever
+  registered. Any authenticated participant (including a self-signup LEAD) thus
+  received the bcrypt `passwordHash` and internal account state of the other
+  participants in every conversation/message response.
+- **Remediation:** introduced explicit projection DTOs + allow-list mappers
+  (`src/modules/chat/dto/chat-response.dto.ts`: `ChatParticipantDto`,
+  `ChatMessageDto`, `ChatConversationDto`, list/detail variants). Wired them into
+  every `ChatService` read/write method. Because `saveMessage` is the single
+  write path shared by the REST controller and the WebSocket gateway, projecting
+  there sanitizes REST responses, the socket `messageReceived` broadcast,
+  notifications, and the AI trigger at once. Credential/verification/OAuth/
+  soft-delete/internal-timestamp fields are now structurally impossible to leak
+  (the mapper never copies them). This is an explicit-DTO fix, not reliance on
+  implicit serialization.
+- **Regression test:** `chat.service.spec.ts` → `PT-01 chat response data
+  minimization` block (recursive key-collection asserting `passwordHash` and
+  other credential/internal fields never appear anywhere in conversation-detail /
+  message-list responses, and that display fields remain present).
+- **Fix commits:** `1c453db` (impl), `fb11a01` (tests).
+- **Residual risk:** none identified. Defense-in-depth note: a global
+  `ClassSerializerInterceptor` was intentionally NOT added — the explicit DTOs
+  are the primary and sufficient control, and adding a global serializer would
+  be an out-of-scope, app-wide behavior change requiring a full-API re-test.
+
+### PT-02 — File ownership validation before S3 signing (High, CWE-639 Authorization Bypass Through User-Controlled Key / IDOR-BOLA) — **Fixed**
+- **Root cause:** `AwsService.signFileUrl` re-signs ANY object that resolves to
+  our bucket, with no per-user authorization. A signing flow that accepted a
+  client-supplied key/`fileUrl` would let any authenticated user obtain a
+  presigned GET URL for another user's chat attachment.
+- **Remediation:** added a resource-based signed-download path. New endpoint
+  `GET /api/chat/messages/:id/file-url` accepts a trusted `messageId` (never a
+  key). `ChatService.getSignedFileUrlForMessage` then: loads the message; requires
+  it to actually have a file; loads its conversation and asserts the requester is
+  a participant / authorized staff member (the **primary DB-ownership boundary**,
+  reusing the same `assertAccess` used to read the conversation); takes the object
+  key from the **stored** message record (never client input); validates the key
+  lives in the `chat/` namespace via new `AwsService.resolveLogicalKey` +
+  `isKeyInNamespace` helpers (defense-in-depth, also rejecting `..`/absolute/
+  backslash traversal); and only then signs. The client can never submit an
+  unrelated bucket key and have it signed. Existing attachment UX is unchanged —
+  messages returned by the read endpoints still carry a pre-signed `fileUrl`, so
+  no frontend change was required; the new endpoint is additive.
+- **Regression test:** `chat.file-ownership.spec.ts` — two isolated users A/B:
+  each can sign their own file; neither can sign the other's (asserting via spy
+  that the S3 signer is **never reached** on denial); arbitrary in-bucket keys,
+  altered/traversal keys, nonexistent message ids, messages with no attachment,
+  and orphaned messages all fail safe without signing. Plus `aws.service.spec.ts`
+  unit tests for the namespace helpers.
+- **Fix commits:** `26f1a5d` (impl), `03b81fc` (tests).
+- **Residual risk:** none identified for chat attachments. The namespace check is
+  scoped to `chat/`; other namespaces (contracts/avatars) are signed by their own
+  authorized services and are out of this finding's scope.
+
+### PT-04 — CSRF protection for cookie-authenticated writes (Medium, CWE-352) — **Fixed**
+- **Architecture inspected first:** the frontend origin is `https://handla.tech`
+  and the API is `https://api.handla.tech` — different sub-origins. The session
+  cookies (`access_token`, `refresh_token`) are set `SameSite=None; Secure` with
+  `Domain=.handla.tech` (verified in `AuthController.setCookies`) precisely
+  because a `Lax`/`Strict` cookie would be dropped on the legitimate cross-site
+  XHR from the frontend to the API and would break login and the Next.js
+  middleware gate. **`SameSite=None` is therefore genuinely required and was NOT
+  downgraded.** The cost of `SameSite=None` is CSRF exposure, and CORS does not
+  mitigate it (CORS restricts reading responses, not sending state-changing
+  simple requests).
+- **Remediation:** added a global `CsrfGuard`
+  (`src/common/guards/csrf.guard.ts`, registered first in `main.ts`'s global
+  guard chain) that enforces strict `Origin`/`Referer` validation for
+  cookie-authenticated state-changing requests (POST/PUT/PATCH/DELETE) against an
+  allow-list of approved first-party origins (`https://handla.tech`,
+  `https://www.handla.tech`, plus `FRONTEND_URL`/`SOCKET_CORS_ORIGIN`/
+  `CSRF_ALLOWED_ORIGINS`). Localhost dev origins are allowed **only** outside
+  production. Explicit exemptions keep every legitimate flow working: safe
+  methods (GET/HEAD/OPTIONS — this also lets the Google OAuth callback GET
+  through), requests with **no auth cookie** (Bearer / server-to-server — a
+  cross-site attacker cannot set `Authorization`, so these cannot be
+  cookie-riding CSRF), and reviewed `@SkipCsrf()` handlers. Missing-Origin policy
+  is explicit, not blanket: a cookie-auth write presenting neither a usable
+  `Origin` nor `Referer`, or `Origin: null`, is rejected; non-browser callers are
+  already exempt because they don't use the cookie.
+- **Regression test:** `csrf.guard.spec.ts` — 21 request-behavior tests:
+  approved origin (and www) succeeds for POST/PUT/PATCH/DELETE; attacker origin,
+  `Origin: null`, and missing-origin cookie-auth writes rejected; simple
+  cross-site form POST rejected; Bearer/non-cookie server-to-server exempt; safe
+  methods and OAuth callback GET pass; login/logout/refresh from Handla work
+  while a replayed refresh from an attacker origin is rejected; `@SkipCsrf`
+  opt-out; dev-only localhost policy; `CSRF_ALLOWED_ORIGINS` additions.
+- **Fix commits:** `75982f4` (impl), `b7b2c46` (tests).
+- **Config note (no secret):** optional `CSRF_ALLOWED_ORIGINS` (comma-separated)
+  can add further first-party origins. No cookie behavior was changed.
+- **Residual risk / why "Fixed" not merely "Mitigated":** the control is a
+  positive-allow-list Origin/Referer check on exactly the vulnerable class of
+  requests, with an explicit (non-blanket) missing-Origin rule, so it closes the
+  finding rather than only reducing it. Residual: it relies on the browser
+  correctly attaching `Origin` on `SameSite=None` cross-site sends (true for all
+  current major browsers); a future move to per-request CSRF tokens would be an
+  orthogonal hardening, not a prerequisite.

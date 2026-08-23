@@ -11,6 +11,14 @@ import {
   ResourceNotFoundException,
   ConversationAccessDeniedException,
 } from '../../utils/exceptions';
+import {
+  ChatConversationDto,
+  ChatConversationDetailDto,
+  ChatConversationListItemDto,
+  ChatMessageDto,
+  toChatConversation,
+  toChatMessage,
+} from './dto/chat-response.dto';
 
 /**
  * Returns true if the given error is a MySQL/MariaDB unique-constraint
@@ -91,8 +99,11 @@ export class ChatService {
 
     const [conversations, total] = await qb.getManyAndCount();
 
-    // Enrich with unread message count + last message per conversation
-    const enriched = await Promise.all(
+    // Enrich with unread message count + last message per conversation.
+    // PT-01: project every conversation + its participants + last message
+    // through the safe chat DTO mappers so raw User entities (and therefore
+    // passwordHash / internal account state) can never reach the response.
+    const enriched: ChatConversationListItemDto[] = await Promise.all(
       conversations.map(async (conv) => {
         // Count messages not sent by the current user that are unread
         const unreadCount = await this.messageRepo.count({
@@ -111,9 +122,9 @@ export class ChatService {
         await this.withSignedFileUrl(lastMessage);
 
         return {
-          ...conv,
+          ...toChatConversation(conv)!,
           unreadCount,
-          lastMessage: lastMessage ?? null,
+          lastMessage: toChatMessage(lastMessage),
           // Expose lastMessage timestamp as a top-level field for easy sorting
           lastMessageAt: lastMessage?.createdAt ?? conv.updatedAt,
         };
@@ -129,7 +140,35 @@ export class ChatService {
   }
 
   // ─── Get Conversation By ID ───────────────────────────────────────────────────
-  async getConversationById(id: string, user: User) {
+  async getConversationById(id: string, user: User): Promise<ChatConversationDetailDto> {
+    const conversation = await this.conversationRepo.findOne({
+      where: { id },
+      relations: ['admin', 'client', 'assignedEmployee'],
+    });
+
+    if (!conversation) {
+      throw new ResourceNotFoundException('Conversation', id);
+    }
+
+    this.assertAccess(conversation, user);
+
+    const messages = await this.messageRepo.find({
+      where: { conversationId: id },
+      relations: ['sender'],
+      order: { createdAt: 'ASC' },
+    });
+    await this.signMessages(messages);
+
+    // PT-01: project entities to safe DTOs before returning so raw User
+    // relations (and passwordHash / internal state) can never be serialized.
+    return {
+      conversation: toChatConversation(conversation)!,
+      messages: messages.map((m) => toChatMessage(m)!),
+    };
+  }
+
+  // ─── Get Messages for a Conversation ─────────────────────────────────────────
+  async getMessages(id: string, user: User): Promise<ChatMessageDto[]> {
     const conversation = await this.conversationRepo.findOne({
       where: { id },
       relations: ['admin', 'client'],
@@ -147,29 +186,71 @@ export class ChatService {
       order: { createdAt: 'ASC' },
     });
     await this.signMessages(messages);
-
-    return { conversation, messages };
+    // PT-01: never return raw Message/User entities.
+    return messages.map((m) => toChatMessage(m)!);
   }
 
-  // ─── Get Messages for a Conversation ─────────────────────────────────────────
-  async getMessages(id: string, user: User): Promise<Message[]> {
-    const conversation = await this.conversationRepo.findOne({
-      where: { id },
-      relations: ['admin', 'client'],
-    });
+  // ─── PT-02: authorized signed download for a message attachment ──────────────
+  //
+  // ROOT CAUSE the endpoint below fixes: `AwsService.signFileUrl` will re-sign
+  // ANY object that lives in our bucket, with no per-user authorization. If a
+  // signing endpoint accepted a client-supplied key/URL, any authenticated user
+  // could get a presigned GET URL for another user's chat attachment (BOLA).
+  //
+  // SECURE FLOW (resource-based, DB ownership is the primary boundary):
+  //   1. caller passes a trusted `messageId` (NOT a key / not a fileUrl)
+  //   2. load the message from the DB
+  //   3. the message must actually carry a file
+  //   4. load the message's conversation and assert the requester is a
+  //      participant / authorized staff member (same guard as reading it)
+  //   5. take the object key from the STORED message record (never client input)
+  //   6. validate that key lives in the expected `chat/` namespace
+  //   7. only then produce a short-lived presigned GET URL
+  //
+  // The client can never submit an unrelated bucket key and have it signed:
+  // the key is read from the row we authorized, and is additionally
+  // namespace-checked as defence-in-depth.
+  async getSignedFileUrlForMessage(messageId: string, user: User): Promise<string> {
+    const message = await this.messageRepo.findOne({ where: { id: messageId } });
 
-    if (!conversation) {
-      throw new ResourceNotFoundException('Conversation', id);
+    // Fail safe on a nonexistent message id — do not leak existence details.
+    if (!message) {
+      throw new ResourceNotFoundException('Message', messageId);
     }
 
+    // Message must actually have an attachment.
+    if (!message.fileUrl) {
+      throw new ResourceNotFoundException('File attachment', messageId);
+    }
+
+    // Authorization boundary: the requester must be a participant / authorized
+    // staff member of the message's conversation. This is the PRIMARY control.
+    const conversation = await this.conversationRepo.findOne({
+      where: { id: message.conversationId },
+    });
+    if (!conversation) {
+      // Orphaned message (conversation gone) — deny rather than sign.
+      throw new ResourceNotFoundException('Conversation', message.conversationId);
+    }
     this.assertAccess(conversation, user);
 
-    const messages = await this.messageRepo.find({
-      where: { conversationId: id },
-      relations: ['sender'],
-      order: { createdAt: 'ASC' },
-    });
-    return this.signMessages(messages);
+    // Defence-in-depth: the STORED key must live in the chat namespace. This is
+    // NOT the primary authorization (the membership check above is) — it stops a
+    // malformed/legacy row or an out-of-scope object from being signed. The key
+    // comes from the trusted DB row, never from client input.
+    const logicalKey = this.awsService.resolveLogicalKey(message.fileUrl);
+    if (!this.awsService.isKeyInNamespace(logicalKey, ['chat'])) {
+      throw new ConversationAccessDeniedException();
+    }
+
+    const signed = await this.awsService.signFileUrl(message.fileUrl);
+    // signFileUrl falls back to the original on failure; if it could not sign
+    // (still not a valid presigned URL) treat as a failure rather than handing
+    // back an unusable/raw private URL.
+    if (!signed) {
+      throw new ResourceNotFoundException('File attachment', messageId);
+    }
+    return signed;
   }
 
   // ─── Send Message (REST fallback) ─────────────────────────────────────────────
@@ -182,7 +263,7 @@ export class ChatService {
     user: User,
     content?: string,
     fileUrl?: string,
-  ): Promise<{ message: Message; conversation: Conversation }> {
+  ): Promise<{ message: ChatMessageDto; conversation: Conversation }> {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
       relations: ['admin', 'client'],
@@ -297,13 +378,19 @@ export class ChatService {
   }
 
   // ─── Save Message ─────────────────────────────────────────────────────────────
+  //
+  // PT-01: returns a safe ChatMessageDto (never a raw Message/User entity). This
+  // is the single write path for both the REST fallback and the WebSocket
+  // gateway broadcast, so sanitizing here guarantees no consumer (REST response,
+  // socket `messageReceived` emit, notifications, AI trigger) can leak the
+  // sender's passwordHash or other internal account fields.
   async saveMessage(
     conversationId: string,
     senderId: string,
     content?: string,
     fileUrl?: string,
     origin?: MessageOrigin,
-  ): Promise<Message> {
+  ): Promise<ChatMessageDto> {
     if (!content && !fileUrl) {
       throw new Error('Message must have content or a file attachment');
     }
@@ -333,7 +420,8 @@ export class ChatService {
     // Return a presigned GET URL (the DB keeps the raw/private URL). This covers
     // BOTH the REST sendMessage path and the WebSocket gateway broadcast, so the
     // sender and recipient can view the attachment immediately without a refetch.
-    return this.withSignedFileUrl(saved!);
+    await this.withSignedFileUrl(saved!);
+    return toChatMessage(saved!)!;
   }
 
   // ─── Mark Message As Read ─────────────────────────────────────────────────────

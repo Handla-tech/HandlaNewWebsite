@@ -16,6 +16,7 @@ import { globalValidationPipe } from './common/pipes/validation.pipe';
 import { JwtAuthGuard } from './common/guards/jwt.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { OwnershipGuard } from './common/guards/ownership.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 
 /**
  * Idempotent schema patch: adds the archive/disable columns to the `users`
@@ -295,7 +296,12 @@ async function bootstrap() {
   app.useGlobalPipes(globalValidationPipe);
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
+  // PT-04: CsrfGuard runs FIRST so cross-origin cookie-authenticated writes are
+  // rejected before any auth/role/ownership work happens. It only enforces on
+  // state-changing methods that carry an auth cookie, so Bearer/API and safe
+  // requests are untouched (see CsrfGuard for the full exemption rules).
   app.useGlobalGuards(
+    new CsrfGuard(reflector, configService),
     new JwtAuthGuard(reflector),
     new RolesGuard(reflector),
     new OwnershipGuard(reflector),
