@@ -24,12 +24,33 @@ import { EmailService } from '../email/email.service';
 import { ChatService } from '../chat/chat.service';
 import { AwsService } from '../aws/aws.service';
 import { Conversation } from '../chat/entities/conversation.entity';
+import { ConfigService } from '@nestjs/config';
+import { PublicTokenService } from '../../common/public-token/public-token.service';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
+import {
+  PublicDocumentType,
+  PublicLinkManagementResult,
+} from '../../common/public-token/public-token.types';
 
 export interface PaginatedContracts {
   contracts: Contract[];
   total: number;
   page: number;
   pages: number;
+}
+
+/** INFO-01 — sanitized public projection returned by the public contract routes. */
+export interface PublicContractProjection {
+  id:        string;
+  title:     string;
+  body:      string;
+  status:    ContractStatus;
+  createdAt: Date;
+  sentAt:    Date | null;
+  signedAt:  Date | null;
+  details:   Contract['details'];
+  client: { name: string | null; company: string | null; email: string | null } | null;
+  issuer: { name: string | null } | null;
 }
 
 /**
@@ -69,6 +90,8 @@ export class ContractsService {
     private readonly emailService: EmailService,
     private readonly chatService: ChatService,
     private readonly awsService: AwsService,
+    private readonly publicTokenService: PublicTokenService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ─── findAll ──────────────────────────────────────────────────────────────
@@ -166,24 +189,11 @@ export class ContractsService {
    *  - Never exposes the raw S3 key or any internal user-entity fields.
    *    Client/issuer projections are flattened to display strings.
    */
-  async findOnePublic(id: string): Promise<{
-    id:        string;
-    title:     string;
-    body:      string;
-    status:    ContractStatus;
-    createdAt: Date;
-    sentAt:    Date | null;
-    signedAt:  Date | null;
-    details:   Contract['details'];
-    client: {
-      name:    string | null;
-      company: string | null;
-      email:   string | null;
-    } | null;
-    issuer: {
-      name: string | null;
-    } | null;
-  }> {
+  async findOnePublic(id: string): Promise<PublicContractProjection> {
+    // INFO-01 — legacy raw-id access disabled when PUBLIC_DOC_LEGACY_ID_LINKS=false.
+    if (!this.configService.get<boolean>('publicDoc.legacyIdLinks')) {
+      throw new ResourceNotFoundException('Contract', id);
+    }
     const contract = await this.contractRepo.findOne({
       where: { id },
       relations: ['client', 'client.user', 'owner'],
@@ -191,7 +201,26 @@ export class ContractsService {
     if (!contract) {
       throw new ResourceNotFoundException('Contract', id);
     }
+    return this.toPublicProjection(contract);
+  }
 
+  // ─── findOnePublicByToken (SECURE token route) ─────────────────────────────
+  /**
+   * INFO-01 — Secure public contract lookup by opaque capability token.
+   * Looks up strictly by `public_token` (document-type-scoped), then funnels
+   * through the centralized lifecycle validator: invalid/mismatch → 404 (no
+   * existence oracle), revoked/expired → 410 Gone.
+   */
+  async findOnePublicByToken(token: string): Promise<PublicContractProjection> {
+    const contract = await this.contractRepo.findOne({
+      where: { publicToken: token },
+      relations: ['client', 'client.user', 'owner'],
+    });
+    this.publicTokenService.assertActive(contract, token);
+    return this.toPublicProjection(contract as Contract);
+  }
+
+  private toPublicProjection(contract: Contract): PublicContractProjection {
     return {
       id:        contract.id,
       title:     contract.title,
@@ -684,5 +713,98 @@ export class ContractsService {
   </div>
 </body>
 </html>`;
+  }
+
+  // ─── INFO-01 Public-link management (Phase 7) ──────────────────────────────
+
+  /**
+   * Management authorization: only ADMIN or the owning EMPLOYEE. CLIENT/LEAD
+   * (and anonymous, blocked by guards) may never mint/revoke links. Contracts
+   * created by an ADMIN have ownerId=null, so only ADMIN can manage those.
+   */
+  private assertManageAccess(contract: Contract, user: User): void {
+    if (user.role === UserRole.ADMIN) return;
+    if (user.role === UserRole.EMPLOYEE) {
+      if (contract.ownerId !== user.id) throw new OwnershipViolationException();
+      return;
+    }
+    throw new InsufficientPermissionsException('manage public links for this contract');
+  }
+
+  private async loadForManage(id: string, user: User): Promise<Contract> {
+    const contract = await this.contractRepo.findOne({ where: { id } });
+    if (!contract) throw new ResourceNotFoundException('Contract', id);
+    this.assertManageAccess(contract, user);
+    return contract;
+  }
+
+  private buildResult(contract: Contract, now: Date): PublicLinkManagementResult {
+    return this.publicTokenService.buildManagementResult(
+      PublicDocumentType.CONTRACT,
+      contract.id,
+      contract,
+      this.configService.get<string>('auth.frontendUrl') ?? '',
+      now,
+    );
+  }
+
+  /** Generate/ensure an active public link for a contract. */
+  async generatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const contract = await this.loadForManage(id, user);
+    const created = this.publicTokenService.ensureToken(contract, now);
+    if (created) {
+      const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+      contract.publicTokenExpiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    }
+    await this.contractRepo.save(contract);
+    this.logger.log(`Public link generated for contract id=${contract.id} by user ${user.id}`);
+    return this.buildResult(contract, now);
+  }
+
+  /** Rotate the public link; old token stops working immediately. */
+  async rotatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const contract = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.rotateToken(contract, { expiresAt }, now);
+    await this.contractRepo.save(contract);
+    this.logger.log(`Public link rotated for contract id=${contract.id} by user ${user.id}`);
+    return this.buildResult(contract, now);
+  }
+
+  /** Revoke the public link; it stops working immediately. */
+  async revokePublicLink(id: string, user: User): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const contract = await this.loadForManage(id, user);
+    this.publicTokenService.revokeToken(contract, now);
+    await this.contractRepo.save(contract);
+    this.logger.log(`Public link revoked for contract id=${contract.id} by user ${user.id}`);
+    return this.buildResult(contract, now);
+  }
+
+  /** Set / change / clear the public link expiry. */
+  async setPublicLinkExpiry(
+    id: string,
+    dto: ManagePublicLinkDto,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const contract = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.setExpiry(contract, expiresAt);
+    await this.contractRepo.save(contract);
+    this.logger.log(`Public link expiry updated for contract id=${contract.id} by user ${user.id}`);
+    return this.buildResult(contract, now);
   }
 }
