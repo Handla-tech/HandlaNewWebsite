@@ -287,8 +287,14 @@ describe('ChatService', () => {
 
       const result = await service.getConversationById(mockConversation.id, adminUser);
 
-      expect(result.conversation).toEqual(mockConversation);
-      expect(result.messages).toEqual([mockMessage]);
+      // PT-01: response is now a sanitized DTO, not the raw entity. Assert the
+      // safe display fields are present and the credential field is absent.
+      expect(result.conversation.id).toBe(mockConversation.id);
+      expect(result.conversation.admin).toMatchObject({ id: adminUser.id, name: adminUser.name });
+      expect((result.conversation.admin as any).passwordHash).toBeUndefined();
+      expect(result.messages).toHaveLength(1);
+      expect(result.messages[0].id).toBe(mockMessage.id);
+      expect((result.messages[0].sender as any).passwordHash).toBeUndefined();
     });
 
     it('should return conversation for the owning client user', async () => {
@@ -343,7 +349,10 @@ describe('ChatService', () => {
     origin: null,
         }),
       );
-      expect(result.sender).toEqual(adminUser);
+      // PT-01: sender is now a sanitized participant DTO — display fields present,
+      // passwordHash structurally absent.
+      expect(result.sender).toMatchObject({ id: adminUser.id, name: adminUser.name });
+      expect((result.sender as any).passwordHash).toBeUndefined();
     });
 
     it('should create a message with a file URL (no content)', async () => {
@@ -443,6 +452,58 @@ describe('ChatService', () => {
       await expect(
         service.updateStatus('bad-conv-uuid', ConversationStatus.COMPLETED, adminUser),
       ).rejects.toThrow(ResourceNotFoundException);
+    });
+  });
+
+  // ─── PT-01: sensitive-field data minimization (regression) ───────────────────
+  describe('PT-01 chat response data minimization', () => {
+    // Recursively collect every object key present anywhere in a value.
+    const collectKeys = (val: unknown, acc = new Set<string>()): Set<string> => {
+      if (Array.isArray(val)) {
+        val.forEach((v) => collectKeys(v, acc));
+      } else if (val && typeof val === 'object') {
+        for (const [k, v] of Object.entries(val)) {
+          acc.add(k);
+          collectKeys(v, acc);
+        }
+      }
+      return acc;
+    };
+    const SENSITIVE = [
+      'passwordHash',
+      'emailVerifiedAt',
+      'provider',
+      'providerId',
+      'isArchived',
+      'archivedAt',
+      'isDisabled',
+    ];
+
+    it('never exposes credential/internal fields anywhere in a conversation detail response', async () => {
+      mockConversationRepository.findOne.mockResolvedValue(mockConversation);
+      mockMessageRepository.find.mockResolvedValue([mockMessage]);
+
+      const result = await service.getConversationById(mockConversation.id, adminUser);
+      const keys = collectKeys(result);
+
+      for (const field of SENSITIVE) {
+        expect(keys.has(field)).toBe(false);
+      }
+      // Expected display fields must remain present.
+      expect(keys.has('id')).toBe(true);
+      expect(keys.has('name')).toBe(true);
+      expect(keys.has('role')).toBe(true);
+    });
+
+    it('never exposes passwordHash in a message-list sender object', async () => {
+      mockConversationRepository.findOne.mockResolvedValue(mockConversation);
+      mockMessageRepository.find.mockResolvedValue([mockMessage]);
+
+      const messages = await service.getMessages(mockConversation.id, adminUser);
+      const keys = collectKeys(messages);
+
+      expect(keys.has('passwordHash')).toBe(false);
+      expect(messages[0].sender).toMatchObject({ id: adminUser.id, name: adminUser.name });
     });
   });
 

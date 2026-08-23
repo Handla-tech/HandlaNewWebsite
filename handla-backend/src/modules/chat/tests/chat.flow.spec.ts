@@ -254,7 +254,9 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
         }),
       );
       expect(result.isRead).toBe(false);
-      expect(result.sender).toEqual(clientUser);
+      // PT-01: sender is now a sanitized participant DTO (no passwordHash).
+      expect(result.sender).toMatchObject({ id: clientUser.id, name: clientUser.name });
+      expect((result.sender as any).passwordHash).toBeUndefined();
     });
 
     it('admin replies — message stored with admin as sender', async () => {
@@ -381,7 +383,9 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
 
       const result = await service.getConversationById(newConversation.id, adminUser);
 
-      expect(result.conversation).toEqual(newConversation);
+      // PT-01: response is a sanitized DTO; assert identity + no passwordHash.
+      expect(result.conversation.id).toBe(newConversation.id);
+      expect(JSON.stringify(result)).not.toContain('passwordHash');
       expect(result.messages).toHaveLength(2);
     });
 
