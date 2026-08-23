@@ -21,6 +21,8 @@ import { plainToInstance } from 'class-transformer';
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { TypingDto } from './dto/typing.dto';
+import { ChatMessageDto } from './dto/chat-response.dto';
+import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { NotificationService } from '../notifications/notification.service';
@@ -334,10 +336,14 @@ export class ChatGateway
   // bot appeared to "never reply". This passthrough gives the REST controller
   // the same hook. It never throws/blocks (fire-and-forget) and the chatbot
   // gates internally on takeover / role / config, so it's safe on every message.
+  // PT-01: the chat write path now emits sanitized `ChatMessageDto`s (no raw
+  // ORM entities). The AI orchestrator only reads a small subset of fields, so
+  // this accepts the same structural context the chatbot expects — the raw
+  // `User`/conversation-DTO passed in structurally satisfy these shapes.
   triggerAiReply(params: {
-    conversation: import('./entities/conversation.entity').Conversation;
-    senderUser: User;
-    message: import('./entities/message.entity').Message;
+    conversation: { id: string; adminId: string };
+    senderUser: { id: string; role: UserRole };
+    message: ChatMessageDto;
   }): void {
     void this.chatbotService.handleIncomingMessage(params);
   }

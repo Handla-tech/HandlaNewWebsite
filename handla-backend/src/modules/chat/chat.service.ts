@@ -11,6 +11,14 @@ import {
   ResourceNotFoundException,
   ConversationAccessDeniedException,
 } from '../../utils/exceptions';
+import {
+  ChatConversationDto,
+  ChatConversationDetailDto,
+  ChatConversationListItemDto,
+  ChatMessageDto,
+  toChatConversation,
+  toChatMessage,
+} from './dto/chat-response.dto';
 
 /**
  * Returns true if the given error is a MySQL/MariaDB unique-constraint
@@ -91,8 +99,11 @@ export class ChatService {
 
     const [conversations, total] = await qb.getManyAndCount();
 
-    // Enrich with unread message count + last message per conversation
-    const enriched = await Promise.all(
+    // Enrich with unread message count + last message per conversation.
+    // PT-01: project every conversation + its participants + last message
+    // through the safe chat DTO mappers so raw User entities (and therefore
+    // passwordHash / internal account state) can never reach the response.
+    const enriched: ChatConversationListItemDto[] = await Promise.all(
       conversations.map(async (conv) => {
         // Count messages not sent by the current user that are unread
         const unreadCount = await this.messageRepo.count({
@@ -111,9 +122,9 @@ export class ChatService {
         await this.withSignedFileUrl(lastMessage);
 
         return {
-          ...conv,
+          ...toChatConversation(conv)!,
           unreadCount,
-          lastMessage: lastMessage ?? null,
+          lastMessage: toChatMessage(lastMessage),
           // Expose lastMessage timestamp as a top-level field for easy sorting
           lastMessageAt: lastMessage?.createdAt ?? conv.updatedAt,
         };
@@ -129,7 +140,35 @@ export class ChatService {
   }
 
   // ─── Get Conversation By ID ───────────────────────────────────────────────────
-  async getConversationById(id: string, user: User) {
+  async getConversationById(id: string, user: User): Promise<ChatConversationDetailDto> {
+    const conversation = await this.conversationRepo.findOne({
+      where: { id },
+      relations: ['admin', 'client', 'assignedEmployee'],
+    });
+
+    if (!conversation) {
+      throw new ResourceNotFoundException('Conversation', id);
+    }
+
+    this.assertAccess(conversation, user);
+
+    const messages = await this.messageRepo.find({
+      where: { conversationId: id },
+      relations: ['sender'],
+      order: { createdAt: 'ASC' },
+    });
+    await this.signMessages(messages);
+
+    // PT-01: project entities to safe DTOs before returning so raw User
+    // relations (and passwordHash / internal state) can never be serialized.
+    return {
+      conversation: toChatConversation(conversation)!,
+      messages: messages.map((m) => toChatMessage(m)!),
+    };
+  }
+
+  // ─── Get Messages for a Conversation ─────────────────────────────────────────
+  async getMessages(id: string, user: User): Promise<ChatMessageDto[]> {
     const conversation = await this.conversationRepo.findOne({
       where: { id },
       relations: ['admin', 'client'],
@@ -147,29 +186,8 @@ export class ChatService {
       order: { createdAt: 'ASC' },
     });
     await this.signMessages(messages);
-
-    return { conversation, messages };
-  }
-
-  // ─── Get Messages for a Conversation ─────────────────────────────────────────
-  async getMessages(id: string, user: User): Promise<Message[]> {
-    const conversation = await this.conversationRepo.findOne({
-      where: { id },
-      relations: ['admin', 'client'],
-    });
-
-    if (!conversation) {
-      throw new ResourceNotFoundException('Conversation', id);
-    }
-
-    this.assertAccess(conversation, user);
-
-    const messages = await this.messageRepo.find({
-      where: { conversationId: id },
-      relations: ['sender'],
-      order: { createdAt: 'ASC' },
-    });
-    return this.signMessages(messages);
+    // PT-01: never return raw Message/User entities.
+    return messages.map((m) => toChatMessage(m)!);
   }
 
   // ─── Send Message (REST fallback) ─────────────────────────────────────────────
@@ -182,7 +200,7 @@ export class ChatService {
     user: User,
     content?: string,
     fileUrl?: string,
-  ): Promise<{ message: Message; conversation: Conversation }> {
+  ): Promise<{ message: ChatMessageDto; conversation: Conversation }> {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
       relations: ['admin', 'client'],
@@ -297,13 +315,19 @@ export class ChatService {
   }
 
   // ─── Save Message ─────────────────────────────────────────────────────────────
+  //
+  // PT-01: returns a safe ChatMessageDto (never a raw Message/User entity). This
+  // is the single write path for both the REST fallback and the WebSocket
+  // gateway broadcast, so sanitizing here guarantees no consumer (REST response,
+  // socket `messageReceived` emit, notifications, AI trigger) can leak the
+  // sender's passwordHash or other internal account fields.
   async saveMessage(
     conversationId: string,
     senderId: string,
     content?: string,
     fileUrl?: string,
     origin?: MessageOrigin,
-  ): Promise<Message> {
+  ): Promise<ChatMessageDto> {
     if (!content && !fileUrl) {
       throw new Error('Message must have content or a file attachment');
     }
@@ -333,7 +357,8 @@ export class ChatService {
     // Return a presigned GET URL (the DB keeps the raw/private URL). This covers
     // BOTH the REST sendMessage path and the WebSocket gateway broadcast, so the
     // sender and recipient can view the attachment immediately without a refetch.
-    return this.withSignedFileUrl(saved!);
+    await this.withSignedFileUrl(saved!);
+    return toChatMessage(saved!)!;
   }
 
   // ─── Mark Message As Read ─────────────────────────────────────────────────────

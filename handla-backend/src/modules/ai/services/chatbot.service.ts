@@ -5,8 +5,7 @@ import { Repository } from 'typeorm';
 
 import type { AiConfig } from '../../../config/ai.config';
 import { ChatService } from '../../chat/chat.service';
-import { Conversation } from '../../chat/entities/conversation.entity';
-import { Message } from '../../chat/entities/message.entity';
+import { ChatMessageDto } from '../../chat/dto/chat-response.dto';
 import { User } from '../../auth/entities/user.entity';
 import {
   MessageOrigin,
@@ -22,15 +21,30 @@ import { AiStateService } from './ai-state.service';
 import { KnowledgeService } from './knowledge.service';
 
 /**
+ * PT-01: the chat write path now returns sanitized DTOs (no raw User/Message
+ * entities). The AI orchestrator only ever reads a small subset of fields, so
+ * it accepts these structural context types rather than the full ORM entities.
+ * This keeps credential/PII fields out of the AI pipeline by construction.
+ */
+interface IncomingConversationCtx {
+  id: string;
+  adminId: string;
+}
+interface IncomingSenderCtx {
+  id: string;
+  role: UserRole;
+}
+
+/**
  * Callback the orchestrator uses to push the AI reply back through the EXISTING
  * chat gateway (no parallel delivery pipeline). The ChatGateway registers this.
  */
-export type BroadcastFn = (conversationId: string, message: Message) => void;
+export type BroadcastFn = (conversationId: string, message: ChatMessageDto) => void;
 
 export interface HandleResult {
   handled: boolean;
   reason?: string;
-  aiMessage?: Message;
+  aiMessage?: ChatMessageDto;
 }
 
 /**
@@ -78,9 +92,9 @@ export class ChatbotService {
    * `senderUser` is the author of the just-saved message.
    */
   async handleIncomingMessage(params: {
-    conversation: Conversation;
-    senderUser: User;
-    message: Message;
+    conversation: IncomingConversationCtx;
+    senderUser: IncomingSenderCtx;
+    message: ChatMessageDto;
   }): Promise<HandleResult> {
     try {
       return await this.handleInner(params);
@@ -92,9 +106,9 @@ export class ChatbotService {
   }
 
   private async handleInner(params: {
-    conversation: Conversation;
-    senderUser: User;
-    message: Message;
+    conversation: IncomingConversationCtx;
+    senderUser: IncomingSenderCtx;
+    message: ChatMessageDto;
   }): Promise<HandleResult> {
     const { conversation, senderUser, message } = params;
 
@@ -193,9 +207,9 @@ export class ChatbotService {
 
   /** Graceful, KB-agnostic fallback when the model fails or returns garbage. */
   private async deliverFallback(
-    conversation: Conversation,
+    conversation: IncomingConversationCtx,
     state: import('../entities/conversation-ai-state.entity').ConversationAiState,
-    message: Message,
+    message: Pick<ChatMessageDto, 'id'>,
   ): Promise<HandleResult> {
     const text =
       "I'm sorry — I'm having trouble answering that right now. I've flagged this so a member of our team can follow up with you shortly.";
@@ -223,13 +237,13 @@ export class ChatbotService {
    * the existing participant/access checks and render on the correct side.
    * Origin=AI is what actually distinguishes them in the UI.
    */
-  private async resolveAiSenderId(conversation: Conversation): Promise<string> {
+  private async resolveAiSenderId(conversation: IncomingConversationCtx): Promise<string> {
     if (conversation.adminId) return conversation.adminId;
     const admin = await this.chatService.findDefaultAdmin();
     return admin?.id ?? conversation.adminId;
   }
 
-  private emit(conversationId: string, message: Message): void {
+  private emit(conversationId: string, message: ChatMessageDto): void {
     if (this.broadcast) {
       this.broadcast(conversationId, message);
     } else {
