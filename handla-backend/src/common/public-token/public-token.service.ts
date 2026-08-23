@@ -143,6 +143,57 @@ export class PublicTokenService {
     }
   }
 
+  /**
+   * Resolve a ManagePublicLinkDto-shaped input into a concrete expiry Date|null.
+   *  - permanent:true            → null (never expires)
+   *  - expiresAt (ISO)           → that instant
+   *  - expiresInDays (preset)    → now + N days
+   *  - none provided             → configured default (defaultExpiryDays; 0=null)
+   */
+  resolveExpiry(
+    input: { expiresInDays?: number; expiresAt?: string; permanent?: boolean } | undefined,
+    defaultExpiryDays: number,
+    now: Date = new Date(),
+  ): Date | null {
+    const dto = input ?? {};
+    if (dto.permanent === true) return null;
+    if (dto.expiresAt) {
+      const t = Date.parse(dto.expiresAt);
+      // Structurally validated by the DTO; guard again defensively.
+      if (!Number.isNaN(t) && t > now.getTime()) return new Date(t);
+      return null;
+    }
+    if (typeof dto.expiresInDays === 'number' && dto.expiresInDays > 0) {
+      return new Date(now.getTime() + dto.expiresInDays * 24 * 60 * 60 * 1000);
+    }
+    // No explicit choice → apply configured default (0 ⇒ permanent).
+    if (defaultExpiryDays > 0) {
+      return new Date(now.getTime() + defaultExpiryDays * 24 * 60 * 60 * 1000);
+    }
+    return null;
+  }
+
+  /**
+   * Build a safe admin-facing status view of a token's lifecycle. Deliberately
+   * does NOT include the token value itself — callers that need the shareable
+   * URL construct it separately and return it only on generate/rotate.
+   */
+  statusView(entity: PublicTokenColumns, now: Date = new Date()): {
+    hasToken: boolean;
+    state: PublicTokenState;
+    expiresAt: Date | null;
+    revokedAt: Date | null;
+    createdAt: Date | null;
+  } {
+    return {
+      hasToken: !!entity.publicToken,
+      state: this.classify(entity, now),
+      expiresAt: entity.publicTokenExpiresAt ?? null,
+      revokedAt: entity.publicTokenRevokedAt ?? null,
+      createdAt: entity.publicTokenCreatedAt ?? null,
+    };
+  }
+
   // ── internals ─────────────────────────────────────────────────────────────
 
   private assignFreshToken(entity: PublicTokenColumns, now: Date): void {
