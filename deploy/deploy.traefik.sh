@@ -52,7 +52,11 @@ get() { grep -E "^$1=" handla-backend/.env | tail -n1 | cut -d= -f2- || true; }
   echo "DATABASE_PASSWORD=$(get DATABASE_PASSWORD)"
   echo "DATABASE_ROOT_PASSWORD=$(get DATABASE_ROOT_PASSWORD)"
   echo "DATABASE_SYNCHRONIZE=$(get DATABASE_SYNCHRONIZE)"
+  echo "REDIS_USERNAME=$(get REDIS_USERNAME)"
+  echo "REDIS_PASSWORD=$(get REDIS_PASSWORD)"
 } > .env
+# Default the Redis application username if it was not set in the backend .env.
+grep -q '^REDIS_USERNAME=.\+'       .env || sed -i 's|^REDIS_USERNAME=.*|REDIS_USERNAME=handla_app|' .env
 grep -q '^PORT=.\+'                  .env || sed -i 's|^PORT=.*|PORT=3001|'                            .env
 grep -q '^DATABASE_NAME=.\+'         .env || sed -i 's|^DATABASE_NAME=.*|DATABASE_NAME=handla_db|'       .env
 grep -q '^DATABASE_USER=.\+'         .env || sed -i 's|^DATABASE_USER=.*|DATABASE_USER=handla|'          .env
