@@ -56,17 +56,29 @@ services:
       start_period: 30s
 
   # ── Redis ────────────────────────────────────────────────────────────────────
+  # Hardened: ACL authentication via a dedicated application user; the built-in
+  # unauthenticated "default" user is disabled. The custom entrypoint generates
+  # the ACL file from REDIS_PASSWORD (injected from .env, never committed) on
+  # every boot, so the config survives container recreation and password
+  # rotation. Redis is only on the private handla_net bridge and publishes no
+  # host port, so it is never reachable from the internet.
   redis:
     image: redis:7-alpine
     container_name: handla_redis
     restart: unless-stopped
-    command: redis-server --save 60 1 --loglevel warning
+    environment:
+      REDIS_USERNAME: ${REDIS_USERNAME:-handla_app}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    entrypoint: ["/usr/local/bin/redis-entrypoint.sh"]
     volumes:
       - redis_data:/data
+      - ./deploy/redis/redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh:ro
     networks:
       - handla_net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      # Authenticate as the application user (default user is disabled). Use an
+      # env-var password so it is not visible in `ps`/process args.
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --user \"$$REDIS_USERNAME\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -91,9 +103,11 @@ services:
       DATABASE_NAME:     ${DATABASE_NAME:-handla_db}
       DATABASE_USER:     ${DATABASE_USER:-handla}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
-      # Redis — points to the redis service above
+      # Redis — points to the redis service above (ACL-authenticated)
       REDIS_HOST:        redis
       REDIS_PORT:        6379
+      REDIS_USERNAME:    ${REDIS_USERNAME:-handla_app}
+      REDIS_PASSWORD:    ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       # Schema sync — reads from .env; safe to enable for local dev, never in real prod
       DATABASE_SYNCHRONIZE: ${DATABASE_SYNCHRONIZE:-false}
     # Bind to loopback so the API is never exposed directly to the public

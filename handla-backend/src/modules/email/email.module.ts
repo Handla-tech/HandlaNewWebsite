@@ -13,6 +13,11 @@ import { EmailProcessor } from './email.processor';
     // Using forRootAsync so we can read the Redis URL from ConfigService.
     // When REDIS_URL is set (production), Bull uses that URI directly.
     // Otherwise, it falls back to REDIS_HOST / REDIS_PORT env vars or localhost.
+    //
+    // Auth (optional, backward-compatible): when REDIS_USERNAME / REDIS_PASSWORD
+    // are set, they are passed to ioredis so Bull authenticates against a
+    // password-protected / ACL-enabled Redis. When they are unset (e.g. local
+    // dev against an open Redis) the connection behaves exactly as before.
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -23,10 +28,17 @@ import { EmailProcessor } from './email.processor';
           return { url: redisUrl };
         }
 
+        const username = configService.get<string>('REDIS_USERNAME');
+        const password = configService.get<string>('REDIS_PASSWORD');
+
         return {
           redis: {
             host: configService.get<string>('REDIS_HOST') || 'localhost',
             port: configService.get<number>('REDIS_PORT') || 6379,
+            // Only include auth fields when provided so unauthenticated
+            // (dev) Redis keeps working unchanged.
+            ...(username ? { username } : {}),
+            ...(password ? { password } : {}),
           },
         };
       },
