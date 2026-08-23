@@ -7,8 +7,9 @@ import { MADAR_SEO, PRODUCTS_SEO } from '@/i18n/seo-content';
 import { softwareApplicationSchema, breadcrumbSchema } from '@/lib/structured-data';
 import { toLocale, type Locale } from '@/i18n/config';
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
-  const locale = toLocale(params.locale);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = toLocale(localeParam);
   const { title, description } = MADAR_SEO[locale];
   return buildLocaleMetadata({
     locale,
@@ -21,8 +22,9 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
   });
 }
 
-export default function MadarPage({ params }: { params: { locale: string } }) {
-  const locale: Locale = toLocale(params.locale);
+export default async function MadarPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale: Locale = toLocale(localeParam);
   const homeLabel = locale === 'ar' ? 'الرئيسية' : 'Home';
 
   return (

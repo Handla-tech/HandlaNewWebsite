@@ -111,12 +111,14 @@ function localeFromPath(pathname: string): Locale {
   return toLocale(seg);
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = headers().get('x-pathname') || '/';
+  // Next.js 15: headers() is async and must be awaited.
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '/';
   const locale   = localeFromPath(pathname);
   const dir      = dirFor(locale);
 

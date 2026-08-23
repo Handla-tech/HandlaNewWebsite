@@ -6,14 +6,16 @@ import { JsonLd } from '@/components/JsonLd';
 import { toLocale, type Locale } from '@/i18n/config';
 import ServicesIndex from '@/components/services/ServicesIndex';
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
-  const locale = toLocale(params.locale);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = toLocale(localeParam);
   const { title, description } = SERVICES_SEO[locale];
   return buildLocaleMetadata({ locale, subPath: '/services', title, description });
 }
 
-export default function ServicesPage({ params }: { params: { locale: string } }) {
-  const locale: Locale = toLocale(params.locale);
+export default async function ServicesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale: Locale = toLocale(localeParam);
   return (
     <>
       <JsonLd data={servicesItemListSchema(locale)} />

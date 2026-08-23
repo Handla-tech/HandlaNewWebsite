@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import { JsonLd } from '@/components/JsonLd';
 import {
   organizationSchema,
@@ -16,49 +15,22 @@ import ServicesBento from '@/components/landing/ServicesBento';
 import Process       from '@/components/landing/Process';
 import Footer        from '@/components/landing/Footer';
 import SectionErrorBoundary from '@/components/landing/SectionErrorBoundary';
-
-// ── Client-only sections (API-driven) ─────────────────────────────────────────
-const Projects = dynamic(() => import('@/components/landing/Projects'), {
-  ssr: false,
-  loading: () => (
-    <section className="py-24 flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-        style={{ borderColor: '#fbbf24', borderTopColor: 'transparent' }} />
-    </section>
-  ),
-});
-const Products = dynamic(() => import('@/components/landing/Products'), {
-  ssr: false,
-  loading: () => (
-    <section className="py-24 flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-        style={{ borderColor: '#fbbf24', borderTopColor: 'transparent' }} />
-    </section>
-  ),
-});
-const Testimonials = dynamic(() => import('@/components/landing/Testimonials'), {
-  ssr: false,
-  loading: () => (
-    <section className="py-24 flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-        style={{ borderColor: '#fbbf24', borderTopColor: 'transparent' }} />
-    </section>
-  ),
-});
-const Contact = dynamic(() => import('@/components/landing/Contact'), {
-  ssr: false,
-  loading: () => <section className="py-24" />,
-});
+// Client-only, API-driven sections (Projects/Products/Testimonials/Contact).
+// Next.js 15 forbids `dynamic(..., { ssr: false })` in a Server Component, so
+// those dynamic imports now live inside this Client Component wrapper.
+import ClientLandingSections from '@/components/landing/ClientLandingSections';
 
 // ─── Localized metadata ───────────────────────────────────────────────────────
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
-  const locale = toLocale(params.locale);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = toLocale(localeParam);
   const { title, description } = HOME_SEO[locale];
   return buildLocaleMetadata({ locale, subPath: '', title, description });
 }
 
-export default function LocalizedLandingPage({ params }: { params: { locale: string } }) {
-  const locale: Locale = toLocale(params.locale);
+export default async function LocalizedLandingPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale: Locale = toLocale(localeParam);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)', color: 'var(--ink-1)' }}>
@@ -75,10 +47,8 @@ export default function LocalizedLandingPage({ params }: { params: { locale: str
         <SectionErrorBoundary name="About"><About /></SectionErrorBoundary>
         <SectionErrorBoundary name="ServicesBento"><ServicesBento /></SectionErrorBoundary>
         <SectionErrorBoundary name="Process"><Process /></SectionErrorBoundary>
-        <SectionErrorBoundary name="Projects"><Projects /></SectionErrorBoundary>
-        <SectionErrorBoundary name="Products"><Products /></SectionErrorBoundary>
-        <SectionErrorBoundary name="Testimonials"><Testimonials /></SectionErrorBoundary>
-        <SectionErrorBoundary name="Contact"><Contact /></SectionErrorBoundary>
+        {/* Projects / Products / Testimonials / Contact — client-only, lazy. */}
+        <ClientLandingSections />
       </main>
       <Footer />
     </div>

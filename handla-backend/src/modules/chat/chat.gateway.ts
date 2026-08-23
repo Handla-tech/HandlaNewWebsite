@@ -131,6 +131,14 @@ export class ChatGateway
     const user = this.socketUserMap.get(client.id);
     if (!user) throw new WsException('Not authenticated');
 
+    // SECURITY/ROBUSTNESS: a malformed frame (null / primitive / array) must not
+    // crash the handler with a raw TypeError that escapes as an unhandled error.
+    // Coerce anything that is not a plain object to {} so class-validator can
+    // reject it cleanly as a WsException (fail-closed, no message persisted).
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new WsException('Invalid message payload');
+    }
+
     // Validate payload
     const dto = plainToInstance(SendMessageDto, payload);
     const errors = await validate(dto);
@@ -188,6 +196,17 @@ export class ChatGateway
     if (!user) throw new WsException('Not authenticated');
 
     if (payload.conversationId) {
+      // SECURITY: enforce room membership BEFORE mutating read-state.
+      // markAllAsRead() itself has no access check, so without this an
+      // authenticated user could mark ANY conversation's messages as read by
+      // guessing/enumerating its id (cross-conversation IDOR/BOLA) and would
+      // also leak existence via the broadcast below. markMessageAsRead()
+      // (the messageId branch) already asserts membership in the service.
+      try {
+        await this.chatService.assertConversationMembership(payload.conversationId, user);
+      } catch (err) {
+        throw new WsException('Access denied');
+      }
       await this.chatService.markAllAsRead(payload.conversationId, user.id);
       this.server
         .to(`conversation:${payload.conversationId}`)
@@ -208,9 +227,24 @@ export class ChatGateway
     const user = this.socketUserMap.get(client.id);
     if (!user) throw new WsException('Not authenticated');
 
+    // Fail-closed on malformed frames (best-effort UX path: return silently).
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+      return;
+    }
+
     const dto = plainToInstance(TypingDto, payload);
     const errors = await validate(dto);
     if (errors.length) return;
+
+    // SECURITY: verify the sender actually belongs to this conversation before
+    // broadcasting a typing indicator into its room. Otherwise an authenticated
+    // user could spoof "X is typing…" into conversations they are not part of.
+    // Fail closed and silently (typing is best-effort UX, not an error path).
+    try {
+      await this.chatService.assertConversationMembership(dto.conversationId, user);
+    } catch {
+      return;
+    }
 
     const key = `${user.id}:${dto.conversationId}`;
 
@@ -446,7 +480,22 @@ export class ChatGateway
       });
 
       const user = await this.userRepository.findOne({ where: { id: payload.sub } });
-      return user ?? null;
+      if (!user) return null;
+
+      // SECURITY (parity with JwtStrategy.validate): a disabled or archived
+      // account must lose real-time access immediately, not just on HTTP
+      // requests. Without this check a user who is disabled while holding an
+      // open (or freshly-reconnecting) socket keeps sending/reading chat with
+      // a still-valid access token until it expires. Reject the handshake so
+      // disable/archive takes effect on the WebSocket transport too.
+      if (user.isDisabled || user.isArchived) {
+        this.logger.warn(
+          `Socket auth rejected: user ${user.id} is disabled/archived`,
+        );
+        return null;
+      }
+
+      return user;
     } catch {
       return null;
     }

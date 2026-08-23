@@ -414,6 +414,25 @@ export class ChatService {
     });
   }
 
+  // ─── Public membership assertion (lightweight) ───────────────────────────────
+  //
+  // Loads ONLY the conversation row (no messages / no signed URLs) and throws
+  // if `user` is not a participant. Used by real-time WebSocket handlers
+  // (markAsRead, typing) that must enforce room membership on the server
+  // BEFORE acting, but do not need the full message list that
+  // getConversationById() returns. Prevents cross-conversation IDOR/BOLA:
+  // an authenticated user cannot mark another user's conversation as read or
+  // inject a typing indicator into a room they are not part of.
+  async assertConversationMembership(conversationId: string, user: User): Promise<void> {
+    const conversation = await this.conversationRepo.findOne({
+      where: { id: conversationId },
+    });
+    if (!conversation) {
+      throw new ResourceNotFoundException('Conversation', conversationId);
+    }
+    this.assertAccess(conversation, user);
+  }
+
   // ─── Access Guard ─────────────────────────────────────────────────────────────
   private assertAccess(conversation: Conversation, user: User): void {
     // ADMIN always has full access

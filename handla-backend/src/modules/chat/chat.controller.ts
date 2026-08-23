@@ -147,7 +147,13 @@ export class ChatController {
   @ApiOperation({ summary: 'Generate an S3 presigned URL for direct file upload' })
   @ApiResponse({ status: 200, description: 'Presigned URL returned' })
   async getPresignedUrl(@Body() dto: PresignedUrlDto, @CurrentUser() user: User) {
-    const key = `chat/${user.id}/${Date.now()}-${dto.fileName.replace(/\s+/g, '_')}`;
+    // FILE-KEY-01: sanitize the client-supplied fileName to a single flat
+    // segment. Stripping only whitespace left `/` and `..` intact, so a crafted
+    // name (e.g. "../victim/x.png") could steer the object outside this user's
+    // `chat/<uid>/` prefix. Collapse everything that is not a safe filename char
+    // so the derived key can never contain a path separator or traversal token.
+    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]+/g, '_');
+    const key = `chat/${user.id}/${Date.now()}-${safeName}`;
     const result = await this.awsService.generatePresignedUrl(key, dto.contentType);
     return {
       message: 'Presigned URL generated',

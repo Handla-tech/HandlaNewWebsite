@@ -127,6 +127,18 @@ export class ProjectsService {
       }
     }
 
+    // DEF-01 — deny-by-default at the service layer. The controller @Roles gate
+    // already blocks any role that is not ADMIN/EMPLOYEE/CLIENT (e.g. LEAD), but
+    // we must not silently leak the row if this service is ever called from an
+    // ungated code path. Only the three roles handled above may proceed.
+    if (
+      user.role !== UserRole.ADMIN &&
+      user.role !== UserRole.EMPLOYEE &&
+      user.role !== UserRole.CLIENT
+    ) {
+      throw new InsufficientPermissionsException('access this project');
+    }
+
     return project;
   }
 

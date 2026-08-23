@@ -1,3 +1,58 @@
+// ─── Security headers (FE-01) ────────────────────────────────────────────────
+// The NestJS API sets helmet headers on API responses, but the HTML documents
+// served by Next.js previously carried NO security headers. This block adds a
+// defence-in-depth header set to every Next-served response.
+//
+// CSP notes / why it is shaped this way (must not break the running app):
+//   • script-src needs 'unsafe-inline' because the root layout ships an inline
+//     anti-FOUC theme <Script strategy="beforeInteractive"> and Next injects
+//     its own inline bootstrap scripts. A strict nonce CSP is not compatible
+//     with `output: 'standalone'` + beforeInteractive inline scripts without a
+//     larger refactor; this is tracked as a future hardening item.
+//   • style-src needs 'unsafe-inline' for framer-motion's injected styles and
+//     Next's inlined critical CSS.
+//   • connect-src must include the API + WebSocket origins (from env) plus ws:
+//     /wss: so axios + socket.io can reach the backend.
+//   • img-src allows the S3 upload bucket(s) and data:/blob: (avatars, QR).
+//   • frame-ancestors 'none' + X-Frame-Options DENY block clickjacking.
+const API_ORIGIN = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').origin; }
+  catch { return 'http://localhost:3001'; }
+})();
+const SOCKET_ORIGIN = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001').origin; }
+  catch { return 'http://localhost:3001'; }
+})();
+
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "img-src 'self' data: blob: https://*.amazonaws.com",
+  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ws: wss:`,
+  "manifest-src 'self'",
+  "worker-src 'self' blob:",
+  "upgrade-insecure-requests",
+].join('; ');
+
+const SECURITY_HEADERS = [
+  { key: 'Content-Security-Policy', value: CSP },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+  { key: 'X-DNS-Prefetch-Control', value: 'off' },
+  // HSTS: only meaningful over HTTPS. Traefik terminates TLS in prod; setting it
+  // here is harmless on http (browsers ignore HSTS on plain http) and ensures
+  // the header is present even if the proxy config drifts.
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // ─── Standalone output (self-contained server for Docker) ──────────────────
@@ -66,6 +121,16 @@ const nextConfig = {
       { source: '/en/services/mobile-app-development', destination: '/en/services/mobile-applications', permanent: true },
       { source: '/ar/services/mobile-app-development', destination: '/ar/services/mobile-applications', permanent: true },
       { source: '/services/mobile-app-development',    destination: '/en/services/mobile-applications', permanent: true },
+    ];
+  },
+
+  // ─── Security headers (FE-01) — applied to every route ─────────────────────
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: SECURITY_HEADERS,
+      },
     ];
   },
 

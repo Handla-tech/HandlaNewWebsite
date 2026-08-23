@@ -232,6 +232,35 @@ async function bootstrap() {
   const instance = httpAdapter.getInstance?.();
   if (instance?.disable) instance.disable('x-powered-by');
 
+  // ─── Reverse-proxy / client-IP trust (rate-limit correctness + anti-spoof) ──
+  //
+  // Production topology (deploy/nginx/conf.d/handla.conf + docker-compose):
+  //   client → nginx (TLS, container `nginx`) → NestJS (`api:3001`)
+  // i.e. EXACTLY ONE trusted proxy hop. nginx sets:
+  //   X-Forwarded-For $proxy_add_x_forwarded_for   (appends the real $remote_addr)
+  //   X-Real-IP       $remote_addr
+  //
+  // Without `trust proxy`, Express reports req.ip = the nginx *container* IP for
+  // EVERY visitor, so @nestjs/throttler would key all traffic into ONE bucket
+  // (every visitor throttled as a single IP). Setting `trust proxy` too loosely
+  // (e.g. `true`) would do the opposite — blindly trust a client-supplied
+  // X-Forwarded-For and let an attacker rotate spoofed IPs to escape throttling.
+  //
+  // The correct model is a NUMERIC HOP COUNT: trust exactly the number of
+  // proxies we actually operate (default 1 = nginx). Express then takes the
+  // (n+1)-th-from-the-right XFF entry as the client IP; any extra entries an
+  // attacker prepends are to the LEFT and are ignored. Never trust more hops
+  // than you control. Override via TRUST_PROXY_HOPS only if you add another
+  // trusted layer in front of nginx (e.g. Cloudflare → set 2 AND ensure that
+  // edge overwrites XFF). Set to 0 to disable (direct-to-Node, no proxy).
+  const trustProxyHops = parseInt(
+    configService.get<string>('TRUST_PROXY_HOPS') ?? '1',
+    10,
+  );
+  if (instance?.set) {
+    instance.set('trust proxy', Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
+  }
+
   // ─── Response compression ───────────────────────────────────────────────────
   app.use(compression());
 

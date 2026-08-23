@@ -14,13 +14,14 @@ export function generateStaticParams() {
   );
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { locale: string; slug: string };
-}): Metadata {
-  const locale = toLocale(params.locale);
-  const svc = getService(params.slug);
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale: localeParam, slug } = await params;
+  const locale = toLocale(localeParam);
+  const svc = getService(slug);
   if (!svc) return {};
   return buildLocaleMetadata({
     locale,
@@ -30,13 +31,14 @@ export function generateMetadata({
   });
 }
 
-export default function ServiceDetailPage({
+export default async function ServiceDetailPage({
   params,
 }: {
-  params: { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const locale: Locale = toLocale(params.locale);
-  const svc = getService(params.slug);
+  const { locale: localeParam, slug } = await params;
+  const locale: Locale = toLocale(localeParam);
+  const svc = getService(slug);
   if (!svc) notFound();
 
   const homeLabel = locale === 'ar' ? 'الرئيسية' : 'Home';
