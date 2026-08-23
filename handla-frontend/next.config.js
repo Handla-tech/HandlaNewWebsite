@@ -10,10 +10,22 @@
 //     with `output: 'standalone'` + beforeInteractive inline scripts without a
 //     larger refactor; this is tracked as a future hardening item.
 //   • style-src needs 'unsafe-inline' for framer-motion's injected styles and
-//     Next's inlined critical CSS.
+//     Next's inlined critical CSS. It ALSO allows https://fonts.googleapis.com
+//     because globals.css does `@import url('https://fonts.googleapis.com/...')`
+//     for the Space Grotesk stylesheet. There is no separate style-src-elem
+//     directive, so browsers fall back to style-src for <link>/@import
+//     stylesheets — adding the Google Fonts origin here unblocks it.
+//   • font-src allows https://fonts.gstatic.com because the Google Fonts
+//     stylesheet loads its .woff2 font files from that origin. `data:` is kept
+//     for any inlined/base64 font glyphs.
 //   • connect-src must include the API + WebSocket origins (from env) plus ws:
-//     /wss: so axios + socket.io can reach the backend.
-//   • img-src allows the S3 upload bucket(s) and data:/blob: (avatars, QR).
+//     /wss: so axios + socket.io can reach the backend, AND the S3 upload
+//     bucket origin because chat attachments are uploaded via a browser-direct
+//     presigned PUT (axios.put -> https://<bucket>.s3.<region>.amazonaws.com).
+//   • img-src allows the exact S3 upload bucket origin (NOT a broad
+//     *.amazonaws.com wildcard) because chat attachment <img> elements load
+//     directly from the stored S3 object URL / presigned GET, plus data:/blob:
+//     for local previews, avatars and QR codes.
 //   • frame-ancestors 'none' + X-Frame-Options DENY block clickjacking.
 const API_ORIGIN = (() => {
   try { return new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').origin; }
@@ -24,6 +36,24 @@ const SOCKET_ORIGIN = (() => {
   catch { return 'http://localhost:3001'; }
 })();
 
+// ─── Exact S3 upload bucket origin (narrowest CSP origin) ────────────────────
+// Chat attachments are uploaded browser-direct with a presigned PUT and then
+// rendered from the same bucket. We allow ONLY this single, exact bucket origin
+// in connect-src (upload) and img-src (display) — never a broad
+// `https://*.amazonaws.com`, which would authorize every S3 bucket on AWS.
+// Derived from env so non-prod/self-hosted setups can override it; defaults to
+// the production bucket (handla-uploads @ eu-north-1).
+const S3_UPLOAD_ORIGIN = (() => {
+  const bucket = process.env.NEXT_PUBLIC_AWS_S3_BUCKET || 'handla-uploads';
+  const region = process.env.NEXT_PUBLIC_AWS_REGION || 'eu-north-1';
+  return `https://${bucket}.s3.${region}.amazonaws.com`;
+})();
+
+// Google Fonts origins (stylesheet + font files), kept as explicit constants so
+// the CSP and the regression tests reference the exact same values.
+const GOOGLE_FONTS_STYLESHEET = 'https://fonts.googleapis.com';
+const GOOGLE_FONTS_FILES = 'https://fonts.gstatic.com';
+
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -31,10 +61,10 @@ const CSP = [
   "frame-ancestors 'none'",
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  "img-src 'self' data: blob: https://*.amazonaws.com",
-  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ws: wss:`,
+  `style-src 'self' 'unsafe-inline' ${GOOGLE_FONTS_STYLESHEET}`,
+  `font-src 'self' data: ${GOOGLE_FONTS_FILES}`,
+  `img-src 'self' data: blob: ${S3_UPLOAD_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ${S3_UPLOAD_ORIGIN} ws: wss:`,
   "manifest-src 'self'",
   "worker-src 'self' blob:",
   "upgrade-insecure-requests",
