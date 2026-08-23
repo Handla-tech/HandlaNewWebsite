@@ -161,6 +161,31 @@ export class ChatController {
     };
   }
 
+  // ─── GET /api/chat/messages/:id/file-url ─────────────────────────────────────
+  //
+  // PT-02: resource-based signed-download. The client passes a trusted
+  // `messageId` (NOT an S3 key / not a fileUrl); the backend resolves the stored
+  // key itself, verifies the requester is authorized for the message's
+  // conversation, validates the key namespace, and only then signs. This closes
+  // the BOLA hole where any in-bucket key could be signed for any user.
+  //
+  // Existing chat UX is unchanged: messages returned by the read endpoints still
+  // carry a pre-signed `fileUrl`. This endpoint gives the frontend a way to
+  // re-fetch a fresh short-lived URL for a specific message (e.g. after the
+  // original presigned URL expires) WITHOUT ever trusting a client-supplied key.
+  @Get('messages/:id/file-url')
+  @ApiOperation({ summary: 'Get a fresh presigned download URL for a message attachment' })
+  @ApiResponse({ status: 200, description: 'Signed URL returned' })
+  @ApiResponse({ status: 404, description: 'Message or attachment not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async getMessageFileUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    const url = await this.chatService.getSignedFileUrlForMessage(id, user);
+    return { message: 'Signed URL generated', data: { url } };
+  }
+
   // ─── PATCH /api/chat/messages/:id/read ───────────────────────────────────────
   @Patch('messages/:id/read')
   @ApiOperation({ summary: 'Mark a specific message as read' })

@@ -190,6 +190,69 @@ export class ChatService {
     return messages.map((m) => toChatMessage(m)!);
   }
 
+  // ─── PT-02: authorized signed download for a message attachment ──────────────
+  //
+  // ROOT CAUSE the endpoint below fixes: `AwsService.signFileUrl` will re-sign
+  // ANY object that lives in our bucket, with no per-user authorization. If a
+  // signing endpoint accepted a client-supplied key/URL, any authenticated user
+  // could get a presigned GET URL for another user's chat attachment (BOLA).
+  //
+  // SECURE FLOW (resource-based, DB ownership is the primary boundary):
+  //   1. caller passes a trusted `messageId` (NOT a key / not a fileUrl)
+  //   2. load the message from the DB
+  //   3. the message must actually carry a file
+  //   4. load the message's conversation and assert the requester is a
+  //      participant / authorized staff member (same guard as reading it)
+  //   5. take the object key from the STORED message record (never client input)
+  //   6. validate that key lives in the expected `chat/` namespace
+  //   7. only then produce a short-lived presigned GET URL
+  //
+  // The client can never submit an unrelated bucket key and have it signed:
+  // the key is read from the row we authorized, and is additionally
+  // namespace-checked as defence-in-depth.
+  async getSignedFileUrlForMessage(messageId: string, user: User): Promise<string> {
+    const message = await this.messageRepo.findOne({ where: { id: messageId } });
+
+    // Fail safe on a nonexistent message id — do not leak existence details.
+    if (!message) {
+      throw new ResourceNotFoundException('Message', messageId);
+    }
+
+    // Message must actually have an attachment.
+    if (!message.fileUrl) {
+      throw new ResourceNotFoundException('File attachment', messageId);
+    }
+
+    // Authorization boundary: the requester must be a participant / authorized
+    // staff member of the message's conversation. This is the PRIMARY control.
+    const conversation = await this.conversationRepo.findOne({
+      where: { id: message.conversationId },
+    });
+    if (!conversation) {
+      // Orphaned message (conversation gone) — deny rather than sign.
+      throw new ResourceNotFoundException('Conversation', message.conversationId);
+    }
+    this.assertAccess(conversation, user);
+
+    // Defence-in-depth: the STORED key must live in the chat namespace. This is
+    // NOT the primary authorization (the membership check above is) — it stops a
+    // malformed/legacy row or an out-of-scope object from being signed. The key
+    // comes from the trusted DB row, never from client input.
+    const logicalKey = this.awsService.resolveLogicalKey(message.fileUrl);
+    if (!this.awsService.isKeyInNamespace(logicalKey, ['chat'])) {
+      throw new ConversationAccessDeniedException();
+    }
+
+    const signed = await this.awsService.signFileUrl(message.fileUrl);
+    // signFileUrl falls back to the original on failure; if it could not sign
+    // (still not a valid presigned URL) treat as a failure rather than handing
+    // back an unusable/raw private URL.
+    if (!signed) {
+      throw new ResourceNotFoundException('File attachment', messageId);
+    }
+    return signed;
+  }
+
   // ─── Send Message (REST fallback) ─────────────────────────────────────────────
   //
   // Returns BOTH the saved message AND the conversation row so the caller

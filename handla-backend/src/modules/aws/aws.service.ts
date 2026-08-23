@@ -215,6 +215,48 @@ export class AwsService {
     return physicalKey;
   }
 
+  /**
+   * PT-02 helper. Resolve a stored value (full S3 URL, already-presigned URL, or
+   * bare key) to its LOGICAL key within THIS bucket, or null when the value does
+   * not belong to this bucket (external URL / already-signed URL / empty).
+   *
+   * This is used by callers that must validate the key namespace BEFORE signing,
+   * so an attacker cannot get an arbitrary/out-of-scope object signed. It never
+   * signs anything and never throws.
+   */
+  resolveLogicalKey(fileUrlOrKey: string | null | undefined): string | null {
+    if (!fileUrlOrKey) return null;
+    // Already presigned → we cannot trust/re-validate it here; treat as opaque.
+    if (fileUrlOrKey.includes('X-Amz-Signature=')) return null;
+    if (/^https?:\/\//i.test(fileUrlOrKey)) {
+      return this.getKeyFromUrl(fileUrlOrKey); // null when not our bucket
+    }
+    // Bare logical key — strip any accidental leading slash.
+    return fileUrlOrKey.replace(/^\/+/, '');
+  }
+
+  /**
+   * PT-02 helper. True when `logicalKey` sits inside one of the given namespace
+   * prefixes (e.g. "chat/"). This is a defence-in-depth check layered on top of
+   * the primary DB-ownership authorization — NOT a replacement for it. It also
+   * rejects path-traversal tokens so a crafted key cannot escape its namespace.
+   */
+  isKeyInNamespace(logicalKey: string | null | undefined, prefixes: string[]): boolean {
+    if (!logicalKey) return false;
+    // Reject traversal / absolute / backslash tricks outright.
+    if (
+      logicalKey.includes('..') ||
+      logicalKey.includes('\\') ||
+      logicalKey.startsWith('/')
+    ) {
+      return false;
+    }
+    return prefixes.some((p) => {
+      const norm = p.endsWith('/') ? p : `${p}/`;
+      return logicalKey.startsWith(norm);
+    });
+  }
+
   // ─── Upload Buffer ───────────────────────────────────────────────────────────
   /**
    * Upload an in-memory Buffer directly to S3.
