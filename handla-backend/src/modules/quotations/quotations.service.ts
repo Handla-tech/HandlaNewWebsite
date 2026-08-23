@@ -1,7 +1,6 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, LessThan } from 'typeorm';
-import { randomUUID } from 'crypto';
 
 import { Quotation } from './entities/quotation.entity';
 import { QuotationLineItem } from './entities/quotation-line-item.entity';
@@ -25,6 +24,13 @@ import {
 import { ContractsService } from '../contracts/contracts.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { NotificationService } from '../notifications/notification.service';
+import { ConfigService } from '@nestjs/config';
+import { PublicTokenService } from '../../common/public-token/public-token.service';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
+import {
+  PublicDocumentType,
+  PublicLinkManagementResult,
+} from '../../common/public-token/public-token.types';
 
 export interface PaginatedQuotations {
   quotations: Quotation[];
@@ -54,6 +60,8 @@ export class QuotationsService {
     private readonly contractsService: ContractsService,
     private readonly invoicesService: InvoicesService,
     private readonly notificationService: NotificationService,
+    private readonly publicTokenService: PublicTokenService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ─── helpers ────────────────────────────────────────────────────────────────
@@ -134,11 +142,14 @@ export class QuotationsService {
 
   // ─── findByPublicToken (public, sanitized) ──────────────────────────────────
   async findByPublicToken(token: string): Promise<any> {
-    const q = await this.quotationRepo.findOne({
+    const found = await this.quotationRepo.findOne({
       where: { publicToken: token },
       relations: ['client', 'client.user', 'owner', 'lineItems'],
     });
-    if (!q) throw new ResourceNotFoundException('Quotation', token);
+    // INFO-01 — funnel through the centralized lifecycle validator: invalid /
+    // mismatch / rotated-away → 404 (no existence oracle), revoked/expired → 410.
+    this.publicTokenService.assertActive(found, token);
+    const q = found as Quotation;
 
     return {
       id: q.id,
@@ -183,10 +194,37 @@ export class QuotationsService {
     return this.dataSource.transaction(async (manager) => {
       const quoteNumber = await this.generateQuoteNumber();
 
+      // INFO-01 — mint a strong capability token (256-bit base64url) up front.
+      // Quotation historically always carries a token (NOT NULL column). We
+      // seed the lifecycle helper so the new fields (created/expiry/revoked)
+      // are consistent from creation. Expiry policy comes from the DTO/default.
+      const now = new Date();
+      const tokenSeed: {
+        publicToken: string | null;
+        publicTokenExpiresAt: Date | null;
+        publicTokenRevokedAt: Date | null;
+        publicTokenCreatedAt: Date | null;
+      } = {
+        publicToken: null,
+        publicTokenExpiresAt: null,
+        publicTokenRevokedAt: null,
+        publicTokenCreatedAt: null,
+      };
+      this.publicTokenService.ensureToken(tokenSeed, now);
+      const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+      tokenSeed.publicTokenExpiresAt = this.publicTokenService.resolveExpiry(
+        undefined,
+        defaultDays,
+        now,
+      );
+
       const quotation = manager.create(Quotation, {
         quoteNumber,
         title: dto.title,
-        publicToken: randomUUID(),
+        publicToken: tokenSeed.publicToken as string,
+        publicTokenExpiresAt: tokenSeed.publicTokenExpiresAt,
+        publicTokenRevokedAt: tokenSeed.publicTokenRevokedAt,
+        publicTokenCreatedAt: tokenSeed.publicTokenCreatedAt,
         clientId: dto.clientId,
         ownerId: actingUser.id,
         status: QuotationStatus.DRAFT,
@@ -326,8 +364,11 @@ export class QuotationsService {
   // ─── accept / reject ──────────────────────────────────────────────────────
   async acceptByToken(token: string): Promise<Quotation> {
     const quotation = await this.quotationRepo.findOne({ where: { publicToken: token } });
-    if (!quotation) throw new ResourceNotFoundException('Quotation', token);
-    return this.applyAccept(quotation);
+    // INFO-01 — lifecycle gate BEFORE the state machine: expired/revoked/rotated
+    // tokens are rejected (404/410) and never reach applyAccept. Combined with the
+    // status===SENT guard this blocks replay of a finalized action.
+    this.publicTokenService.assertActive(quotation, token);
+    return this.applyAccept(quotation as Quotation);
   }
 
   async accept(id: string, user: User): Promise<Quotation> {
@@ -361,8 +402,9 @@ export class QuotationsService {
 
   async rejectByToken(token: string, reason?: string): Promise<Quotation> {
     const quotation = await this.quotationRepo.findOne({ where: { publicToken: token } });
-    if (!quotation) throw new ResourceNotFoundException('Quotation', token);
-    return this.applyReject(quotation, reason);
+    // INFO-01 — same lifecycle gate as acceptByToken.
+    this.publicTokenService.assertActive(quotation, token);
+    return this.applyReject(quotation as Quotation, reason);
   }
 
   async reject(id: string, user: User, reason?: string): Promise<Quotation> {
@@ -496,5 +538,98 @@ export class QuotationsService {
       return;
     }
     throw new InsufficientPermissionsException('access quotations');
+  }
+
+  // ─── INFO-01 Public-link management (Phase 7) ──────────────────────────────
+
+  /**
+   * Management authorization: only ADMIN or the owning EMPLOYEE. CLIENT/LEAD
+   * (and anonymous, already blocked by guards) may never mint/revoke links.
+   * Enforced here at the service layer + per-record ownership (BOLA) scoping.
+   */
+  private assertManageAccess(quotation: Quotation, user: User): void {
+    if (user.role === UserRole.ADMIN) return;
+    if (user.role === UserRole.EMPLOYEE) {
+      if (quotation.ownerId !== user.id) throw new OwnershipViolationException();
+      return;
+    }
+    throw new InsufficientPermissionsException('manage public links for this quotation');
+  }
+
+  private async loadForManage(id: string, user: User): Promise<Quotation> {
+    const quotation = await this.quotationRepo.findOne({ where: { id } });
+    if (!quotation) throw new ResourceNotFoundException('Quotation', id);
+    this.assertManageAccess(quotation, user);
+    return quotation;
+  }
+
+  private buildResult(quotation: Quotation, now: Date): PublicLinkManagementResult {
+    return this.publicTokenService.buildManagementResult(
+      PublicDocumentType.QUOTATION,
+      quotation.id,
+      quotation,
+      this.configService.get<string>('auth.frontendUrl') ?? '',
+      now,
+    );
+  }
+
+  /** Generate/ensure an active public link (quotations always have a token). */
+  async generatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const quotation = await this.loadForManage(id, user);
+    const created = this.publicTokenService.ensureToken(quotation, now);
+    if (created) {
+      const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+      quotation.publicTokenExpiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    }
+    await this.quotationRepo.save(quotation);
+    this.logger.log(`Public link generated for quotation ${quotation.quoteNumber} by user ${user.id}`);
+    return this.buildResult(quotation, now);
+  }
+
+  /** Rotate the public link; old token stops working immediately. */
+  async rotatePublicLink(
+    id: string,
+    dto: ManagePublicLinkDto | undefined,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const quotation = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.rotateToken(quotation, { expiresAt }, now);
+    await this.quotationRepo.save(quotation);
+    this.logger.log(`Public link rotated for quotation ${quotation.quoteNumber} by user ${user.id}`);
+    return this.buildResult(quotation, now);
+  }
+
+  /** Revoke the public link; accept/reject + view stop working immediately. */
+  async revokePublicLink(id: string, user: User): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const quotation = await this.loadForManage(id, user);
+    this.publicTokenService.revokeToken(quotation, now);
+    await this.quotationRepo.save(quotation);
+    this.logger.log(`Public link revoked for quotation ${quotation.quoteNumber} by user ${user.id}`);
+    return this.buildResult(quotation, now);
+  }
+
+  /** Set / change / clear the public link expiry. */
+  async setPublicLinkExpiry(
+    id: string,
+    dto: ManagePublicLinkDto,
+    user: User,
+  ): Promise<PublicLinkManagementResult> {
+    const now = new Date();
+    const quotation = await this.loadForManage(id, user);
+    const defaultDays = this.configService.get<number>('publicDoc.defaultExpiryDays') ?? 0;
+    const expiresAt = this.publicTokenService.resolveExpiry(dto, defaultDays, now);
+    this.publicTokenService.setExpiry(quotation, expiresAt);
+    await this.quotationRepo.save(quotation);
+    this.logger.log(`Public link expiry updated for quotation ${quotation.quoteNumber} by user ${user.id}`);
+    return this.buildResult(quotation, now);
   }
 }
