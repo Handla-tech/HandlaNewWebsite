@@ -13,6 +13,7 @@ import socketConfig from './config/socket.config';
 import aiConfig from './config/ai.config';
 import saasConfig from './config/saas.config';
 import authConfig from './config/auth.config';
+import publicDocConfig from './config/public-doc.config';
 import { winstonConfig } from './utils/logger';
 
 // ─── Entities ───────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ import { PublicTokenModule } from './common/public-token/public-token.module';
     // ─── Config ────────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig, authConfig],
+      load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig, authConfig, publicDocConfig],
       envFilePath: '.env',
     }),
 
