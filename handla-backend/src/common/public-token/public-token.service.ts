@@ -8,6 +8,8 @@ import {
 import {
   PublicTokenColumns,
   PublicTokenState,
+  PublicDocumentType,
+  PublicLinkManagementResult,
 } from './public-token.types';
 import { generatePublicToken, isWellFormedPublicToken } from './public-token.util';
 
@@ -188,6 +190,50 @@ export class PublicTokenService {
     return {
       hasToken: !!entity.publicToken,
       state: this.classify(entity, now),
+      expiresAt: entity.publicTokenExpiresAt ?? null,
+      revokedAt: entity.publicTokenRevokedAt ?? null,
+      createdAt: entity.publicTokenCreatedAt ?? null,
+    };
+  }
+
+  /**
+   * Frontend public-page path segment for each document type. These match the
+   * existing Next.js public routes (which already carry `noindex, nofollow`):
+   *   /invoice/public/token/:token
+   *   /quotation/public/token/:token
+   *   /contract/public/token/:token
+   * (the quotation page historically used /quotation/public/:token — the new
+   * unified token route adds the explicit /token/ segment for all three.)
+   */
+  buildPublicUrl(
+    type: PublicDocumentType,
+    token: string | null,
+    frontendBaseUrl: string,
+  ): string | null {
+    if (!token) return null;
+    const base = (frontendBaseUrl || '').replace(/\/+$/, '');
+    return `${base}/${type}/public/token/${token}`;
+  }
+
+  /**
+   * Assemble the safe management-metadata result for an admin endpoint. Only
+   * surfaces the URL/token when the token is currently ACTIVE.
+   */
+  buildManagementResult(
+    type: PublicDocumentType,
+    documentId: string,
+    entity: PublicTokenColumns,
+    frontendBaseUrl: string,
+    now: Date = new Date(),
+  ): PublicLinkManagementResult {
+    const state = this.classify(entity, now);
+    const isLive = state === PublicTokenState.ACTIVE;
+    return {
+      documentType: type,
+      documentId,
+      token: isLive ? entity.publicToken : null,
+      publicUrl: isLive ? this.buildPublicUrl(type, entity.publicToken, frontendBaseUrl) : null,
+      state,
       expiresAt: entity.publicTokenExpiresAt ?? null,
       revokedAt: entity.publicTokenRevokedAt ?? null,
       createdAt: entity.publicTokenCreatedAt ?? null,

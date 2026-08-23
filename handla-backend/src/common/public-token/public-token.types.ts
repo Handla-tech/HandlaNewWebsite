@@ -55,3 +55,26 @@ export enum PublicTokenState {
   REVOKED = 'REVOKED',
   EXPIRED = 'EXPIRED',
 }
+
+/**
+ * Safe management-metadata returned by the generate/rotate/revoke/set-expiry
+ * admin endpoints. Deliberately minimal: it exposes the shareable public URL
+ * (which necessarily contains the token, since the admin is the one sharing it)
+ * plus lifecycle status — and NOTHING else about the underlying record.
+ *
+ * `publicUrl` / `token` are ONLY populated for operations that (re)issue a live
+ * token (generate/rotate/set-expiry on an active link). Revoke returns them as
+ * null so a revoked token is never echoed back.
+ */
+export interface PublicLinkManagementResult {
+  documentType: PublicDocumentType;
+  documentId: string;
+  /** Full shareable public URL (token route). Null when there is no live token. */
+  publicUrl: string | null;
+  /** The token value — same caveat as publicUrl. Callers usually surface the URL. */
+  token: string | null;
+  state: PublicTokenState;
+  expiresAt: Date | null;
+  revokedAt: Date | null;
+  createdAt: Date | null;
+}

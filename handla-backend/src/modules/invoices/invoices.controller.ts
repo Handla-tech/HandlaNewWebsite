@@ -20,11 +20,14 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 
+import { Throttle } from '@nestjs/throttler';
+
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { MarkPaidDto } from './dto/mark-paid.dto';
 import { InvoicesQueryDto } from './dto/invoices-query.dto';
+import { ManagePublicLinkDto } from '../../common/public-token/dto/manage-public-link.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { OwnedResource } from '../../common/decorators/owned-resource.decorator';
@@ -55,6 +58,81 @@ export class InvoicesController {
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
   async findOnePublic(@Param('id', ParseUUIDPipe) id: string) {
     return this.invoicesService.findOnePublic(id);
+  }
+
+  // ── GET /erp/invoices/public/token/:token ─────────────────────────────
+  // INFO-01 — SECURE public read via opaque capability token. Declared before
+  // `:id` so it is matched first. Invalid → 404 (no existence oracle),
+  // revoked/expired → 410 Gone. Throttled to blunt token enumeration.
+  @Get('public/token/:token')
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Public read-only invoice view via capability token (no auth). Preferred over the legacy raw-id route.',
+  })
+  @ApiResponse({ status: 200, description: 'Sanitized invoice payload' })
+  @ApiResponse({ status: 404, description: 'Invalid or unknown token' })
+  @ApiResponse({ status: 410, description: 'Token revoked or expired' })
+  @ApiParam({ name: 'token', type: String })
+  async findOnePublicByToken(@Param('token') token: string) {
+    return this.invoicesService.findOnePublicByToken(token);
+  }
+
+  // ── POST /erp/invoices/:id/public-link ────────────────────────────────
+  // INFO-01 — generate (or return existing active) public capability link.
+  @Post(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Generate a public capability link for an invoice (ADMIN/owning EMPLOYEE)' })
+  @ApiResponse({ status: 201, description: 'Public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async generatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.invoicesService.generatePublicLink(id, dto, user);
+  }
+
+  // ── POST /erp/invoices/:id/public-link/rotate ─────────────────────────
+  @Post(':id/public-link/rotate')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Rotate (regenerate) the public link; old token stops working immediately' })
+  @ApiResponse({ status: 201, description: 'New public link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async rotatePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.invoicesService.rotatePublicLink(id, dto, user);
+  }
+
+  // ── DELETE /erp/invoices/:id/public-link ──────────────────────────────
+  @Delete(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Revoke the public link; it stops working immediately' })
+  @ApiResponse({ status: 200, description: 'Revoked link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async revokePublicLink(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.invoicesService.revokePublicLink(id, user);
+  }
+
+  // ── PATCH /erp/invoices/:id/public-link ───────────────────────────────
+  @Patch(':id/public-link')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  @ApiOperation({ summary: 'Set / change / clear the public link expiry' })
+  @ApiResponse({ status: 200, description: 'Updated link metadata' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  async setPublicLinkExpiry(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ManagePublicLinkDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.invoicesService.setPublicLinkExpiry(id, dto, user);
   }
 
   // ── GET /erp/invoices ──────────────────────────────────────────────────
