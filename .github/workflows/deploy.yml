@@ -55,17 +55,31 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH (Traefik path)
+      # Deploy as the dedicated least-privilege account `handla-deploy`, NOT root.
+      # (security/deploy-user-hardening) The remote user is pinned here in-code so
+      # the non-root deploy identity is visible in review and enforced regardless
+      # of secret drift; `secrets.VPS_USER` may still override it if intentionally
+      # set, but it must never be `root` — the preflight below aborts if it is.
+      - name: Deploy over SSH (Traefik path, non-root deploy user)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          username: ${{ secrets.VPS_USER || 'handla-deploy' }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
           script_stop: true
           command_timeout: 30m
           script: |
             set -e
+            # Preflight: refuse to deploy as root. GitHub Actions must authenticate
+            # as the dedicated least-privilege `handla-deploy` account.
+            WHOAMI="$(whoami)"
+            echo "[deploy] Connected to VPS as: ${WHOAMI}"
+            if [ "${WHOAMI}" = "root" ] || [ "$(id -u)" = "0" ]; then
+              echo "[deploy] FATAL: connected as root. CI must deploy as the non-root 'handla-deploy' user." >&2
+              echo "[deploy]        Update the VPS_USER / VPS_SSH_KEY secrets to the handla-deploy account." >&2
+              exit 1
+            fi
             export HANDLA_DIR="${{ secrets.VPS_HANDLA_DIR }}"
             export DEPLOY_BRANCH=main
             export TRAEFIK_NETWORK="${{ secrets.VPS_TRAEFIK_NETWORK }}"
