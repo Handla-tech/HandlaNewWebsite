@@ -111,15 +111,25 @@ function assertNoInjectedKeys(mail: Record<string, unknown>): void {
   }
 }
 
-/** CRLF / header-injection probes an attacker might smuggle into a field. */
-const HEADER_INJECTION_PROBES = [
+/**
+ * CRLF / header-injection probes containing REAL control characters — these
+ * must be rejected fail-closed by the mail-layer recipient guard.
+ */
+const CONTROL_CHAR_PROBES = [
   'victim@example.com\r\nBcc: attacker@evil.com',
   'victim@example.com\nCc: attacker@evil.com',
   'victim@example.com\r\nReply-To: attacker@evil.com',
-  'victim@example.com%0d%0aBcc:attacker@evil.com',
   'victim@example.com\r\nSubject: Hijacked',
   'victim@example.com\r\nX-Injected-Header: 1',
+  'victim@example.com\u0000nul',
 ];
+
+/**
+ * A percent-ENCODED probe — no literal CR/LF bytes, so the control-char guard
+ * does not fire. It is harmless (treated as opaque text) and must NOT split
+ * into extra header keys.
+ */
+const PERCENT_ENCODED_PROBE = 'victim@example.com%0d%0aBcc:attacker@evil.com';
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
 
@@ -230,32 +240,64 @@ describe('EmailService — security regression', () => {
   // ─── 3. Recipient handling — CRLF / header injection ───────────────────────
 
   describe('recipient handling — CRLF / header injection', () => {
-    it.each(HEADER_INJECTION_PROBES)(
-      'passes a raw recipient probe straight to the transport for sanitisation: %s',
+    it.each(CONTROL_CHAR_PROBES)(
+      'rejects a control-character recipient fail-closed and never reaches the transport: %j',
       async (probe) => {
-        // Handla does not do its own naive string concatenation of the recipient
-        // into a header; it hands the value to nodemailer, whose mime-node layer
-        // strips control chars / rejects injection. We assert the service does
-        // NOT create additional top-level header fields from the probe.
-        await service.sendMail({
-          to: probe,
-          subject: 'Subject',
-          html: '<p>x</p>',
-        });
+        // The mail-layer guard must reject the probe BEFORE any transport call.
+        await expect(
+          service.sendMail({ to: probe, subject: 'Subject', html: '<p>x</p>' }),
+        ).rejects.toThrow('Invalid email recipient');
 
-        const mail = lastMailArg();
-        // The service must not have split the probe into Bcc/Cc/Reply-To keys.
-        expect(mail.replyTo).toBe('support@handla.com'); // unchanged, server-controlled
-        // Only whitelisted keys are present; no injected header keys, regardless
-        // of malicious input.
-        assertNoInjectedKeys(mail);
+        // Crucially, nothing was handed to the SMTP transport.
+        expect(mockSendMail).not.toHaveBeenCalled();
       },
     );
 
-    it('does not throw synchronously on malformed recipient (delegates to transport)', async () => {
+    it('rejection error is generic and leaks no SMTP credentials/host', async () => {
+      let caught: Error | undefined;
+      try {
+        await service.sendMail({
+          to: 'victim@example.com\r\nBcc: attacker@evil.com',
+          subject: 'S',
+          html: '<p/>',
+        });
+      } catch (e) {
+        caught = e as Error;
+      }
+      expect(caught).toBeDefined();
+      expect(caught!.message).toBe('Invalid email recipient');
+      expect(caught!.message).not.toContain('smtp');
+      expect(caught!.message).not.toContain('REDACTED');
+      expect(caught!.message).not.toContain('attacker@evil.com');
+    });
+
+    it('rejects empty / non-string recipients fail-closed', async () => {
       await expect(
-        service.sendMail({ to: 'not-an-email', subject: 'S', html: '<p/>' }),
-      ).resolves.toBeUndefined();
+        service.sendMail({ to: '', subject: 'S', html: '<p/>' }),
+      ).rejects.toThrow('Invalid email recipient');
+      expect(mockSendMail).not.toHaveBeenCalled();
+    });
+
+    it('a percent-ENCODED probe (no real CR/LF) is opaque text and never splits into header keys', async () => {
+      await service.sendMail({
+        to: PERCENT_ENCODED_PROBE,
+        subject: 'Subject',
+        html: '<p>x</p>',
+      });
+      const mail = lastMailArg();
+      expect(mail.replyTo).toBe('support@handla.com'); // server-controlled, unchanged
+      assertNoInjectedKeys(mail); // no bcc/cc/raw/headers keys created
+    });
+
+    it('a normal valid recipient passes through unchanged', async () => {
+      await service.sendMail({
+        to: 'user@example.com',
+        subject: 'Subject',
+        html: '<p>x</p>',
+      });
+      const mail = lastMailArg();
+      expect(mail.to).toBe('user@example.com');
+      assertNoInjectedKeys(mail);
     });
   });
 
