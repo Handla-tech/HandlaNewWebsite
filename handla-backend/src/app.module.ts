@@ -77,6 +77,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AiModule } from './modules/ai/ai.module';
 import { SaasModule } from './modules/saas/saas.module';
+import { PublicTokenModule } from './common/public-token/public-token.module';
 
 @Module({
   imports: [
@@ -99,6 +100,9 @@ import { SaasModule } from './modules/saas/saas.module';
         entities: [User, EmailVerification, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
       }),
     }),
+
+    // ─── Shared: public-document capability tokens (INFO-01) ────────────────────
+    PublicTokenModule,
 
     // ─── Feature Modules ────────────────────────────────────────────────────────
     AuthModule,

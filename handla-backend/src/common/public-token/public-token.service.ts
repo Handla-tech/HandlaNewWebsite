@@ -1,0 +1,167 @@
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  GoneException,
+} from '@nestjs/common';
+
+import {
+  PublicTokenColumns,
+  PublicTokenState,
+} from './public-token.types';
+import { generatePublicToken, isWellFormedPublicToken } from './public-token.util';
+
+/**
+ * INFO-01 — Centralized public-document token lifecycle + validation.
+ *
+ * This service is intentionally document-type-agnostic: it operates on the
+ * shared `PublicTokenColumns` shape carried by Invoice / Quotation / Contract,
+ * so the exact same generate / rotate / revoke / expiry / validate semantics
+ * apply everywhere. Each per-document service owns the repository lookup (which
+ * enforces document-type scoping — a token is only ever queried within its own
+ * table), then delegates the *lifecycle* + *state validation* here.
+ *
+ * Lifecycle mutation helpers are pure (they mutate the passed entity in memory
+ * and return it); persistence stays with the calling service inside its own
+ * transaction/repo. This keeps this service free of any repository binding and
+ * trivially unit-testable with fake timers.
+ */
+@Injectable()
+export class PublicTokenService {
+  private readonly logger = new Logger(PublicTokenService.name);
+
+  /**
+   * Ensure the entity has an ACTIVE token, generating one if absent.
+   * Does not rotate an existing active token (idempotent "generate link").
+   * @returns `true` if a new token was generated, `false` if one already existed.
+   */
+  ensureToken(entity: PublicTokenColumns, now: Date = new Date()): boolean {
+    if (entity.publicToken && this.classify(entity, now) === PublicTokenState.ACTIVE) {
+      return false;
+    }
+    // No token yet, OR the stored token is revoked/expired → mint a fresh one
+    // and clear the terminal flags so the new link starts clean.
+    this.assignFreshToken(entity, now);
+    return true;
+  }
+
+  /**
+   * Rotate: unconditionally mint a NEW token, immediately invalidating the old
+   * one (the old string simply no longer matches any stored value). Clears
+   * revocation and resets creation time; preserves the current expiry policy by
+   * default (caller may pass a new expiry).
+   */
+  rotateToken(
+    entity: PublicTokenColumns,
+    opts: { expiresAt?: Date | null } = {},
+    now: Date = new Date(),
+  ): void {
+    const nextExpiry =
+      opts.expiresAt !== undefined ? opts.expiresAt : entity.publicTokenExpiresAt ?? null;
+    this.assignFreshToken(entity, now);
+    entity.publicTokenExpiresAt = nextExpiry;
+  }
+
+  /** Revoke the current token. The public link stops working immediately. */
+  revokeToken(entity: PublicTokenColumns, now: Date = new Date()): void {
+    if (!entity.publicToken) return;
+    entity.publicTokenRevokedAt = now;
+  }
+
+  /**
+   * Set (or clear) the expiry of the CURRENT token.
+   * `null` = permanent link (only when the caller explicitly chooses it).
+   */
+  setExpiry(entity: PublicTokenColumns, expiresAt: Date | null): void {
+    entity.publicTokenExpiresAt = expiresAt;
+  }
+
+  /**
+   * Classify the lifecycle state of an entity's token WITHOUT comparing against
+   * a supplied token (used internally + for admin status display).
+   */
+  classify(entity: PublicTokenColumns, now: Date = new Date()): PublicTokenState {
+    if (!entity.publicToken) return PublicTokenState.NOT_FOUND;
+    if (entity.publicTokenRevokedAt) return PublicTokenState.REVOKED;
+    if (entity.publicTokenExpiresAt && entity.publicTokenExpiresAt.getTime() <= now.getTime()) {
+      return PublicTokenState.EXPIRED;
+    }
+    return PublicTokenState.ACTIVE;
+  }
+
+  /**
+   * Compare a caller-supplied token against the entity and classify the result.
+   * A mismatch is reported as NOT_FOUND (never leaks that the record exists but
+   * the token is wrong) — this covers the "old rotated token" case, which no
+   * longer matches the stored value.
+   */
+  match(
+    entity: PublicTokenColumns | null | undefined,
+    suppliedToken: string,
+    now: Date = new Date(),
+  ): PublicTokenState {
+    if (!entity || !entity.publicToken) return PublicTokenState.NOT_FOUND;
+    // Constant-time-ish equality: lengths differ ⇒ mismatch; otherwise compare.
+    if (!this.safeEquals(entity.publicToken, suppliedToken)) {
+      return PublicTokenState.NOT_FOUND;
+    }
+    return this.classify(entity, now);
+  }
+
+  /**
+   * Assert that a supplied token is ACTIVE for the given entity, throwing the
+   * canonical safe HTTP error otherwise. This is the single choke-point every
+   * public read/action route funnels through.
+   *
+   *   invalid / unknown / mismatch / rotated-away → 404 NotFound
+   *   revoked                                     → 410 Gone
+   *   expired                                     → 410 Gone
+   *
+   * Errors carry generic messages only — no document identifiers, no hint about
+   * whether a record exists behind an invalid token.
+   */
+  assertActive(
+    entity: PublicTokenColumns | null | undefined,
+    suppliedToken: string,
+    now: Date = new Date(),
+  ): void {
+    // Structural pre-check keeps malformed probes off the DB-shaped path.
+    if (!isWellFormedPublicToken(suppliedToken)) {
+      throw new NotFoundException('Document not found');
+    }
+    const state = this.match(entity, suppliedToken, now);
+    switch (state) {
+      case PublicTokenState.ACTIVE:
+        return;
+      case PublicTokenState.REVOKED:
+        throw new GoneException('This link has been revoked and is no longer available');
+      case PublicTokenState.EXPIRED:
+        throw new GoneException('This link has expired and is no longer available');
+      case PublicTokenState.NOT_FOUND:
+      default:
+        throw new NotFoundException('Document not found');
+    }
+  }
+
+  // ── internals ─────────────────────────────────────────────────────────────
+
+  private assignFreshToken(entity: PublicTokenColumns, now: Date): void {
+    entity.publicToken = generatePublicToken();
+    entity.publicTokenCreatedAt = now;
+    entity.publicTokenRevokedAt = null;
+    // NOTE: expiry is managed by the caller (ensure/rotate/setExpiry); we do not
+    // silently impose one here so "permanent unless explicitly chosen" holds.
+    // We intentionally do NOT log the token value (Phase 10).
+    this.logger.log('Public capability token (re)generated');
+  }
+
+  private safeEquals(a: string, b: string): boolean {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+      diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return diff === 0;
+  }
+}
