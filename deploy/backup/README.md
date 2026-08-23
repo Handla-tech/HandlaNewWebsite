@@ -51,14 +51,18 @@ protects against accidental/malicious object deletion). Do not make the bucket p
   credential scoped to `PUT/LIST/GET` only (no `DELETE`) and enable **Object Lock /
   immutable retention / versioning**. Templates already note this.
 
-## Real-provider cutover (currently a stand-in)
+## Real-provider cutover (BLOCKED — currently a stand-in)
 The pipeline is proven end-to-end against a **loopback-only MinIO S3-compatible
-stand-in** (identical rclone S3 code path). To go live off-host, on the VPS:
-1. Create a **dedicated** bucket `handla-production-backups` (private) at the chosen
-   provider (AWS S3 / Backblaze B2 / Cloudflare R2).
-2. Create a backup credential scoped `PUT/LIST/GET` on that bucket only.
-3. Put those creds in `/etc/handla-backup/rclone.conf` (replace the MinIO block).
-4. Enable Object Lock/versioning. Run `handla-backup` once, then the restore drill.
+stand-in** (identical rclone S3 code path). Going live on a real independent
+provider is **blocked pending operator-supplied credentials**: no dedicated
+backup-provider credentials exist on the VPS, and the app's AWS IAM user is
+least-privileged and cannot create/manage a backup bucket
+(`s3:CreateBucket` / `s3:ListAllMyBuckets` → 403 AccessDenied). Credentials were
+not fabricated and the app IAM policy was not changed.
+
+**See `REAL-PROVIDER-CUTOVER.md`** for the exact provider/bucket/credential
+requirements the operator must supply, and the ready-to-run agent steps once
+they are provided.
 
 ## Operate
 ```

@@ -2,6 +2,13 @@
 
 > Rebuild Handla production from an off-host, encrypted backup after total VPS
 > loss/compromise. **No secret values appear in this document.**
+>
+> **Off-host target status:** the real independent provider cutover is **pending
+> operator-supplied credentials** — see `REAL-PROVIDER-CUTOVER.md`. Until then the
+> proven off-host target is a MinIO S3-compatible stand-in (loopback on the VPS),
+> which is NOT an independent failure domain. The restore steps below are
+> provider-agnostic (rclone remote `handlabackup:`); they apply unchanged once the
+> real provider is wired.
 
 ## 0. Recovery inputs you must have OFF the VPS
 - **age private identity** (`handla-backup-identity.key`) — decrypts every backup.
