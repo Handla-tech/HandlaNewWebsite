@@ -119,6 +119,9 @@ export default async function RootLayout({
   // Next.js 15: headers() is async and must be awaited.
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '/';
+  // Per-request CSP nonce set by middleware; used to authorize the single
+  // trusted inline script below so script-src can drop 'unsafe-inline'.
+  const nonce    = headersList.get('x-nonce') || undefined;
   const locale   = localeFromPath(pathname);
   const dir      = dirFor(locale);
 
@@ -135,7 +138,7 @@ export default async function RootLayout({
             so a light-mode user never sees a dark flash. Locale is NOT touched
             here anymore — lang/dir are already correct in the server HTML from
             the URL locale above, so this only manages the theme class. */}
-        <Script id="handla-theme-init" strategy="beforeInteractive">
+        <Script id="handla-theme-init" strategy="beforeInteractive" nonce={nonce}>
           {`(function(){try{var t='dark';var raw=localStorage.getItem('handla-ui');if(raw){var s=JSON.parse(raw);if(s&&s.state&&s.state.theme)t=s.state.theme;}var r=document.documentElement;r.classList.toggle('dark',t==='dark');r.classList.toggle('light',t==='light');}catch(e){document.documentElement.classList.add('dark');}})();`}
         </Script>
 
@@ -158,6 +161,7 @@ export default async function RootLayout({
         <Script
           src="/analytics.js"
           strategy="afterInteractive"
+          nonce={nonce}
           data-endpoint={ANALYTICS_ENDPOINT}
           data-site="handla"
         />

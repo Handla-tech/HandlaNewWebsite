@@ -226,15 +226,23 @@ async function bootstrap() {
       // enabled with a conservative policy in production.
       contentSecurityPolicy: isProd
         ? {
+            // The API serves JSON only in production (Swagger UI is dev-only,
+            // and CSP is disabled in dev). No HTML/inline styles or scripts are
+            // returned, so the policy can be strict:
+            //   • scriptSrc 'self'  — no inline/eval (already the case).
+            //   • styleSrc  'self'  — 'unsafe-inline' REMOVED (Phase 6): the API
+            //     emits no inline <style>/style attributes, so it is unneeded.
+            //   • formAction 'none' — the API never renders forms.
             directives: {
               defaultSrc: ["'self'"],
               baseUri: ["'self'"],
               frameAncestors: ["'none'"],
               objectSrc: ["'none'"],
-              imgSrc: ["'self'", 'data:', 'https:'],
+              formAction: ["'none'"],
+              imgSrc: ["'self'", 'data:'],
               scriptSrc: ["'self'"],
-              styleSrc: ["'self'", "'unsafe-inline'"],
-              connectSrc: ["'self'", 'https:', 'wss:'],
+              styleSrc: ["'self'"],
+              connectSrc: ["'self'", 'wss:'],
               upgradeInsecureRequests: [],
             },
           }
