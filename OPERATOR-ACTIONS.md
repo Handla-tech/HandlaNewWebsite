@@ -54,8 +54,11 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 - **Security warning:** Use only the two public health URLs; do not expose internal
   ports or admin paths to the external monitor.
 
-## 🟡 C. Deploy legacy-public-links secure default  (Phase: Legacy public links)
-- **Status:** OPERATOR ACTION REQUIRED (NON-BLOCKING) — merge + deploy gated.
+## ✅ C. Deploy legacy-public-links secure default  (Phase: Legacy public links)
+- **Status:** ✅ CLOSED — DEPLOYED & LIVE-VERIFIED (2026-08-24). PR #38 merged;
+  `PUBLIC_DOC_LEGACY_ID_LINKS` is unset in production (secure default false).
+  Legacy raw-ID routes (`/api/invoices|contracts|quotations/public/:id`) return
+  404; capability-token routes (`public/token/:token`) remain live.
 - **Why:** Branch `security/legacy-public-links-disable` flips the code default of
   `PUBLIC_DOC_LEGACY_ID_LINKS` to **false** (secure-by-default: legacy raw-UUID
   public routes → 404; only capability tokens grant public access). Verified safe:
@@ -146,7 +149,11 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 *(Further operator actions are appended by later phases below.)*
 
 ---
-## E. Deploy Redis command ALLOW-LIST (Phase 4) 🟡 (NON-BLOCKING)
+## ✅ E. Deploy Redis command ALLOW-LIST (Phase 4) 🟡 (NON-BLOCKING)
+> **STATUS: ✅ DEPLOYED & LIVE-VERIFIED (2026-08-24).** PR #35 merged and live:
+> `handla_app` runs an explicit allow-list (NOT `+@all`) with `-flushall -flushdb
+> -config -shutdown -debug -module -acl …` denied; `default` user is `off`.
+> Verified in prod: `PING`→PONG, `FLUSHALL`→NOPERM, no NOPERM/NOAUTH in app logs.
 
 - **Phase:** 4 — Redis ACL allow-list
 - **Why:** `deploy/redis/redis-entrypoint.sh` now grants `handla_app` an explicit
@@ -170,7 +177,9 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 
 ## F. Container hardening — HANDLA services + SHARED Traefik (Phase 5)
 
-### F1. Apply HANDLA container hardening overlay 🟡 (NON-BLOCKING)
+### ✅ F1. Apply HANDLA container hardening overlay 🟡 (NON-BLOCKING)
+> **STATUS: ✅ DEPLOYED & LIVE.** PR #39 merged; HANDLA containers run with the
+> hardening overlay. All HANDLA containers healthy, 0 restarts.
 - **Phase:** 5 — container hardening (HANDLA-owned services)
 - **Why:** `deploy/docker-compose.hardening.yml` adds `no-new-privileges:true`
   and `cap_drop: ALL` (with minimal per-service `cap_add`) to the four services
@@ -189,9 +198,15 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
   `cap_drop: ALL` + the minimal cap set + `no-new-privileges`; ACL file written
   correctly; `NoNewPrivs: 1` confirmed in-kernel. api/web need no caps (non-root).
 
-### F2. Harden the SHARED Traefik container 🟠 (BLOCKING for "Traefik hardened" — requires Traefik OWNER)
+### ✅ F2. Harden the SHARED Traefik container 🟠 (was BLOCKING — requires Traefik OWNER)
+> **STATUS: ✅ APPLIED & LIVE-VERIFIED (2026-08-24).** The shared Traefik owner
+> applied the hardening manually. Verified in prod: `Privileged=false`,
+> `ReadonlyRootfs=true`, `CapDrop=[ALL]`, `CapAdd=[NET_BIND_SERVICE]`,
+> `no-new-privileges:true`; `/certs/acme.json` present + writable; no ACME /
+> read-only / permission errors. handla.tech, api.handla.tech, tameerhome.tech
+> all serving; Traefik API dashboard not publicly exposed (404).
 - **Phase:** 5 — container hardening (shared reverse proxy)
-- **Why:** The `traefik` container is currently `no-new-privileges` OFF,
+- **Why (historical):** The `traefik` container was previously `no-new-privileges` OFF,
   `cap_drop` empty, `read_only` false. It should run with
   `no-new-privileges:true`, `cap_drop: ALL` + only `NET_BIND_SERVICE`, and a
   read-only rootfs (keeping `/certs` writable + a `/tmp` tmpfs).
@@ -210,7 +225,12 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 - **Security warning:** do NOT make `/certs` read-only (acme.json is written
   there). Test against ALL tenants, not just handla.tech, before considering done.
 
-## G. CSP final tightening (Phase 6) — 🟢 LOW / NON-BLOCKING (code-only, ships on merge+deploy)
+## ✅ G. CSP final tightening (Phase 6) — 🟢 LOW / NON-BLOCKING
+> **STATUS: ✅ DEPLOYED & LIVE-VERIFIED (2026-08-24).** PR #40 merged (main
+> `eae09ce`). Verified in prod on /en, /ar, /auth, products: CSP present with
+> `script-src 'self' 'nonce-…' 'strict-dynamic'` (no `unsafe-inline`), per-request
+> nonce differs across requests, executable scripts carry the nonce, S3 upload
+> origin + Google Fonts allowed, HSTS/nosniff/X-Frame/Referrer/Permissions intact.
 
 **What changed (already in this branch, verified):**
 - **Backend (`handla-backend/src/main.ts`)** — production helmet CSP tightened:
