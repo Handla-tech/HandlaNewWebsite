@@ -143,6 +143,26 @@ async function applyAuthVerificationSchema(dataSource: DataSource): Promise<void
   }
 }
 
+/**
+ * Decide whether the runtime schema self-heal (idempotent ALTER/CREATE
+ * patches) should run at application startup.
+ *
+ * SECURITY (MySQL runtime/migrator split): in production the schema is owned by
+ * TypeORM migrations (run under the migrator identity in entrypoint.sh before
+ * the app starts), so the runtime DB user must NOT need CREATE/ALTER. We
+ * therefore skip the self-heal in production unless RUNTIME_SCHEMA_SELFHEAL is
+ * explicitly set to 'true' for exceptional recovery.
+ *
+ * Exported for unit testing.
+ */
+export function shouldRunSchemaSelfHeal(
+  nodeEnv: string | undefined,
+  selfHealFlag: string | undefined,
+): boolean {
+  if (nodeEnv !== 'production') return true;
+  return selfHealFlag === 'true';
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -331,13 +351,42 @@ async function bootstrap() {
   }
 
   // ─── Schema patch: ensure archive/disable columns exist ────────────────────
+  //
+  // SECURITY (MySQL runtime/migrator split): these idempotent ALTER/CREATE
+  // patches are a DEVELOPMENT-only self-heal for environments that boot without
+  // running the migration step (e.g. `nest start` against a fresh dev DB). In
+  // production the authoritative source of schema is the TypeORM migrations
+  //   • 1755100000000-AddEmailVerificationAndProvider
+  //   • 1755300000000-AddUserArchiveAndDisableFlags
+  // which run in entrypoint.sh (under the migrator identity) BEFORE the app
+  // starts. Running these ALTER/CREATE statements again at runtime is therefore
+  // redundant in production — and would force the runtime DB user to hold
+  // CREATE/ALTER privileges it must never need. We skip them in production so
+  // the runtime identity can be pure DML (SELECT/INSERT/UPDATE/DELETE).
+  //
+  // Override for exceptional recovery only via RUNTIME_SCHEMA_SELFHEAL=true
+  // (documented in .env.example) — this should stay unset in normal production.
   const dataSource = app.get(DataSource);
-  await applyUserArchiveColumns(dataSource);
-  await applyAuthVerificationSchema(dataSource);
+  const schemaSelfHeal = shouldRunSchemaSelfHeal(
+    nodeEnv,
+    configService.get<string>('RUNTIME_SCHEMA_SELFHEAL'),
+  );
+  if (schemaSelfHeal) {
+    await applyUserArchiveColumns(dataSource);
+    await applyAuthVerificationSchema(dataSource);
+  } else {
+    Logger.log(
+      'Runtime schema self-heal skipped in production (migrations are authoritative; runtime DB user is DML-only). Set RUNTIME_SCHEMA_SELFHEAL=true only for exceptional recovery.',
+    );
+  }
 
   await app.listen(port);
   Logger.log(`🚀 Handla API running on http://localhost:${port}/api`);
   Logger.log(`🌍 Environment: ${nodeEnv}`);
 }
 
-bootstrap();
+// Only auto-start when run as the entrypoint (`node dist/main`), not when this
+// module is imported by unit tests to exercise the exported pure helpers.
+if (require.main === module) {
+  bootstrap();
+}
