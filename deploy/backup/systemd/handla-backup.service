@@ -1,0 +1,28 @@
+# /etc/systemd/system/handla-backup.service
+# Encrypted off-host Handla production backup (invoked by handla-backup.timer).
+# No secret values live in this unit — the script reads /etc/handla-backup/*.
+[Unit]
+Description=Handla encrypted off-host production backup
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/handla-backup
+# Fail loudly; do not mask non-zero exits.
+User=root
+Group=root
+# Hard timeout so a hung dump/upload cannot run forever.
+TimeoutStartSec=1800
+# Basic hardening for the backup process itself.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+# Log to journal (journalctl -u handla-backup) + the script's own logfile.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
