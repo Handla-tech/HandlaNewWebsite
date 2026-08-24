@@ -61,8 +61,19 @@ for i in $(seq 1 $REDIS_RETRIES); do
 done
 
 # ─── Run Migrations ──────────────────────────────────────────────────────────
+#
+# SECURITY (MySQL runtime/migrator split): migrations require DDL privileges
+# (CREATE/ALTER/DROP). The compiled data-source (dist/config/data-source.js)
+# prefers DATABASE_MIGRATION_USER / DATABASE_MIGRATION_PASSWORD (the migrator
+# identity) and falls back to DATABASE_USER / DATABASE_PASSWORD when they are
+# unset. The application process below (`node dist/main`) always uses the
+# DML-only DATABASE_USER identity, so the running API never needs DDL rights.
 
-log "Running TypeORM migrations..."
+if [ -n "${DATABASE_MIGRATION_USER:-}" ]; then
+  log "Running TypeORM migrations as migrator identity (DATABASE_MIGRATION_USER)..."
+else
+  log "Running TypeORM migrations (no DATABASE_MIGRATION_USER set — using DATABASE_USER)..."
+fi
 # Use the compiled JS data-source (dist) to avoid needing ts-node at runtime
 node -e "
 const { AppDataSource } = require('./dist/config/data-source');

@@ -1,0 +1,127 @@
+# HANDLA — Operator Actions Required
+
+This file records every task in the security-hardening program that requires
+**manual operator intervention** (credentials, console/account access, customer
+impact decisions, PR merges, or production env changes the agent must not make
+unilaterally). Autonomous work continues around these; nothing here blocks
+independent phases unless explicitly marked **BLOCKING**.
+
+**No secret values are ever recorded here — only the *type* of secret and where it goes.**
+
+Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
+
+---
+
+## 🔴 A. Configure external monitoring alert channel  (Phase: Monitoring)
+- **Status:** OPERATOR ACTION REQUIRED (BLOCKING for "Monitoring = A" verdict; NON-BLOCKING for other phases)
+- **Why:** `handla-monitor`/`handla-alert` are live on production and write alerts
+  locally (spool + journald), but `ALERT_CHANNEL=none`, so **no alert currently
+  leaves the VPS**. If the VPS degrades, no one is notified off-host.
+- **Exact action (choose ONE channel):**
+  1. `sudoedit /etc/handla-monitor/alert.conf` (file is root:root 0600).
+  2. Set `ALERT_CHANNEL=telegram` (or `slack` / `smtp`) and fill the matching secret(s):
+     - **Telegram:** `TELEGRAM_BOT_TOKEN=…`, `TELEGRAM_CHAT_ID=…`
+       (create a bot via @BotFather; get chat id via @userinfobot).
+     - **Slack:** `SLACK_WEBHOOK_URL=…` (Incoming Webhook).
+     - **SMTP:** `ALERT_EMAIL_TO=…`, `ALERT_EMAIL_FROM=…` (needs working `mail`/`sendmail`).
+  3. Keep file mode 0600. Do NOT commit the file to git.
+- **Verification afterward (must be done):**
+  ```
+  sudo handla-alert INFO test manual "external delivery test"
+  sudo tail -2 /var/lib/handla-monitor/alerts.log     # expect external=delivered(...)
+  ```
+  If it shows `external=failed(...)` or `misconfigured(...)`, fix creds and retry.
+- **Security warning:** Never paste the token into chat, logs, or a committed file.
+  Rotate immediately if it is ever exposed.
+
+## 🔴 B. Configure an independent OFF-VPS uptime monitor  (Phase: Monitoring)
+- **Status:** OPERATOR ACTION REQUIRED (BLOCKING for "Monitoring = A"; NON-BLOCKING otherwise)
+- **Why:** A monitor running *on* the VPS cannot detect a total VPS/network/power
+  outage. An external watcher is required so full outage is noticed.
+- **Exact action:** Create a free/basic account on an external uptime service
+  (UptimeRobot, Healthchecks.io, BetterStack, Pingdom, etc.) and add HTTP checks:
+  - `https://handla.tech/` — expect 200/301/302/308.
+  - `https://api.handla.tech/api/health` — expect HTTP 200 (JSON `status:ok`).
+  - Notification target = the same ops contact as (A).
+  - Recommended interval ≤ 5 min.
+- **Verification afterward:** Trigger a test notification from the provider; confirm
+  it reaches the ops contact. Optionally pause one check briefly to confirm a down
+  alert fires (then re-enable).
+- **Security warning:** Use only the two public health URLs; do not expose internal
+  ports or admin paths to the external monitor.
+
+## 🟡 C. Deploy legacy-public-links secure default  (Phase: Legacy public links)
+- **Status:** OPERATOR ACTION REQUIRED (NON-BLOCKING) — merge + deploy gated.
+- **Why:** Branch `security/legacy-public-links-disable` flips the code default of
+  `PUBLIC_DOC_LEGACY_ID_LINKS` to **false** (secure-by-default: legacy raw-UUID
+  public routes → 404; only capability tokens grant public access). Verified safe:
+  production has **0 invoices / 0 contracts / 0 quotations**, so **no circulating
+  link is affected**. The change only takes effect once the branch is merged and
+  the API is redeployed.
+- **Exact action:**
+  1. Review & merge PR for `security/legacy-public-links-disable` into `main`.
+  2. Redeploy `handla_api` (normal deploy path).
+  3. (No env change needed — the secure default is now in code. To *temporarily
+     re-enable* legacy routes you would set `PUBLIC_DOC_LEGACY_ID_LINKS=true`.)
+- **Verification afterward:**
+  ```
+  # after deploy, legacy raw-id must 404 (there is no data, so use any UUID):
+  curl -s -o /dev/null -w '%{http_code}\n' \
+    https://api.handla.tech/erp/invoices/public/00000000-0000-4000-8000-000000000000
+  # expect 404
+  ```
+- **Security warning:** Do not set `PUBLIC_DOC_LEGACY_ID_LINKS=true` in production
+  unless you are knowingly restoring pre-token legacy links; it re-opens the
+  enumerable raw-UUID surface.
+
+---
+## D. Apply MySQL runtime/migrator user split in production 🟡 (NON-BLOCKING)
+
+- **Phase:** 3 — MySQL runtime/migrator user split
+- **Why:** The single app DB user currently holds DDL+DML. Code now supports a
+  DML-only runtime identity + a DDL migrator identity so the running API can
+  never `CREATE/ALTER/DROP`. Applying it requires creating two DB users with
+  operator-chosen secrets and a coordinated env/redeploy — an operator step.
+- **BLOCKING?** NON-BLOCKING. The code falls back to the current single user
+  when `DATABASE_MIGRATION_USER` is unset, so production is unaffected until you
+  choose to apply this. No production change was made by this phase.
+- **Exact steps:**
+  1. Verified backup FIRST (schema + grants):
+     `docker exec -e MYSQL_PWD=<root_pw> handla_mysql mysqldump -uroot handla_db > /root/handla_db_pre_split_$(date +%F).sql`
+     `docker exec -e MYSQL_PWD=<root_pw> handla_mysql mysql -uroot -N -e "SHOW GRANTS FOR 'handla'@'%'" > /root/handla_grants_pre_split_$(date +%F).txt`
+  2. Generate two strong secrets on the VPS (do NOT display/commit them) and the
+     render+apply helper will consume them from env WITHOUT echoing:
+     ```
+     export MYSQL_ROOT_PASSWORD='<root_pw>'                 # not echoed
+     export RUNTIME_PW="$(openssl rand -base64 30)"
+     export MIGRATOR_PW="$(openssl rand -base64 30)"
+     # Optional dry-run first (prints SQL with passwords MASKED, applies nothing):
+     DRY_RUN=1 deploy/mysql/render-and-apply.sh
+     # Apply for real (idempotent; re-runnable):
+     deploy/mysql/render-and-apply.sh
+     ```
+     (The helper renders `deploy/mysql/runtime-migrator-split.sql`; you may also
+     render it manually with `sed` — see the header of that file.)
+  3. Set deployed env (compose/secret store) — values from the shell above:
+     `DATABASE_USER=handla_runtime`, `DATABASE_PASSWORD=<RUNTIME_PW>`,
+     `DATABASE_MIGRATION_USER=handla_migrator`, `DATABASE_MIGRATION_PASSWORD=<MIGRATOR_PW>`
+  4. Redeploy `handla_api`.
+  5. (Optional, after verification) drop the legacy combined user:
+     `DROP USER 'handla'@'%';`
+- **Verification after:** API health = 200; runtime CRUD works; migrations run
+  clean (idempotent) under migrator; runtime `CREATE/ALTER/DROP` denied
+  (expected); existing data unchanged. In the container logs you should see
+  "Runtime schema self-heal skipped in production". Confirm grants:
+  `SHOW GRANTS FOR 'handla_runtime'@'%';` → only SELECT/INSERT/UPDATE/DELETE.
+- **Pre-verified in an isolated throwaway MySQL 8.0 (not production):** all 23
+  migrations ran under the migrator identity; runtime user passed 4/4 DML tests
+  and was correctly DENIED on 6/6 DDL tests (CREATE/ALTER/DROP/INDEX/TRUNCATE/GRANT);
+  provisioning + migrations are idempotent on re-run.
+- **Security warnings:** Never grant `GRANT OPTION` or global `*.*` privileges to
+  either identity. Keep `root@localhost` admin/recovery only. Do not commit real
+  secrets. `RUNTIME_SCHEMA_SELFHEAL=true` is recovery-only — leave it unset.
+- **Merge required:** merge branch `security/mysql-runtime-migrator-split` before
+  deploying (code changes to data-source.ts / main.ts / entrypoint.sh).
+
+---
+*(Further operator actions are appended by later phases below.)*
