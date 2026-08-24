@@ -37,7 +37,10 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_DATABASE:      ${DATABASE_NAME:-handla_db}
-      MYSQL_USER:          ${DATABASE_USER:-handla}
+      # Runtime identity (DML-only). MUST be provided explicitly — no silent
+      # fallback to the deprecated privileged legacy `handla` user. See
+      # deploy/mysql/runtime-migrator-split.sql. Canonical value: handla_runtime.
+      MYSQL_USER:          ${DATABASE_USER:?DATABASE_USER is required - canonical handla_runtime, legacy handla is deprecated}
       MYSQL_PASSWORD:      ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
       MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:?DATABASE_ROOT_PASSWORD is required}
     command: >
@@ -49,7 +52,7 @@ services:
     networks:
       - handla_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DATABASE_USER:-handla}", "-p${DATABASE_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DATABASE_USER:?DATABASE_USER is required - canonical handla_runtime}", "-p${DATABASE_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -101,8 +104,15 @@ services:
       DATABASE_HOST:     mysql
       DATABASE_PORT:     3306
       DATABASE_NAME:     ${DATABASE_NAME:-handla_db}
-      DATABASE_USER:     ${DATABASE_USER:-handla}
+      # Runtime identity (DML-only): required, no legacy fallback.
+      DATABASE_USER:     ${DATABASE_USER:?DATABASE_USER is required - canonical handla_runtime, legacy handla is deprecated}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      # Migrator identity (schema-scoped DDL, migrations only). Optional here:
+      # when unset the migration DataSource falls back to DATABASE_USER (see
+      # handla-backend/src/config/data-source.ts). Sourced from env_file too;
+      # listed explicitly so Compose interpolation stays in lockstep.
+      DATABASE_MIGRATION_USER:     ${DATABASE_MIGRATION_USER:-}
+      DATABASE_MIGRATION_PASSWORD: ${DATABASE_MIGRATION_PASSWORD:-}
       # Redis — points to the redis service above (ACL-authenticated)
       REDIS_HOST:        redis
       REDIS_PORT:        6379

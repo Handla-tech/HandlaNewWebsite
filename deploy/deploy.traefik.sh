@@ -52,6 +52,8 @@ get() { grep -E "^$1=" handla-backend/.env | tail -n1 | cut -d= -f2- || true; }
   echo "DATABASE_PASSWORD=$(get DATABASE_PASSWORD)"
   echo "DATABASE_ROOT_PASSWORD=$(get DATABASE_ROOT_PASSWORD)"
   echo "DATABASE_SYNCHRONIZE=$(get DATABASE_SYNCHRONIZE)"
+  echo "DATABASE_MIGRATION_USER=$(get DATABASE_MIGRATION_USER)"
+  echo "DATABASE_MIGRATION_PASSWORD=$(get DATABASE_MIGRATION_PASSWORD)"
   echo "REDIS_USERNAME=$(get REDIS_USERNAME)"
   echo "REDIS_PASSWORD=$(get REDIS_PASSWORD)"
 } > .env
@@ -59,7 +61,9 @@ get() { grep -E "^$1=" handla-backend/.env | tail -n1 | cut -d= -f2- || true; }
 grep -q '^REDIS_USERNAME=.\+'       .env || sed -i 's|^REDIS_USERNAME=.*|REDIS_USERNAME=handla_app|' .env
 grep -q '^PORT=.\+'                  .env || sed -i 's|^PORT=.*|PORT=3001|'                            .env
 grep -q '^DATABASE_NAME=.\+'         .env || sed -i 's|^DATABASE_NAME=.*|DATABASE_NAME=handla_db|'       .env
-grep -q '^DATABASE_USER=.\+'         .env || sed -i 's|^DATABASE_USER=.*|DATABASE_USER=handla|'          .env
+# Runtime DB identity is required: never silently fall back to the deprecated
+# privileged legacy `handla` user. Fail clearly on a missing/empty secret.
+grep -q '^DATABASE_USER=.\+'         .env || { echo "[deploy-traefik] FATAL: DATABASE_USER missing from handla-backend/.env (canonical: handla_runtime). Refusing to deploy with a legacy/empty DB identity." >&2; exit 5; }
 grep -q '^DATABASE_SYNCHRONIZE=.\+'  .env || sed -i 's|^DATABASE_SYNCHRONIZE=.*|DATABASE_SYNCHRONIZE=false|' .env
 chmod 600 .env
 
