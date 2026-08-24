@@ -33,8 +33,19 @@ Artifacts: `handla-db-prod_YYYYMMDD-HHMMSS.sql.gz.age`,
   for restore / restore-drill (`AGE_IDENTITY=...`).
 
 ## Retention
-Local: 3 encrypted copies. Off-host: daily 7 / weekly 4 / monthly 3 (age-based
-prune; tolerated/skipped if the remote is immutable).
+Local: `KEEP_LOCAL=3` encrypted copies on the VPS. **Off-host expiry is
+provider-side** (AWS S3 Lifecycle + Object Lock); the VPS performs **no**
+off-host deletion (`OFFHOST_PRUNE=false`). Two enabled AWS lifecycle rules on
+`handla-production-backups`:
+- `handla-backup-retention` — expire current versions after **30 days**;
+  permanently delete noncurrent versions **1 day** after they become noncurrent
+  (subject to the 30-day Object Lock retention); keep **0** newer noncurrent
+  versions.
+- `handla-delete-marker-cleanup` — delete expired object delete markers.
+
+The legacy `RETAIN_DAILY/WEEKLY/MONTHLY` vars are inert on the immutable AWS
+remote and apply only to the optional non-immutable (MinIO test) path.
+See `REAL-PROVIDER-CUTOVER.md` for the full retention/lifecycle model.
 
 ## S3 user-file recovery (`handla-uploads`)
 S3 is the durable copy for user uploads. The app IAM user is least-privileged and
@@ -43,13 +54,18 @@ state is undetermined via the app credential. **Recommendation:** enable
 **versioning + lifecycle** on `handla-uploads` from the AWS console (low-risk,
 protects against accidental/malicious object deletion). Do not make the bucket public.
 
-## Compromise / ransomware resilience
+## Compromise / ransomware resilience (implemented + verified)
 - Backups are encrypted before leaving the VPS; the bucket is private (unauth = 403).
-- **Residual risk:** the backup upload credential lives on the VPS. A root-level
-  compromise could, if the remote allows `DeleteObject`, delete off-host backups.
-  **Mitigation (operator action on the real provider):** use a dedicated backup
-  credential scoped to `PUT/LIST/GET` only (no `DELETE`) and enable **Object Lock /
-  immutable retention / versioning**. Templates already note this.
+- The backup credential on the VPS is scoped to `PUT/GET/LIST` only and **cannot**
+  `DeleteObject`, `DeleteObjectVersion`, or `BypassGovernanceRetention` — so a
+  root-level VPS compromise **cannot** delete, overwrite-destroy, or shorten the
+  off-host backups. Versioning + Object Lock (Governance, 30d) enforce this on the
+  provider side.
+- **Accepted residual risk:** a trusted AWS *administrative* principal (account
+  root / admin, not on the VPS) could bypass Governance retention. This is the
+  deliberate cost of keeping an emergency admin recovery path; Compliance mode
+  (which removes even admin recovery) was considered and intentionally not
+  enabled. Protect the AWS account root/admin accordingly (MFA, minimal admins).
 
 ## Off-host provider — LIVE on AWS S3 (verified)
 Production backups upload to a **real, independent AWS S3 bucket**:
@@ -59,9 +75,17 @@ Production backups upload to a **real, independent AWS S3 bucket**:
 - rclone remote **`handla-backups-aws`**; destination
   `handla-backups-aws:handla-production-backups`.
 - Dedicated IAM user **`handla-backup`**, scoped **PUT/GET/LIST only** — no
-  DELETE, no CreateBucket, no bucket admin, no Object Lock bypass.
-- **Versioning enabled**, **Object Lock** (Governance, 30 days), **Block Public
+  DELETE, no DeleteObjectVersion, no CreateBucket, no bucket admin, and **no
+  Object Lock / Governance bypass** (all verified 403, non-destructively).
+- **Versioning enabled**, **Object Lock** (Governance, 30 days — deliberately
+  chosen; Compliance considered but intentionally not enabled), **Block Public
   Access** enabled.
+- **Provider-side lifecycle** (`handla-backup-retention` +
+  `handla-delete-marker-cleanup`) handles expiry; the VPS performs **no**
+  off-host deletion (`OFFHOST_PRUNE=false`).
+- Admin Governance bypass by a trusted AWS admin principal is an **accepted
+  residual risk** (preserves an emergency recovery path); no VPS-resident
+  credential can perform it.
 - All uploads use `--s3-no-check-bucket` (the credential cannot CreateBucket).
 
 Cutover verified end-to-end: real AWS backup → real-AWS restore drill
