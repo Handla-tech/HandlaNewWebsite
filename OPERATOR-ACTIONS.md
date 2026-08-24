@@ -209,3 +209,37 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
   recommended file. Roll back by removing the four keys and recreating.
 - **Security warning:** do NOT make `/certs` read-only (acme.json is written
   there). Test against ALL tenants, not just handla.tech, before considering done.
+
+## G. CSP final tightening (Phase 6) — 🟢 LOW / NON-BLOCKING (code-only, ships on merge+deploy)
+
+**What changed (already in this branch, verified):**
+- **Backend (`handla-backend/src/main.ts`)** — production helmet CSP tightened:
+  removed `style-src 'unsafe-inline'`, narrowed `img-src` to `'self' data:`
+  (dropped broad `https:`), narrowed `connect-src` to `'self' wss:` (dropped
+  broad `https:`), added `form-action 'none'`. The API returns JSON only in
+  prod (Swagger is dev-only, CSP disabled in dev), so this is zero-risk.
+- **Frontend (`handla-frontend/src/middleware.ts`, `next.config.js`,
+  `src/app/layout.tsx`)** — CSP moved from static `headers()` to a per-request
+  **nonce-based** policy in middleware. `script-src` dropped `'unsafe-inline'`
+  and now uses `'self' 'nonce-<per-request>' 'strict-dynamic'`. The anti-FOUC
+  theme script and analytics `<Script>` carry the nonce; Next stamps its own
+  bootstrap/hydration scripts with it. Verified against a real standalone build:
+  `/en`, `/ar`, `/en/products`, `/auth` all return 200 with 0 executable
+  scripts missing the nonce (JSON-LD data blocks are not script-src governed).
+  `style-src 'unsafe-inline'` is INTENTIONALLY kept (framer-motion injects
+  nonce-less runtime `<style>` tags); tightening style-src is a future item.
+
+**Operator action required:** NONE beyond the normal merge + redeploy of the
+frontend and backend images. After deploy, verify in a browser devtools
+Console that there are **no CSP violation errors** on the public pages and the
+theme (dark/light) still applies before first paint (no FOUC).
+
+**Verification after deploy:**
+- `curl -sI https://<site>/en | grep -i content-security-policy` shows
+  `script-src 'self' 'nonce-...' 'strict-dynamic'` (a fresh nonce each request)
+  and NO `'unsafe-inline'` in script-src.
+- Browser Console shows no `Refused to execute inline script` errors.
+
+**Residual (tracked, future):** remove `style-src 'unsafe-inline'` — requires
+replacing framer-motion's runtime style injection or a nonce-aware styling
+approach.

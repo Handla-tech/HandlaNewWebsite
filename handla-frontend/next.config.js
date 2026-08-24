@@ -4,12 +4,15 @@
 // defence-in-depth header set to every Next-served response.
 //
 // CSP notes / why it is shaped this way (must not break the running app):
-//   • script-src needs 'unsafe-inline' because the root layout ships an inline
-//     anti-FOUC theme <Script strategy="beforeInteractive"> and Next injects
-//     its own inline bootstrap scripts. A strict nonce CSP is not compatible
-//     with `output: 'standalone'` + beforeInteractive inline scripts without a
-//     larger refactor; this is tracked as a future hardening item.
-//   • style-src needs 'unsafe-inline' for framer-motion's injected styles and
+//   • Content-Security-Policy is NO LONGER set here (Phase 6). It is emitted
+//     per-request by src/middleware.ts so script-src can use a fresh nonce and
+//     DROP 'unsafe-inline': the one trusted inline script (the anti-FOUC theme
+//     script in the root layout) carries that nonce, and Next stamps its own
+//     bootstrap scripts with it. A static headers() CSP cannot carry a
+//     per-request nonce, hence the move to middleware. All the origin
+//     constants below are mirrored in middleware.ts (kept in sync by the
+//     security-headers regression test).
+//   • style-src still needs 'unsafe-inline' for framer-motion's injected styles and
 //     Next's inlined critical CSS. It ALSO allows https://fonts.googleapis.com
 //     because globals.css does `@import url('https://fonts.googleapis.com/...')`
 //     for the Space Grotesk stylesheet. There is no separate style-src-elem
@@ -54,24 +57,15 @@ const S3_UPLOAD_ORIGIN = (() => {
 const GOOGLE_FONTS_STYLESHEET = 'https://fonts.googleapis.com';
 const GOOGLE_FONTS_FILES = 'https://fonts.gstatic.com';
 
-const CSP = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  `style-src 'self' 'unsafe-inline' ${GOOGLE_FONTS_STYLESHEET}`,
-  `font-src 'self' data: ${GOOGLE_FONTS_FILES}`,
-  `img-src 'self' data: blob: ${S3_UPLOAD_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ${S3_UPLOAD_ORIGIN} ws: wss:`,
-  "manifest-src 'self'",
-  "worker-src 'self' blob:",
-  "upgrade-insecure-requests",
-].join('; ');
+// NOTE: The Content-Security-Policy itself now lives in src/middleware.ts (it
+// needs a per-request nonce). The origin constants above are kept here for
+// documentation parity and are re-derived identically inside the middleware.
+// eslint-disable-next-line no-unused-vars
+void [API_ORIGIN, SOCKET_ORIGIN, S3_UPLOAD_ORIGIN, GOOGLE_FONTS_STYLESHEET, GOOGLE_FONTS_FILES];
 
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy', value: CSP },
+  // Content-Security-Policy is intentionally omitted here — it is a per-request
+  // nonce-based header set by src/middleware.ts (see note at top of file).
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
