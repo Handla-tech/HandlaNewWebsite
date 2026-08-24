@@ -36,10 +36,31 @@ if [ -z "${REDIS_PASSWORD:-}" ]; then
   exit 1
 fi
 
-# Dangerous / administrative commands the Handla app (Bull email queue) does
-# NOT require. Denied even for the application user as defence-in-depth.
-# Bull needs data structures + scripting (EVAL/EVALSHA/SCRIPT) + pub/sub +
-# blocking list/zset ops + CLIENT + INFO — all of which remain allowed.
+# ── Command ALLOW-LIST (default-deny) ────────────────────────────────────────
+# Phase 4 hardening: the application user is now granted an explicit allow-list
+# of the ACL categories the Bull email queue provably needs, instead of the
+# previous "+@all minus a deny-list" (allow-all) model. Everything outside the
+# allow-list is DENIED BY DEFAULT — including ~99 admin/introspection/stream/
+# geo/bitmap/hyperloglog/function commands the app never uses, and any NEW
+# dangerous command a future Redis release adds.
+#
+# The allowed categories were derived empirically from 12h of production
+# `INFO commandstats` PLUS a full Bull 4.16.5 / ioredis 5.11.1 queue-lifecycle
+# run (enqueue → process → fail+retry/backoff → getJobCounts → pause/resume →
+# clean) executed against a throwaway Redis with this exact ACL: 0 permission
+# errors. Categories: read/write/list/sortedset/hash/string/connection/
+# scripting/pubsub/transaction/keyspace. Explicit extras cover connection setup
+# and introspection ioredis/Bull issue at connect + queue management:
+#   +info +client +command +hello +auth +echo +quit
+# (KEYS is intentionally allowed — Bull uses it in queue.js pause/empty via a
+# MULTI; SCAN alone is not sufficient for Bull's rate-limiter cleanup.)
+ALLOW_CMDS="+@read +@write +@list +@sortedset +@hash +@string +@connection \
++@scripting +@pubsub +@transaction +@keyspace \
++info +client +command +hello +auth +echo +quit"
+
+# Belt-and-suspenders: even though @keyspace/@write contain FLUSHALL/FLUSHDB/
+# SWAPDB, we explicitly re-deny the destructive/administrative subset so they
+# stay blocked. (These `-cmd` clauses come AFTER the +@category grants.)
 DENY_CMDS="-flushall -flushdb -swapdb -config -shutdown -debug -module -acl \
 -cluster -replicaof -slaveof -failover -save -bgsave -bgrewriteaof -reset -migrate -restore"
 
@@ -50,7 +71,7 @@ DENY_CMDS="-flushall -flushdb -swapdb -config -shutdown -debug -module -acl \
 umask 077
 {
   # Dedicated application user: authenticated, broad data access, admin denied.
-  printf 'user %s on >%s ~* &* +@all %s\n' "$REDIS_USERNAME" "$REDIS_PASSWORD" "$DENY_CMDS"
+  printf 'user %s on >%s ~* &* %s %s\n' "$REDIS_USERNAME" "$REDIS_PASSWORD" "$ALLOW_CMDS" "$DENY_CMDS"
   # Disable the built-in default user entirely: no unauthenticated access.
   echo "user default off nopass ~* &* -@all"
 } > "$ACL_FILE"

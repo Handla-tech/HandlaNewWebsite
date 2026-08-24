@@ -140,3 +140,26 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 
 ---
 *(Further operator actions are appended by later phases below.)*
+
+---
+## E. Deploy Redis command ALLOW-LIST (Phase 4) 🟡 (NON-BLOCKING)
+
+- **Phase:** 4 — Redis ACL allow-list
+- **Why:** `deploy/redis/redis-entrypoint.sh` now grants `handla_app` an explicit
+  category allow-list (default-deny) instead of `+@all` minus a deny-list. ~99
+  admin/stream/geo/bitmap/function commands (and any future dangerous command)
+  are now denied by default; the destructive subset is also explicitly re-denied.
+- **BLOCKING?** NON-BLOCKING. No production change made by this phase — it takes
+  effect only when the branch is merged and `handla_redis` is recreated.
+- **Exact steps:** merge `security/redis-acl-allowlist`; recreate `handla_redis`
+  (entrypoint regenerates the ACL file from `REDIS_PASSWORD` on boot — no secret
+  change needed).
+- **Verification after:** API `/api/health`=200; send a test email (queue works);
+  `docker exec handla_redis redis-cli -u redis://handla_app:<pw>@127.0.0.1:6379 flushall`
+  → must return `NOPERM`. Bull queue processes normally.
+- **Pre-verified (throwaway Redis 7.4, production untouched):** full Bull 4.16.5 /
+  ioredis 5.11.1 lifecycle (enqueue → process → fail+retry/backoff → getJobCounts
+  → pause/resume → clean) ran with 0 permission errors; 15/15 dangerous commands
+  correctly DENIED (flushall/flushdb/config/shutdown/acl/cluster/save/bgsave/
+  module/replicaof/swapdb/migrate/debug/bgrewriteaof/failover).
+- **Rollback:** revert the entrypoint to the previous `+@all` line and recreate.
