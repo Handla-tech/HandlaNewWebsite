@@ -163,3 +163,45 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
   correctly DENIED (flushall/flushdb/config/shutdown/acl/cluster/save/bgsave/
   module/replicaof/swapdb/migrate/debug/bgrewriteaof/failover).
 - **Rollback:** revert the entrypoint to the previous `+@all` line and recreate.
+
+## F. Container hardening — HANDLA services + SHARED Traefik (Phase 5)
+
+### F1. Apply HANDLA container hardening overlay 🟡 (NON-BLOCKING)
+- **Phase:** 5 — container hardening (HANDLA-owned services)
+- **Why:** `deploy/docker-compose.hardening.yml` adds `no-new-privileges:true`
+  and `cap_drop: ALL` (with minimal per-service `cap_add`) to the four services
+  HANDLA owns (mysql, redis, api, web). api/web are non-root Node → zero caps;
+  mysql/redis get only CHOWN/SETUID/SETGID/DAC_OVERRIDE(+FOWNER for mysql).
+- **BLOCKING?** NON-BLOCKING. No production change made by this phase; effective
+  only when the overlay is included in the deploy command and containers recreate.
+- **Exact steps:** add the overlay to the deploy command, e.g.
+  `docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.hardening.yml up -d`
+  (or wire it into `deploy/deploy.traefik.sh`).
+- **Verification after:** all four containers `healthy`; API `/api/health`=200;
+  `docker inspect handla_api --format '{{.HostConfig.SecurityOpt}} {{.HostConfig.CapDrop}}'`
+  shows `[no-new-privileges:true] [ALL]`.
+- **Pre-verified in isolation (production untouched):** mysql:8.0 and
+  redis:7-alpine (with HANDLA's custom ACL entrypoint) both start HEALTHY under
+  `cap_drop: ALL` + the minimal cap set + `no-new-privileges`; ACL file written
+  correctly; `NoNewPrivs: 1` confirmed in-kernel. api/web need no caps (non-root).
+
+### F2. Harden the SHARED Traefik container 🟠 (BLOCKING for "Traefik hardened" — requires Traefik OWNER)
+- **Phase:** 5 — container hardening (shared reverse proxy)
+- **Why:** The `traefik` container is currently `no-new-privileges` OFF,
+  `cap_drop` empty, `read_only` false. It should run with
+  `no-new-privileges:true`, `cap_drop: ALL` + only `NET_BIND_SERVICE`, and a
+  read-only rootfs (keeping `/certs` writable + a `/tmp` tmpfs).
+- **BLOCKING / OWNERSHIP:** HANDLA **cannot** apply this. The container is owned
+  by the **`tameerhome`** compose project (`/opt/tameerhome/docker-compose.yml`)
+  and fronts multiple unrelated tenants. Per the multi-tenant safety rule, HANDLA
+  must not edit another tenant's compose. This must be done by the Traefik/VPS
+  owner.
+- **Exact action:** merge the keys from `deploy/traefik-hardening.recommended.yml`
+  into the `traefik` service in `/opt/tameerhome/docker-compose.yml`, then
+  `cd /opt/tameerhome && docker compose up -d traefik`.
+- **Verification after:** every tenant host still serves 200/redirect with a
+  valid cert; ACME still renews (no acme write errors in `docker logs traefik`);
+  `docker inspect traefik` shows the hardening flags. Full checklist is in the
+  recommended file. Roll back by removing the four keys and recreating.
+- **Security warning:** do NOT make `/certs` read-only (acme.json is written
+  there). Test against ALL tenants, not just handla.tech, before considering done.
