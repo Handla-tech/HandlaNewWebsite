@@ -77,6 +77,21 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 ---
 ## D. Apply MySQL runtime/migrator user split in production 🟡 (NON-BLOCKING)
 
+> **STATUS: ✅ DEPLOYED & LIVE-VERIFIED.** The split is applied in production.
+> **Canonical identities:**
+> - **Runtime:** `handla_runtime` — DML only (SELECT/INSERT/UPDATE/DELETE).
+> - **Migrations:** `handla_migrator` — schema-scoped DDL/DML, no GRANT OPTION.
+> - **Legacy:** `handla@%` — **DEPRECATED, scheduled for removal.** Zero live and
+>   zero cumulative connections since cutover; safe to drop after fallback cleanup.
+>
+> **Executable fallbacks to the legacy `handla` user have been REMOVED** (branch
+> `security/mysql-legacy-user-cleanup`): `docker-compose.yml` and all three deploy
+> scripts now **require** an explicit `DATABASE_USER` and fail clearly if it is
+> missing — they no longer silently substitute `DATABASE_USER=handla`.
+>
+> **Remaining operator step (final):** drop the legacy user once satisfied:
+> `DROP USER 'handla'@'%';`  (take a `SHOW GRANTS` snapshot first). Not done here.
+
 - **Phase:** 3 — MySQL runtime/migrator user split
 - **Why:** The single app DB user currently holds DDL+DML. Code now supports a
   DML-only runtime identity + a DDL migrator identity so the running API can
