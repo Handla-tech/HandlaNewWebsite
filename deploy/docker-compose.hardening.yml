@@ -1,0 +1,85 @@
+# =============================================================================
+# Handla — container security hardening overlay
+# =============================================================================
+# Applies defence-in-depth container hardening to the services HANDLA OWNS
+# (mysql, redis, api, web). It is an OPT-IN overlay so it can be adopted without
+# rewriting the base compose, and layered on top of the normal deploy:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.override.yml \
+#                  -f deploy/docker-compose.hardening.yml up -d
+#
+# or with the Traefik overlay:
+#
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml \
+#                  -f deploy/docker-compose.hardening.yml up -d
+#
+# WHAT IT DOES (per service):
+#   • security_opt: no-new-privileges:true
+#       Blocks setuid/privilege-escalation via exec after start. Universally
+#       safe for all four services.
+#   • cap_drop: ALL  +  minimal cap_add
+#       Removes every Linux capability, re-adding ONLY what each image's
+#       entrypoint needs to initialise and drop privileges:
+#         - api / web run as non-root (handla / nextjs) Node processes and need
+#           NO capabilities at all → cap_drop: ALL, no cap_add.
+#         - mysql:8.0 / redis:7-alpine entrypoints start as root, chown their
+#           data dir and drop to the service user → they need CHOWN, SETUID,
+#           SETGID, DAC_OVERRIDE. FOWNER is included for mysql datadir perms.
+#
+# SCOPE / SAFETY:
+#   • Only HANDLA-owned services are touched. The SHARED Traefik reverse proxy
+#     is owned by a DIFFERENT compose project (tameerhome) and is intentionally
+#     NOT modified here — see OPERATOR-ACTIONS.md section F for the recommended
+#     Traefik-owner hardening.
+#   • read_only rootfs is deliberately NOT forced on mysql/redis here (they need
+#     writable data dirs and, for redis, a writable ACL file path); doing so
+#     safely requires per-service tmpfs tuning that risks the shared DB/queue.
+#     api/web CAN run read-only + tmpfs — provided as a commented, opt-in block
+#     so it can be enabled after a canary test.
+# =============================================================================
+services:
+
+  mysql:
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+      - FOWNER
+
+  redis:
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+
+  api:
+    # Non-root Node process — needs no Linux capabilities.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Opt-in read-only rootfs (enable after a canary; Node writes only to /tmp):
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+
+  web:
+    # Non-root Next.js process — needs no Linux capabilities.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Opt-in read-only rootfs (Next.js may need /tmp and .next/cache writable):
+    # read_only: true
+    # tmpfs:
+    #   - /tmp

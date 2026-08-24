@@ -1,0 +1,59 @@
+# =============================================================================
+# RECOMMENDED Traefik container hardening — FOR THE TRAEFIK OWNER ONLY
+# =============================================================================
+# ⚠️  DO NOT APPLY FROM THE HANDLA PROJECT.
+#
+# On this VPS the `traefik` container is a SHARED reverse proxy owned by a
+# DIFFERENT compose project (`tameerhome`, /opt/tameerhome/docker-compose.yml)
+# and it fronts multiple unrelated tenants (tameerhome, homy_*, handla_*,
+# phpmyadmin, frontend). HANDLA must not edit another tenant's compose file, so
+# this is provided as a REFERENCE for whoever owns /opt/tameerhome to adopt.
+#
+# It adds defence-in-depth without changing routing, ACME, or entrypoints. The
+# hardening below is compatible with Traefik v2.11 as currently configured
+# (docker provider via docker-socket-proxy, tlschallenge ACME to /certs).
+#
+# Apply by merging these keys into the `traefik` service in
+# /opt/tameerhome/docker-compose.yml, then:
+#   cd /opt/tameerhome && docker compose up -d traefik
+# and verify ALL tenants still resolve + serve valid TLS (see checklist below).
+# =============================================================================
+services:
+  traefik:
+    # Block privilege escalation via exec after start.
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop every Linux capability, then re-add ONLY NET_BIND_SERVICE so Traefik
+    # can bind the privileged ports 80/443. Traefik needs no other capability
+    # (it reaches Docker via the socket PROXY over TCP, not the raw socket).
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+    # Read-only root filesystem. Traefik only needs to WRITE the ACME store,
+    # which already lives on the mounted /certs volume (rw). Everything else can
+    # be immutable; a small tmpfs covers /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
+    # NOTE: keep the existing certs volume mount writable, e.g.:
+    #   volumes:
+    #     - tameerhome_traefik-certs:/certs
+    # (acme.json is written there — do NOT make /certs read-only.)
+
+# =============================================================================
+# POST-APPLY VERIFICATION CHECKLIST (run as the Traefik owner):
+#   1. docker inspect traefik --format \
+#        'ro={{.HostConfig.ReadonlyRootfs}} nnp={{.HostConfig.SecurityOpt}} \
+#         capdrop={{.HostConfig.CapDrop}} capadd={{.HostConfig.CapAdd}}'
+#   2. For EACH tenant host, confirm 200/redirect + valid cert:
+#        curl -sSI https://handla.tech            | head -1
+#        curl -sSI https://api.handla.tech/api/health | head -1
+#        curl -sSI https://tameerhome.tech         | head -1   # and other tenants
+#   3. Confirm ACME still renews: traefik logs should show no acme write errors
+#        docker logs traefik 2>&1 | grep -i acme | tail
+#   4. If anything fails, roll back by removing the four keys above and
+#      `docker compose up -d traefik`.
+# =============================================================================
