@@ -1,0 +1,75 @@
+# =============================================================================
+# handla-monitor threshold/behaviour config  (EXAMPLE — optional overrides)
+# =============================================================================
+# INSTALL AT (VPS):  /etc/handla-monitor/monitor.conf
+# OWNERSHIP/PERMS:   root:root  0644  (contains NO secrets — thresholds only)
+#
+#   install -o root -g root -m 0644 monitor.conf.example /etc/handla-monitor/monitor.conf
+#
+# This file is OPTIONAL. handla-monitor ships with sane built-in defaults; this
+# file only exists to override them without editing the script. It is sourced
+# by bash, so use only simple KEY=value lines. It must NEVER contain secrets —
+# DB/Redis credentials are read at runtime from the container environment.
+# =============================================================================
+
+# ── containers to watch (explicit HANDLA allow-list; this host is multi-tenant,
+#    so we NEVER touch other tenants' containers) ─────────────────────────────
+#HANDLA_CONTAINERS="handla_api handla_web handla_mysql handla_redis traefik docker-socket-proxy"
+#HANDLA_HEALTHCHECKED="handla_api handla_web handla_mysql handla_redis"
+#MYSQL_CONTAINER=handla_mysql
+#REDIS_CONTAINER=handla_redis
+
+# ── resource thresholds (percent) ────────────────────────────────────────────
+#DISK_WARN=80
+#DISK_CRIT=90
+#INODE_WARN=80
+#INODE_CRIT=90
+#MEM_WARN=85
+#MEM_CRIT=95
+# load average / core ratio (host currently has no swap → mem pressure serious)
+#LOAD_WARN_RATIO=1.5
+#LOAD_CRIT_RATIO=2.5
+
+# ── backup freshness ─────────────────────────────────────────────────────────
+# Daily backup runs ~02:30 UTC; alert if no success within this many hours.
+#BACKUP_STALE_HOURS=30
+
+# ── docker / http ────────────────────────────────────────────────────────────
+#RESTART_LOOP_THRESHOLD=5      # restarts since last check ⇒ loop
+#HTTP_FAIL_THRESHOLD=3         # consecutive HTTP failures ⇒ CRITICAL
+#API_HEALTH_URL=http://127.0.0.1:3001/api/health
+#EXT_FRONTEND_URL=https://handla.tech/
+#EXT_API_URL=https://api.handla.tech/api/health
+
+# ── http error rate (from SHARED Traefik logs; scoped to HANDLA :3000/:3001) ─
+#HTTP5XX_WARN=10
+#HTTP5XX_CRIT=40
+#HTTP_ERR_WINDOW=6m
+
+# ── db / redis ───────────────────────────────────────────────────────────────
+#MYSQL_CONN_WARN_PCT=80
+#REDIS_MEM_WARN_PCT=85
+#BULL_FAILED_WARN=10
+#BULL_FAILED_CRIT=50
+
+# ── tls expiry (days) ────────────────────────────────────────────────────────
+#TLS_WARN_DAYS=21
+#TLS_CRIT_DAYS=7
+#TLS_DOMAINS="handla.tech api.handla.tech"
+
+# ── ssh / host security ──────────────────────────────────────────────────────
+#SSH_FAIL_WARN=20             # failed+invalid-user auths / 1h window ⇒ WARNING
+#SSH_FAIL_CRIT=80             #                                       ⇒ CRITICAL
+#SUDO_FAIL_WARN=5
+#SSH_WINDOW="1 hour ago"
+# Set to 1 to get an INFO alert on each new successful root SSH login today.
+#ALERT_ON_ROOT_SSH=0
+
+# ── dedup / cooldown ─────────────────────────────────────────────────────────
+#COOLDOWN_MIN=45
+#REMIND_MIN=360               # remind after N minutes still-in-alarm
+
+# ── daily summary ────────────────────────────────────────────────────────────
+# 0 = write summary to local spool only; 1 = also dispatch externally (requires
+# a configured external channel in alert.conf).
+#SUMMARY_EXTERNAL=0

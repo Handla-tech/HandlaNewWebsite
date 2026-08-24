@@ -12,11 +12,13 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 
 ---
 
-## 🔴 A. Configure external monitoring alert channel  (Phase: Monitoring)
-- **Status:** OPERATOR ACTION REQUIRED (BLOCKING for "Monitoring = A" verdict; NON-BLOCKING for other phases)
-- **Why:** `handla-monitor`/`handla-alert` are live on production and write alerts
-  locally (spool + journald), but `ALERT_CHANNEL=none`, so **no alert currently
-  leaves the VPS**. If the VPS degrades, no one is notified off-host.
+## ✅ A. Configure external monitoring alert channel  (Phase: Monitoring)
+- **Status:** ✅ CLOSED — COMPLETED & VERIFIED. External alert delivery is live:
+  `ALERT_CHANNEL=telegram` is configured and **Telegram alert delivery was verified
+  end-to-end** (test alert delivered off-host). This blocker is no longer open.
+- **Why (historical):** `handla-monitor`/`handla-alert` are live on production and write alerts
+  locally (spool + journald); previously `ALERT_CHANNEL=none`, so no alert left the
+  VPS. Now resolved — alerts are delivered externally via Telegram.
 - **Exact action (choose ONE channel):**
   1. `sudoedit /etc/handla-monitor/alert.conf` (file is root:root 0600).
   2. Set `ALERT_CHANNEL=telegram` (or `slack` / `smtp`) and fill the matching secret(s):
@@ -34,10 +36,12 @@ Legend: 🔴 CRITICAL/BLOCKING · 🟠 HIGH · 🟡 MEDIUM · 🟢 LOW/OPTIONAL
 - **Security warning:** Never paste the token into chat, logs, or a committed file.
   Rotate immediately if it is ever exposed.
 
-## 🔴 B. Configure an independent OFF-VPS uptime monitor  (Phase: Monitoring)
-- **Status:** OPERATOR ACTION REQUIRED (BLOCKING for "Monitoring = A"; NON-BLOCKING otherwise)
-- **Why:** A monitor running *on* the VPS cannot detect a total VPS/network/power
-  outage. An external watcher is required so full outage is noticed.
+## ✅ B. Configure an independent OFF-VPS uptime monitor  (Phase: Monitoring)
+- **Status:** ✅ CLOSED — COMPLETED & VERIFIED. **UptimeRobot monitors are active**
+  for both the website and the API, and external **Down** and **Recovery** email
+  notifications were both verified end-to-end. This blocker is no longer open.
+- **Why (historical):** A monitor running *on* the VPS cannot detect a total VPS/network/power
+  outage. An external watcher is required so full outage is noticed — now in place.
 - **Exact action:** Create a free/basic account on an external uptime service
   (UptimeRobot, Healthchecks.io, BetterStack, Pingdom, etc.) and add HTTP checks:
   - `https://handla.tech/` — expect 200/301/302/308.

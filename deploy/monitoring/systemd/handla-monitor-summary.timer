@@ -1,0 +1,16 @@
+# =============================================================================
+# handla-monitor-summary.timer  —  daily local summary (~07:00 UTC).
+# INSTALL: /etc/systemd/system/handla-monitor-summary.timer
+# ENABLE:  systemctl enable --now handla-monitor-summary.timer
+# =============================================================================
+[Unit]
+Description=Run HANDLA daily local monitoring summary
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=handla-monitor-summary.service
+
+[Install]
+WantedBy=timers.target
