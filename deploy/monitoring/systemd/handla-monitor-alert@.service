@@ -1,0 +1,41 @@
+# =============================================================================
+# handla-monitor-alert@.service  —  generic systemd OnFailure alert wrapper.
+# =============================================================================
+# INSTALL: /etc/systemd/system/handla-monitor-alert@.service
+#
+# Wire it into any critical service with:
+#     [Unit]
+#     OnFailure=handla-monitor-alert@%n.service
+#
+# The instance name (%i) is the failed unit's name, passed as sanitized DATA to
+# handla-alert (never eval'd). This is how a *failed* handla-backup.service (or
+# handla-monitor.service itself) reaches the external alert path immediately,
+# independent of the 5-minute polling sweep.
+#
+# Loop-safety: this unit has NO OnFailure= of its own, so an alert-dispatch
+# failure cannot recursively re-trigger itself.
+# =============================================================================
+[Unit]
+Description=HANDLA: emit alert because %i failed
+# Do not let this wrapper's own failure cascade.
+
+[Service]
+Type=oneshot
+# %i is the failed unit name (e.g. handla-backup.service). handla-alert
+# sanitizes and length-bounds every field; the reason is fixed text + the unit
+# name, so no attacker-controlled string is executed.
+ExecStart=/usr/local/sbin/handla-alert CRITICAL systemd unit.%i "systemd unit %i entered a failed state on this host"
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/handla-monitor
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077

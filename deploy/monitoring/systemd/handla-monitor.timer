@@ -1,0 +1,22 @@
+# =============================================================================
+# handla-monitor.timer  —  fires the monitoring sweep every 5 minutes.
+# INSTALL: /etc/systemd/system/handla-monitor.timer
+# ENABLE:  systemctl enable --now handla-monitor.timer
+# =============================================================================
+[Unit]
+Description=Run HANDLA monitoring sweep every 5 minutes
+
+[Timer]
+# First run shortly after boot, then every 5 minutes.
+OnBootSec=2min
+OnUnitActiveSec=5min
+# Survive downtime: if the VPS was off/asleep at a scheduled tick, run once on
+# resume so we don't silently skip checks.
+Persistent=true
+# Small jitter to avoid all timers firing on the exact same second.
+RandomizedDelaySec=20
+AccuracySec=30s
+Unit=handla-monitor.service
+
+[Install]
+WantedBy=timers.target

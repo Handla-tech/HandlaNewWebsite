@@ -1,0 +1,56 @@
+# =============================================================================
+# handla-monitor.service  —  runs one full monitoring sweep, then exits.
+# Driven by handla-monitor.timer (every 5 min). Type=oneshot.
+# INSTALL: /etc/systemd/system/handla-monitor.service
+# =============================================================================
+[Unit]
+Description=HANDLA lightweight production monitoring sweep
+Documentation=file:///opt/handla/deploy/monitoring/MONITORING.md
+# Only meaningful once the machine is basically up.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/handla-monitor all
+# A monitoring run should not "fail" the unit for transient issues; problems are
+# surfaced as alerts, not as unit failure. Non-zero from an unknown-arg still
+# fails, which is desirable.
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=120
+
+# ── sandboxing / self-hardening (Phase 22) ───────────────────────────────────
+# Runs as root (needs: docker CLI, journald, /var/lib/handla-backup, openssl).
+# We still lock down everything not required.
+NoNewPrivileges=true
+PrivateTmp=true
+# ProtectSystem=strict makes / read-only; we must still write our state dir and
+# read the docker socket. Allow only the paths we need to write.
+ProtectSystem=strict
+ReadWritePaths=/var/lib/handla-monitor
+# handla-monitor reads (not writes) these; strict already makes them RO.
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+# Networking is required (curl to local+public health, telegram/slack, openssl).
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Keep only capabilities root genuinely needs here (docker.sock access is via
+# the unix socket + root uid; no elevated caps needed for our reads).
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+UMask=0077
+
+# If a sweep itself errors out (unknown arg / crash), notify via the alert path.
+OnFailure=handla-monitor-alert@%n.service

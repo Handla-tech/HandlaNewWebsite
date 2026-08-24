@@ -1,0 +1,39 @@
+# =============================================================================
+# handla-alert external notification config  (EXAMPLE — copy, do NOT commit real)
+# =============================================================================
+# INSTALL AT (VPS):  /etc/handla-monitor/alert.conf
+# OWNERSHIP/PERMS:   root:root  0600     (contains secrets — never world/deploy readable)
+#
+#   install -o root -g root -m 0600 alert.conf.example /etc/handla-monitor/alert.conf
+#   $EDITOR /etc/handla-monitor/alert.conf   # fill in ONE channel's secrets
+#
+# This file is sourced by /usr/local/sbin/handla-alert. It MUST contain only
+# simple KEY=value assignments (it is sourced by bash). Do NOT put commands here.
+#
+# SECURITY:
+#   * Real secret values must NEVER be committed to git. This .example ships
+#     with placeholders only.
+#   * handla-alert logs delivery *status* only — it never logs the token, the
+#     webhook URL, or the message body to journald/spool.
+# =============================================================================
+
+# Which external channel to use. One of: telegram | slack | smtp | none
+# Until an operator fills in real credentials, leave this as "none": alerts
+# still go to the LOCAL spool + journald, but nothing leaves the VPS.
+ALERT_CHANNEL=none
+
+# ── Option A: Telegram bot ───────────────────────────────────────────────────
+# Create a bot with @BotFather, get the token; get your chat_id (e.g. via
+# @userinfobot or the getUpdates API). Then set ALERT_CHANNEL=telegram.
+#TELEGRAM_BOT_TOKEN=123456:REPLACE_WITH_REAL_BOT_TOKEN
+#TELEGRAM_CHAT_ID=-1001234567890
+
+# ── Option B: Slack incoming webhook ─────────────────────────────────────────
+# Create an Incoming Webhook in your Slack workspace. Then set
+# ALERT_CHANNEL=slack.
+#SLACK_WEBHOOK_URL=https://hooks.slack.com/services/REPLACE/WITH/REAL
+
+# ── Option C: SMTP / email (uses system `mail` or `sendmail`) ─────────────────
+# Requires a working local MTA / mail command. Then set ALERT_CHANNEL=smtp.
+#ALERT_EMAIL_TO=ops@example.com
+#ALERT_EMAIL_FROM=handla-monitor@srv1642049
