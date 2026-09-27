@@ -472,6 +472,35 @@ describe('ChatGateway', () => {
       );
       expect(res).toEqual({ success: true, message: { id: 'msg-7', content: 'hello' } });
     });
+
+    it('surfaces error and prevents broadcast when fileUrl validation fails in saveMessage', async () => {
+      const CONV_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+      const user = makeUser({ id: 'admin-1', role: UserRole.ADMIN });
+      const sock = makeSocket({ handshake: { headers: {}, auth: { token: 't' } } });
+      jwtService.verify.mockReturnValue({ sub: user.id });
+      userRepo.findOne.mockResolvedValue(user);
+      await gateway.handleConnection(sock);
+
+      const conv = makeConversation({ id: CONV_ID, adminId: 'admin-1', clientId: 'client-1' });
+      chatService.getConversationById.mockResolvedValue({ conversation: conv, messages: [] });
+      // Simulate saveMessage throwing BadRequestException due to malicious fileUrl
+      chatService.saveMessage.mockRejectedValue(new Error('Invalid chat attachment'));
+
+      await expect(
+        gateway.handleSendMessage(sock, {
+          conversationId: CONV_ID,
+          fileUrl: 'https://evil.com/malware.exe',
+        }),
+      ).rejects.toThrow('Invalid chat attachment');
+
+      expect(chatService.saveMessage).toHaveBeenCalledWith(CONV_ID, 'admin-1', undefined, 'https://evil.com/malware.exe');
+
+      // Ensure no broadcast occurred
+      const toCalls = ((gateway.server as any).to as jest.Mock).mock.calls.map((c) => c[0]);
+      expect(toCalls).not.toContain(`conversation:${CONV_ID}`);
+      // Ensure no notification was emitted
+      expect(notificationService.createMessageNotification).not.toHaveBeenCalled();
+    });
   });
 
   // ── handleMarkAsRead ──────────────────────────────────────────────────────

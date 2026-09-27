@@ -156,6 +156,19 @@ describe('ChatController', () => {
       expect(chatService.sendMessage).toHaveBeenCalledWith(validUuid, user, '', 'https://s3/file.pdf');
     });
 
+    it('surfaces error from ChatService.sendMessage when malicious fileUrl is provided', async () => {
+      const user = makeUser();
+      const error = new Error('Invalid chat attachment');
+      chatService.sendMessage.mockRejectedValue(error);
+
+      await expect(controller.sendMessage(validUuid, undefined as any, 'https://evil.com/malware.exe', user))
+        .rejects.toThrow(error);
+
+      expect(chatService.sendMessage).toHaveBeenCalledWith(validUuid, user, undefined, 'https://evil.com/malware.exe');
+      expect(chatGateway.broadcastMessage).not.toHaveBeenCalled();
+      expect(chatGateway.notifyMessageRecipient).not.toHaveBeenCalled();
+    });
+
     it('calls broadcast BEFORE notification so listeners see the message first', async () => {
       const user = makeUser({ id: 'admin-1', role: UserRole.ADMIN });
       const message = { id: 'msg-3', content: 'order' };
