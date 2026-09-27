@@ -85,22 +85,9 @@ export class ProfilesService {
     const user = await this.userRepo.findOne({ where: { id: targetUserId } });
     if (!user) throw new NotFoundException('User not found');
 
-    // Defensive email uniqueness check — pre-empts the database UNIQUE
-    // constraint so callers get a 409 (instead of a 500 wrapping ER_DUP_ENTRY)
-    if (dto.email !== undefined && dto.email !== user.email) {
-      const duplicate = await this.userRepo.findOne({
-        where: { email: dto.email, id: Not(targetUserId) },
-      });
-      if (duplicate) {
-        throw new ConflictException('Email already in use by another account');
-      }
-    }
-
     // Apply only fields that were actually provided (undefined means "leave alone";
     // null / empty string means "clear this field").
     if (dto.name        !== undefined) user.name        = dto.name;
-    if (dto.email       !== undefined) user.email       = dto.email;
-    if (dto.avatarUrl   !== undefined) user.avatarUrl   = dto.avatarUrl;
     if (dto.bio         !== undefined) user.bio         = dto.bio;
     if (dto.phoneNumber !== undefined) user.phoneNumber = dto.phoneNumber;
     if (dto.jobTitle    !== undefined) user.jobTitle    = dto.jobTitle;
@@ -127,8 +114,8 @@ export class ProfilesService {
   // ─── Avatar helpers ─────────────────────────────────────────────────────────
 
   /**
-   * Persist the new avatar URL after the client has finished uploading the
-   * image to S3 via a presigned URL. Kept as a thin helper so the controller
+   * Persist the new avatar URL after the backend has finished uploading the
+   * image to S3. Kept as a thin helper so the controller
    * stays readable and so unit tests don't have to construct a full DTO.
    */
   async setAvatarUrl(targetUserId: string, avatarUrl: string | null): Promise<ProfileResponse> {

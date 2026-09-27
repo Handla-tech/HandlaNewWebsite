@@ -7,7 +7,6 @@ import { AwsService } from '../../aws/aws.service';
 import { User } from '../../auth/entities/user.entity';
 import { UserRole } from '../../../common/enums';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
-import { AvatarUploadDto } from '../dto/avatar-upload.dto';
 
 /**
  * Helper to construct a fully-typed User entity for tests without having to
@@ -87,7 +86,13 @@ describe('ProfilesController', () => {
       assertSelfOrAdmin: jest.fn(),
       toResponse: jest.fn(),
     };
-    aws = { generatePresignedUrl: jest.fn() };
+    aws = {
+      generatePresignedUrl: jest.fn(),
+      uploadBuffer: jest.fn(),
+      resolveLogicalKey: jest.fn(),
+      isKeyInNamespace: jest.fn(),
+      deleteFile: jest.fn(),
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProfilesController],
@@ -147,66 +152,40 @@ describe('ProfilesController', () => {
 
   // ── POST /profiles/me/avatar-upload ───────────────────────────────────────
   describe('POST /profiles/me/avatar-upload', () => {
-    it('builds a per-user key, sanitises the filename and forwards to AwsService', async () => {
+    const tinyGif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+
+    it('uploads valid image to S3, updates profile, and deletes old avatar', async () => {
+      const user = makeUser({ id: 'user-42', avatarUrl: 'https://cdn/old.jpg' });
+      const file = { buffer: tinyGif, length: tinyGif.length } as Express.Multer.File;
+      aws.uploadBuffer.mockResolvedValue('https://cdn/new.gif');
+      aws.resolveLogicalKey.mockReturnValue('avatars/user-42/old.jpg');
+      aws.isKeyInNamespace.mockReturnValue(true);
+      aws.deleteFile.mockResolvedValue(undefined);
+      service.setAvatarUrl.mockResolvedValue(makeProfile({ avatarUrl: 'https://cdn/new.gif' }));
+
+      const res = await controller.uploadAvatar(user, file);
+
+      expect(aws.uploadBuffer).toHaveBeenCalledTimes(1);
+      const [bufferArg, keyArg, mimeArg] = aws.uploadBuffer.mock.calls[0];
+      expect(bufferArg).toBe(tinyGif);
+      expect(keyArg).toMatch(/^avatars\/user-42\/\d+-[a-f0-9-]+\.gif$/);
+      expect(mimeArg).toBe('image/gif');
+
+      expect(service.setAvatarUrl).toHaveBeenCalledWith('user-42', 'https://cdn/new.gif');
+      expect(aws.deleteFile).toHaveBeenCalledWith('avatars/user-42/old.jpg');
+      expect(res.message).toBe('Profile picture updated');
+    });
+
+    it('rejects empty files', async () => {
       const user = makeUser({ id: 'user-42' });
-      const dto: AvatarUploadDto = { fileName: 'my photo.jpg', contentType: 'image/jpeg' };
-      aws.generatePresignedUrl.mockResolvedValue({
-        url: 'https://s3/presigned',
-        bucket: 'b',
-        key: 'k',
-        expiresIn: 900,
-        fileUrl: 'https://cdn/avatar.jpg',
-      });
-
-      const res = await controller.getAvatarUploadUrl(user, dto);
-
-      expect(aws.generatePresignedUrl).toHaveBeenCalledTimes(1);
-      const [keyArg, ctArg] = aws.generatePresignedUrl.mock.calls[0];
-      // Per-user prefix to prevent cross-user overwrite
-      expect(keyArg).toMatch(/^avatars\/user-42\/\d+-my_photo\.jpg$/);
-      expect(ctArg).toBe('image/jpeg');
-      expect(res.message).toBe('Avatar upload URL generated');
-      expect(res.data).toMatchObject({ url: 'https://s3/presigned', fileUrl: 'https://cdn/avatar.jpg' });
+      const file = { buffer: Buffer.from('') } as Express.Multer.File;
+      await expect(controller.uploadAvatar(user, file)).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('strips dangerous characters from the filename (no slashes, no spaces)', async () => {
-      const user = makeUser({ id: 'user-7' });
-      const dto: AvatarUploadDto = {
-        fileName: '../../etc/passwd attack name.png',
-        contentType: 'image/png',
-      };
-      aws.generatePresignedUrl.mockResolvedValue({
-        url: 'u', bucket: 'b', key: 'k', expiresIn: 1, fileUrl: 'f',
-      });
-
-      await controller.getAvatarUploadUrl(user, dto);
-
-      const [keyArg] = aws.generatePresignedUrl.mock.calls[0];
-      // No path-traversal segments survive — sanitiser replaces them with _
-      expect(keyArg).not.toContain('../');
-      expect(keyArg).not.toContain(' ');
-      expect(keyArg).toMatch(/^avatars\/user-7\/\d+-[A-Za-z0-9._-]+$/);
-    });
-
-    it('uses a per-request timestamp so the URL changes between uploads', async () => {
-      const user = makeUser({ id: 'user-1' });
-      const dto: AvatarUploadDto = { fileName: 'a.png', contentType: 'image/png' };
-      aws.generatePresignedUrl.mockResolvedValue({
-        url: 'u', bucket: 'b', key: 'k', expiresIn: 1, fileUrl: 'f',
-      });
-
-      // First call
-      await controller.getAvatarUploadUrl(user, dto);
-      const firstKey = aws.generatePresignedUrl.mock.calls[0][0];
-
-      // Tiny wait to guarantee Date.now() advances
-      await new Promise((r) => setTimeout(r, 5));
-
-      // Second call
-      await controller.getAvatarUploadUrl(user, dto);
-      const secondKey = aws.generatePresignedUrl.mock.calls[1][0];
-
-      expect(firstKey).not.toBe(secondKey);
+    it('rejects invalid magic bytes', async () => {
+      const user = makeUser({ id: 'user-42' });
+      const file = { buffer: Buffer.from('just plain text') } as Express.Multer.File;
+      await expect(controller.uploadAvatar(user, file)).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

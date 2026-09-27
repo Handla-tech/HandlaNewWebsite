@@ -424,8 +424,8 @@ export const profilesApi = {
   getMe:                () => api.get('/profiles/me'),
   /** PATCH /profiles/me — update own profile (partial) */
   updateMe:             (data: object) => api.patch('/profiles/me', data),
-  /** POST /profiles/me/avatar-upload — { fileName, contentType } → presigned URL */
-  getAvatarUploadUrl:   (data: object) => api.post('/profiles/me/avatar-upload', data),
+  /** POST /profiles/me/avatar-upload — multipart form data → updated profile */
+  uploadAvatar:         (data: FormData, config?: import('axios').AxiosRequestConfig) => api.post('/profiles/me/avatar-upload', data, config),
   /** GET /profiles/:id — owner OR ADMIN */
   getOne:               (id: string) => api.get(`/profiles/${id}`),
   /** PATCH /profiles/:id — owner OR ADMIN */

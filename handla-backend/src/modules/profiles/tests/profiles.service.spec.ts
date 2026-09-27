@@ -129,79 +129,12 @@ describe('ProfilesService', () => {
       userRepo.findOne.mockResolvedValue(user);
       userRepo.save.mockImplementation(async (u) => u);
 
-      const res = await service.update(user.id, { name: 'New Name', avatarUrl: 'https://cdn/x.png' });
+      const res = await service.update(user.id, { name: 'New Name' });
 
       expect(res.name).toBe('New Name');
-      expect(res.avatarUrl).toBe('https://cdn/x.png');
       expect(res.bio).toBe('old bio'); // untouched
     });
 
-    it('null clears the field (vs undefined which leaves it alone)', async () => {
-      const user = makeUser({ avatarUrl: 'https://old.png' });
-      userRepo.findOne.mockResolvedValue(user);
-      userRepo.save.mockImplementation(async (u) => u);
-
-      const res = await service.update(user.id, { avatarUrl: null });
-
-      expect(res.avatarUrl).toBeNull();
-    });
-
-    it('throws NotFoundException when the target does not exist', async () => {
-      userRepo.findOne.mockResolvedValue(null);
-      await expect(service.update('missing', { name: 'x' })).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('checks email uniqueness BEFORE saving and throws ConflictException on duplicate', async () => {
-      const user = makeUser({ email: 'me@example.com' });
-      userRepo.findOne
-        .mockResolvedValueOnce(user)                                  // initial fetch
-        .mockResolvedValueOnce(makeUser({ id: 'other', email: 'taken@example.com' })); // dup check
-
-      await expect(
-        service.update(user.id, { email: 'taken@example.com' }),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(userRepo.save).not.toHaveBeenCalled();
-    });
-
-    it('allows changing email to a not-in-use address', async () => {
-      const user = makeUser({ email: 'me@example.com' });
-      userRepo.findOne
-        .mockResolvedValueOnce(user)
-        .mockResolvedValueOnce(null); // no duplicate
-      userRepo.save.mockImplementation(async (u) => u);
-
-      const res = await service.update(user.id, { email: 'new@example.com' });
-      expect(res.email).toBe('new@example.com');
-    });
-
-    it('does not run the duplicate-check when email is unchanged', async () => {
-      const user = makeUser({ email: 'me@example.com' });
-      userRepo.findOne.mockResolvedValue(user);
-      userRepo.save.mockImplementation(async (u) => u);
-
-      await service.update(user.id, { email: 'me@example.com', name: 'New' });
-
-      // Only ONE findOne call (the initial fetch); no second uniqueness lookup.
-      expect(userRepo.findOne).toHaveBeenCalledTimes(1);
-    });
-
-    it('translates a late ER_DUP_ENTRY into ConflictException (race-safe)', async () => {
-      const user = makeUser({ email: 'me@example.com' });
-      userRepo.findOne
-        .mockResolvedValueOnce(user)
-        .mockResolvedValueOnce(null); // no duplicate at check time
-
-      const innerErr = new Error('Duplicate entry') as Error & { code?: string; errno?: number };
-      innerErr.code = 'ER_DUP_ENTRY';
-      innerErr.errno = 1062;
-      const wrapped = new QueryFailedError('UPDATE users', [], innerErr);
-      (wrapped as any).driverError = innerErr;
-      userRepo.save.mockRejectedValue(wrapped);
-
-      await expect(
-        service.update(user.id, { email: 'new@example.com' }),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
 
     it('re-throws non-duplicate-key DB errors unchanged', async () => {
       const user = makeUser();

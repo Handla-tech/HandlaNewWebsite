@@ -3,23 +3,20 @@
  *
  * Steps:
  *   1. Validate the file locally (size + MIME) — fast fail.
- *   2. POST /profiles/me/avatar-upload  → presigned S3 PUT URL.
- *   3. PUT the file directly to S3 (no auth headers — signed URL handles it).
- *   4. PATCH /profiles/me with { avatarUrl } to persist the new URL.
+ *   2. POST /profiles/me/avatar-upload via multipart/form-data.
  *
  * Returns the updated User profile so the caller can update its store / UI
  * without an extra GET round-trip.
  */
-import axios from 'axios';
 import { profilesApi } from './api';
-import type { PresignedUrlResult, User } from '@/types';
+import type { User } from '@/types';
 
-// ─── Constraints (must match backend AvatarUploadDto) ─────────────────────────
+// ─── Constraints (UX only; backend independently validates size & magic bytes) ─
 
 /** Max avatar size — 5 MB. Backend has its own check too. */
 export const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 
-/** Allowed MIME types — must match the regex in AvatarUploadDto. */
+/** Allowed MIME types for client-side feedback. */
 export const ALLOWED_AVATAR_TYPES = [
   'image/jpeg',
   'image/png',
@@ -71,17 +68,11 @@ export async function uploadAvatar(
   // 1 — Local validation
   validateAvatar(file);
 
-  // 2 — Request presigned URL
-  const presignedRes = await profilesApi.getAvatarUploadUrl({
-    fileName: file.name,
-    contentType: file.type,
-  });
-  const presigned: PresignedUrlResult =
-    presignedRes.data?.data ?? presignedRes.data;
+  // 2 — Upload directly to backend
+  const formData = new FormData();
+  formData.append('file', file);
 
-  // 3 — PUT directly to S3
-  await axios.put(presigned.url, file, {
-    headers: { 'Content-Type': file.type },
+  const response = await profilesApi.uploadAvatar(formData, {
     signal,
     onUploadProgress: (event) => {
       if (onProgress && event.total) {
@@ -90,11 +81,9 @@ export async function uploadAvatar(
     },
   });
 
-  // 4 — Persist on the user
-  const patchRes = await profilesApi.updateMe({ avatarUrl: presigned.fileUrl });
-  const profile: User = patchRes.data?.data?.profile ?? patchRes.data?.profile ?? patchRes.data;
+  const profile: User = response.data?.data?.profile ?? response.data?.profile ?? response.data;
 
-  return { avatarUrl: presigned.fileUrl, profile };
+  return { avatarUrl: profile.avatarUrl!, profile };
 }
 
 /** Catch-and-return convenience wrapper for UI components. */
