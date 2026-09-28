@@ -1,13 +1,10 @@
-import axios from 'axios';
-import { chatApi } from './api';
+import api from './api';
 import type {
-  PresignedUrlRequest,
-  PresignedUrlResult,
   UploadProgress,
   UploadResult,
 } from '@/types';
 
-// ─── Max file size: 5 MB (must match backend PresignedUrlDto) ─────────────────
+// ─── Max file size: 5 MB (must match backend chat upload limit) ─────────────────
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 // ─── Allowed MIME types ───────────────────────────────────────────────────────
@@ -16,33 +13,15 @@ export const ALLOWED_TYPES = [
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
   'application/pdf',
-  'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain',
-  'text/csv',
-  'application/zip',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Build a consistent S3 key for a chat file upload.
- * Format: `chat/{conversationId}/{timestamp}-{sanitizedFilename}`
- */
-export function buildChatFileKey(
-  conversationId: string,
-  file: File,
-): string {
-  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  return `chat/${conversationId}/${Date.now()}-${sanitized}`;
-}
-
-/**
- * Validate a file before requesting a presigned URL.
+ * Validate a file before uploading it.
  * Throws an error with a user-readable message on failure.
  */
 export function validateFile(file: File): void {
@@ -66,31 +45,20 @@ export interface UploadOptions {
 /**
  * Full upload pipeline:
  *  1. Validate file locally
- *  2. Request a presigned PUT URL from the backend
- *  3. PUT the file directly to S3 (with progress reporting)
- *  4. Return the permanent file URL
+ *  2. Upload multipart form data through the authenticated backend
+ *  3. Return server-validated file metadata
  */
 export async function uploadChatFile(options: UploadOptions): Promise<UploadResult> {
-  const { conversationId, file, onProgress, signal } = options;
+  const { file, onProgress, signal } = options;
 
-  // 1 — local validation (fast fail)
+  // 1 - local validation (fast fail)
   validateFile(file);
 
-  // 2 — get presigned URL from backend
-  const requestPayload: PresignedUrlRequest = {
-    fileName: file.name,
-    contentType: file.type,
-    fileSize: file.size,
-  };
+  // 2 - send multipart form data to the authenticated backend
+  const formData = new FormData();
+  formData.append('file', file);
 
-  const presignedResponse = await chatApi.getPresignedUrl(requestPayload);
-  const presigned: PresignedUrlResult = presignedResponse.data?.data ?? presignedResponse.data;
-
-  // 3 — PUT directly to S3 (no auth headers — signed URL handles auth)
-  await axios.put(presigned.url, file, {
-    headers: {
-      'Content-Type': file.type,
-    },
+  const response = await api.post('/chat/upload', formData, {
     signal,
     onUploadProgress: (event) => {
       if (onProgress && event.total) {
@@ -103,12 +71,14 @@ export async function uploadChatFile(options: UploadOptions): Promise<UploadResu
     },
   });
 
-  // 4 — return the permanent URL
+  const result = response.data?.data ?? response.data;
+
+  // 3 - return server-validated metadata
   return {
-    fileUrl: presigned.fileUrl,
-    key: presigned.key,
-    contentType: file.type,
-    size: file.size,
+    fileUrl: result.fileUrl,
+    key: result.key,
+    contentType: result.contentType,
+    size: result.size,
   };
 }
 

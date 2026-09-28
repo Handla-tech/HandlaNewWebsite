@@ -13,7 +13,13 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'crypto';
+import * as fileType from 'file-type';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 
 import { ChatService } from './chat.service';
@@ -158,6 +164,58 @@ export class ChatController {
     return {
       message: 'Presigned URL generated',
       data: result,
+    };
+  }
+
+  // ─── POST /api/chat/upload ──────────────────────────────────────────────────
+  @Post('upload')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Upload a chat attachment directly to backend' })
+  @ApiResponse({ status: 201, description: 'Chat attachment uploaded' })
+  @ApiResponse({ status: 400, description: 'Invalid file or type' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadChatFile(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is missing or empty');
+    }
+
+    const detected = await fileType.fromBuffer(file.buffer);
+    if (!detected) {
+      throw new BadRequestException('Unsupported file type');
+    }
+
+    const allowedMimes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    if (!allowedMimes.includes(detected.mime)) {
+      throw new BadRequestException('Unsupported file type');
+    }
+
+    const key = `chat/${user.id}/${Date.now()}-${randomUUID()}.${detected.ext}`;
+    const fileUrl = await this.awsService.uploadBuffer(file.buffer, key, detected.mime);
+
+    return {
+      message: 'Chat attachment uploaded',
+      data: {
+        fileUrl: fileUrl,
+        key: key,
+        contentType: detected.mime,
+        size: file.buffer.length,
+      },
     };
   }
 
