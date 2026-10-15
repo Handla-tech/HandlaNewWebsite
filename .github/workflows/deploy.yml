@@ -1,12 +1,23 @@
 name: CI + Deploy
 
-# dev  -> runs tests only (safe to iterate)
-# main -> runs tests, then deploys to the Hostinger VPS on success
+# Automated CI:
+#   - push to main, dev -> runs backend tests & frontend build check
+#   - pull_request to main, dev -> runs backend tests & frontend build check
+#
+# Manual Deploy:
+#   - workflow_dispatch -> only manual dispatch on refs/heads/main with confirm_deploy='deploy'
+#                          runs tests, then invokes the root-owned wrapper on the Hostinger VPS.
 on:
   push:
     branches: [main, dev]
   pull_request:
     branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: "Type 'deploy' to confirm production deployment"
+        required: true
+        default: ""
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -49,10 +60,13 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://handla.tech
         run: npm run build
 
-  # 3. Deploy to VPS (only on push to main, after tests pass)
+  # 3. Deploy to VPS (MANUAL ONLY: requires workflow_dispatch on main with confirm_deploy == 'deploy')
   deploy:
     needs: [test-backend, build-frontend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm_deploy == 'deploy'
     runs-on: ubuntu-latest
     steps:
       # Deploy as the dedicated least-privilege account `handla-deploy`, NOT root.
