@@ -63,33 +63,43 @@ done
 # ─── Run Migrations ──────────────────────────────────────────────────────────
 #
 # SECURITY (MySQL runtime/migrator split): migrations require DDL privileges
-# (CREATE/ALTER/DROP). The compiled data-source (dist/config/data-source.js)
-# prefers DATABASE_MIGRATION_USER / DATABASE_MIGRATION_PASSWORD (the migrator
-# identity) and falls back to DATABASE_USER / DATABASE_PASSWORD when they are
-# unset. The application process below (`node dist/main`) always uses the
-# DML-only DATABASE_USER identity, so the running API never needs DDL rights.
+# (CREATE/ALTER/DROP). In production, migrations should be executed by a
+# dedicated one-off migration runner before application containers are replaced.
+# RUN_MIGRATIONS defaults to true for backward compatibility with standalone boots,
+# but can be explicitly set to 'false' (e.g. during normal production API start)
+# or 'only' (to run migrations and immediately exit 0).
 
-if [ -n "${DATABASE_MIGRATION_USER:-}" ]; then
-  log "Running TypeORM migrations as migrator identity (DATABASE_MIGRATION_USER)..."
+RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
+
+if [ "$RUN_MIGRATIONS" = "false" ]; then
+  log "Skipping migrations (RUN_MIGRATIONS=false — migrations executed by runner)."
 else
-  log "Running TypeORM migrations (no DATABASE_MIGRATION_USER set — using DATABASE_USER)..."
-fi
-# Use the compiled JS data-source (dist) to avoid needing ts-node at runtime
-node -e "
-const { AppDataSource } = require('./dist/config/data-source');
-AppDataSource.initialize()
-  .then(() => AppDataSource.runMigrations({ transaction: 'all' }))
-  .then((ran) => {
-    console.log('[entrypoint] Migrations applied:', ran.length ? ran.map(m => m.name).join(', ') : 'none (already up-to-date)');
-    return AppDataSource.destroy();
-  })
-  .catch((err) => {
-    console.error('[entrypoint] Migration failed:', err.message);
-    process.exit(1);
-  });
-"
+  if [ -n "${DATABASE_MIGRATION_USER:-}" ]; then
+    log "Running TypeORM migrations as migrator identity (DATABASE_MIGRATION_USER)..."
+  else
+    log "Running TypeORM migrations (no DATABASE_MIGRATION_USER set)..."
+  fi
+  # Use the compiled JS data-source (dist) to avoid needing ts-node at runtime
+  node -e "
+  const { AppDataSource } = require('./dist/config/data-source');
+  AppDataSource.initialize()
+    .then(() => AppDataSource.runMigrations({ transaction: 'all' }))
+    .then((ran) => {
+      console.log('[entrypoint] Migrations applied:', ran.length ? ran.map(m => m.name).join(', ') : 'none (already up-to-date)');
+      return AppDataSource.destroy();
+    })
+    .catch((err) => {
+      console.error('[entrypoint] Migration failed:', err.message);
+      process.exit(1);
+    });
+  "
+  log "Migrations complete ✓"
 
-log "Migrations complete ✓"
+  if [ "$RUN_MIGRATIONS" = "only" ]; then
+    log "Migration-only run complete. Exiting."
+    exit 0
+  fi
+fi
 
 # ─── Start API ────────────────────────────────────────────────────────────────
 

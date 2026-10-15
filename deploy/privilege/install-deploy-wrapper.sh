@@ -29,9 +29,21 @@ log() { echo "[install] $*"; }
 
 [ "$(id -u)" -eq 0 ] || { echo "[install] must run as root" >&2; exit 1; }
 
-# ---- 1. Install the wrapper: root:root 0755 --------------------------------
+# ---- 0. Pre-install sanity & syntax check ---------------------------------
+log "Checking wrapper syntax..."
+bash -n "$WRAPPER_SRC" || { echo "[install] FATAL: wrapper syntax check failed" >&2; exit 2; }
+
+# ---- 1. Install the wrapper: backup existing -> install root:root 0755 -----
+if [ -f "$WRAPPER_DST" ]; then
+  BACKUP_PATH="${WRAPPER_DST}.bak.$(date +%Y%m%d%H%M%S)"
+  log "Backing up existing wrapper to $BACKUP_PATH"
+  cp -p "$WRAPPER_DST" "$BACKUP_PATH"
+fi
+
 log "Installing wrapper -> $WRAPPER_DST (root:root 0755)"
 install -o root -g root -m 0755 "$WRAPPER_SRC" "$WRAPPER_DST"
+NEW_HASH="$(shasum -a 256 "$WRAPPER_DST" | awk '{print $1}')"
+log "Installed wrapper SHA-256: $NEW_HASH"
 
 # ---- 2. Seed the root-owned secrets store (once) ---------------------------
 if [ ! -f "$SECRETS_ENV" ]; then
@@ -45,6 +57,11 @@ if [ ! -f "$SECRETS_ENV" ]; then
 else
   log "Secrets store already present at $SECRETS_ENV (left unchanged)"
 fi
+
+# ---- 2b. Prepare root-owned rollback storage directory ---------------------
+ROLLBACK_DIR="/opt/handla-production-rollback"
+install -d -m 0700 -o root -g root "$ROLLBACK_DIR"
+log "Durable rollback directory ensured at $ROLLBACK_DIR (root:root 0700)"
 
 # ---- 3. Create the root-owned trusted checkout -----------------------------
 if [ ! -d "$TRUSTED_DIR/.git" ]; then
