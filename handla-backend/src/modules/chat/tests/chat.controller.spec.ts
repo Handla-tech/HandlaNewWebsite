@@ -220,20 +220,10 @@ describe('ChatController', () => {
     });
   });
 
-  // ── POST /presigned-url ───────────────────────────────────────────────────
-  describe('getPresignedUrl', () => {
-    it('builds a sanitized S3 key with user id + timestamp and returns the result', async () => {
-      const user = makeUser({ id: 'u-99' });
-      awsService.generatePresignedUrl.mockResolvedValue({ url: 'https://s3', fileUrl: 'https://cdn' });
-      const dto = { fileName: 'My Big File.pdf', contentType: 'application/pdf' } as any;
-
-      const res = await controller.getPresignedUrl(dto, user);
-
-      expect(awsService.generatePresignedUrl).toHaveBeenCalledTimes(1);
-      const [keyArg, ctArg] = awsService.generatePresignedUrl.mock.calls[0];
-      expect(keyArg).toMatch(/^chat\/u-99\/\d+-My_Big_File\.pdf$/);
-      expect(ctArg).toBe('application/pdf');
-      expect(res.data).toEqual({ url: 'https://s3', fileUrl: 'https://cdn' });
+  // ── Legacy /presigned-url removed ─────────────────────────────────────────
+  describe('legacy presigned-url', () => {
+    it('legacy presigned-url handler is removed from ChatController', () => {
+      expect((controller as any).getPresignedUrl).toBeUndefined();
     });
   });
 

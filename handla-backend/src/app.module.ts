@@ -51,6 +51,7 @@ import { SaasTenant } from './modules/saas/entities/saas-tenant.entity';
 import { SaasSubscription } from './modules/saas/entities/saas-subscription.entity';
 import { SaasTenantDomain } from './modules/saas/entities/saas-tenant-domain.entity';
 import { SaasProvisioningLog } from './modules/saas/entities/saas-provisioning-log.entity';
+import { FileUpload } from './modules/uploads/entities/file-upload.entity';
 
 // ─── Feature Modules ────────────────────────────────────────────────────────
 import { AuthModule } from './modules/auth/auth.module';
@@ -79,13 +80,14 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AiModule } from './modules/ai/ai.module';
 import { SaasModule } from './modules/saas/saas.module';
 import { PublicTokenModule } from './common/public-token/public-token.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
     // ─── Config ────────────────────────────────────────────────────────────────
     ConfigModule.forRoot({
-      isGlobal: true,
       load: [databaseConfig, jwtConfig, awsConfig, emailConfig, socketConfig, aiConfig, saasConfig, authConfig, publicDocConfig],
+      isGlobal: true,
       envFilePath: '.env',
     }),
 
@@ -98,7 +100,7 @@ import { PublicTokenModule } from './common/public-token/public-token.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, EmailVerification, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog],
+        entities: [User, EmailVerification, Conversation, Message, Notification, Testimonial, WebsiteProject, WebsiteProduct, Client, Project, Task, Contract, Invoice, InvoiceLineItem, Expense, Account, LedgerEntry, Supplier, Purchase, PurchaseLineItem, Quotation, QuotationLineItem, Ticket, TicketReply, ClientApiKey, AnalyticsEvent, KnowledgeEntry, ConversationAiState, SaasProduct, SaasPlan, SaasTenant, SaasSubscription, SaasTenantDomain, SaasProvisioningLog, FileUpload],
       }),
     }),
 
@@ -131,6 +133,7 @@ import { PublicTokenModule } from './common/public-token/public-token.module';
     AiModule,
     SaasModule,
     HealthModule,
+    UploadsModule,
 
     // ─── Rate Limiting ──────────────────────────────────────────────────────────
     ThrottlerModule.forRootAsync({

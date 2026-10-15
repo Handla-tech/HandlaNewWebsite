@@ -56,6 +56,7 @@ import { Contract } from '../../contracts/entities/contract.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { User } from '../../auth/entities/user.entity';
 import { Conversation } from '../../chat/entities/conversation.entity';
+import { FileUpload } from '../../uploads/entities/file-upload.entity';
 import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
 import { ChatService } from '../../chat/chat.service';
@@ -231,6 +232,7 @@ describe('INFO-01 — public capability-link integration (real app)', () => {
         { provide: getRepositoryToken(Client), useValue: clientStore },
         { provide: getRepositoryToken(User), useValue: { findOne: jest.fn(async ({ where: { id } }: any) => users[id] ?? null), find: jest.fn(async () => []) } },
         { provide: getRepositoryToken(Conversation), useValue: makeStore() },
+        { provide: getRepositoryToken(FileUpload), useValue: makeStore() },
         { provide: NotificationService, useValue: noopNotify },
         { provide: EmailService, useValue: noopEmail },
         { provide: ChatService, useValue: noopChat },

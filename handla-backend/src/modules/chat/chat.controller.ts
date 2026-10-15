@@ -24,7 +24,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@ne
 
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
-import { PresignedUrlDto } from './dto/presigned-url.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { User } from '../auth/entities/user.entity';
@@ -145,26 +144,6 @@ export class ChatController {
     }
     const conversation = await this.chatService.createOrGetConversation(user.id, admin.id);
     return { message: 'Conversation ready', data: { conversation } };
-  }
-
-  // ─── POST /api/chat/presigned-url ─────────────────────────────────────────────
-  @Post('presigned-url')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Generate an S3 presigned URL for direct file upload' })
-  @ApiResponse({ status: 200, description: 'Presigned URL returned' })
-  async getPresignedUrl(@Body() dto: PresignedUrlDto, @CurrentUser() user: User) {
-    // FILE-KEY-01: sanitize the client-supplied fileName to a single flat
-    // segment. Stripping only whitespace left `/` and `..` intact, so a crafted
-    // name (e.g. "../victim/x.png") could steer the object outside this user's
-    // `chat/<uid>/` prefix. Collapse everything that is not a safe filename char
-    // so the derived key can never contain a path separator or traversal token.
-    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]+/g, '_');
-    const key = `chat/${user.id}/${Date.now()}-${safeName}`;
-    const result = await this.awsService.generatePresignedUrl(key, dto.contentType);
-    return {
-      message: 'Presigned URL generated',
-      data: result,
-    };
   }
 
   // ─── POST /api/chat/upload ──────────────────────────────────────────────────

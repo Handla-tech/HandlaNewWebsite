@@ -7,7 +7,7 @@ import { Invoice } from '../entities/invoice.entity';
 import { InvoiceLineItem } from '../entities/invoice-line-item.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { User } from '../../auth/entities/user.entity';
-import { UserRole, InvoicePaymentStatus, ClientStatus } from '../../../common/enums';
+import { UserRole, InvoicePaymentStatus, ClientStatus, NotificationType } from '../../../common/enums';
 import {
   ResourceNotFoundException,
   OwnershipViolationException,
@@ -20,7 +20,9 @@ import { ExpensesService } from '../../expenses/expenses.service';
 import { LineItemDto } from '../dto/line-item.dto';
 import { Conversation } from '../../chat/entities/conversation.entity';
 import { ChatService } from '../../chat/chat.service';
+import { AwsService } from '../../aws/aws.service';
 import { makePublicTokenTestProviders } from '../../../common/public-token/testing/public-token-test-providers';
+import { FileUpload, FileUploadResourceType, FileUploadStatus } from '../../uploads/entities/file-upload.entity';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -127,6 +129,7 @@ function makeMockRepo() {
     remove: jest.fn(),
     create: jest.fn(),
     delete: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
     _qb: qb,
   };
 }
@@ -145,12 +148,16 @@ describe('InvoicesService', () => {
   let chatService: { saveMessage: jest.Mock };
   let expensesService: { createFromPaidInvoice: jest.Mock };
   let dataSource: { transaction: jest.Mock };
+  let fileUploadRepo: ReturnType<typeof makeMockRepo>;
 
   beforeEach(async () => {
     invoiceRepo = makeMockRepo();
     lineItemRepo = makeMockRepo();
     clientRepo = makeMockRepo();
     userRepo = makeMockRepo();
+    fileUploadRepo = makeMockRepo();
+    fileUploadRepo.create.mockImplementation((dto: any) => ({ id: 'proof-upload-uuid', ...dto }));
+    fileUploadRepo.save.mockImplementation(async (r: any) => r);
     // InvoicesService also takes ConversationRepository + ChatService because
     // it posts a system-event chat message when an invoice is created.
     conversationRepo = makeMockRepo();
@@ -165,6 +172,19 @@ describe('InvoicesService', () => {
     };
     chatService         = { saveMessage: jest.fn().mockResolvedValue({}) };
     expensesService     = { createFromPaidInvoice: jest.fn().mockResolvedValue(null) };
+    const mockAwsService = {
+      uploadBuffer: jest.fn().mockResolvedValue('https://cdn.example.com/invoices/inv-1/proof.pdf'),
+      resolveLogicalKey: jest.fn().mockImplementation((url: string) => {
+        if (!url || !url.startsWith('https://cdn.example.com/')) return null;
+        return url.replace('https://cdn.example.com/', '');
+      }),
+      isKeyInNamespace: jest.fn().mockImplementation((key: string, namespaces: string[]) => {
+        if (!key) return false;
+        return namespaces.some((ns) => key.startsWith(ns));
+      }),
+      fileExists: jest.fn().mockResolvedValue(true),
+      generateGetUrl: jest.fn().mockImplementation(async (k) => `https://cdn.example.com/${k}?signed=true`),
+    };
 
     // Simple transaction mock: calls the callback with a manager that mirrors invoiceRepo
     dataSource = {
@@ -174,6 +194,11 @@ describe('InvoicesService', () => {
           save: jest.fn().mockImplementation((_Entity: any, data: any) => Promise.resolve(data)),
           delete: jest.fn().mockResolvedValue({}),
           findOneOrFail: jest.fn().mockResolvedValue(makeInvoice()),
+          getRepository: jest.fn().mockImplementation((entity: any) => {
+            if (entity === FileUpload) return fileUploadRepo;
+            if (entity === Invoice) return invoiceRepo;
+            return invoiceRepo;
+          }),
         };
         return cb(manager);
       }),
@@ -187,11 +212,13 @@ describe('InvoicesService', () => {
         { provide: getRepositoryToken(Client),          useValue: clientRepo       },
         { provide: getRepositoryToken(User),            useValue: userRepo         },
         { provide: getRepositoryToken(Conversation),    useValue: conversationRepo },
+        { provide: getRepositoryToken(FileUpload),      useValue: fileUploadRepo   },
         { provide: NotificationService,                 useValue: notificationService },
         { provide: EmailService,                        useValue: emailService     },
         { provide: ChatService,                         useValue: chatService      },
         { provide: DataSource,                          useValue: dataSource       },
         { provide: ExpensesService,                     useValue: expensesService  },
+        { provide: AwsService,                          useValue: mockAwsService   },
         // INFO-01 — PublicTokenService (real) + mock ConfigService.
         ...makePublicTokenTestProviders(),
       ],
@@ -619,6 +646,279 @@ describe('InvoicesService', () => {
       const overdueInv = makeInvoice({ paymentStatus: InvoicePaymentStatus.OVERDUE });
       invoiceRepo.findOne.mockResolvedValue(overdueInv);
       await expect(service.remove('inv-1', admin)).rejects.toThrow(AppException);
+    });
+  });
+
+  // ── uploadPaymentProof ────────────────────────────────────────────────
+  describe('uploadPaymentProof', () => {
+    const tinyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
+    const tinyPng = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082', 'hex');
+
+    it('rejects non-CLIENT users', async () => {
+      const emp = makeUser({ role: UserRole.EMPLOYEE });
+      const file = { buffer: tinyPdf, originalname: 'proof.pdf' } as Express.Multer.File;
+      await expect(service.uploadPaymentProof('inv-1', file, emp)).rejects.toThrow(
+        InsufficientPermissionsException,
+      );
+    });
+
+    it('rejects empty or missing file', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      const file = { buffer: Buffer.from(''), originalname: 'empty.pdf' } as Express.Multer.File;
+      await expect(service.uploadPaymentProof('inv-1', file, client)).rejects.toThrow(AppException);
+    });
+
+    it('rejects unsupported file type', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      const file = { buffer: Buffer.from('MZ\x90\x00\x03\x00'), originalname: 'trojan.exe' } as Express.Multer.File;
+      await expect(service.uploadPaymentProof('inv-1', file, client)).rejects.toThrow(AppException);
+    });
+
+    it('uploads valid PNG and returns server-controlled key in invoices namespace', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      const file = { buffer: tinyPng, originalname: '../../../etc/passwd.png' } as Express.Multer.File;
+      const res = await service.uploadPaymentProof('inv-1', file, client);
+
+      expect(res.contentType).toBe('image/png');
+      expect(res.key).toMatch(/^invoices\/inv-1\/[0-9]+-[a-f0-9-]+\.png$/);
+    });
+  });
+
+  // ── submitPaymentProof ────────────────────────────────────────────────
+  describe('submitPaymentProof', () => {
+    it('rejects external URL not matching storage', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      await expect(
+        service.submitPaymentProof('inv-1', { proofUrl: 'https://evil.com/fake.png' }, client),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects proof URL from another invoice namespace', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/other-invoice/proof.png' },
+          client,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('saves notes and notifies owner when proof is valid and verified in file_uploads', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({
+        id: 'inv-1',
+        ownerId: 'owner-1',
+        clientId: 'c-1',
+        client: makeClient({ userId: 'client-u' }),
+        notes: null,
+      });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      invoiceRepo.save.mockImplementation(async (i: any) => i);
+      fileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'proof-up-1',
+        userId: 'client-u',
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: 'inv-1',
+        s3Key: 'invoices/inv-1/proof.pdf',
+        fileUrl: 'https://cdn.example.com/invoices/inv-1/proof.pdf',
+        originalName: 'proof.pdf',
+        sizeBytes: 1024,
+        status: FileUploadStatus.PENDING,
+      });
+
+      const res = await service.submitPaymentProof(
+        'inv-1',
+        { proofUrl: 'https://cdn.example.com/invoices/inv-1/proof.pdf', notes: 'Paid in full' },
+        client,
+      );
+
+      expect(res.notes).toContain('Proof URL: https://cdn.example.com/invoices/inv-1/proof.pdf');
+      expect(res.notes).toContain('Paid in full');
+      expect(notificationService.createErpNotification).toHaveBeenCalledWith(
+        'owner-1',
+        NotificationType.INVOICE_CREATED,
+        'Payment Proof Submitted',
+        expect.any(String),
+        'inv-1',
+      );
+      expect(fileUploadRepo.update).toHaveBeenCalledWith(
+        { s3Key: 'invoices/inv-1/proof.pdf', status: FileUploadStatus.PENDING },
+        expect.objectContaining({ status: FileUploadStatus.CONSUMED }),
+      );
+    });
+
+    it('rejects unverified proof not found in file_uploads', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      fileUploadRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/inv-1/untracked.pdf' },
+          client,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects proof belonging to another user (cross-user reuse)', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      fileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'proof-up-cross',
+        userId: 'other-user',
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: 'inv-1',
+        s3Key: 'invoices/inv-1/cross.pdf',
+        fileUrl: 'https://cdn.example.com/invoices/inv-1/cross.pdf',
+        originalName: 'cross.pdf',
+        sizeBytes: 1024,
+        status: FileUploadStatus.PENDING,
+      });
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/inv-1/cross.pdf' },
+          client,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects already-consumed payment proof', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      fileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'proof-up-consumed',
+        userId: 'client-u',
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: 'inv-1',
+        s3Key: 'invoices/inv-1/consumed.pdf',
+        fileUrl: 'https://cdn.example.com/invoices/inv-1/consumed.pdf',
+        originalName: 'consumed.pdf',
+        sizeBytes: 1024,
+        status: FileUploadStatus.CONSUMED,
+      });
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/inv-1/consumed.pdf' },
+          client,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rolls back and throws CONFLICT if proof is consumed concurrently during transaction', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      fileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'proof-up-concurrent',
+        userId: 'client-u',
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: 'inv-1',
+        s3Key: 'invoices/inv-1/concurrent.pdf',
+        fileUrl: 'https://cdn.example.com/invoices/inv-1/concurrent.pdf',
+        originalName: 'concurrent.pdf',
+        sizeBytes: 1024,
+        status: FileUploadStatus.PENDING,
+      });
+      // Simulate concurrent consumption inside transaction
+      fileUploadRepo.update.mockResolvedValueOnce({ affected: 0 });
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/inv-1/concurrent.pdf' },
+          client,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rolls back transaction if invoice save fails', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+      fileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'proof-up-fail',
+        userId: 'client-u',
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: 'inv-1',
+        s3Key: 'invoices/inv-1/fail.pdf',
+        fileUrl: 'https://cdn.example.com/invoices/inv-1/fail.pdf',
+        originalName: 'fail.pdf',
+        sizeBytes: 1024,
+        status: FileUploadStatus.PENDING,
+      });
+      fileUploadRepo.update.mockResolvedValueOnce({ affected: 1 });
+      invoiceRepo.save.mockRejectedValueOnce(new Error('DB failure on invoice save'));
+
+      await expect(
+        service.submitPaymentProof(
+          'inv-1',
+          { proofUrl: 'https://cdn.example.com/invoices/inv-1/fail.pdf' },
+          client,
+        ),
+      ).rejects.toThrow('DB failure on invoice save');
+    });
+  });
+
+  describe('getSignedPaymentProofUrl', () => {
+    it('generates signed download URL when client has access and proof is in invoice notes', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({
+        id: 'inv-1',
+        clientId: 'c-1',
+        client: makeClient({ userId: 'client-u' }),
+        notes: '[Payment proof submitted] Proof URL: https://cdn.example.com/invoices/inv-1/proof.pdf',
+      });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      const url = await service.getSignedPaymentProofUrl('inv-1', 'https://cdn.example.com/invoices/inv-1/proof.pdf', client);
+      expect(url).toBe('https://cdn.example.com/invoices/inv-1/proof.pdf?signed=true');
+    });
+
+    it('rejects proof key belonging to a different invoice', async () => {
+      const client = makeUser({ id: 'client-u', role: UserRole.CLIENT });
+      const inv = makeInvoice({ id: 'inv-1', clientId: 'c-1', client: makeClient({ userId: 'client-u' }) });
+      invoiceRepo.findOne.mockResolvedValue(inv);
+      clientRepo.findOne.mockResolvedValue(makeClient({ id: 'c-1', userId: 'client-u' }));
+
+      await expect(
+        service.getSignedPaymentProofUrl('inv-1', 'https://cdn.example.com/invoices/other-inv/proof.pdf', client),
+      ).rejects.toThrow(AppException);
     });
   });
 });

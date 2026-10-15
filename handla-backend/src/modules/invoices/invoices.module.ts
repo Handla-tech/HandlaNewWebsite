@@ -6,6 +6,7 @@ import { InvoiceLineItem } from './entities/invoice-line-item.entity';
 import { Client } from '../clients/entities/client.entity';
 import { User } from '../auth/entities/user.entity';
 import { Conversation } from '../chat/entities/conversation.entity';
+import { FileUpload } from '../uploads/entities/file-upload.entity';
 
 import { InvoicesService } from './invoices.service';
 import { InvoicesController } from './invoices.controller';
@@ -14,6 +15,7 @@ import { NotificationModule } from '../notifications/notification.module';
 import { ExpensesModule } from '../expenses/expenses.module';
 import { EmailModule } from '../email/email.module';
 import { ChatModule } from '../chat/chat.module';
+import { AwsModule } from '../aws/aws.module';
 
 /**
  * ERP-7 — InvoicesModule (updated in ERP-8.5)
@@ -27,10 +29,11 @@ import { ChatModule } from '../chat/chat.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Invoice, InvoiceLineItem, Client, User, Conversation]),
+    TypeOrmModule.forFeature([Invoice, InvoiceLineItem, Client, User, Conversation, FileUpload]),
     NotificationModule,
     EmailModule,
     ChatModule,
+    AwsModule,
     forwardRef(() => ExpensesModule),
   ],
   providers: [InvoicesService, InvoicesScheduler],

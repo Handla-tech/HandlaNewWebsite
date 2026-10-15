@@ -30,6 +30,10 @@ import {
   PublicDocumentType,
   PublicLinkManagementResult,
 } from '../../common/public-token/public-token.types';
+import { AwsService } from '../aws/aws.service';
+import { FileUpload, FileUploadResourceType, FileUploadStatus } from '../uploads/entities/file-upload.entity';
+import { randomUUID } from 'crypto';
+import * as fileType from 'file-type';
 
 export interface PaginatedInvoices {
   invoices: Invoice[];
@@ -99,6 +103,9 @@ export class InvoicesService {
     @InjectRepository(Conversation)
     private readonly conversationRepo: Repository<Conversation>,
 
+    @InjectRepository(FileUpload)
+    private readonly fileUploadRepo: Repository<FileUpload>,
+
     private readonly notificationService: NotificationService,
     private readonly dataSource: DataSource,
     private readonly emailService: EmailService,
@@ -109,6 +116,7 @@ export class InvoicesService {
 
     private readonly publicTokenService: PublicTokenService,
     private readonly configService: ConfigService,
+    private readonly awsService: AwsService,
   ) {}
 
   // ─── generateInvoiceNumber ────────────────────────────────────────────────
@@ -629,11 +637,92 @@ export class InvoicesService {
     return process.env['BASE_URL'] ?? 'https://handla.com';
   }
 
+  // ─── uploadPaymentProof ──────────────────────────────────────────────────────
+  /**
+   * CLIENT uploads payment proof file directly to S3.
+   * Validates access to the invoice, non-empty file, size (<= 10MB), and magic-byte signature.
+   * Records server-side provenance in `file_uploads` as PENDING.
+   * Stores under `invoices/<invoiceId>/<timestamp>-<uuid>.<ext>`.
+   */
+  async uploadPaymentProof(
+    id: string,
+    file: Express.Multer.File,
+    user: User,
+  ): Promise<{ fileUrl: string; key: string; contentType: string; size: number; uploadId: string }> {
+    if (user.role !== UserRole.CLIENT) {
+      throw new InsufficientPermissionsException('upload payment proof for this invoice (CLIENT only)');
+    }
+
+    const invoice = await this.findOne(id, user);
+
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new AppException('File is missing or empty', HttpStatus.BAD_REQUEST);
+    }
+
+    // Programmatic service-level size check: enforce 10MB max buffer size
+    const MAX_PROOF_SIZE = 10 * 1024 * 1024;
+    if (file.buffer.length > MAX_PROOF_SIZE) {
+      throw new AppException('File size exceeds the 10MB limit', HttpStatus.BAD_REQUEST);
+    }
+
+    const fromBuffer = fileType.fromBuffer ?? (fileType as any).default?.fromBuffer;
+    const detected = await fromBuffer(file.buffer);
+    if (!detected) {
+      throw new AppException('Unsupported file type', HttpStatus.BAD_REQUEST);
+    }
+
+    const allowedMimes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/pdf',
+    ];
+
+    if (!allowedMimes.includes(detected.mime)) {
+      throw new AppException('Unsupported file type. Only JPEG, PNG, WEBP, and PDF are allowed.', HttpStatus.BAD_REQUEST);
+    }
+
+    const key = `invoices/${invoice.id}/${Date.now()}-${randomUUID()}.${detected.ext}`;
+    const fileUrl = await this.awsService.uploadBuffer(file.buffer, key, detected.mime);
+
+    const safeDisplayName = (file.originalname || `proof.${detected.ext}`)
+      .replace(/[^\w.\- ]+/g, '_')
+      .slice(0, 255);
+
+    // Record server-validated provenance
+    const fileUpload = this.fileUploadRepo.create({
+      userId: user.id,
+      resourceType: FileUploadResourceType.INVOICE,
+      resourceId: invoice.id,
+      s3Key: key,
+      fileUrl,
+      originalName: safeDisplayName,
+      mimeType: detected.mime,
+      sizeBytes: file.buffer.length,
+      status: FileUploadStatus.PENDING,
+    });
+    const savedRecord = await this.fileUploadRepo.save(fileUpload);
+
+    return {
+      fileUrl,
+      key,
+      contentType: detected.mime,
+      size: file.buffer.length,
+      uploadId: savedRecord.id,
+    };
+  }
+
   // ─── submitPaymentProof ───────────────────────────────────────────────────────
   /**
    * CLIENT submits payment proof for an invoice.
    * Stores the proof URL and optional partial amount as notes, then notifies the owner/admin.
    * Does NOT auto-change paymentStatus — an ADMIN/EMPLOYEE must confirm via markAsPaid.
+   *
+   * Provenance & Security:
+   * - Validates that proofUrl corresponds to a verified PENDING FileUpload record belonging
+   *   to this user and this invoice.
+   * - Consumes the upload record atomically to prevent reuse.
+   * - Never echoes unverified raw URLs in error messages.
    */
   async submitPaymentProof(
     id: string,
@@ -642,38 +731,126 @@ export class InvoicesService {
   ): Promise<Invoice> {
     const invoice = await this.findOne(id, user);
 
-    // Build a notes annotation
+    let verifiedProofUrl: string | null = null;
+
+    // Security validation on proofUrl:
+    if (dto.proofUrl) {
+      if (typeof dto.proofUrl !== 'string') {
+        throw new AppException('Invalid payment proof URL format.', HttpStatus.BAD_REQUEST);
+      }
+
+      const logicalKey = this.awsService.resolveLogicalKey(dto.proofUrl);
+      if (!logicalKey) {
+        throw new AppException('Invalid payment proof URL format.', HttpStatus.BAD_REQUEST);
+      }
+      if (!this.awsService.isKeyInNamespace(logicalKey, [`invoices/${invoice.id}/`])) {
+        throw new AppException(
+          'Payment proof does not belong to this invoice.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Query server-side provenance record
+      const uploadRecord = await this.fileUploadRepo.findOne({
+        where: { s3Key: logicalKey },
+      });
+
+      if (!uploadRecord) {
+        throw new AppException(
+          'Payment proof record not found or unverified.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (uploadRecord.userId !== user.id) {
+        throw new AppException(
+          'Payment proof belongs to another user.',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      if (
+        uploadRecord.resourceType !== FileUploadResourceType.INVOICE ||
+        uploadRecord.resourceId !== invoice.id
+      ) {
+        throw new AppException(
+          'Payment proof does not belong to this invoice.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (uploadRecord.status !== FileUploadStatus.PENDING) {
+        throw new AppException(
+          'Payment proof has already been consumed or has expired.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const exists = await this.awsService.fileExists(logicalKey);
+      if (!exists) {
+        throw new AppException(
+          'Payment proof file does not exist in storage.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      verifiedProofUrl = uploadRecord.fileUrl;
+    }
+
+    // Build a notes annotation using verified URL
     const proofNote = [
-      dto.proofUrl ? `Proof URL: ${dto.proofUrl}` : null,
+      verifiedProofUrl ? `Proof URL: ${verifiedProofUrl}` : null,
       dto.partialAmount != null ? `Partial amount: ${dto.partialAmount}` : null,
       dto.notes ? `Note: ${dto.notes}` : null,
     ]
       .filter(Boolean)
       .join(' | ');
 
-    // Append to existing notes
-    invoice.notes = invoice.notes
-      ? `${invoice.notes}\n[Payment proof submitted] ${proofNote}`
-      : `[Payment proof submitted] ${proofNote}`;
+    // Atomic transaction: conditionally consume FileUpload record and update Invoice
+    const updatedInvoice = await this.dataSource.transaction(async (manager) => {
+      const uploadManager = manager.getRepository(FileUpload);
+      const invoiceManager = manager.getRepository(Invoice);
 
-    await this.invoiceRepo.save(invoice);
+      if (dto.proofUrl) {
+        const logicalKey = this.awsService.resolveLogicalKey(dto.proofUrl);
+        if (logicalKey) {
+          const updateResult = await uploadManager.update(
+            { s3Key: logicalKey, status: FileUploadStatus.PENDING },
+            { status: FileUploadStatus.CONSUMED, consumedAt: new Date() },
+          );
+
+          if (updateResult.affected === 0) {
+            throw new AppException(
+              'Payment proof has already been consumed or is no longer pending.',
+              HttpStatus.CONFLICT,
+            );
+          }
+        }
+      }
+
+      // Append to existing notes
+      invoice.notes = invoice.notes
+        ? `${invoice.notes}\n[Payment proof submitted] ${proofNote}`
+        : `[Payment proof submitted] ${proofNote}`;
+
+      return invoiceManager.save(invoice);
+    });
 
     // Notify the invoice owner (EMPLOYEE) or fall back to generic admin notification
-    if (invoice.ownerId) {
+    if (updatedInvoice.ownerId) {
       void this.notificationService.createErpNotification(
-        invoice.ownerId,
+        updatedInvoice.ownerId,
         NotificationType.INVOICE_CREATED,
         'Payment Proof Submitted',
-        `Client submitted payment proof for invoice ${invoice.invoiceNumber}.`,
+        `Client submitted payment proof for invoice ${updatedInvoice.invoiceNumber}.`,
         id,
       );
     }
 
     this.logger.log(
-      `Payment proof submitted for invoice ${invoice.invoiceNumber} by client user ${user.id}`,
+      `Payment proof submitted for invoice ${updatedInvoice.invoiceNumber} by client user ${user.id}`,
     );
 
-    return invoice;
+    return updatedInvoice;
   }
 
   private async assertAccess(invoice: Invoice, user: User): Promise<void> {
@@ -797,5 +974,58 @@ export class InvoicesService {
     await this.invoiceRepo.save(invoice);
     this.logger.log(`Public link expiry updated for invoice ${invoice.invoiceNumber} by user ${user.id}`);
     return this.buildResult(invoice, now);
+  }
+
+  // ─── getSignedPaymentProofUrl ─────────────────────────────────────────────────
+  /**
+   * Secure file retrieval: generates a short-lived presigned GET download URL for
+   * a payment proof attached to an invoice.
+   *
+   * Security enforcement:
+   * 1. Authorization: calls `findOne(id, user)` (asserts staff or owning client access).
+   * 2. Key validation: extracts and validates the logical key against `invoices/<invoiceId>/`.
+   * 3. S3 existence check.
+   * 4. Signs and returns short-lived GET URL.
+   */
+  async getSignedPaymentProofUrl(
+    id: string,
+    proofKeyOrUrl: string,
+    user: User,
+  ): Promise<string> {
+    if (!proofKeyOrUrl) {
+      throw new AppException('Proof identifier is required.', HttpStatus.BAD_REQUEST);
+    }
+
+    const invoice = await this.findOne(id, user);
+
+    const logicalKey = this.awsService.resolveLogicalKey(proofKeyOrUrl);
+    if (!logicalKey) {
+      throw new AppException('Invalid payment proof identifier format.', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!this.awsService.isKeyInNamespace(logicalKey, [`invoices/${invoice.id}/`])) {
+      throw new AppException('Payment proof does not belong to this invoice.', HttpStatus.BAD_REQUEST);
+    }
+
+    // Must be in invoice notes or verified file_uploads for this invoice
+    const keyInNotes = invoice.notes && invoice.notes.includes(logicalKey);
+    const uploadRecord = await this.fileUploadRepo.findOne({
+      where: {
+        resourceType: FileUploadResourceType.INVOICE,
+        resourceId: invoice.id,
+        s3Key: logicalKey,
+      },
+    });
+
+    if (!keyInNotes && !uploadRecord) {
+      throw new ResourceNotFoundException('Payment proof', logicalKey);
+    }
+
+    const exists = await this.awsService.fileExists(logicalKey);
+    if (!exists) {
+      throw new ResourceNotFoundException('Payment proof file', logicalKey);
+    }
+
+    return this.awsService.generateGetUrl(logicalKey);
   }
 }
