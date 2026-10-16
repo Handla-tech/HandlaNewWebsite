@@ -66,6 +66,7 @@ readonly BACKEND_ENV_REL="handla-backend/.env"
 readonly COMPOSE_FILES=( -f docker-compose.yml -f deploy/docker-compose.traefik.yml )
 readonly GIT=/usr/bin/git
 readonly DOCKER=/usr/bin/docker
+readonly NODE=/usr/bin/node
 readonly TRAEFIK_NETWORK="proxy"
 # Pin the Compose PROJECT NAME explicitly. Compose otherwise derives it from the
 # working-directory basename; because the trusted checkout lives in
@@ -199,74 +200,166 @@ fi
 COMPOSE_ARGS=( -p "$COMPOSE_PROJECT" "${COMPOSE_FILES[@]}" )
 
 # ---- 9. Ensure core stateful infrastructure (MySQL & Redis) is running ------
-log "Ensuring core stateful services (mysql, redis) are running..."
-"$DOCKER" compose "${COMPOSE_ARGS[@]}" up -d mysql redis
+log "Verifying status of core stateful services (mysql, redis)..."
+MYSQL_STATE="$("$DOCKER" inspect --format='{{json .State.Status}}' handla_mysql 2>/dev/null || echo '"not_found"')"
+MYSQL_HEALTH="$("$DOCKER" inspect --format='{{if .State.Health}}{{json .State.Health.Status}}{{else}}"none"{{end}}' handla_mysql 2>/dev/null || echo '"unknown"')"
 
-log "Waiting for mysql to report healthy..."
-for i in $(seq 1 30); do
-  status="$("$DOCKER" inspect --format='{{json .State.Health.Status}}' handla_mysql 2>/dev/null || echo '"unknown"')"
-  if [ "$status" = '"healthy"' ]; then
-    log "handla_mysql is healthy ✓"
-    break
-  fi
-  if [ "$i" -eq 30 ]; then
-    echo "[handla-production-deploy] FATAL: handla_mysql did not become healthy within 60s." >&2
-    exit 6
-  fi
-  sleep 2
-done
+REDIS_STATE="$("$DOCKER" inspect --format='{{json .State.Status}}' handla_redis 2>/dev/null || echo '"not_found"')"
+REDIS_HEALTH="$("$DOCKER" inspect --format='{{if .State.Health}}{{json .State.Health.Status}}{{else}}"none"{{end}}' handla_redis 2>/dev/null || echo '"unknown"')"
 
-log "Waiting for redis to report healthy..."
-for i in $(seq 1 15); do
-  status="$("$DOCKER" inspect --format='{{json .State.Health.Status}}' handla_redis 2>/dev/null || echo '"unknown"')"
-  if [ "$status" = '"healthy"' ]; then
-    log "handla_redis is healthy ✓"
-    break
-  fi
-  if [ "$i" -eq 15 ]; then
-    echo "[handla-production-deploy] FATAL: handla_redis did not become healthy within 30s." >&2
-    exit 6
-  fi
-  sleep 2
-done
+if [ "$MYSQL_STATE" != '"running"' ] || [ "$MYSQL_HEALTH" != '"healthy"' ]; then
+  echo "[handla-production-deploy] FATAL: handla_mysql is not running and healthy (status=${MYSQL_STATE}, health=${MYSQL_HEALTH})." >&2
+  echo "[handla-production-deploy]        Core stateful containers must exist, be running, and report healthy before deployment." >&2
+  echo "[handla-production-deploy]        Infrastructure bootstrap is a separate, explicitly authorized operation." >&2
+  echo "[handla-production-deploy]        Refusing to execute 'docker compose up' against mysql." >&2
+  exit 6
+fi
+
+if [ "$REDIS_STATE" != '"running"' ] || [ "$REDIS_HEALTH" != '"healthy"' ]; then
+  echo "[handla-production-deploy] FATAL: handla_redis is not running and healthy (status=${REDIS_STATE}, health=${REDIS_HEALTH})." >&2
+  echo "[handla-production-deploy]        Core stateful containers must exist, be running, and report healthy before deployment." >&2
+  echo "[handla-production-deploy]        Infrastructure bootstrap is a separate, explicitly authorized operation." >&2
+  echo "[handla-production-deploy]        Refusing to execute 'docker compose up' against redis." >&2
+  exit 6
+fi
+
+log "Core stateful services (handla_mysql, handla_redis) are running and healthy ✓"
+log "Preserving existing stateful containers (never executing docker compose up against mysql/redis during deployment)."
 
 # ---- 10. Build application images -------------------------------------------
 log "Building application images (api, web)..."
 "$DOCKER" compose "${COMPOSE_ARGS[@]}" build api web
 
-# Tag current running images for rollback reference and write durable rollback override
-PREV_API_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_api 2>/dev/null || true)"
-PREV_WEB_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_web 2>/dev/null || true)"
-if [ -n "$PREV_API_IMAGE" ] && [ -n "$PREV_WEB_IMAGE" ]; then
-  "$DOCKER" tag "$PREV_API_IMAGE" handla-api:rollback 2>/dev/null || true
-  "$DOCKER" tag "$PREV_WEB_IMAGE" handla-web:rollback 2>/dev/null || true
-  log "Tagged prior images (api=${PREV_API_IMAGE}, web=${PREV_WEB_IMAGE}) as :rollback"
+# Capture candidate prior image IDs from existing containers
+CANDIDATE_API_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_api 2>/dev/null || true)"
+CANDIDATE_WEB_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_web 2>/dev/null || true)"
 
-  # Write an immutable rollback compose override in persistent root-owned storage
+# Read existing verified metadata if available:
+# - active_*_image: the last successfully deployed & verified version (e.g. V1)
+# - known_good_*_image / previous_*_image: the version before that (e.g. V0)
+LAST_ACTIVE_API=""
+LAST_ACTIVE_WEB=""
+PREVIOUS_GOOD_API=""
+PREVIOUS_GOOD_WEB=""
+LAST_STATUS=""
+if [ -f "$ROLLBACK_METADATA" ]; then
+  LAST_STATUS="$(grep -m1 '"status":' "$ROLLBACK_METADATA" | sed -E 's/.*"status":[[:space:]]*"([^"]+)".*/\1/' || true)"
+  LAST_ACTIVE_API="$(grep -m1 '"active_api_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"active_api_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+  LAST_ACTIVE_WEB="$(grep -m1 '"active_web_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"active_web_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+
+  PREVIOUS_GOOD_API="$(grep -m1 '"known_good_api_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"known_good_api_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+  [ -n "$PREVIOUS_GOOD_API" ] || PREVIOUS_GOOD_API="$(grep -m1 '"previous_api_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"previous_api_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+
+  PREVIOUS_GOOD_WEB="$(grep -m1 '"known_good_web_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"known_good_web_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+  [ -n "$PREVIOUS_GOOD_WEB" ] || PREVIOUS_GOOD_WEB="$(grep -m1 '"previous_web_image":' "$ROLLBACK_METADATA" | sed -E 's/.*"previous_web_image":[[:space:]]*"([^"]+)".*/\1/' || true)"
+fi
+
+# Verify runtime health of existing containers (requires both container health and HTTP 200)
+CURR_API_IS_HEALTHY=0
+CURR_WEB_IS_HEALTHY=0
+
+c_api_health="$("$DOCKER" inspect --format='{{if .State.Health}}{{json .State.Health.Status}}{{else}}"none"{{end}}' handla_api 2>/dev/null || echo '"unknown"')"
+c_web_state="$("$DOCKER" inspect --format='{{json .State.Status}}' handla_web 2>/dev/null || echo '"unknown"')"
+
+if [ "$c_api_health" = '"healthy"' ] && \
+   { curl -sf -o /dev/null -w "%{http_code}" --max-time 2 http://127.0.0.1:3001/api/health 2>/dev/null | grep -q "^200$" || \
+     { [ -x "$NODE" ] && "$NODE" -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3001/api/health", { timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null; } || \
+     "$DOCKER" exec handla_api wget -q -S --spider http://127.0.0.1:3001/api/health 2>&1 | grep -Eq 'HTTP/[0-9.]+ 200'; }; then
+  CURR_API_IS_HEALTHY=1
+fi
+
+if [ "$c_web_state" = '"running"' ] && \
+   { curl -sf -o /dev/null -w "%{http_code}" --max-time 2 http://127.0.0.1:3000/ 2>/dev/null | grep -q "^200$" || \
+     { [ -x "$NODE" ] && "$NODE" -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3000/", { timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null; } || \
+     "$DOCKER" exec handla_web node -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3000/", { timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null || \
+     "$DOCKER" exec handla_web wget -q -S --spider http://127.0.0.1:3000/ 2>&1 | grep -Eq 'HTTP/[0-9.]+ 200'; }; then
+  CURR_WEB_IS_HEALTHY=1
+fi
+
+# Determine authoritative prior rollback target images
+ROLLBACK_TARGET_API=""
+ROLLBACK_TARGET_WEB=""
+ROLLBACK_BASELINE_STATUS=""
+
+if [ "$CURR_API_IS_HEALTHY" -eq 1 ] && [ "$CURR_WEB_IS_HEALTHY" -eq 1 ] && \
+   [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
+  # Running containers pass active live HTTP 200 health checks -> use them directly as verified baseline
+  ROLLBACK_TARGET_API="$CANDIDATE_API_IMAGE"
+  ROLLBACK_TARGET_WEB="$CANDIDATE_WEB_IMAGE"
+  ROLLBACK_BASELINE_STATUS="live_healthy"
+elif [ -n "$LAST_ACTIVE_API" ] && [ -n "$LAST_ACTIVE_WEB" ]; then
+  # Containers are stopped, unverified, or broken by a failed deploy -> prefer the LAST VERIFIED ACTIVE version
+  ROLLBACK_TARGET_API="$LAST_ACTIVE_API"
+  ROLLBACK_TARGET_WEB="$LAST_ACTIVE_WEB"
+  ROLLBACK_BASELINE_STATUS="last_verified_active"
+elif [ -n "$PREVIOUS_GOOD_API" ] && [ -n "$PREVIOUS_GOOD_WEB" ]; then
+  # Fallback to earlier known-good if last_active is somehow not present in legacy metadata
+  ROLLBACK_TARGET_API="$PREVIOUS_GOOD_API"
+  ROLLBACK_TARGET_WEB="$PREVIOUS_GOOD_WEB"
+  ROLLBACK_BASELINE_STATUS="${LAST_STATUS:-persisted_known_good}"
+elif [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
+  # Initial deployment case: no prior rollback metadata exists. Capture existing container
+  # image IDs as recovery baseline (stopped or unverified).
+  ROLLBACK_TARGET_API="$CANDIDATE_API_IMAGE"
+  ROLLBACK_TARGET_WEB="$CANDIDATE_WEB_IMAGE"
+  ROLLBACK_BASELINE_STATUS="initial_unverified_baseline"
+fi
+
+# Validate that the rollback image targets actually exist in local Docker storage
+if [ -n "$ROLLBACK_TARGET_API" ]; then
+  if ! "$DOCKER" image inspect "$ROLLBACK_TARGET_API" >/dev/null 2>&1; then
+    echo "[handla-production-deploy] FATAL: rollback target API image '$ROLLBACK_TARGET_API' does not exist in local Docker storage." >&2
+    echo "[handla-production-deploy]        Cannot establish a recoverable rollback state. Aborting." >&2
+    exit 9
+  fi
+fi
+
+if [ -n "$ROLLBACK_TARGET_WEB" ]; then
+  if ! "$DOCKER" image inspect "$ROLLBACK_TARGET_WEB" >/dev/null 2>&1; then
+    echo "[handla-production-deploy] FATAL: rollback target Web image '$ROLLBACK_TARGET_WEB' does not exist in local Docker storage." >&2
+    echo "[handla-production-deploy]        Cannot establish a recoverable rollback state. Aborting." >&2
+    exit 9
+  fi
+fi
+
+# Ensure rollback targets are tagged so 'docker image prune' never deletes them
+if [ -n "$ROLLBACK_TARGET_API" ] && [ -n "$ROLLBACK_TARGET_WEB" ]; then
+  "$DOCKER" tag "$ROLLBACK_TARGET_API" handla-api:rollback 2>/dev/null || true
+  "$DOCKER" tag "$ROLLBACK_TARGET_WEB" handla-web:rollback 2>/dev/null || true
+  log "Pinned rollback targets (api=${ROLLBACK_TARGET_API}, web=${ROLLBACK_TARGET_WEB}) to tag :rollback"
+
+  # INITIALIZE durable rollback files ONLY on first deployment if they do NOT exist.
+  # NEVER overwrite existing rollback files before migrations and health checks pass.
   install -d -m 0700 -o root -g root "$ROLLBACK_DIR"
-  cat <<EOF > "$ROLLBACK_OVERRIDE"
-# AUTO-GENERATED by handla-production-deploy prior to deployment of ${BRANCH}@${DEPLOY_SHA}
-# Restores exact image IDs from prior working deployment.
+  if [ ! -f "$ROLLBACK_OVERRIDE" ]; then
+    cat <<EOF > "$ROLLBACK_OVERRIDE"
+# AUTO-GENERATED by handla-production-deploy (initial baseline)
+# Restores exact image IDs from baseline deployment.
 services:
   api:
-    image: ${PREV_API_IMAGE}
+    image: ${ROLLBACK_TARGET_API}
   web:
-    image: ${PREV_WEB_IMAGE}
+    image: ${ROLLBACK_TARGET_WEB}
 EOF
-  chmod 600 "$ROLLBACK_OVERRIDE"
+    chmod 600 "$ROLLBACK_OVERRIDE"
+    log "Initialized first-run rollback compose override -> $ROLLBACK_OVERRIDE"
+  fi
 
-  cat <<EOF > "$ROLLBACK_METADATA"
+  if [ ! -f "$ROLLBACK_METADATA" ]; then
+    cat <<EOF > "$ROLLBACK_METADATA"
 {
-  "timestamp": "$(date -u +%FT%TZ)",
-  "deployed_branch": "${BRANCH}",
-  "deployed_sha": "${DEPLOY_SHA}",
-  "previous_api_image": "${PREV_API_IMAGE}",
-  "previous_web_image": "${PREV_WEB_IMAGE}",
+  "last_updated": "$(date -u +%FT%TZ)",
+  "status": "${ROLLBACK_BASELINE_STATUS}",
+  "known_good_api_image": "${ROLLBACK_TARGET_API}",
+  "known_good_web_image": "${ROLLBACK_TARGET_WEB}",
+  "previous_api_image": "${ROLLBACK_TARGET_API}",
+  "previous_web_image": "${ROLLBACK_TARGET_WEB}",
   "caller": "${CALLER}"
 }
 EOF
-  chmod 600 "$ROLLBACK_METADATA"
-  log "Persisted durable rollback metadata -> $ROLLBACK_DIR (survives git clean)"
+    chmod 600 "$ROLLBACK_METADATA"
+    log "Initialized first-run rollback metadata -> $ROLLBACK_METADATA (status=${ROLLBACK_BASELINE_STATUS})"
+  fi
 fi
 
 # ---- 11. Run database migrations BEFORE stopping old API -------------------
@@ -314,9 +407,12 @@ for i in $(seq 1 30); do
 
   # Verify HTTP 200 status code directly
   http_code=0
-  if curl -sf -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:3001/api/health 2>/dev/null | grep -q "^200$"; then
+  curl_code="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:3001/api/health 2>/dev/null || true)"
+  if [ "$curl_code" = "200" ]; then
     http_code=200
-  elif "$DOCKER" exec handla_api wget -qO- http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+  elif [ -x "$NODE" ] && "$NODE" -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3001/api/health", { timeout: 3000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null; then
+    http_code=200
+  elif "$DOCKER" exec handla_api wget -q -S --spider http://127.0.0.1:3001/api/health 2>&1 | grep -Eq 'HTTP/[0-9.]+ 200'; then
     http_code=200
   fi
 
@@ -335,13 +431,25 @@ if [ "$API_HEALTHY" -ne 1 ]; then
   exit 8
 fi
 
-log "Verifying new Web frontend responsiveness..."
+log "Verifying new Web frontend responsiveness (HTTP 200 probe)..."
 WEB_HEALTHY=0
 for i in $(seq 1 20); do
-  # Probe inside the frontend container via node/wget to verify Next.js server readiness
-  if "$DOCKER" exec handla_web wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1; then
+  # Probe frontend to verify Next.js server readiness with an explicit HTTP 200 check
+  web_http_code=0
+  curl_code="$(curl -sf -o /dev/null -w "%{http_code}" --max-time 3 http://127.0.0.1:3000/ 2>/dev/null || true)"
+  if [ "$curl_code" = "200" ]; then
+    web_http_code=200
+  elif [ -x "$NODE" ] && "$NODE" -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3000/", { timeout: 3000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null; then
+    web_http_code=200
+  elif "$DOCKER" exec handla_web node -e 'const http = require("http"); const req = http.get("http://127.0.0.1:3000/", { timeout: 3000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on("error", () => process.exit(1)); req.on("timeout", () => { req.destroy(); process.exit(1); });' 2>/dev/null; then
+    web_http_code=200
+  elif "$DOCKER" exec handla_web wget -q -S --spider http://127.0.0.1:3000/ 2>&1 | grep -Eq 'HTTP/[0-9.]+ 200'; then
+    web_http_code=200
+  fi
+
+  if [ "$web_http_code" -eq 200 ]; then
     WEB_HEALTHY=1
-    log "Frontend server responding ✓ (attempt ${i})"
+    log "Frontend server responding ✓ (HTTP 200 OK, attempt ${i})"
     break
   fi
   sleep 2
@@ -354,7 +462,46 @@ if [ "$WEB_HEALTHY" -ne 1 ]; then
   exit 8
 fi
 
-# ---- 14. Prune dangling images & report status -------------------------------
+# ---- 14. Record verified deployment & update rollback metadata -------------
+# Only after both API and Web have passed all health checks and are confirmed
+# serving HTTP 200 do we update the durable rollback reference to point to the
+# previously verified state and save the new successfully deployed image IDs.
+NEW_DEPLOYED_API_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_api 2>/dev/null || true)"
+NEW_DEPLOYED_WEB_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_web 2>/dev/null || true)"
+
+install -d -m 0700 -o root -g root "$ROLLBACK_DIR"
+if [ -n "$ROLLBACK_TARGET_API" ] && [ -n "$ROLLBACK_TARGET_WEB" ]; then
+  cat <<EOF > "$ROLLBACK_OVERRIDE"
+# AUTO-GENERATED by handla-production-deploy upon verified healthy deployment of ${BRANCH}@${DEPLOY_SHA}
+# Restores exact image IDs from prior working deployment.
+services:
+  api:
+    image: ${ROLLBACK_TARGET_API}
+  web:
+    image: ${ROLLBACK_TARGET_WEB}
+EOF
+  chmod 600 "$ROLLBACK_OVERRIDE"
+fi
+
+cat <<EOF > "$ROLLBACK_METADATA"
+{
+  "timestamp": "$(date -u +%FT%TZ)",
+  "deployed_branch": "${BRANCH}",
+  "deployed_sha": "${DEPLOY_SHA}",
+  "status": "healthy_verified",
+  "active_api_image": "${NEW_DEPLOYED_API_IMAGE}",
+  "active_web_image": "${NEW_DEPLOYED_WEB_IMAGE}",
+  "known_good_api_image": "${ROLLBACK_TARGET_API}",
+  "known_good_web_image": "${ROLLBACK_TARGET_WEB}",
+  "previous_api_image": "${ROLLBACK_TARGET_API}",
+  "previous_web_image": "${ROLLBACK_TARGET_WEB}",
+  "caller": "${CALLER}"
+}
+EOF
+chmod 600 "$ROLLBACK_METADATA"
+log "Persisted verified rollback metadata and compose override -> $ROLLBACK_DIR"
+
+# ---- 15. Prune dangling images & report status -------------------------------
 log "Pruning dangling images..."
 "$DOCKER" image prune -f >/dev/null 2>&1 || true
 
