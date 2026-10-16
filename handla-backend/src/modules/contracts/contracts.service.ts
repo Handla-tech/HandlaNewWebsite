@@ -672,13 +672,12 @@ export class ContractsService {
       );
     }
 
-    const result = await this.awsService.generatePresignedUrl(
+    const url = await this.awsService.generateGetUrl(
       contract.s3Key,
-      'text/html',
       900, // 15 minutes
     );
 
-    return result.url;
+    return url;
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────

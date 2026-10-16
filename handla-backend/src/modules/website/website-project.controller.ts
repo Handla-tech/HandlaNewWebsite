@@ -11,14 +11,18 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'crypto';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 
 import { WebsiteProjectService } from './website-project.service';
 import { CreateWebsiteProjectDto } from './dto/create-website-project.dto';
 import { UpdateWebsiteProjectDto } from './dto/update-website-project.dto';
 import { WebsiteProjectQueryDto } from './dto/website-project-query.dto';
-import { WebsiteImageUploadDto } from './dto/website-image-upload.dto';
 import { JwtAuthGuard, Public } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -36,30 +40,100 @@ export class WebsiteProjectController {
   ) {}
 
   // ─── POST /api/website/projects/image-upload  (ADMIN only) ───────────────────
-  // Presigned S3 PUT URL for uploading a website project/product cover image.
-  // The browser then PUTs the file directly to S3 and stores the returned
-  // fileUrl on the project's imageUrl. Restricted to image MIME types only.
+  // Backend-controlled multipart upload for website project/product cover image.
+  // Validates file buffer magic bytes, strict MIME types (JPEG, PNG, WebP, GIF - no SVG),
+  // maximum file size (5MB), and uploads directly to S3 under `website/projects/*`.
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('image-upload')
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth()
-  @ApiOperation({ summary: 'Request a presigned S3 URL to upload a website image (ADMIN only)' })
-  @ApiBody({ type: WebsiteImageUploadDto })
-  @ApiResponse({ status: 200, description: 'Presigned upload URL generated' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+    }),
+  )
+  @ApiOperation({ summary: 'Upload a website image with byte validation (ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Website image uploaded' })
+  @ApiResponse({ status: 400, description: 'Invalid file or unsupported image format' })
   @ApiResponse({ status: 403, description: 'Admin role required' })
-  async getImageUploadUrl(@Body() dto: WebsiteImageUploadDto) {
-    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const key = `website/projects/${Date.now()}-${safeName}`;
-    // publicRead=true → object is world-readable so the public marketing site can
-    // render it directly in an <img> (no short-lived signed URL needed).
-    const result = await this.awsService.generatePresignedUrl(
-      key,
-      dto.contentType,
-      undefined,
-      true,
-    );
-    return { message: 'Website image upload URL generated', data: result };
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is required and cannot be empty');
+    }
+
+    const MAX_WEBSITE_IMAGE_SIZE = 5 * 1024 * 1024;
+    if (file.buffer.length > MAX_WEBSITE_IMAGE_SIZE) {
+      throw new BadRequestException('File size exceeds the 5MB limit');
+    }
+
+    // Inspect actual file bytes / magic numbers
+    const fileType = await import('file-type');
+    const fromBuffer = fileType.fromBuffer ?? (fileType.default as any)?.fromBuffer;
+    const detected = await fromBuffer(file.buffer);
+
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!detected || !allowedMimes.includes(detected.mime)) {
+      throw new BadRequestException(
+        'Invalid or unsupported image type. Only JPEG, PNG, WEBP, and GIF are allowed.',
+      );
+    }
+
+    // Extract and validate client-supplied original filename extension
+    const originalName = file.originalname || '';
+    const lastDotIndex = originalName.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      throw new BadRequestException('File must have a valid image extension (.jpg, .jpeg, .png, .webp, or .gif)');
+    }
+    const rawExt = originalName.substring(lastDotIndex + 1).toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!allowedExtensions.includes(rawExt)) {
+      throw new BadRequestException(
+        `Unsupported file extension '.${rawExt}'. Only .jpg, .jpeg, .png, .webp, and .gif are permitted.`,
+      );
+    }
+
+    // Verify consistency between declared MIME type and detected MIME type
+    if (file.mimetype) {
+      const declaredMime = file.mimetype.toLowerCase().trim();
+      if (declaredMime !== detected.mime) {
+        throw new BadRequestException(
+          `Declared MIME type (${declaredMime}) does not match detected image format (${detected.mime}).`,
+        );
+      }
+    }
+
+    // Verify consistency between original extension and detected format (accounting for jpg/jpeg aliases)
+    const isJpegExt = rawExt === 'jpg' || rawExt === 'jpeg';
+    const isJpegDetected = detected.mime === 'image/jpeg';
+    if (isJpegDetected && !isJpegExt) {
+      throw new BadRequestException(`File extension '.${rawExt}' is incompatible with detected JPEG image format.`);
+    }
+    if (!isJpegDetected) {
+      const expectedExt = detected.ext.toLowerCase();
+      if (rawExt !== expectedExt) {
+        throw new BadRequestException(
+          `File extension '.${rawExt}' is incompatible with detected ${expectedExt.toUpperCase()} image format.`,
+        );
+      }
+    }
+
+    // Canonical extension based on detected magic bytes (canonical 'jpg' for image/jpeg)
+    const canonicalExt = detected.mime === 'image/jpeg' ? 'jpg' : detected.ext.toLowerCase();
+    const key = `website/projects/${Date.now()}-${randomUUID()}.${canonicalExt}`;
+
+    const fileUrl = await this.awsService.uploadBuffer(file.buffer, key, detected.mime);
+
+    return {
+      message: 'Website image uploaded successfully',
+      data: {
+        fileUrl,
+        key,
+        contentType: detected.mime,
+        size: file.buffer.length,
+      },
+    };
   }
 
   // ─── GET /api/website/projects  (PUBLIC) ─────────────────────────────────────

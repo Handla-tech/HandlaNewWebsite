@@ -60,6 +60,33 @@ export function registerAuthFailureCallback(cb: LogoutCallback) {
   _onAuthFailure = cb;
 }
 
+// ─── Request interceptor — FormData multipart boundary handling ─────────────
+//
+// The shared Axios instance sets `Content-Type: application/json` by default.
+// When `data` is a FormData instance, leaving that header intact causes Axios
+// to serialize the FormData to a JSON string `{"field":"val"}` instead of
+// multipart/form-data, or strips the essential multipart boundary parameter.
+// Removing Content-Type for FormData lets Axios/browser generate the exact
+// `multipart/form-data; boundary=...` header.
+api.interceptors.request.use((config) => {
+  const isFormData =
+    config.data &&
+    ((typeof FormData !== 'undefined' && config.data instanceof FormData) ||
+      Object.prototype.toString.call(config.data) === '[object FormData]' ||
+      typeof (config.data as { getHeaders?: () => Record<string, string> }).getHeaders === 'function');
+
+  if (isFormData && config.headers) {
+    if (typeof config.headers.delete === 'function') {
+      config.headers.delete('Content-Type');
+      config.headers.delete('content-type');
+    } else {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+  }
+  return config;
+});
+
 // ─── Response interceptor — transparent token refresh ────────────────────────
 
 api.interceptors.response.use(
@@ -217,9 +244,9 @@ export const websiteProjectApi = {
   update:  (id: string, data: object) => api.patch(`/website/projects/${id}`, data),
   /** DELETE /website/projects/:id — ADMIN */
   remove:  (id: string)               => api.delete(`/website/projects/${id}`),
-  /** POST /website/projects/image-upload — ADMIN → presigned S3 PUT URL */
-  getImageUploadUrl: (data: { fileName: string; contentType: string }) =>
-    api.post('/website/projects/image-upload', data),
+  /** POST /website/projects/image-upload — ADMIN → multipart file upload with server byte validation */
+  uploadImage: (formData: FormData, config?: import('axios').AxiosRequestConfig) =>
+    api.post('/website/projects/image-upload', formData, config),
 };
 
 // ─── Website Content — Products (public showcase) ────────────────────────────
