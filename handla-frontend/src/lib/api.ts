@@ -181,7 +181,6 @@ export const chatApi = {
   createConversation: (data: object)              => api.post('/chat/conversations', data),
   getMessages:        (id: string)                => api.get(`/chat/conversations/${id}/messages`),
   sendMessage:        (id: string, data: object)  => api.post(`/chat/conversations/${id}/messages`, data),
-  getPresignedUrl:    (data: object)              => api.post('/chat/presigned-url', data),
   updateStatus:       (id: string, data: object)  => api.patch(`/chat/conversations/${id}/status`, data),
   markMessageRead:    (id: string)                => api.patch(`/chat/messages/${id}/read`),
 };
@@ -323,8 +322,16 @@ export const tasksApi = {
   deleteTask:           (id: string)                          => api.delete(`/erp/tasks/${id}`),
   /** GET /erp/projects/:projectId/tasks — tasks for a specific project */
   getTasksByProject:    (projectId: string)                   => api.get(`/erp/projects/${projectId}/tasks`),
+  /** POST /erp/tasks/:id/attachments/upload — CLIENT uploads a file attachment */
+  uploadAttachment:     (id: string, formData: FormData, config?: object) =>
+    api.post(`/erp/tasks/${id}/attachments/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      ...config,
+    }),
   /** PATCH /erp/tasks/:id/submit — CLIENT submits a client-directed task (files + complete) */
   submitClientTask:     (id: string, data: object)            => api.patch(`/erp/tasks/${id}/submit`, data),
+  /** GET /erp/tasks/:id/attachments/download?key=... — get presigned download URL for attachment */
+  getAttachmentDownloadUrl: (id: string, key: string)         => api.get(`/erp/tasks/${id}/attachments/download`, { params: { key } }),
   /** POST /erp/tasks/recalculate-delayed — ADMIN manual trigger */
   recalculateDelayed:   ()                                    => api.post('/erp/tasks/recalculate-delayed'),
 };
@@ -380,8 +387,16 @@ export const invoicesApi = {
   markInvoicePaid:      (id: string, data?: object)           => api.post(`/erp/invoices/${id}/mark-paid`, data ?? {}),
   /** POST /erp/invoices/recalculate-overdue — ADMIN manual trigger */
   recalculateOverdue:   ()                                    => api.post('/erp/invoices/recalculate-overdue'),
+  /** POST /erp/invoices/:id/payment-proof/upload — CLIENT uploads payment proof file directly */
+  uploadPaymentProof:   (id: string, formData: FormData, config?: object) =>
+    api.post(`/erp/invoices/${id}/payment-proof/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      ...config,
+    }),
   /** POST /erp/invoices/:id/submit-payment — CLIENT submits payment proof */
   submitPaymentProof:   (id: string, data: object)            => api.post(`/erp/invoices/${id}/submit-payment`, data),
+  /** GET /erp/invoices/:id/payment-proof/download?key=... — get presigned download URL for payment proof */
+  getPaymentProofDownloadUrl: (id: string, key: string)       => api.get(`/erp/invoices/${id}/payment-proof/download`, { params: { key } }),
   /** GET /erp/invoices/public/:id — LEGACY raw-id public route (transitional, gated by PUBLIC_DOC_LEGACY_ID_LINKS). Prefer the token route. */
   getPublicInvoice:     (id: string)                          => api.get(`/erp/invoices/public/${id}`),
   /** GET /erp/invoices/public/token/:token — INFO-01 canonical public sanitized invoice via opaque capability token (no auth). */
@@ -424,8 +439,8 @@ export const profilesApi = {
   getMe:                () => api.get('/profiles/me'),
   /** PATCH /profiles/me — update own profile (partial) */
   updateMe:             (data: object) => api.patch('/profiles/me', data),
-  /** POST /profiles/me/avatar-upload — { fileName, contentType } → presigned URL */
-  getAvatarUploadUrl:   (data: object) => api.post('/profiles/me/avatar-upload', data),
+  /** POST /profiles/me/avatar-upload — multipart form data → updated profile */
+  uploadAvatar:         (data: FormData, config?: import('axios').AxiosRequestConfig) => api.post('/profiles/me/avatar-upload', data, config),
   /** GET /profiles/:id — owner OR ADMIN */
   getOne:               (id: string) => api.get(`/profiles/${id}`),
   /** PATCH /profiles/:id — owner OR ADMIN */

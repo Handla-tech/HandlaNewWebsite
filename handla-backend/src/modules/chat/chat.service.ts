@@ -1,4 +1,4 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 
@@ -395,11 +395,30 @@ export class ChatService {
       throw new Error('Message must have content or a file attachment');
     }
 
+    let finalFileUrl: string | null = null;
+    if (fileUrl) {
+      const logicalKey = this.awsService.resolveLogicalKey(fileUrl);
+      if (!logicalKey) {
+        throw new BadRequestException('Invalid chat attachment');
+      }
+
+      if (!this.awsService.isKeyInNamespace(logicalKey, [`chat/${senderId}/`])) {
+        throw new BadRequestException('Invalid chat attachment');
+      }
+
+      const exists = await this.awsService.fileExists(logicalKey);
+      if (!exists) {
+        throw new BadRequestException('Invalid chat attachment');
+      }
+
+      finalFileUrl = this.awsService.buildFileUrl(logicalKey);
+    }
+
     const message = this.messageRepo.create({
       conversationId,
       senderId,
       content: content ?? null,
-      fileUrl: fileUrl ?? null,
+      fileUrl: finalFileUrl,
       isRead: false,
       origin: origin ?? null,
     });

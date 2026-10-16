@@ -156,6 +156,19 @@ describe('ChatController', () => {
       expect(chatService.sendMessage).toHaveBeenCalledWith(validUuid, user, '', 'https://s3/file.pdf');
     });
 
+    it('surfaces error from ChatService.sendMessage when malicious fileUrl is provided', async () => {
+      const user = makeUser();
+      const error = new Error('Invalid chat attachment');
+      chatService.sendMessage.mockRejectedValue(error);
+
+      await expect(controller.sendMessage(validUuid, undefined as any, 'https://evil.com/malware.exe', user))
+        .rejects.toThrow(error);
+
+      expect(chatService.sendMessage).toHaveBeenCalledWith(validUuid, user, undefined, 'https://evil.com/malware.exe');
+      expect(chatGateway.broadcastMessage).not.toHaveBeenCalled();
+      expect(chatGateway.notifyMessageRecipient).not.toHaveBeenCalled();
+    });
+
     it('calls broadcast BEFORE notification so listeners see the message first', async () => {
       const user = makeUser({ id: 'admin-1', role: UserRole.ADMIN });
       const message = { id: 'msg-3', content: 'order' };
@@ -207,20 +220,10 @@ describe('ChatController', () => {
     });
   });
 
-  // ── POST /presigned-url ───────────────────────────────────────────────────
-  describe('getPresignedUrl', () => {
-    it('builds a sanitized S3 key with user id + timestamp and returns the result', async () => {
-      const user = makeUser({ id: 'u-99' });
-      awsService.generatePresignedUrl.mockResolvedValue({ url: 'https://s3', fileUrl: 'https://cdn' });
-      const dto = { fileName: 'My Big File.pdf', contentType: 'application/pdf' } as any;
-
-      const res = await controller.getPresignedUrl(dto, user);
-
-      expect(awsService.generatePresignedUrl).toHaveBeenCalledTimes(1);
-      const [keyArg, ctArg] = awsService.generatePresignedUrl.mock.calls[0];
-      expect(keyArg).toMatch(/^chat\/u-99\/\d+-My_Big_File\.pdf$/);
-      expect(ctArg).toBe('application/pdf');
-      expect(res.data).toEqual({ url: 'https://s3', fileUrl: 'https://cdn' });
+  // ── Legacy /presigned-url removed ─────────────────────────────────────────
+  describe('legacy presigned-url', () => {
+    it('legacy presigned-url handler is removed from ChatController', () => {
+      expect((controller as any).getPresignedUrl).toBeUndefined();
     });
   });
 

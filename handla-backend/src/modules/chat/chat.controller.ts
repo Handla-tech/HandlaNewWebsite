@@ -13,12 +13,17 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'crypto';
+import * as fileType from 'file-type';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
-import { PresignedUrlDto } from './dto/presigned-url.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { User } from '../auth/entities/user.entity';
@@ -141,23 +146,55 @@ export class ChatController {
     return { message: 'Conversation ready', data: { conversation } };
   }
 
-  // ─── POST /api/chat/presigned-url ─────────────────────────────────────────────
-  @Post('presigned-url')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Generate an S3 presigned URL for direct file upload' })
-  @ApiResponse({ status: 200, description: 'Presigned URL returned' })
-  async getPresignedUrl(@Body() dto: PresignedUrlDto, @CurrentUser() user: User) {
-    // FILE-KEY-01: sanitize the client-supplied fileName to a single flat
-    // segment. Stripping only whitespace left `/` and `..` intact, so a crafted
-    // name (e.g. "../victim/x.png") could steer the object outside this user's
-    // `chat/<uid>/` prefix. Collapse everything that is not a safe filename char
-    // so the derived key can never contain a path separator or traversal token.
-    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]+/g, '_');
-    const key = `chat/${user.id}/${Date.now()}-${safeName}`;
-    const result = await this.awsService.generatePresignedUrl(key, dto.contentType);
+  // ─── POST /api/chat/upload ──────────────────────────────────────────────────
+  @Post('upload')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Upload a chat attachment directly to backend' })
+  @ApiResponse({ status: 201, description: 'Chat attachment uploaded' })
+  @ApiResponse({ status: 400, description: 'Invalid file or type' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadChatFile(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is missing or empty');
+    }
+
+    const detected = await fileType.fromBuffer(file.buffer);
+    if (!detected) {
+      throw new BadRequestException('Unsupported file type');
+    }
+
+    const allowedMimes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    if (!allowedMimes.includes(detected.mime)) {
+      throw new BadRequestException('Unsupported file type');
+    }
+
+    const key = `chat/${user.id}/${Date.now()}-${randomUUID()}.${detected.ext}`;
+    const fileUrl = await this.awsService.uploadBuffer(file.buffer, key, detected.mime);
+
     return {
-      message: 'Presigned URL generated',
-      data: result,
+      message: 'Chat attachment uploaded',
+      data: {
+        fileUrl: fileUrl,
+        key: key,
+        contentType: detected.mime,
+        size: file.buffer.length,
+      },
     };
   }
 

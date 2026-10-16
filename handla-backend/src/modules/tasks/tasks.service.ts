@@ -1,6 +1,6 @@
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, Not, In } from 'typeorm';
+import { Repository, DataSource, LessThan, Not, In } from 'typeorm';
 
 import { Task } from './entities/task.entity';
 import { Project } from '../projects/entities/project.entity';
@@ -18,6 +18,10 @@ import {
 } from '../../utils/exceptions';
 import { NotificationService } from '../notifications/notification.service';
 import { EmailService } from '../email/email.service';
+import { AwsService } from '../aws/aws.service';
+import { FileUpload, FileUploadResourceType, FileUploadStatus } from '../uploads/entities/file-upload.entity';
+import { randomUUID } from 'crypto';
+import * as fileType from 'file-type';
 
 export interface PaginatedTasks {
   tasks: Task[];
@@ -40,8 +44,13 @@ export class TasksService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
 
+    @InjectRepository(FileUpload)
+    private readonly fileUploadRepo: Repository<FileUpload>,
+
     private readonly notificationService: NotificationService,
     private readonly emailService: EmailService,
+    private readonly awsService: AwsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ─── findAll ──────────────────────────────────────────────────────────────────
@@ -141,6 +150,21 @@ export class TasksService {
       }
     }
 
+    // Secure file retrieval: sign attachment URLs so authorized clients and staff
+    // can download private S3 objects securely without exposing permanent public URLs.
+    if (task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0) {
+      const signedAttachments = await Promise.all(
+        task.attachments.map(async (att) => {
+          const signedUrl = await this.awsService.signFileUrl(att.url);
+          return {
+            ...att,
+            url: signedUrl || att.url,
+          };
+        }),
+      );
+      task.attachments = signedAttachments;
+    }
+
     return task;
   }
 
@@ -199,11 +223,28 @@ export class TasksService {
       }
     }
 
-    return this.taskRepo.find({
+    const tasks = await this.taskRepo.find({
       where: { projectId },
       relations: ['project', 'assignee', 'owner'],
       order: { createdAt: 'DESC' },
     });
+
+    // Secure file retrieval: sign attachment URLs for authorized project viewers
+    for (const task of tasks) {
+      if (task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0) {
+        task.attachments = await Promise.all(
+          task.attachments.map(async (att) => {
+            const signedUrl = await this.awsService.signFileUrl(att.url);
+            return {
+              ...att,
+              url: signedUrl || att.url,
+            };
+          }),
+        );
+      }
+    }
+
+    return tasks;
   }
 
   // ─── create ───────────────────────────────────────────────────────────────────
@@ -297,12 +338,103 @@ export class TasksService {
     }) as Promise<Task>;
   }
 
+  // ─── uploadAttachment ────────────────────────────────────────────────────────
+  /**
+   * CLIENT uploads a task attachment directly to S3.
+   * Validates client access to the task, file presence, size (<= 10MB), and magic-byte signature.
+   * Records file provenance in `file_uploads` as PENDING.
+   * Stores under `tasks/<taskId>/<timestamp>-<uuid>.<ext>`.
+   */
+  async uploadAttachment(
+    id: string,
+    file: Express.Multer.File,
+    user: User,
+  ): Promise<{ fileUrl: string; key: string; contentType: string; size: number; name: string; uploadId: string }> {
+    if (user.role !== UserRole.CLIENT) {
+      throw new InsufficientPermissionsException('upload attachments for this task (CLIENT only)');
+    }
+
+    const task = await this.findOne(id, user);
+
+    if (!task.assignedToClient) {
+      throw new AppException('This task is not assigned to you.', HttpStatus.FORBIDDEN);
+    }
+
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new AppException('File is missing or empty', HttpStatus.BAD_REQUEST);
+    }
+
+    // Programmatic service-level size check: enforce 10MB max buffer size
+    const MAX_TASK_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+    if (file.buffer.length > MAX_TASK_ATTACHMENT_SIZE) {
+      throw new AppException('File size exceeds the 10MB limit', HttpStatus.BAD_REQUEST);
+    }
+
+    const fromBuffer = fileType.fromBuffer ?? (fileType as any).default?.fromBuffer;
+    const detected = await fromBuffer(file.buffer);
+    if (!detected) {
+      throw new AppException('Unsupported file type', HttpStatus.BAD_REQUEST);
+    }
+
+    const allowedMimes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    if (!allowedMimes.includes(detected.mime)) {
+      throw new AppException('Unsupported file type', HttpStatus.BAD_REQUEST);
+    }
+
+    const key = `tasks/${task.id}/${Date.now()}-${randomUUID()}.${detected.ext}`;
+    const fileUrl = await this.awsService.uploadBuffer(file.buffer, key, detected.mime);
+
+    // Sanitize client-provided filename for safe display
+    const safeDisplayName = (file.originalname || `attachment.${detected.ext}`)
+      .replace(/[^\w.\- ]+/g, '_')
+      .slice(0, 255);
+
+    // Record server-validated provenance
+    const fileUpload = this.fileUploadRepo.create({
+      userId: user.id,
+      resourceType: FileUploadResourceType.TASK,
+      resourceId: task.id,
+      s3Key: key,
+      fileUrl,
+      originalName: safeDisplayName,
+      mimeType: detected.mime,
+      sizeBytes: file.buffer.length,
+      status: FileUploadStatus.PENDING,
+    });
+    const savedRecord = await this.fileUploadRepo.save(fileUpload);
+
+    return {
+      fileUrl,
+      key,
+      contentType: detected.mime,
+      size: file.buffer.length,
+      name: safeDisplayName,
+      uploadId: savedRecord.id,
+    };
+  }
+
   // ─── submitClientTask ───────────────────────────────────────────────────────────
   /**
    * A CLIENT fulfils a client-directed task: attach uploaded files (if any) and
    * mark the task COMPLETED. Only the client who owns the task's project may do
    * this, and only for tasks flagged assignedToClient. If the task requires an
    * upload, at least one attachment must be provided.
+   *
+   * Enforces server-side file provenance:
+   * - Each attachment must correspond to a verified PENDING FileUpload record.
+   * - Upload record must belong to this user and this task.
+   * - Uses trusted filename and size from DB record, ignoring any client tampering.
+   * - Consumes the upload record atomically to prevent duplicate / cross-task reuse.
+   * - Never echoes raw unverified URLs in error messages.
    *
    * Notifies the task owner (and project owner) that the client submitted.
    */
@@ -322,27 +454,125 @@ export class TasksService {
       throw new AppException('This task is not assigned to you.', HttpStatus.FORBIDDEN);
     }
 
-    const attachments = (dto.attachments ?? []).map((a) => ({
-      url: a.url,
-      name: a.name,
-      size: a.size,
-      uploadedAt: new Date().toISOString(),
-    }));
+    const incomingAttachments = dto.attachments ?? [];
 
-    if (task.requiresUpload && attachments.length === 0) {
+    if (task.requiresUpload && incomingAttachments.length === 0) {
       throw new AppException(
         'This task requires at least one uploaded file.',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    // Merge onto any previously-submitted files rather than overwriting.
-    task.attachments = [...(task.attachments ?? []), ...attachments];
-    task.status = TaskStatus.COMPLETED;
-    const saved = await this.taskRepo.save(task);
+    const verifiedAttachments: Array<{
+      url: string;
+      name: string;
+      size: number;
+      uploadedAt: string;
+    }> = [];
+
+    const uploadsToConsume: FileUpload[] = [];
+
+    // Security validation on attached URLs:
+    for (const a of incomingAttachments) {
+      if (!a.url || typeof a.url !== 'string') {
+        throw new AppException('Attachment URL is missing or invalid.', HttpStatus.BAD_REQUEST);
+      }
+
+      const logicalKey = this.awsService.resolveLogicalKey(a.url);
+      if (!logicalKey) {
+        throw new AppException('Invalid attachment URL format.', HttpStatus.BAD_REQUEST);
+      }
+      if (!this.awsService.isKeyInNamespace(logicalKey, [`tasks/${task.id}/`])) {
+        throw new AppException(
+          'Attachment does not belong to this task.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Query server-side provenance record
+      const uploadRecord = await this.fileUploadRepo.findOne({
+        where: { s3Key: logicalKey },
+      });
+
+      if (!uploadRecord) {
+        throw new AppException(
+          'Attachment record not found or unverified.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (uploadRecord.userId !== user.id) {
+        throw new AppException(
+          'Attachment belongs to another user.',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      if (
+        uploadRecord.resourceType !== FileUploadResourceType.TASK ||
+        uploadRecord.resourceId !== task.id
+      ) {
+        throw new AppException(
+          'Attachment does not belong to this task.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (uploadRecord.status !== FileUploadStatus.PENDING) {
+        throw new AppException(
+          'Attachment has already been consumed or has expired.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const exists = await this.awsService.fileExists(logicalKey);
+      if (!exists) {
+        throw new AppException(
+          'Attached file does not exist in storage.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Derive trusted metadata from the server-validated record, NOT client input
+      verifiedAttachments.push({
+        url: uploadRecord.fileUrl,
+        name: uploadRecord.originalName,
+        size: uploadRecord.sizeBytes,
+        uploadedAt: new Date().toISOString(),
+      });
+
+      uploadsToConsume.push(uploadRecord);
+    }
+
+    // Atomic transaction: conditionally consume FileUpload records and update Task.
+    // If any record was already consumed concurrently, or if DB save fails, the transaction aborts.
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const uploadManager = manager.getRepository(FileUpload);
+      const taskManager = manager.getRepository(Task);
+
+      for (const uploadRecord of uploadsToConsume) {
+        // Conditional update to ensure the upload is still PENDING at moment of commit
+        const updateResult = await uploadManager.update(
+          { id: uploadRecord.id, status: FileUploadStatus.PENDING },
+          { status: FileUploadStatus.CONSUMED, consumedAt: new Date() },
+        );
+
+        if (updateResult.affected === 0) {
+          throw new AppException(
+            'Attachment has already been consumed or is no longer pending.',
+            HttpStatus.CONFLICT,
+          );
+        }
+      }
+
+      // Merge onto any previously-submitted files rather than overwriting.
+      task.attachments = [...(task.attachments ?? []), ...verifiedAttachments];
+      task.status = TaskStatus.COMPLETED;
+      return taskManager.save(task);
+    });
 
     this.logger.log(
-      `Client task submitted: id=${saved.id} by client=${user.id} files=${attachments.length}`,
+      `Client task submitted: id=${saved.id} by client=${user.id} files=${verifiedAttachments.length}`,
     );
 
     // Notify the staff owner that the client submitted their deliverable.
@@ -353,7 +583,7 @@ export class TasksService {
         notifyUserId,
         NotificationType.SYSTEM,
         'Client submitted a task',
-        `The client completed "${saved.title}" (${attachments.length} file(s))${noteSuffix}.`,
+        `The client completed "${saved.title}" (${verifiedAttachments.length} file(s))${noteSuffix}.`,
         saved.id,
       );
     }
@@ -515,6 +745,55 @@ export class TasksService {
     }
 
     return ids.length;
+  }
+
+  // ─── getSignedAttachmentUrl ──────────────────────────────────────────────────
+  /**
+   * Secure file retrieval: generates a short-lived presigned GET download URL for
+   * an attachment on a task.
+   *
+   * Security enforcement:
+   * 1. Authorization: calls `findOne(taskId, user)` to ensure caller is authorized
+   *    (client owning project, employee assigned/owning, or admin).
+   * 2. Provenance / Scope: verifies that the requested logical key exists in the
+   *    task's stored attachments array.
+   * 3. Namespace defense-in-depth: ensures key is in `tasks/<taskId>/`.
+   * 4. Signs and returns short-lived GET URL.
+   */
+  async getSignedAttachmentUrl(
+    taskId: string,
+    attachmentKeyOrUrl: string,
+    user: User,
+  ): Promise<string> {
+    if (!attachmentKeyOrUrl) {
+      throw new AppException('Attachment identifier is required.', HttpStatus.BAD_REQUEST);
+    }
+
+    const task = await this.findOne(taskId, user);
+
+    const logicalKey = this.awsService.resolveLogicalKey(attachmentKeyOrUrl);
+    if (!logicalKey) {
+      throw new AppException('Invalid attachment identifier format.', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!this.awsService.isKeyInNamespace(logicalKey, [`tasks/${task.id}/`])) {
+      throw new AppException('Attachment does not belong to this task.', HttpStatus.BAD_REQUEST);
+    }
+
+    const matchingAttachment = (task.attachments ?? []).find((att) => {
+      const attKey = this.awsService.resolveLogicalKey(att.url);
+      if (attKey === logicalKey) return true;
+      // If att.url was signed (contains query parameters or signature), check if it includes the logicalKey
+      if (att.url && att.url.includes(logicalKey)) return true;
+      return false;
+    });
+
+    if (!matchingAttachment) {
+      throw new ResourceNotFoundException('Attachment', logicalKey);
+    }
+
+    const signed = await this.awsService.generateGetUrl(logicalKey);
+    return signed;
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────────

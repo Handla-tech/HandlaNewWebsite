@@ -27,7 +27,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { projectsApi, tasksApi, chatApi } from '@/lib/api';
+import { projectsApi, tasksApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Project, ProjectStatus, Task, TaskAttachment } from '@/types';
 
@@ -94,24 +94,32 @@ function ClientTaskCard({ task, projectId }: { task: Task; projectId: string }) 
   const submit = useMutation({
     mutationFn: async () => {
       setErr('');
-      // Upload each selected file to S3 via a presigned URL, collecting metadata.
+      // Upload each selected file directly to the task attachment endpoint
       const attachments: TaskAttachment[] = [];
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        const presignedRes = await chatApi.getPresignedUrl({
-          fileName: f.name, contentType: f.type, fileSize: f.size,
-        });
-        const presigned = (presignedRes.data?.data ?? presignedRes.data) as { url: string; fileUrl: string };
-        await axios.put(presigned.url, f, {
-          headers: { 'Content-Type': f.type },
-          onUploadProgress: (e) => {
+        const formData = new FormData();
+        formData.append('file', f);
+
+        const uploadRes = await tasksApi.uploadAttachment(task.id, formData, {
+          onUploadProgress: (e: any) => {
             if (e.total) {
               const perFile = (e.loaded / e.total) * (100 / files.length);
               setUploadPct(Math.round((i * 100) / files.length + perFile));
             }
           },
         });
-        attachments.push({ url: presigned.fileUrl, name: f.name, size: f.size, uploadedAt: new Date().toISOString() });
+        const uploaded = (uploadRes.data?.data ?? uploadRes.data) as {
+          fileUrl: string;
+          name: string;
+          size: number;
+        };
+        attachments.push({
+          url: uploaded.fileUrl,
+          name: uploaded.name || f.name,
+          size: uploaded.size ?? f.size,
+          uploadedAt: new Date().toISOString(),
+        });
       }
       return tasksApi.submitClientTask(task.id, { attachments, note: note || undefined });
     },

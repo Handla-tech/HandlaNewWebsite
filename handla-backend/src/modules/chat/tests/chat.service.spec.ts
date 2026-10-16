@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
 
 import { ChatService } from '../chat.service';
@@ -115,6 +115,7 @@ const mockMessageRepository = {
 
 describe('ChatService', () => {
   let service: ChatService;
+  let awsService: AwsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -132,12 +133,19 @@ describe('ChatService', () => {
           provide: AwsService,
           // signFileUrl runs on every message-return path; pass through so
           // existing fileUrl assertions remain valid.
-          useValue: { signFileUrl: jest.fn(async (u: string | null) => u) },
+          useValue: {
+            signFileUrl: jest.fn(async (u: string | null) => u),
+            resolveLogicalKey: jest.fn(),
+            isKeyInNamespace: jest.fn(),
+            fileExists: jest.fn(),
+            buildFileUrl: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     service = module.get<ChatService>(ChatService);
+    awsService = module.get<AwsService>(AwsService);
     jest.clearAllMocks();
     // Restore manager.transaction after clearAllMocks wipes it
     mockConversationRepository.manager.transaction = jest.fn().mockImplementation(
@@ -355,8 +363,17 @@ describe('ChatService', () => {
       expect((result.sender as any).passwordHash).toBeUndefined();
     });
 
-    it('should create a message with a file URL (no content)', async () => {
-      const fileMsg = { ...mockMessage, content: null, fileUrl: 'https://s3.example.com/file.pdf' };
+    it('should create a message with a file URL (no content) when valid', async () => {
+      const fileUrl = 'https://s3.example.com/chat/admin-uuid/file.pdf';
+      const logicalKey = 'chat/admin-uuid/file.pdf';
+      const canonicalUrl = 'https://s3.canonical.com/chat/admin-uuid/file.pdf';
+
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(true);
+      (awsService.fileExists as jest.Mock).mockResolvedValue(true);
+      (awsService.buildFileUrl as jest.Mock).mockReturnValue(canonicalUrl);
+
+      const fileMsg = { ...mockMessage, content: null, fileUrl: canonicalUrl };
       mockMessageRepository.create.mockReturnValue(fileMsg);
       mockMessageRepository.save.mockResolvedValue(fileMsg);
       mockMessageRepository.findOne.mockResolvedValue({ ...fileMsg, sender: adminUser });
@@ -366,10 +383,80 @@ describe('ChatService', () => {
         mockConversation.id,
         adminUser.id,
         undefined,
-        'https://s3.example.com/file.pdf',
+        fileUrl,
       );
 
-      expect(result.fileUrl).toBe('https://s3.example.com/file.pdf');
+      expect(awsService.resolveLogicalKey).toHaveBeenCalledWith(fileUrl);
+      expect(awsService.isKeyInNamespace).toHaveBeenCalledWith(logicalKey, [`chat/${adminUser.id}/`]);
+      expect(awsService.fileExists).toHaveBeenCalledWith(logicalKey);
+      expect(awsService.buildFileUrl).toHaveBeenCalledWith(logicalKey);
+
+      expect(result.fileUrl).toBe(canonicalUrl);
+    });
+
+    it('should throw BadRequestException for external URL (resolves to null) and not call signFileUrl', async () => {
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(null);
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'https://evil.com/malware.exe'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for another users chat key and not call signFileUrl', async () => {
+      const logicalKey = 'chat/other-user-uuid/file.pdf';
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(false);
+
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'url'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for avatars/ key and not call signFileUrl', async () => {
+      const logicalKey = 'avatars/admin-uuid/avatar.png';
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(false);
+
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'url'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for contracts/ key and not call signFileUrl', async () => {
+      const logicalKey = 'contracts/admin-uuid/contract.pdf';
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(false);
+
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'url'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for traversal key and not call signFileUrl', async () => {
+      const logicalKey = 'chat/admin-uuid/../other-user/file.pdf';
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(false);
+
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'url'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for already-presigned URL and not call signFileUrl', async () => {
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(null);
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'https://s3.amazonaws.com/bucket/chat/admin-uuid/file.pdf?X-Amz-Signature=123'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if file does not exist in S3 and not call signFileUrl', async () => {
+      const logicalKey = 'chat/admin-uuid/file.pdf';
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(true);
+      (awsService.fileExists as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.saveMessage(mockConversation.id, adminUser.id, undefined, 'url'))
+        .rejects.toThrow(BadRequestException);
+      expect(awsService.signFileUrl).not.toHaveBeenCalled();
     });
 
     it('should throw an error when neither content nor fileUrl is provided', async () => {

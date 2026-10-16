@@ -462,25 +462,19 @@ function PaymentProofModal({ invoice, onClose }: { invoice: Invoice; onClose: ()
     mutationFn: async () => {
       let proofUrl: string | undefined;
 
-      // Upload file to S3 via presigned URL if one was selected
+      // Upload file directly to invoice payment proof endpoint if one was selected
       if (selectedFile) {
         setUploadError('');
-        // Request presigned PUT URL from backend
-        const presignedRes = await chatApi.getPresignedUrl({
-          fileName: selectedFile.name,
-          contentType: selectedFile.type,
-          fileSize: selectedFile.size,
-        } as any);
-        const presigned = presignedRes.data?.data ?? presignedRes.data;
+        const formData = new FormData();
+        formData.append('file', selectedFile);
 
-        // PUT file directly to S3
-        await axios.put(presigned.url, selectedFile, {
-          headers: { 'Content-Type': selectedFile.type },
-          onUploadProgress: (e) => {
+        const uploadRes = await invoicesApi.uploadPaymentProof(invoice.id, formData, {
+          onUploadProgress: (e: any) => {
             if (e.total) setUploadProgress(Math.round((e.loaded / e.total) * 100));
           },
         });
-        proofUrl = presigned.fileUrl;
+        const uploadData = uploadRes.data?.data ?? uploadRes.data;
+        proofUrl = uploadData.fileUrl;
       }
 
       return invoicesApi.submitPaymentProof(invoice.id, {
@@ -503,9 +497,9 @@ function PaymentProofModal({ invoice, onClose }: { invoice: Invoice; onClose: ()
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    // 20 MB limit for payment proof files (matches backend PresignedUrlDto @Max)
-    if (f.size > 20 * 1024 * 1024) {
-      setUploadError('File too large. Max 20 MB.');
+    // 10 MB limit for payment proof files (matches backend upload limit)
+    if (f.size > 10 * 1024 * 1024) {
+      setUploadError('File too large. Max 10 MB.');
       return;
     }
     setUploadError('');
@@ -587,7 +581,7 @@ function PaymentProofModal({ invoice, onClose }: { invoice: Invoice; onClose: ()
               className="w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/3 px-3 py-4 text-white/40 text-xs hover:border-[#fbbf24]/40 hover:text-white/70 transition-colors"
             >
               <Paperclip className="w-4 h-4" />
-              Click to attach file (image or PDF, max 20 MB)
+              Click to attach file (image or PDF, max 10 MB)
             </button>
           )}
           {/* Upload progress */}

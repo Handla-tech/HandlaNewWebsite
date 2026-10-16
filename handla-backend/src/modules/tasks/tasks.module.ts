@@ -4,18 +4,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { Project } from '../projects/entities/project.entity';
 import { User } from '../auth/entities/user.entity';
+import { FileUpload } from '../uploads/entities/file-upload.entity';
 import { TasksService } from './tasks.service';
 import { TasksScheduler } from './tasks.scheduler';
 import { TasksController } from './tasks.controller';
 import { ProjectTasksController } from './project-tasks.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { EmailModule } from '../email/email.module';
+import { AwsModule } from '../aws/aws.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Project, User]),
+    TypeOrmModule.forFeature([Task, Project, User, FileUpload]),
     NotificationModule,
     EmailModule,
+    AwsModule,
   ],
   controllers: [TasksController, ProjectTasksController],
   providers: [TasksService, TasksScheduler],

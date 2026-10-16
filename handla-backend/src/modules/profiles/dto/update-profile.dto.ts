@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength, IsUrl, IsEmail } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -13,19 +13,7 @@ export class UpdateProfileDto {
   @MaxLength(100)
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Email address' })
-  @IsOptional()
-  @IsEmail()
-  @MaxLength(255)
-  email?: string;
 
-  @ApiPropertyOptional({ description: 'Public S3 URL of the profile picture' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  // We intentionally do NOT use @IsUrl() — empty string is allowed to clear
-  // the avatar, and S3 URLs may be passed without protocol in some test envs.
-  avatarUrl?: string | null;
 
   @ApiPropertyOptional({ description: 'Short bio', maxLength: 500 })
   @IsOptional()

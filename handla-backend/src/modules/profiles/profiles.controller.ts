@@ -9,7 +9,13 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'crypto';
 import {
   ApiTags,
   ApiOperation,
@@ -22,7 +28,6 @@ import {
 import { ProfilesService } from './profiles.service';
 import { AwsService } from '../aws/aws.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { AvatarUploadDto } from './dto/avatar-upload.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { User } from '../auth/entities/user.entity';
@@ -77,21 +82,54 @@ export class ProfilesController {
   @Post('me/avatar-upload')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Request a presigned S3 URL for uploading a profile picture',
+    summary: 'Upload a profile picture directly',
   })
-  @ApiBody({ type: AvatarUploadDto })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   @ApiResponse({
     status: 200,
-    description: 'Presigned URL + final fileUrl to PATCH back to /profiles/me',
+    description: 'Avatar uploaded and profile updated',
   })
-  async getAvatarUploadUrl(@CurrentUser() user: User, @Body() dto: AvatarUploadDto) {
-    // Per-user prefix so one user cannot overwrite another\u2019s avatar.
-    // Timestamp prevents browser/CDN caching from showing the old image
-    // after a new upload.
-    const safeName = dto.fileName.replace(/[^a-zA-Z0-9._-]+/g, '_');
-    const key = `avatars/${user.id}/${Date.now()}-${safeName}`;
-    const result = await this.aws.generatePresignedUrl(key, dto.contentType);
-    return { message: 'Avatar upload URL generated', data: result };
+  async uploadAvatar(
+    @CurrentUser() user: User,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is required and cannot be empty');
+    }
+
+    const fileType = await import('file-type');
+    const fromBuffer = fileType.fromBuffer ?? (fileType.default as any)?.fromBuffer;
+    const detected = await fromBuffer(file.buffer);
+
+    if (!detected || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(detected.mime)) {
+      throw new BadRequestException('Invalid or unsupported image type. Only JPEG, PNG, WEBP, and GIF are allowed.');
+    }
+
+    const key = `avatars/${user.id}/${Date.now()}-${randomUUID()}.${detected.ext}`;
+    const fileUrl = await this.aws.uploadBuffer(file.buffer, key, detected.mime);
+
+    const oldAvatarUrl = user.avatarUrl;
+
+    let profile;
+    try {
+      profile = await this.profiles.setAvatarUrl(user.id, fileUrl);
+    } catch (dbErr) {
+      this.aws.deleteFile(key).catch(err => {
+        Logger.warn(`Failed to clean up newly uploaded avatar ${key} after DB failure`, err);
+      });
+      throw dbErr;
+    }
+
+    if (oldAvatarUrl) {
+      const logicalKey = this.aws.resolveLogicalKey(oldAvatarUrl);
+      if (this.aws.isKeyInNamespace(logicalKey, [`avatars/${user.id}/`])) {
+        this.aws.deleteFile(logicalKey).catch(err => {
+          Logger.warn(`Failed to delete old avatar ${logicalKey}`, err);
+        });
+      }
+    }
+
+    return { message: 'Profile picture updated', data: { profile } };
   }
 
   // ─── GET /profiles/:id ────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 import { TasksService } from '../tasks.service';
 import { Task } from '../entities/task.entity';
@@ -15,6 +16,8 @@ import {
 import { Client } from '../../clients/entities/client.entity';
 import { NotificationService } from '../../notifications/notification.service';
 import { EmailService } from '../../email/email.service';
+import { AwsService } from '../../aws/aws.service';
+import { FileUpload, FileUploadResourceType, FileUploadStatus } from '../../uploads/entities/file-upload.entity';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,6 +129,14 @@ const mockTaskRepo = {
   createQueryBuilder: jest.fn(),
 };
 
+const mockFileUploadRepo = {
+  findOne: jest.fn(),
+  find: jest.fn(),
+  create: jest.fn().mockImplementation((dto) => ({ id: 'upload-uuid-1', ...dto })),
+  save: jest.fn().mockImplementation(async (r) => r),
+  update: jest.fn().mockResolvedValue({ affected: 1 }),
+};
+
 const mockProjectRepo = {
   findOne: jest.fn(),
 };
@@ -144,6 +155,21 @@ const mockEmailService = {
   queueTaskDelayed:  jest.fn().mockResolvedValue(undefined),
 };
 
+const mockAwsService = {
+  uploadBuffer: jest.fn().mockResolvedValue('https://cdn.example.com/tasks/task-1/file.pdf'),
+  resolveLogicalKey: jest.fn().mockImplementation((url: string) => {
+    if (!url || !url.startsWith('https://cdn.example.com/')) return null;
+    return url.replace('https://cdn.example.com/', '');
+  }),
+  isKeyInNamespace: jest.fn().mockImplementation((key: string, namespaces: string[]) => {
+    if (!key) return false;
+    return namespaces.some((ns) => key.startsWith(ns));
+  }),
+  fileExists: jest.fn().mockResolvedValue(true),
+  signFileUrl: jest.fn().mockImplementation(async (u) => (u ? `${u}?signed=true` : u)),
+  generateGetUrl: jest.fn().mockImplementation(async (k) => `https://cdn.example.com/${k}?signed=true`),
+};
+
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('TasksService', () => {
@@ -152,14 +178,30 @@ describe('TasksService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    const mockDataSource = {
+      transaction: jest.fn().mockImplementation(async (cb) => {
+        const manager = {
+          getRepository: jest.fn().mockImplementation((entity) => {
+            if (entity === Task) return mockTaskRepo;
+            if (entity === FileUpload) return mockFileUploadRepo;
+            return {};
+          }),
+        };
+        return cb(manager);
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: getRepositoryToken(Task),    useValue: mockTaskRepo    },
-        { provide: getRepositoryToken(Project), useValue: mockProjectRepo },
-        { provide: getRepositoryToken(User),    useValue: mockUserRepo    },
-        { provide: NotificationService,         useValue: mockNotificationService },
-        { provide: EmailService,                useValue: mockEmailService },
+        { provide: getRepositoryToken(Task),       useValue: mockTaskRepo       },
+        { provide: getRepositoryToken(Project),    useValue: mockProjectRepo    },
+        { provide: getRepositoryToken(User),       useValue: mockUserRepo       },
+        { provide: getRepositoryToken(FileUpload), useValue: mockFileUploadRepo },
+        { provide: NotificationService,            useValue: mockNotificationService },
+        { provide: EmailService,                   useValue: mockEmailService },
+        { provide: AwsService,                     useValue: mockAwsService },
+        { provide: DataSource,                     useValue: mockDataSource },
       ],
     }).compile();
 
@@ -731,22 +773,33 @@ describe('TasksService', () => {
         .mockResolvedValueOnce(task)
         .mockResolvedValueOnce({ ...task, status: TaskStatus.COMPLETED });
       mockTaskRepo.save.mockImplementation(async (t: Task) => t);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-1',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/a.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/a.pdf',
+        originalName: 'a.pdf',
+        sizeBytes: 1234,
+        status: FileUploadStatus.PENDING,
+      });
 
       const result = await service.submitClientTask(
         'task-1',
         {
-          attachments: [{ url: 'https://cdn.example.com/a.pdf', name: 'a.pdf', size: 1234 }],
+          attachments: [{ url: 'https://cdn.example.com/tasks/task-1/a.pdf', name: 'tampered-name.exe', size: 999999 }],
           note: 'Here are my files',
         },
         clientUser,
       );
 
-      // Saved task became COMPLETED with the attachment merged in.
+      // Saved task became COMPLETED with the attachment merged in using trusted server record metadata
       const savedArg = mockTaskRepo.save.mock.calls[0][0] as Task;
       expect(savedArg.status).toBe(TaskStatus.COMPLETED);
       expect(savedArg.attachments).toHaveLength(1);
       expect(savedArg.attachments![0]).toEqual(
-        expect.objectContaining({ url: 'https://cdn.example.com/a.pdf', name: 'a.pdf', size: 1234 }),
+        expect.objectContaining({ url: 'https://cdn.example.com/tasks/task-1/a.pdf', name: 'a.pdf', size: 1234 }),
       );
       expect(savedArg.attachments![0].uploadedAt).toEqual(expect.any(String));
 
@@ -758,19 +811,34 @@ describe('TasksService', () => {
         task.id,
       );
       expect(result.status).toBe(TaskStatus.COMPLETED);
+      expect(mockFileUploadRepo.update).toHaveBeenCalledWith(
+        { id: 'up-1', status: FileUploadStatus.PENDING },
+        expect.objectContaining({ status: FileUploadStatus.CONSUMED }),
+      );
     });
 
     it('merges new attachments onto previously-submitted ones', async () => {
-      const existing = { url: 'https://cdn.example.com/old.pdf', name: 'old.pdf', uploadedAt: '2024-01-01T00:00:00.000Z' };
+      const existing = { url: 'https://cdn.example.com/tasks/task-1/old.pdf', name: 'old.pdf', uploadedAt: '2024-01-01T00:00:00.000Z' };
       const task = makeClientTask({ requiresUpload: false, attachments: [existing] });
       mockTaskRepo.findOne
         .mockResolvedValueOnce(task)
         .mockResolvedValueOnce(task);
       mockTaskRepo.save.mockImplementation(async (t: Task) => t);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-2',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/new.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/new.pdf',
+        originalName: 'new.pdf',
+        sizeBytes: 5678,
+        status: FileUploadStatus.PENDING,
+      });
 
       await service.submitClientTask(
         'task-1',
-        { attachments: [{ url: 'https://cdn.example.com/new.pdf', name: 'new.pdf' }] },
+        { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/new.pdf', name: 'new.pdf' }] },
         clientUser,
       );
 
@@ -789,5 +857,328 @@ describe('TasksService', () => {
       const result = await service.submitClientTask('task-1', { attachments: [] }, clientUser);
       expect(result.status).toBe(TaskStatus.COMPLETED);
     });
+
+    it('rejects external URL attachment not hosted in storage', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://evil.com/malware.pdf', name: 'evil.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects attachment belonging to a different task namespace', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/other-task-id/file.pdf', name: 'file.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects attachment when upload record does not exist in DB', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/untracked.pdf', name: 'untracked.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects attachment uploaded by a different user (cross-user reuse)', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-cross',
+        userId: 'other-user-999',
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/cross.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/cross.pdf',
+        originalName: 'cross.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.PENDING,
+      });
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/cross.pdf', name: 'cross.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects attachment uploaded for a different task (cross-task reuse)', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-other',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-different',
+        s3Key: 'tasks/task-1/cross-task.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/cross-task.pdf',
+        originalName: 'cross-task.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.PENDING,
+      });
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/cross-task.pdf', name: 'cross-task.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects already-consumed attachment (replay / double consumption)', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-consumed',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/consumed.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/consumed.pdf',
+        originalName: 'consumed.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.CONSUMED,
+      });
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/consumed.pdf', name: 'consumed.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects attachment when object does not exist in S3', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-s3',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/missing.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/missing.pdf',
+        originalName: 'missing.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.PENDING,
+      });
+      mockAwsService.fileExists.mockResolvedValueOnce(false);
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/missing.pdf', name: 'missing.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rolls back and throws CONFLICT when an attachment was consumed concurrently', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-concurrent',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/concurrent.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/concurrent.pdf',
+        originalName: 'concurrent.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.PENDING,
+      });
+      mockAwsService.fileExists.mockResolvedValueOnce(true);
+      // Simulate concurrent update where affected count is 0
+      mockFileUploadRepo.update.mockResolvedValueOnce({ affected: 0 });
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/concurrent.pdf', name: 'concurrent.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rolls back transaction if task save fails during submission', async () => {
+      const task = makeClientTask({ requiresUpload: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      mockFileUploadRepo.findOne.mockResolvedValueOnce({
+        id: 'up-save-fail',
+        userId: clientUser.id,
+        resourceType: FileUploadResourceType.TASK,
+        resourceId: 'task-1',
+        s3Key: 'tasks/task-1/save-fail.pdf',
+        fileUrl: 'https://cdn.example.com/tasks/task-1/save-fail.pdf',
+        originalName: 'save-fail.pdf',
+        sizeBytes: 100,
+        status: FileUploadStatus.PENDING,
+      });
+      mockAwsService.fileExists.mockResolvedValueOnce(true);
+      mockFileUploadRepo.update.mockResolvedValueOnce({ affected: 1 });
+      mockTaskRepo.save.mockRejectedValueOnce(new Error('DB deadlock / write failure'));
+
+      await expect(
+        service.submitClientTask(
+          'task-1',
+          { attachments: [{ url: 'https://cdn.example.com/tasks/task-1/save-fail.pdf', name: 'save-fail.pdf' }] },
+          clientUser,
+        ),
+      ).rejects.toThrow('DB deadlock / write failure');
+    });
+  });
+
+  describe('uploadAttachment', () => {
+    const clientUser = makeUser({ id: 'client-user-1', role: UserRole.CLIENT });
+
+    function makeClientTask(overrides: Partial<Task> = {}): Task {
+      return makeTask({
+        assignedToClient: true,
+        project: makeProject({ client: makeClient({ userId: 'client-user-1' }) }),
+        ...overrides,
+      });
+    }
+
+    const tinyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
+
+    it('rejects non-CLIENT users', async () => {
+      const employee = makeUser({ role: UserRole.EMPLOYEE });
+      const file = { buffer: tinyPdf, originalname: 'doc.pdf' } as Express.Multer.File;
+
+      await expect(
+        service.uploadAttachment('task-1', file, employee),
+      ).rejects.toThrow(InsufficientPermissionsException);
+    });
+
+    it('rejects upload when task is not assigned to client', async () => {
+      const task = makeClientTask({ assignedToClient: false });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      const file = { buffer: tinyPdf, originalname: 'doc.pdf' } as Express.Multer.File;
+
+      await expect(
+        service.uploadAttachment('task-1', file, clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects empty or missing file buffer', async () => {
+      const task = makeClientTask({ assignedToClient: true });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      const file = { buffer: Buffer.from(''), originalname: 'empty.pdf' } as Express.Multer.File;
+
+      await expect(
+        service.uploadAttachment('task-1', file, clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects file buffer exceeding 10MB limit in service directly', async () => {
+      const task = makeClientTask({ assignedToClient: true });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      const oversizedBuffer = Buffer.alloc(11 * 1024 * 1024);
+      const file = { buffer: oversizedBuffer, originalname: 'big.pdf' } as Express.Multer.File;
+
+      await expect(
+        service.uploadAttachment('task-1', file, clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects disguised executable disguised as PDF', async () => {
+      const task = makeClientTask({ assignedToClient: true });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      const fakePdf = { buffer: Buffer.from('MZ\x90\x00\x03\x00\x00\x00'), originalname: 'trojan.pdf' } as Express.Multer.File;
+
+      await expect(
+        service.uploadAttachment('task-1', fakePdf, clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('uploads valid PDF and creates PENDING FileUpload record', async () => {
+      const task = makeClientTask({ assignedToClient: true });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+      const validPdfFile = { buffer: tinyPdf, originalname: '../../../etc/passwd.pdf' } as Express.Multer.File;
+
+      const res = await service.uploadAttachment('task-1', validPdfFile, clientUser);
+      expect(res.contentType).toBe('application/pdf');
+      expect(mockAwsService.uploadBuffer).toHaveBeenCalledWith(
+        tinyPdf,
+        expect.stringMatching(/^tasks\/task-1\/[0-9]+-[a-f0-9-]+\.pdf$/),
+        'application/pdf',
+      );
+      expect(mockFileUploadRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: clientUser.id,
+          resourceType: FileUploadResourceType.TASK,
+          resourceId: task.id,
+          status: FileUploadStatus.PENDING,
+          sizeBytes: tinyPdf.length,
+          originalName: '.._.._.._etc_passwd.pdf',
+        }),
+      );
+      expect(mockFileUploadRepo.save).toHaveBeenCalled();
+      expect(res.uploadId).toBe('upload-uuid-1');
+    });
+  });
+
+  describe('getSignedAttachmentUrl', () => {
+    const clientUser = makeUser({ id: 'client-user-1', role: UserRole.CLIENT });
+
+    function makeClientTask(overrides: Partial<Task> = {}): Task {
+      return makeTask({
+        assignedToClient: true,
+        project: makeProject({ client: makeClient({ userId: 'client-user-1' }) }),
+        attachments: [
+          { url: 'https://cdn.example.com/tasks/task-1/file-1.pdf', name: 'file-1.pdf', uploadedAt: '2024-01-01' },
+        ],
+        ...overrides,
+      });
+    }
+
+    it('generates signed download URL when client has access and attachment belongs to task', async () => {
+      const task = makeClientTask();
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      const url = await service.getSignedAttachmentUrl('task-1', 'https://cdn.example.com/tasks/task-1/file-1.pdf', clientUser);
+      expect(url).toContain('https://cdn.example.com/tasks/task-1/file-1.pdf?signed=true');
+    });
+
+    it('rejects access if key is in another task namespace', async () => {
+      const task = makeClientTask();
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.getSignedAttachmentUrl('task-1', 'https://cdn.example.com/tasks/other-task/secret.pdf', clientUser),
+      ).rejects.toThrow(AppException);
+    });
+
+    it('rejects access if attachment does not exist on the task record', async () => {
+      const task = makeClientTask({ attachments: [] });
+      mockTaskRepo.findOne.mockResolvedValueOnce(task);
+
+      await expect(
+        service.getSignedAttachmentUrl('task-1', 'https://cdn.example.com/tasks/task-1/nonexistent.pdf', clientUser),
+      ).rejects.toThrow(ResourceNotFoundException);
+    });
+  });
   });
 });

@@ -11,7 +11,11 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -217,6 +221,33 @@ export class InvoicesController {
     return this.invoicesService.markAsPaid(id, dto, user);
   }
 
+  // ── POST /erp/invoices/:id/payment-proof/upload ──────────────────────
+  // CLIENT uploads payment proof file directly
+  @Post(':id/payment-proof/upload')
+  @Roles(UserRole.CLIENT)
+  @ApiOperation({ summary: 'CLIENT uploads a payment proof file for an invoice' })
+  @ApiResponse({ status: 201, description: 'Payment proof file uploaded' })
+  @ApiResponse({ status: 400, description: 'Invalid file or type' })
+  @ApiResponse({ status: 403, description: 'Not authorized for this invoice' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    }),
+  )
+  async uploadPaymentProof(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is missing or empty');
+    }
+    const result = await this.invoicesService.uploadPaymentProof(id, file, user);
+    return { message: 'Payment proof uploaded', data: result };
+  }
+
   // ── POST /erp/invoices/:id/submit-payment ─────────────────────────────
   // CLIENT submits payment proof — notifies admin/owner; does NOT auto-mark paid.
   @Post(':id/submit-payment')
@@ -230,6 +261,28 @@ export class InvoicesController {
     @CurrentUser() user: User,
   ) {
     return this.invoicesService.submitPaymentProof(id, dto, user);
+  }
+
+  // ── GET /erp/invoices/:id/payment-proof/download ──────────────────────
+  // Authorized download URL generation for invoice payment proofs.
+  @Get(':id/payment-proof/download')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
+  @ApiOperation({ summary: 'Generate a short-lived presigned download URL for an invoice payment proof' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Signed download URL generated' })
+  @ApiResponse({ status: 400, description: 'Invalid or missing proof key' })
+  @ApiResponse({ status: 403, description: 'Access denied to invoice or payment proof' })
+  @ApiResponse({ status: 404, description: 'Invoice or payment proof not found' })
+  async getPaymentProofDownloadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('key') key: string,
+    @CurrentUser() user: User,
+  ) {
+    if (!key) {
+      throw new BadRequestException('Proof key query parameter is required');
+    }
+    const downloadUrl = await this.invoicesService.getSignedPaymentProofUrl(id, key, user);
+    return { message: 'Download URL generated', data: { downloadUrl } };
   }
 
   // ── POST /erp/invoices/recalculate-overdue ────────────────────────────

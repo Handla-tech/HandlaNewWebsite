@@ -10,7 +10,12 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -31,8 +36,12 @@ import { OwnedResource } from '../../common/decorators/owned-resource.decorator'
 import { UserRole } from '../../common/enums';
 import { User } from '../auth/entities/user.entity';
 
+import { JwtAuthGuard } from '../../common/guards/jwt.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+
 @ApiTags('erp-tasks')
 @ApiCookieAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('erp/tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
@@ -114,6 +123,33 @@ export class TasksController {
     return { message: 'Task updated', data: { task } };
   }
 
+  // ─── POST /api/erp/tasks/:id/attachments/upload ──────────────────────────────
+  // CLIENT uploads an attachment file directly for their client-directed task.
+  @Post(':id/attachments/upload')
+  @Roles(UserRole.CLIENT)
+  @ApiOperation({ summary: 'CLIENT uploads a file attachment for a client-directed task' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({ status: 201, description: 'Attachment uploaded' })
+  @ApiResponse({ status: 400, description: 'Invalid file or type' })
+  @ApiResponse({ status: 403, description: 'Not the client this task belongs to or task not assigned to client' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    }),
+  )
+  async uploadTaskAttachment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('File is missing or empty');
+    }
+    const result = await this.tasksService.uploadAttachment(id, file, user);
+    return { message: 'Attachment uploaded', data: result };
+  }
+
   // ─── PATCH /api/erp/tasks/:id/submit ──────────────────────────────────────────
   // CLIENT fulfils a client-directed task: attach uploaded files + mark done.
   // Not @OwnedResource() — that guard is for staff ownership; client access is
@@ -133,6 +169,28 @@ export class TasksController {
   ) {
     const task = await this.tasksService.submitClientTask(id, dto, user);
     return { message: 'Task submitted', data: { task } };
+  }
+
+  // ─── GET /api/erp/tasks/:id/attachments/download ──────────────────────────────
+  // Authorized download URL generation for task attachments.
+  @Get(':id/attachments/download')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.CLIENT)
+  @ApiOperation({ summary: 'Generate a short-lived presigned download URL for a task attachment' })
+  @ApiParam({ name: 'id', type: String, format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Signed download URL generated' })
+  @ApiResponse({ status: 400, description: 'Invalid or missing attachment key' })
+  @ApiResponse({ status: 403, description: 'Access denied to task or attachment' })
+  @ApiResponse({ status: 404, description: 'Task or attachment not found' })
+  async getAttachmentDownloadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('key') key: string,
+    @CurrentUser() user: User,
+  ) {
+    if (!key) {
+      throw new BadRequestException('Attachment key query parameter is required');
+    }
+    const downloadUrl = await this.tasksService.getSignedAttachmentUrl(id, key, user);
+    return { message: 'Download URL generated', data: { downloadUrl } };
   }
 
   // ─── DELETE /api/erp/tasks/:id ────────────────────────────────────────────────

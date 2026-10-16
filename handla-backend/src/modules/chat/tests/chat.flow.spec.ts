@@ -154,6 +154,7 @@ const mockMsgRepo = {
 
 describe('Phase 19.1 — Chat E2E Flow', () => {
   let service: ChatService;
+  let awsService: AwsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -165,12 +166,19 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
           provide: AwsService,
           // signFileUrl is called on every message-return path; pass the value
           // through unchanged so flow assertions on fileUrl still hold.
-          useValue: { signFileUrl: jest.fn(async (u: string | null) => u) },
+          useValue: {
+            signFileUrl: jest.fn(async (u: string | null) => u),
+            resolveLogicalKey: jest.fn(),
+            isKeyInNamespace: jest.fn(),
+            fileExists: jest.fn(),
+            buildFileUrl: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     service = module.get<ChatService>(ChatService);
+    awsService = module.get<AwsService>(AwsService);
     jest.clearAllMocks();
     // Restore manager methods after clearAllMocks
     mockConvRepo.manager.transaction = jest.fn().mockImplementation(
@@ -286,9 +294,19 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
   // ─── Flow 3: File upload message ─────────────────────────────────────────────
   describe('Flow 3 — File upload message flow', () => {
     it('client uploads file — fileUrl stored, content is null', async () => {
-      mockMsgRepo.create.mockReturnValue(fileMessage);
-      mockMsgRepo.save.mockResolvedValue(fileMessage);
-      mockMsgRepo.findOne.mockResolvedValue({ ...fileMessage, sender: clientUser });
+      const logicalKey = `chat/${clientUser.id}/invoice.pdf`;
+      const canonicalUrl = `https://s3.canonical.com/chat/${clientUser.id}/invoice.pdf`;
+
+      (awsService.resolveLogicalKey as jest.Mock).mockReturnValue(logicalKey);
+      (awsService.isKeyInNamespace as jest.Mock).mockReturnValue(true);
+      (awsService.fileExists as jest.Mock).mockResolvedValue(true);
+      (awsService.buildFileUrl as jest.Mock).mockReturnValue(canonicalUrl);
+
+      const fileMessageUpdated = { ...fileMessage, fileUrl: canonicalUrl };
+
+      mockMsgRepo.create.mockReturnValue(fileMessageUpdated);
+      mockMsgRepo.save.mockResolvedValue(fileMessageUpdated);
+      mockMsgRepo.findOne.mockResolvedValue({ ...fileMessageUpdated, sender: clientUser });
       mockConvRepo.update.mockResolvedValue(undefined);
 
       const result = await service.saveMessage(
@@ -298,7 +316,7 @@ describe('Phase 19.1 — Chat E2E Flow', () => {
         'https://s3.amazonaws.com/handla/uploads/invoice.pdf',
       );
 
-      expect(result.fileUrl).toBe('https://s3.amazonaws.com/handla/uploads/invoice.pdf');
+      expect(result.fileUrl).toBe(canonicalUrl);
       expect(result.content).toBeNull();
     });
   });
