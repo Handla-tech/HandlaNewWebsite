@@ -62,6 +62,7 @@ jobs:
 
   # 3. Deploy to VPS (MANUAL ONLY: requires workflow_dispatch on main with confirm_deploy == 'deploy')
   deploy:
+    environment: production
     needs: [test-backend, build-frontend]
     if: >-
       github.event_name == 'workflow_dispatch' &&
