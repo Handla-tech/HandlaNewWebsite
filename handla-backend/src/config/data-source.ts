@@ -30,11 +30,31 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export function resolveMigrationCredentials(
   env: NodeJS.ProcessEnv = process.env,
 ): { username: string; password: string | undefined } {
+  const isProduction = env.NODE_ENV === 'production';
+  const migratorUser = env.DATABASE_MIGRATION_USER?.trim();
+  const migratorPassword = env.DATABASE_MIGRATION_PASSWORD;
+
+  if (isProduction) {
+    if (!migratorUser) {
+      throw new Error(
+        'DATABASE_MIGRATION_USER is required in production. Refusing to run migrations with unprivileged or fallback credentials.',
+      );
+    }
+    if (!migratorPassword) {
+      throw new Error(
+        'DATABASE_MIGRATION_PASSWORD is required in production. Refusing to run migrations with missing password.',
+      );
+    }
+    return {
+      username: migratorUser,
+      password: migratorPassword,
+    };
+  }
+
+  // Non-production (dev/test) fallback for backward compatibility
   return {
-    username:
-      env.DATABASE_MIGRATION_USER || env.DATABASE_USER || 'root',
-    password:
-      env.DATABASE_MIGRATION_PASSWORD || env.DATABASE_PASSWORD || undefined,
+    username: migratorUser || env.DATABASE_USER || 'root',
+    password: migratorPassword || env.DATABASE_PASSWORD || undefined,
   };
 }
 

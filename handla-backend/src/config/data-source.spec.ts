@@ -13,62 +13,89 @@
 import { resolveMigrationCredentials } from './data-source';
 
 describe('resolveMigrationCredentials (migrator/runtime split)', () => {
-  it('uses the migrator identity when DATABASE_MIGRATION_USER is set', () => {
-    const creds = resolveMigrationCredentials({
-      DATABASE_USER: 'handla_runtime',
-      DATABASE_PASSWORD: 'runtime-pw',
-      DATABASE_MIGRATION_USER: 'handla_migrator',
-      DATABASE_MIGRATION_PASSWORD: 'migrator-pw',
+  describe('non-production environment (fallback/dev mode)', () => {
+    it('uses the migrator identity when DATABASE_MIGRATION_USER is set', () => {
+      const creds = resolveMigrationCredentials({
+        DATABASE_USER: 'handla_runtime',
+        DATABASE_PASSWORD: 'runtime-pw',
+        DATABASE_MIGRATION_USER: 'handla_migrator',
+        DATABASE_MIGRATION_PASSWORD: 'migrator-pw',
+      });
+      expect(creds.username).toBe('handla_migrator');
+      expect(creds.password).toBe('migrator-pw');
     });
-    expect(creds.username).toBe('handla_migrator');
-    expect(creds.password).toBe('migrator-pw');
+
+    it('falls back to the runtime user when migrator vars are unset (back-compat)', () => {
+      const creds = resolveMigrationCredentials({
+        DATABASE_USER: 'handla_runtime',
+        DATABASE_PASSWORD: 'runtime-pw',
+      });
+      expect(creds.username).toBe('handla_runtime');
+      expect(creds.password).toBe('runtime-pw');
+    });
+
+    it('uses migrator user but runtime password when only the migrator user is set', () => {
+      const creds = resolveMigrationCredentials({
+        DATABASE_USER: 'handla_runtime',
+        DATABASE_PASSWORD: 'shared-pw',
+        DATABASE_MIGRATION_USER: 'handla_migrator',
+        // DATABASE_MIGRATION_PASSWORD intentionally unset
+      });
+      expect(creds.username).toBe('handla_migrator');
+      expect(creds.password).toBe('shared-pw');
+    });
+
+    it('defaults username to root and password to undefined when nothing is configured', () => {
+      const creds = resolveMigrationCredentials({});
+      expect(creds.username).toBe('root');
+      expect(creds.password).toBeUndefined();
+    });
+
+    it('empty-string migrator user is treated as unset (falls back to runtime)', () => {
+      const creds = resolveMigrationCredentials({
+        DATABASE_USER: 'handla_runtime',
+        DATABASE_PASSWORD: 'runtime-pw',
+        DATABASE_MIGRATION_USER: '',
+        DATABASE_MIGRATION_PASSWORD: '',
+      });
+      expect(creds.username).toBe('handla_runtime');
+      expect(creds.password).toBe('runtime-pw');
+    });
   });
 
-  it('falls back to the runtime user when migrator vars are unset (back-compat)', () => {
-    const creds = resolveMigrationCredentials({
-      DATABASE_USER: 'handla_runtime',
-      DATABASE_PASSWORD: 'runtime-pw',
+  describe('production environment (fail-closed security)', () => {
+    it('uses migrator identity when both migrator user and password are set in production', () => {
+      const creds = resolveMigrationCredentials({
+        NODE_ENV: 'production',
+        DATABASE_USER: 'handla_runtime',
+        DATABASE_PASSWORD: 'runtime-pw',
+        DATABASE_MIGRATION_USER: 'handla_migrator',
+        DATABASE_MIGRATION_PASSWORD: 'migrator-pw',
+      });
+      expect(creds.username).toBe('handla_migrator');
+      expect(creds.password).toBe('migrator-pw');
     });
-    expect(creds.username).toBe('handla_runtime');
-    expect(creds.password).toBe('runtime-pw');
-  });
 
-  it('uses migrator user but runtime password when only the migrator user is set', () => {
-    const creds = resolveMigrationCredentials({
-      DATABASE_USER: 'handla_runtime',
-      DATABASE_PASSWORD: 'shared-pw',
-      DATABASE_MIGRATION_USER: 'handla_migrator',
-      // DATABASE_MIGRATION_PASSWORD intentionally unset
+    it('fails closed (throws Error) if DATABASE_MIGRATION_USER is missing in production', () => {
+      expect(() => {
+        resolveMigrationCredentials({
+          NODE_ENV: 'production',
+          DATABASE_USER: 'handla_runtime',
+          DATABASE_PASSWORD: 'runtime-pw',
+          DATABASE_MIGRATION_PASSWORD: 'migrator-pw',
+        });
+      }).toThrow('DATABASE_MIGRATION_USER is required in production');
     });
-    expect(creds.username).toBe('handla_migrator');
-    expect(creds.password).toBe('shared-pw');
-  });
 
-  it('defaults username to root and password to undefined when nothing is configured', () => {
-    const creds = resolveMigrationCredentials({});
-    expect(creds.username).toBe('root');
-    expect(creds.password).toBeUndefined();
-  });
-
-  it('never returns the runtime identity when a distinct migrator identity is provided', () => {
-    const creds = resolveMigrationCredentials({
-      DATABASE_USER: 'handla_runtime',
-      DATABASE_PASSWORD: 'runtime-pw',
-      DATABASE_MIGRATION_USER: 'handla_migrator',
-      DATABASE_MIGRATION_PASSWORD: 'migrator-pw',
+    it('fails closed (throws Error) if DATABASE_MIGRATION_PASSWORD is missing in production', () => {
+      expect(() => {
+        resolveMigrationCredentials({
+          NODE_ENV: 'production',
+          DATABASE_USER: 'handla_runtime',
+          DATABASE_PASSWORD: 'runtime-pw',
+          DATABASE_MIGRATION_USER: 'handla_migrator',
+        });
+      }).toThrow('DATABASE_MIGRATION_PASSWORD is required in production');
     });
-    expect(creds.username).not.toBe('handla_runtime');
-    expect(creds.password).not.toBe('runtime-pw');
-  });
-
-  it('empty-string migrator user is treated as unset (falls back to runtime)', () => {
-    const creds = resolveMigrationCredentials({
-      DATABASE_USER: 'handla_runtime',
-      DATABASE_PASSWORD: 'runtime-pw',
-      DATABASE_MIGRATION_USER: '',
-      DATABASE_MIGRATION_PASSWORD: '',
-    });
-    expect(creds.username).toBe('handla_runtime');
-    expect(creds.password).toBe('runtime-pw');
   });
 });
