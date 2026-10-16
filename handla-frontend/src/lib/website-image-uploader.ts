@@ -7,15 +7,10 @@
  *
  * Steps:
  *   1. Validate the file locally (size + MIME) — fast fail.
- *   2. POST /website/projects/image-upload → presigned S3 PUT URL (ADMIN only).
- *   3. PUT the file directly to S3 (Content-Type only — NO x-amz-acl header).
- *      Public reachability is granted by a bucket policy on the website prefix,
- *      so the marketing site can render it in an <img> without a signed URL.
- *   4. Return the permanent public fileUrl.
+ *   2. POST /website/projects/image-upload (multipart) → server validates bytes, MIME, size, and uploads to S3.
+ *   3. Return the permanent public fileUrl.
  */
-import axios from 'axios';
 import { websiteProjectApi } from './api';
-import type { PresignedUrlResult } from '@/types';
 
 // ─── Constraints (must match backend WebsiteImageUploadDto) ───────────────────
 
@@ -52,7 +47,7 @@ export interface WebsiteImageUploadOptions {
 }
 
 /**
- * Upload a website image to S3 and return its permanent public URL.
+ * Upload a website image to S3 via validated backend multipart endpoint and return its permanent public URL.
  * Does NOT persist anything on the record — the caller writes the returned URL
  * into the form's `imageUrl` field and saves the record separately.
  */
@@ -64,21 +59,11 @@ export async function uploadWebsiteImage(
   // 1 — Local validation
   validateWebsiteImage(file);
 
-  // 2 — Request presigned URL
-  const presignedRes = await websiteProjectApi.getImageUploadUrl({
-    fileName: file.name,
-    contentType: file.type,
-  });
-  const presigned: PresignedUrlResult =
-    presignedRes.data?.data ?? presignedRes.data;
+  // 2 — Upload via backend multipart endpoint (validates magic bytes, MIME, size, admin auth)
+  const formData = new FormData();
+  formData.append('file', file);
 
-  // 3 — PUT directly to S3. Only Content-Type is signed; do NOT send an
-  //     x-amz-acl header (the bucket has ACLs disabled — public access comes
-  //     from a bucket policy). Sending an unsigned header → SignatureDoesNotMatch.
-  await axios.put(presigned.url, file, {
-    headers: {
-      'Content-Type': file.type,
-    },
+  const res = await websiteProjectApi.uploadImage(formData, {
     signal,
     onUploadProgress: (event) => {
       if (onProgress && event.total) {
@@ -87,8 +72,15 @@ export async function uploadWebsiteImage(
     },
   });
 
-  // 4 — Return permanent public URL
-  return presigned.fileUrl;
+  const fileUrl: string =
+    res.data?.data?.fileUrl ?? res.data?.fileUrl ?? res.data?.data?.url;
+
+  if (!fileUrl) {
+    throw new Error('Upload succeeded but server did not return a valid file URL.');
+  }
+
+  // 3 — Return permanent public URL
+  return fileUrl;
 }
 
 /** Catch-and-return convenience wrapper for UI components. */

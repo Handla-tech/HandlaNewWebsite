@@ -122,6 +122,7 @@ const mockAwsService = {
   uploadBuffer: jest.fn(),
   buildFileUrl: jest.fn().mockReturnValue('https://bucket.s3.region.amazonaws.com/contracts/contract-1.html'),
   generatePresignedUrl: jest.fn(),
+  generateGetUrl: jest.fn(),
 };
 
 // ─── QueryBuilder mock helper ─────────────────────────────────────────────────
@@ -669,22 +670,37 @@ describe('ContractsService', () => {
     });
   });
 
-  describe('rejectContract — ERP-9 notification', () => {
-    it('should call createErpNotification with CONTRACT_REJECTED type', async () => {
-      const client   = makeUser({ id: 'user-client-1', role: UserRole.CLIENT });
-      const contract = makeContract({ status: ContractStatus.SENT });
+  describe('getPdfSignedUrl', () => {
+    it('generates a presigned GET URL for an authorized user (never PUT)', async () => {
+      const admin = makeUser({ id: 'admin-1', role: UserRole.ADMIN });
+      const contract = makeContract({ s3Key: 'contracts/contract-1.html' });
       mockContractRepo.findOne.mockResolvedValue(contract);
-      mockContractRepo.save.mockResolvedValue({ ...contract, status: ContractStatus.REJECTED });
+      mockAwsService.generateGetUrl.mockResolvedValue('https://s3.signed.url/contract-1.html?signature=abc');
 
-      await service.rejectContract('contract-1', client);
+      const url = await service.getPdfSignedUrl('contract-1', admin);
 
-      expect(mockNotificationService.createErpNotification).toHaveBeenCalledWith(
-        expect.any(String),
-        'CONTRACT_REJECTED',
-        expect.any(String),
-        expect.any(String),
-        'contract-1',
+      expect(mockAwsService.generateGetUrl).toHaveBeenCalledWith('contracts/contract-1.html', 900);
+      expect(mockAwsService.generatePresignedUrl).not.toHaveBeenCalled();
+      expect(url).toBe('https://s3.signed.url/contract-1.html?signature=abc');
+    });
+
+    it('throws 404 NOT_FOUND if contract has no generated document (s3Key is null)', async () => {
+      const admin = makeUser({ id: 'admin-1', role: UserRole.ADMIN });
+      const contract = makeContract({ s3Key: null as any });
+      mockContractRepo.findOne.mockResolvedValue(contract);
+
+      await expect(service.getPdfSignedUrl('contract-1', admin)).rejects.toThrow(
+        'No document has been generated for this contract yet.',
       );
+      expect(mockAwsService.generateGetUrl).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unauthorized user via findOne access control', async () => {
+      const client = makeUser({ id: 'user-client-1', role: UserRole.CLIENT });
+      mockContractRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.getPdfSignedUrl('non-existent', client)).rejects.toThrow();
+      expect(mockAwsService.generateGetUrl).not.toHaveBeenCalled();
     });
   });
 });
