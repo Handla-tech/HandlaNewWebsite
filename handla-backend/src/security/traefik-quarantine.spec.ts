@@ -555,13 +555,15 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
         known_good_api_image?: string;
         known_good_web_image?: string;
       } | null;
-      rollbackOverrideExists?: boolean;
       backupMarkerExists?: boolean;
+      backupMarkerContent?: string;
+      backupMetaContent?: string;
       backupMeta?: {
         ts?: string;
         db_artifact?: string;
         db_size?: number;
         db_sha256?: string;
+        remote?: string;
       } | null;
       quarantineValid?: boolean;
     }
@@ -651,32 +653,93 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
             };
           }
 
-          if (!config.backupMarkerExists) {
+          if (config.backupMarkerExists === false) {
             return {
               exitCode: 9,
               fatalError: 'first-deployment mode rejected: database backup marker missing (/var/lib/handla-backup/last-success).',
             };
           }
 
-          if (!config.backupMeta) {
+          // Parse metadata either from raw string or structured object
+          let parsedTs: string | undefined;
+          let parsedMetaTs: string | undefined;
+          let parsedArtifact: string | undefined;
+          let parsedSize: string | number | undefined;
+          let parsedSha: string | undefined;
+          let parsedRemote: string | undefined;
+
+          if (config.backupMetaContent !== undefined) {
+            if (config.backupMetaContent === null || config.backupMetaContent === '') {
+              return {
+                exitCode: 9,
+                fatalError: 'first-deployment mode rejected: database backup metadata missing (/var/lib/handla-backup/last-success.meta).',
+              };
+            }
+            const lines = config.backupMetaContent.split('\n');
+            const getVal = (prefix: string) => {
+              const line = lines.find((l) => l.startsWith(prefix));
+              return line ? line.slice(prefix.length).trim() : undefined;
+            };
+            parsedMetaTs = getVal('ts=');
+            parsedArtifact = getVal('db_artifact=');
+            parsedSize = getVal('db_size=');
+            parsedSha = getVal('db_sha256=');
+            parsedRemote = getVal('remote=');
+            parsedTs = config.backupMarkerContent?.trim();
+          } else if (config.backupMeta) {
+            parsedTs = config.backupMeta.ts;
+            parsedMetaTs = config.backupMeta.ts;
+            parsedArtifact = config.backupMeta.db_artifact;
+            parsedSize = config.backupMeta.db_size;
+            parsedSha = config.backupMeta.db_sha256;
+            parsedRemote = config.backupMeta.remote || 'handla-backups-aws:handla-production-backups/daily/' + config.backupMeta.ts;
+          } else {
             return {
               exitCode: 9,
               fatalError: 'first-deployment mode rejected: database backup metadata missing (/var/lib/handla-backup/last-success.meta).',
             };
           }
 
-          const { ts, db_artifact, db_size, db_sha256 } = config.backupMeta;
-          if (!ts || !db_artifact || db_size === undefined || db_size === null || !db_sha256) {
+          if (!parsedTs || !parsedMetaTs || !parsedArtifact || parsedSize === undefined || !parsedSha || !parsedRemote) {
             return {
               exitCode: 9,
               fatalError: 'first-deployment mode rejected: database backup metadata is corrupt or incomplete.',
             };
           }
 
-          if (db_size <= 0) {
+          if (parsedTs !== parsedMetaTs) {
             return {
               exitCode: 9,
-              fatalError: `first-deployment mode rejected: database backup size is zero or invalid (${db_size}).`,
+              fatalError: `first-deployment mode rejected: backup marker timestamp ('${parsedTs}') does not match metadata ts ('${parsedMetaTs}').`,
+            };
+          }
+
+          const sizeNum = typeof parsedSize === 'number' ? parsedSize : parseInt(parsedSize, 10);
+          if (isNaN(sizeNum) || sizeNum <= 0 || !/^[1-9][0-9]*$/.test(String(parsedSize))) {
+            return {
+              exitCode: 9,
+              fatalError: `first-deployment mode rejected: database backup size is invalid ('${parsedSize}').`,
+            };
+          }
+
+          if (!/^[0-9a-fA-F]{64}$/.test(parsedSha)) {
+            return {
+              exitCode: 9,
+              fatalError: `first-deployment mode rejected: database backup SHA256 checksum is invalid ('${parsedSha}').`,
+            };
+          }
+
+          if (!parsedRemote.startsWith('handla-backups-aws:')) {
+            return {
+              exitCode: 9,
+              fatalError: `first-deployment mode rejected: backup remote ('${parsedRemote}') is not AWS (handla-backups-aws:).`,
+            };
+          }
+
+          if (!/^handla-backups-aws:.+\/daily\//.test(parsedRemote)) {
+            return {
+              exitCode: 9,
+              fatalError: `first-deployment mode rejected: backup remote prefix is malformed ('${parsedRemote}').`,
             };
           }
 
@@ -760,7 +823,121 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       db_artifact: 'handla-db-prod_20261018-030000.sql.gz.age',
       db_size: 4518290,
       db_sha256: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
+      remote: 'handla-backups-aws:handla-production-backups/daily/20261018-030000',
     };
+
+    it('should support eligible first deployment with real production KEY=VALUE backup metadata format', () => {
+      const realMetaContent = [
+        'ts=20261018-023237',
+        'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
+        'db_size=116945',
+        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'remote=handla-backups-aws:handla-production-backups/daily/20261018-023237',
+      ].join('\n');
+
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:2da5f2f3e64affeb95c6b760953ba30504a8d4ab87da18d40045aef4acd9cf7f' },
+          handla_web: { status: 'exited', imageId: 'sha256:587884954640d5979fe6f4269d293fc4aa8cf432e337ab974ca09209967b8247' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'], // VPS historical images missing, new built images present
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMarkerContent: '20261018-023237\n',
+        backupMetaContent: realMetaContent,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(0);
+      expect(res.mode).toBe('first_deploy_no_baseline');
+      expect(res.rollbackBaselineRecorded?.status).toBe('healthy_verified_initial');
+      expect(res.rollbackBaselineRecorded?.active_api).toBe('sha256:new_api_1');
+      expect(res.rollbackBaselineRecorded?.previous_api).toBeNull();
+      expect(res.pinnedRollbackTag?.api).toBe('sha256:new_api_1');
+    });
+
+    it('should fail closed when backup marker timestamp and metadata ts diverge', () => {
+      const mismatchedMetaContent = [
+        'ts=20261018-023237',
+        'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
+        'db_size=116945',
+        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'remote=handla-backups-aws:handla-production-backups/daily/20261018-023237',
+      ].join('\n');
+
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMarkerContent: '20261017-999999', // marker differs from metadata
+        backupMetaContent: mismatchedMetaContent,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain("backup marker timestamp ('20261017-999999') does not match metadata ts ('20261018-023237')");
+    });
+
+    it('should fail closed when remote is non-AWS', () => {
+      const nonAwsMetaContent = [
+        'ts=20261018-023237',
+        'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
+        'db_size=116945',
+        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'remote=minio-test:handla-backups/daily/20261018-023237',
+      ].join('\n');
+
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMarkerContent: '20261018-023237',
+        backupMetaContent: nonAwsMetaContent,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('backup remote');
+      expect(res.fatalError).toContain('is not AWS');
+    });
+
+    it('should fail closed when db_sha256 is malformed or invalid hex', () => {
+      const invalidShaMetaContent = [
+        'ts=20261018-023237',
+        'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
+        'db_size=116945',
+        'db_sha256=not_a_valid_sha256',
+        'remote=handla-backups-aws:handla-production-backups/daily/20261018-023237',
+      ].join('\n');
+
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMarkerContent: '20261018-023237',
+        backupMetaContent: invalidShaMetaContent,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('database backup SHA256 checksum is invalid');
+    });
 
     it('should support eligible first deployment with no historical images', () => {
       const res = simulateDeployBaseline({
@@ -856,7 +1033,7 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       });
 
       expect(res.exitCode).toBe(9);
-      expect(res.fatalError).toContain('database backup size is zero or invalid');
+      expect(res.fatalError).toContain('database backup size is invalid');
     });
 
     it('should reject deployment when historical images are only partially available', () => {
