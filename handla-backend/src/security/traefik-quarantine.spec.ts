@@ -827,11 +827,12 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
     };
 
     it('should support eligible first deployment with real production KEY=VALUE backup metadata format', () => {
-      const realMetaContent = [
+      // Synthetic test fixture modeling the production KEY=VALUE metadata schema
+      const syntheticMetaContent = [
         'ts=20261018-023237',
         'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
         'db_size=116945',
-        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'db_sha256=111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000',
         'remote=handla-backups-aws:handla-production-backups/daily/20261018-023237',
       ].join('\n');
 
@@ -845,7 +846,7 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
         rollbackOverrideExists: false,
         backupMarkerExists: true,
         backupMarkerContent: '20261018-023237\n',
-        backupMetaContent: realMetaContent,
+        backupMetaContent: syntheticMetaContent,
         quarantineValid: true,
       });
 
@@ -862,7 +863,7 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
         'ts=20261018-023237',
         'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
         'db_size=116945',
-        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'db_sha256=111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000',
         'remote=handla-backups-aws:handla-production-backups/daily/20261018-023237',
       ].join('\n');
 
@@ -889,7 +890,7 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
         'ts=20261018-023237',
         'db_artifact=handla-db-prod_20261018-023237.sql.gz.age',
         'db_size=116945',
-        'db_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        'db_sha256=111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000',
         'remote=minio-test:handla-backups/daily/20261018-023237',
       ].join('\n');
 

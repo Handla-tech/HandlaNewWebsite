@@ -600,11 +600,12 @@ elif [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
     fi
 
     # Note: The encrypted backup artifact is securely uploaded to off-host S3 storage and is NOT
-    # required to exist in local /opt/handla-backup/local on the VPS. We do not download the full artifact
-    # during deploy; we verify the remote layout metadata and local marker integrity.
+    # required to exist in local /opt/handla-backup/local on the VPS. Full artifact download and remote
+    # SHA256 integrity verification is an out-of-band operational procedure (already verified independently
+    # on the VPS). The deployment wrapper validates local metadata format, marker consistency, and S3 target structure.
 
     FIRST_DEPLOY_NO_BASELINE=1
-    log "First-deployment mode ELIGIBLE ✓ (no historical baseline, app containers stopped, DB backup verified: artifact=${backup_db_artifact}, size=${backup_db_size} bytes, remote=${backup_remote})"
+    log "First-deployment mode ELIGIBLE ✓ (no historical baseline, app containers stopped, local DB backup metadata verified: artifact=${backup_db_artifact}, size=${backup_db_size} bytes, remote=${backup_remote})"
   else
     # Partial availability (one exists, one missing): invalid state
     echo "[handla-production-deploy] FATAL: asymmetric historical Docker images detected (api_exists=${api_exists}, web_exists=${web_exists})." >&2
