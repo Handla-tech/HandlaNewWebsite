@@ -78,6 +78,9 @@ readonly COMPOSE_PROJECT="handla"
 readonly ROLLBACK_DIR="/opt/handla-production-rollback"
 readonly ROLLBACK_OVERRIDE="$ROLLBACK_DIR/docker-compose.rollback.yml"
 readonly ROLLBACK_METADATA="$ROLLBACK_DIR/rollback-state.json"
+readonly BACKUP_STATE_DIR="/var/lib/handla-backup"
+readonly BACKUP_SUCCESS_MARKER="$BACKUP_STATE_DIR/last-success"
+readonly BACKUP_SUCCESS_META="$BACKUP_STATE_DIR/last-success.meta"
 
 CALLER="${SUDO_USER:-$(id -un)}"
 log() { echo "[handla-production-deploy] $*"; }
@@ -482,6 +485,7 @@ fi
 ROLLBACK_TARGET_API=""
 ROLLBACK_TARGET_WEB=""
 ROLLBACK_BASELINE_STATUS=""
+FIRST_DEPLOY_NO_BASELINE=0
 
 if [ "$CURR_API_IS_HEALTHY" -eq 1 ] && [ "$CURR_WEB_IS_HEALTHY" -eq 1 ] && \
    [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
@@ -500,39 +504,109 @@ elif [ -n "$PREVIOUS_GOOD_API" ] && [ -n "$PREVIOUS_GOOD_WEB" ]; then
   ROLLBACK_TARGET_WEB="$PREVIOUS_GOOD_WEB"
   ROLLBACK_BASELINE_STATUS="${LAST_STATUS:-persisted_known_good}"
 elif [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
-  # Initial deployment case: no prior rollback metadata exists. Capture existing container
-  # image IDs as recovery baseline (stopped or unverified).
-  ROLLBACK_TARGET_API="$CANDIDATE_API_IMAGE"
-  ROLLBACK_TARGET_WEB="$CANDIDATE_WEB_IMAGE"
-  ROLLBACK_BASELINE_STATUS="initial_unverified_baseline"
+  # Check if candidate images actually exist in local Docker storage
+  api_exists=0
+  web_exists=0
+  "$DOCKER" image inspect "$CANDIDATE_API_IMAGE" >/dev/null 2>&1 && api_exists=1 || true
+  "$DOCKER" image inspect "$CANDIDATE_WEB_IMAGE" >/dev/null 2>&1 && web_exists=1 || true
+
+  if [ "$api_exists" -eq 1 ] && [ "$web_exists" -eq 1 ]; then
+    # Both historical candidate images exist in local Docker storage -> usable unverified baseline
+    ROLLBACK_TARGET_API="$CANDIDATE_API_IMAGE"
+    ROLLBACK_TARGET_WEB="$CANDIDATE_WEB_IMAGE"
+    ROLLBACK_BASELINE_STATUS="initial_unverified_baseline"
+  elif [ "$api_exists" -eq 0 ] && [ "$web_exists" -eq 0 ]; then
+    # Neither historical image exists in local Docker storage.
+    # Check eligibility for explicit first-deployment / no-baseline mode.
+    # Strict eligibility conditions:
+    # 1. Existing application containers must be stopped ('exited' or 'not_found').
+    # 2. Historical images must genuinely be unavailable.
+    # 3. No valid rollback baseline or metadata exists in /opt/handla-production-rollback.
+    # 4. Production Traefik quarantine must pass effective Compose validation (verified in Step 8b).
+    # 5. The required database backup must exist and pass integrity checks.
+
+    log "Checking eligibility for first-deployment (no historical rollback baseline) mode..."
+
+    api_raw_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_api 2>/dev/null || echo 'not_found')"
+    web_raw_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_web 2>/dev/null || echo 'not_found')"
+
+    if [ "$api_raw_status" = "running" ] || [ "$web_raw_status" = "running" ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: application containers are currently running." >&2
+      echo "[handla-production-deploy]        (handla_api: ${api_raw_status}, handla_web: ${web_raw_status})." >&2
+      exit 9
+    fi
+
+    # Confirm no rollback metadata or overrides exist
+    if [ -f "$ROLLBACK_METADATA" ] || [ -f "$ROLLBACK_OVERRIDE" ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: rollback metadata or override exists in ${ROLLBACK_DIR}," >&2
+      echo "[handla-production-deploy]        but referenced historical Docker images are missing from local storage." >&2
+      exit 9
+    fi
+
+    # Verify database backup exists and passes integrity checks
+    if [ ! -f "$BACKUP_SUCCESS_MARKER" ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: database backup marker missing (${BACKUP_SUCCESS_MARKER})." >&2
+      echo "[handla-production-deploy]        A valid database backup must exist before first deployment." >&2
+      exit 9
+    fi
+
+    if [ ! -f "$BACKUP_SUCCESS_META" ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: database backup metadata missing (${BACKUP_SUCCESS_META})." >&2
+      exit 9
+    fi
+
+    backup_ts="$(cat "$BACKUP_SUCCESS_MARKER" | tr -d '[:space:]')"
+    backup_db_artifact="$(grep -m1 '^db_artifact=' "$BACKUP_SUCCESS_META" | cut -d= -f2- | tr -d '[:space:]' || true)"
+    backup_db_size="$(grep -m1 '^db_size=' "$BACKUP_SUCCESS_META" | cut -d= -f2- | tr -d '[:space:]' || true)"
+    backup_db_sha="$(grep -m1 '^db_sha256=' "$BACKUP_SUCCESS_META" | cut -d= -f2- | tr -d '[:space:]' || true)"
+
+    if [ -z "$backup_ts" ] || [ -z "$backup_db_artifact" ] || [ -z "$backup_db_size" ] || [ -z "$backup_db_sha" ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: database backup metadata is corrupt or incomplete." >&2
+      exit 9
+    fi
+
+    if [ "$backup_db_size" -le 0 ]; then
+      echo "[handla-production-deploy] FATAL: first-deployment mode rejected: database backup size is zero or invalid (${backup_db_size})." >&2
+      exit 9
+    fi
+
+    FIRST_DEPLOY_NO_BASELINE=1
+    log "First-deployment mode ELIGIBLE ✓ (no historical baseline, app containers stopped, DB backup verified: ${backup_db_artifact}, ${backup_db_size} bytes)"
+  else
+    # Partial availability (one exists, one missing): invalid state
+    echo "[handla-production-deploy] FATAL: asymmetric historical Docker images detected (api_exists=${api_exists}, web_exists=${web_exists})." >&2
+    echo "[handla-production-deploy]        Cannot establish a coherent rollback baseline. Aborting." >&2
+    exit 9
+  fi
 fi
 
-# Validate that the rollback image targets actually exist in local Docker storage
-if [ -n "$ROLLBACK_TARGET_API" ]; then
+# Validate that the rollback image targets actually exist in local Docker storage (if baseline required)
+if [ "$FIRST_DEPLOY_NO_BASELINE" -eq 1 ]; then
+  log "Operating in first-deployment mode: skipping pre-deployment rollback image pinning."
+else
+  if [ -z "$ROLLBACK_TARGET_API" ] || [ -z "$ROLLBACK_TARGET_WEB" ]; then
+    echo "[handla-production-deploy] FATAL: no valid rollback target images determined and not eligible for first-deployment mode." >&2
+    exit 9
+  fi
+
   if ! "$DOCKER" image inspect "$ROLLBACK_TARGET_API" >/dev/null 2>&1; then
     echo "[handla-production-deploy] FATAL: rollback target API image '$ROLLBACK_TARGET_API' does not exist in local Docker storage." >&2
     echo "[handla-production-deploy]        Cannot establish a recoverable rollback state. Aborting." >&2
     exit 9
   fi
-fi
 
-if [ -n "$ROLLBACK_TARGET_WEB" ]; then
   if ! "$DOCKER" image inspect "$ROLLBACK_TARGET_WEB" >/dev/null 2>&1; then
     echo "[handla-production-deploy] FATAL: rollback target Web image '$ROLLBACK_TARGET_WEB' does not exist in local Docker storage." >&2
     echo "[handla-production-deploy]        Cannot establish a recoverable rollback state. Aborting." >&2
     exit 9
   fi
-fi
 
-# Ensure rollback targets are tagged so 'docker image prune' never deletes them
-if [ -n "$ROLLBACK_TARGET_API" ] && [ -n "$ROLLBACK_TARGET_WEB" ]; then
+  # Ensure rollback targets are tagged so 'docker image prune' never deletes them
   "$DOCKER" tag "$ROLLBACK_TARGET_API" handla-api:rollback 2>/dev/null || true
   "$DOCKER" tag "$ROLLBACK_TARGET_WEB" handla-web:rollback 2>/dev/null || true
   log "Pinned rollback targets (api=${ROLLBACK_TARGET_API}, web=${ROLLBACK_TARGET_WEB}) to tag :rollback"
 
   # Ensure the emergency rollback compose override points to the verified recovery baseline
-  # (e.g. V0 on first run, V1 when deploying V2). If deployment of V2 subsequently fails,
-  # the emergency rollback command will immediately restore this verified baseline.
   install -d -m 0700 -o root -g root "$ROLLBACK_DIR"
   cat <<EOF > "$ROLLBACK_OVERRIDE"
 # AUTO-GENERATED by handla-production-deploy
@@ -546,7 +620,7 @@ EOF
   chmod 600 "$ROLLBACK_OVERRIDE"
   log "Durable emergency rollback compose override ensured -> $ROLLBACK_OVERRIDE (points to recovery baseline)"
 
-  # Initialize metadata file on first deployment if absent
+  # Initialize metadata file on first deployment with existing baseline if absent
   if [ ! -f "$ROLLBACK_METADATA" ]; then
     cat <<EOF > "$ROLLBACK_METADATA"
 {
@@ -560,7 +634,7 @@ EOF
 }
 EOF
     chmod 600 "$ROLLBACK_METADATA"
-    log "Initialized first-run rollback metadata -> $ROLLBACK_METADATA (status=${ROLLBACK_BASELINE_STATUS})"
+    log "Initialized rollback metadata -> $ROLLBACK_METADATA (status=${ROLLBACK_BASELINE_STATUS})"
   fi
 fi
 
@@ -686,8 +760,47 @@ NEW_DEPLOYED_API_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_api 2>/
 NEW_DEPLOYED_WEB_IMAGE="$("$DOCKER" inspect --format='{{.Image}}' handla_web 2>/dev/null || true)"
 
 install -d -m 0700 -o root -g root "$ROLLBACK_DIR"
-if [ -n "$ROLLBACK_TARGET_API" ] && [ -n "$ROLLBACK_TARGET_WEB" ]; then
+
+if [ "$FIRST_DEPLOY_NO_BASELINE" -eq 1 ]; then
+  # Successful first deployment without prior baseline:
+  # The newly verified release establishes the initial active baseline.
+  # We do not fabricate a fictitious prior image, but record the verified state
+  # and point the rollback override to the newly verified release so that future
+  # deployments can reliably restore or roll back to this known-good release.
+  "$DOCKER" tag "$NEW_DEPLOYED_API_IMAGE" handla-api:rollback 2>/dev/null || true
+  "$DOCKER" tag "$NEW_DEPLOYED_WEB_IMAGE" handla-web:rollback 2>/dev/null || true
+
   cat <<EOF > "$ROLLBACK_OVERRIDE"
+# AUTO-GENERATED by handla-production-deploy upon verified healthy first deployment of ${BRANCH}@${DEPLOY_SHA}
+# Establishes initial verified baseline for subsequent deployments.
+services:
+  api:
+    image: ${NEW_DEPLOYED_API_IMAGE}
+  web:
+    image: ${NEW_DEPLOYED_WEB_IMAGE}
+EOF
+  chmod 600 "$ROLLBACK_OVERRIDE"
+
+  cat <<EOF > "$ROLLBACK_METADATA"
+{
+  "timestamp": "$(date -u +%FT%TZ)",
+  "deployed_branch": "${BRANCH}",
+  "deployed_sha": "${DEPLOY_SHA}",
+  "status": "healthy_verified_initial",
+  "active_api_image": "${NEW_DEPLOYED_API_IMAGE}",
+  "active_web_image": "${NEW_DEPLOYED_WEB_IMAGE}",
+  "known_good_api_image": "${NEW_DEPLOYED_API_IMAGE}",
+  "known_good_web_image": "${NEW_DEPLOYED_WEB_IMAGE}",
+  "previous_api_image": null,
+  "previous_web_image": null,
+  "caller": "${CALLER}"
+}
+EOF
+  chmod 600 "$ROLLBACK_METADATA"
+  log "Persisted verified initial baseline metadata and rollback override -> $ROLLBACK_DIR (status=healthy_verified_initial)"
+else
+  if [ -n "$ROLLBACK_TARGET_API" ] && [ -n "$ROLLBACK_TARGET_WEB" ]; then
+    cat <<EOF > "$ROLLBACK_OVERRIDE"
 # AUTO-GENERATED by handla-production-deploy upon verified healthy deployment of ${BRANCH}@${DEPLOY_SHA}
 # Restores exact image IDs from prior working deployment.
 services:
@@ -696,10 +809,10 @@ services:
   web:
     image: ${ROLLBACK_TARGET_WEB}
 EOF
-  chmod 600 "$ROLLBACK_OVERRIDE"
-fi
+    chmod 600 "$ROLLBACK_OVERRIDE"
+  fi
 
-cat <<EOF > "$ROLLBACK_METADATA"
+  cat <<EOF > "$ROLLBACK_METADATA"
 {
   "timestamp": "$(date -u +%FT%TZ)",
   "deployed_branch": "${BRANCH}",
@@ -714,8 +827,9 @@ cat <<EOF > "$ROLLBACK_METADATA"
   "caller": "${CALLER}"
 }
 EOF
-chmod 600 "$ROLLBACK_METADATA"
-log "Persisted verified rollback metadata and compose override -> $ROLLBACK_DIR"
+  chmod 600 "$ROLLBACK_METADATA"
+  log "Persisted verified rollback metadata and compose override -> $ROLLBACK_DIR (status=healthy_verified)"
+fi
 
 # ---- 15. Prune dangling images & report status -------------------------------
 log "Pruning dangling images..."

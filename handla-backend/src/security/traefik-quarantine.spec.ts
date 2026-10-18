@@ -540,4 +540,430 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       );
     });
   });
+
+  describe('First-Deployment and Rollback Baseline Simulation Tests', () => {
+    interface BaselineSimulationConfig {
+      existingContainers: {
+        handla_api: { status: 'running' | 'exited' | 'not_found'; imageId?: string };
+        handla_web: { status: 'running' | 'exited' | 'not_found'; imageId?: string };
+      };
+      dockerStorageImages: string[];
+      rollbackMetadata?: {
+        status?: string;
+        active_api_image?: string;
+        active_web_image?: string;
+        known_good_api_image?: string;
+        known_good_web_image?: string;
+      } | null;
+      rollbackOverrideExists?: boolean;
+      backupMarkerExists?: boolean;
+      backupMeta?: {
+        ts?: string;
+        db_artifact?: string;
+        db_size?: number;
+        db_sha256?: string;
+      } | null;
+      quarantineValid?: boolean;
+    }
+
+    interface DeployExecutionResult {
+      exitCode: number;
+      fatalError?: string;
+      mode?: 'normal' | 'first_deploy_no_baseline';
+      rollbackBaselineRecorded?: {
+        status: string;
+        active_api: string;
+        active_web: string;
+        known_good_api: string;
+        known_good_web: string;
+        previous_api: string | null;
+        previous_web: string | null;
+      };
+      pinnedRollbackTag?: { api: string; web: string };
+    }
+
+    function simulateDeployBaseline(
+      config: BaselineSimulationConfig,
+      candidateImages: { api: string; web: string } = { api: 'sha256:new_api_1', web: 'sha256:new_web_1' },
+      healthCheckSucceeds: boolean = true,
+    ): DeployExecutionResult {
+      // 1. Production quarantine validation check (Step 8b)
+      if (config.quarantineValid === false) {
+        return {
+          exitCode: 5,
+          fatalError: 'Traefik Phase 1 quarantine validation failed.',
+        };
+      }
+
+      const currApiStatus = config.existingContainers.handla_api.status;
+      const currWebStatus = config.existingContainers.handla_web.status;
+
+      const candidateApiImage = config.existingContainers.handla_api.imageId;
+      const candidateWebImage = config.existingContainers.handla_web.imageId;
+
+      const currApiHealthy = currApiStatus === 'running' && healthCheckSucceeds;
+      const currWebHealthy = currWebStatus === 'running' && healthCheckSucceeds;
+
+      const meta = config.rollbackMetadata;
+      const lastActiveApi = meta?.active_api_image;
+      const lastActiveWeb = meta?.active_web_image;
+      const prevGoodApi = meta?.known_good_api_image;
+      const prevGoodWeb = meta?.known_good_web_image;
+
+      let rollbackTargetApi = '';
+      let rollbackTargetWeb = '';
+      let rollbackBaselineStatus = '';
+      let firstDeployNoBaseline = false;
+
+      if (currApiHealthy && currWebHealthy && candidateApiImage && candidateWebImage) {
+        rollbackTargetApi = candidateApiImage;
+        rollbackTargetWeb = candidateWebImage;
+        rollbackBaselineStatus = 'live_healthy';
+      } else if (lastActiveApi && lastActiveWeb) {
+        rollbackTargetApi = lastActiveApi;
+        rollbackTargetWeb = lastActiveWeb;
+        rollbackBaselineStatus = 'last_verified_active';
+      } else if (prevGoodApi && prevGoodWeb) {
+        rollbackTargetApi = prevGoodApi;
+        rollbackTargetWeb = prevGoodWeb;
+        rollbackBaselineStatus = meta?.status || 'persisted_known_good';
+      } else if (candidateApiImage && candidateWebImage) {
+        const apiExists = config.dockerStorageImages.includes(candidateApiImage);
+        const webExists = config.dockerStorageImages.includes(candidateWebImage);
+
+        if (apiExists && webExists) {
+          rollbackTargetApi = candidateApiImage;
+          rollbackTargetWeb = candidateWebImage;
+          rollbackBaselineStatus = 'initial_unverified_baseline';
+        } else if (!apiExists && !webExists) {
+          // Check eligibility for first-deployment no-baseline mode
+          if (currApiStatus === 'running' || currWebStatus === 'running') {
+            return {
+              exitCode: 9,
+              fatalError: 'first-deployment mode rejected: application containers are currently running.',
+            };
+          }
+
+          if (config.rollbackMetadata || config.rollbackOverrideExists) {
+            return {
+              exitCode: 9,
+              fatalError: 'first-deployment mode rejected: rollback metadata or override exists in /opt/handla-production-rollback, but referenced historical Docker images are missing from local storage.',
+            };
+          }
+
+          if (!config.backupMarkerExists) {
+            return {
+              exitCode: 9,
+              fatalError: 'first-deployment mode rejected: database backup marker missing (/var/lib/handla-backup/last-success).',
+            };
+          }
+
+          if (!config.backupMeta) {
+            return {
+              exitCode: 9,
+              fatalError: 'first-deployment mode rejected: database backup metadata missing (/var/lib/handla-backup/last-success.meta).',
+            };
+          }
+
+          const { ts, db_artifact, db_size, db_sha256 } = config.backupMeta;
+          if (!ts || !db_artifact || db_size === undefined || db_size === null || !db_sha256) {
+            return {
+              exitCode: 9,
+              fatalError: 'first-deployment mode rejected: database backup metadata is corrupt or incomplete.',
+            };
+          }
+
+          if (db_size <= 0) {
+            return {
+              exitCode: 9,
+              fatalError: `first-deployment mode rejected: database backup size is zero or invalid (${db_size}).`,
+            };
+          }
+
+          firstDeployNoBaseline = true;
+        } else {
+          // Asymmetric historical images
+          return {
+            exitCode: 9,
+            fatalError: `asymmetric historical Docker images detected (api_exists=${apiExists}, web_exists=${webExists}).`,
+          };
+        }
+      }
+
+      if (!firstDeployNoBaseline) {
+        if (!rollbackTargetApi || !rollbackTargetWeb) {
+          return {
+            exitCode: 9,
+            fatalError: 'no valid rollback target images determined and not eligible for first-deployment mode.',
+          };
+        }
+
+        if (!config.dockerStorageImages.includes(rollbackTargetApi)) {
+          return {
+            exitCode: 9,
+            fatalError: `rollback target API image '${rollbackTargetApi}' does not exist in local Docker storage.`,
+          };
+        }
+        if (!config.dockerStorageImages.includes(rollbackTargetWeb)) {
+          return {
+            exitCode: 9,
+            fatalError: `rollback target Web image '${rollbackTargetWeb}' does not exist in local Docker storage.`,
+          };
+        }
+      }
+
+      // App deploy and health verification
+      if (!healthCheckSucceeds) {
+        return {
+          exitCode: 8,
+          fatalError: 'API or Web health verification failed.',
+          mode: firstDeployNoBaseline ? 'first_deploy_no_baseline' : 'normal',
+        };
+      }
+
+      // Post-verification recording (Step 14)
+      if (firstDeployNoBaseline) {
+        return {
+          exitCode: 0,
+          mode: 'first_deploy_no_baseline',
+          pinnedRollbackTag: { api: candidateImages.api, web: candidateImages.web },
+          rollbackBaselineRecorded: {
+            status: 'healthy_verified_initial',
+            active_api: candidateImages.api,
+            active_web: candidateImages.web,
+            known_good_api: candidateImages.api,
+            known_good_web: candidateImages.web,
+            previous_api: null,
+            previous_web: null,
+          },
+        };
+      } else {
+        return {
+          exitCode: 0,
+          mode: 'normal',
+          pinnedRollbackTag: { api: rollbackTargetApi, web: rollbackTargetWeb },
+          rollbackBaselineRecorded: {
+            status: 'healthy_verified',
+            active_api: candidateImages.api,
+            active_web: candidateImages.web,
+            known_good_api: rollbackTargetApi,
+            known_good_web: rollbackTargetWeb,
+            previous_api: rollbackTargetApi,
+            previous_web: rollbackTargetWeb,
+          },
+        };
+      }
+    }
+
+    const validBackupMeta = {
+      ts: '20261018-030000',
+      db_artifact: 'handla-db-prod_20261018-030000.sql.gz.age',
+      db_size: 4518290,
+      db_sha256: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
+    };
+
+    it('should support eligible first deployment with no historical images', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'], // old missing, new present
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(0);
+      expect(res.mode).toBe('first_deploy_no_baseline');
+      expect(res.rollbackBaselineRecorded?.status).toBe('healthy_verified_initial');
+      expect(res.rollbackBaselineRecorded?.active_api).toBe('sha256:new_api_1');
+      expect(res.rollbackBaselineRecorded?.previous_api).toBeNull();
+      expect(res.pinnedRollbackTag?.api).toBe('sha256:new_api_1');
+    });
+
+    it('should reject first-deployment mode when existing containers are running', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'running', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('application containers are currently running');
+    });
+
+    it('should abort if Traefik Phase 1 quarantine validation fails', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: false,
+      });
+
+      expect(res.exitCode).toBe(5);
+      expect(res.fatalError).toContain('quarantine validation failed');
+    });
+
+    it('should reject first-deployment mode when database backup marker is missing', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: false,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('database backup marker missing');
+    });
+
+    it('should reject first-deployment mode when database backup metadata is corrupt or zero size', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: {
+          ...validBackupMeta,
+          db_size: 0,
+        },
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('database backup size is zero or invalid');
+    });
+
+    it('should reject deployment when historical images are only partially available', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:existing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:existing_old_api', 'sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('asymmetric historical Docker images detected');
+    });
+
+    it('should reject first-deployment mode if rollback metadata exists but target images are missing', () => {
+      const res = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+        rollbackMetadata: {
+          active_api_image: 'sha256:recorded_api_missing',
+          active_web_image: 'sha256:recorded_web_missing',
+        },
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      });
+
+      expect(res.exitCode).toBe(9);
+      expect(res.fatalError).toContain('rollback target API image');
+    });
+
+    it('should abort with exit code 8 if health verification fails during first deployment', () => {
+      const res = simulateDeployBaseline(
+        {
+          existingContainers: {
+            handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+            handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+          },
+          dockerStorageImages: ['sha256:new_api_1', 'sha256:new_web_1'],
+          rollbackMetadata: null,
+          rollbackOverrideExists: false,
+          backupMarkerExists: true,
+          backupMeta: validBackupMeta,
+          quarantineValid: true,
+        },
+        { api: 'sha256:new_api_1', web: 'sha256:new_web_1' },
+        false, // health fails
+      );
+
+      expect(res.exitCode).toBe(8);
+      expect(res.fatalError).toContain('health verification failed');
+    });
+
+    it('should support normal subsequent deployment after a successful first deployment', () => {
+      // 1. Run first deployment
+      const firstRun = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'exited', imageId: 'sha256:missing_old_api' },
+          handla_web: { status: 'exited', imageId: 'sha256:missing_old_web' },
+        },
+        dockerStorageImages: ['sha256:v1_api', 'sha256:v1_web'],
+        rollbackMetadata: null,
+        rollbackOverrideExists: false,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      }, { api: 'sha256:v1_api', web: 'sha256:v1_web' });
+
+      expect(firstRun.exitCode).toBe(0);
+      expect(firstRun.mode).toBe('first_deploy_no_baseline');
+      const establishedMeta = firstRun.rollbackBaselineRecorded;
+
+      // 2. Second deployment (deploying v2 while v1 is running and healthy)
+      const secondRun = simulateDeployBaseline({
+        existingContainers: {
+          handla_api: { status: 'running', imageId: 'sha256:v1_api' },
+          handla_web: { status: 'running', imageId: 'sha256:v1_web' },
+        },
+        dockerStorageImages: ['sha256:v1_api', 'sha256:v1_web', 'sha256:v2_api', 'sha256:v2_web'],
+        rollbackMetadata: {
+          status: establishedMeta?.status,
+          active_api_image: establishedMeta?.active_api,
+          active_web_image: establishedMeta?.active_web,
+          known_good_api_image: establishedMeta?.known_good_api,
+          known_good_web_image: establishedMeta?.known_good_web,
+        },
+        rollbackOverrideExists: true,
+        backupMarkerExists: true,
+        backupMeta: validBackupMeta,
+        quarantineValid: true,
+      }, { api: 'sha256:v2_api', web: 'sha256:v2_web' });
+
+      expect(secondRun.exitCode).toBe(0);
+      expect(secondRun.mode).toBe('normal');
+      expect(secondRun.pinnedRollbackTag?.api).toBe('sha256:v1_api');
+      expect(secondRun.rollbackBaselineRecorded?.known_good_api).toBe('sha256:v1_api');
+      expect(secondRun.rollbackBaselineRecorded?.active_api).toBe('sha256:v2_api');
+    });
+  });
 });
