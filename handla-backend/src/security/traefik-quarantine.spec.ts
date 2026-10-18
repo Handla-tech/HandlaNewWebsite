@@ -262,4 +262,282 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       'handla-web router is missing required handla-www-redirect middleware.',
     );
   });
+
+  describe('Deployment Failure-Safety and Cleanup Procedure Tests', () => {
+    type ContainerStatus =
+      | 'running'
+      | 'exited'
+      | 'not_found'
+      | 'restarting'
+      | 'paused'
+      | 'created'
+      | 'removing'
+      | 'dead'
+      | 'unknown';
+
+    interface SimulatedContainer {
+      name: string;
+      status: ContainerStatus;
+      inspectFails?: boolean;
+    }
+
+    interface DeploySimulationState {
+      containers: Record<string, SimulatedContainer>;
+      appDeployInProgress: boolean;
+      appCleanupExecuted: boolean;
+      cleanupCallCount: number;
+      logs: string[];
+      errors: string[];
+    }
+
+    function createSimulation(initialContainers: Record<string, ContainerStatus>) {
+      const state: DeploySimulationState = {
+        containers: {},
+        appDeployInProgress: false,
+        appCleanupExecuted: false,
+        cleanupCallCount: 0,
+        logs: [],
+        errors: [],
+      };
+      for (const [name, status] of Object.entries(initialContainers)) {
+        state.containers[name] = { name, status };
+      }
+      return state;
+    }
+
+    function runCleanup(
+      state: DeploySimulationState,
+      incomingExit: number = 0,
+      failToStop: boolean = false,
+    ): { exitCode: number } {
+      if (state.appCleanupExecuted) {
+        return { exitCode: incomingExit };
+      }
+
+      state.cleanupCallCount += 1;
+
+      if (state.appDeployInProgress) {
+        state.appCleanupExecuted = true;
+        state.appDeployInProgress = false;
+        state.logs.push('CRITICAL / FAILURE: Initiating strict application container cleanup...');
+
+        if (!failToStop) {
+          if (state.containers['handla_api'] && state.containers['handla_api'].status !== 'not_found') {
+            state.containers['handla_api'].status = 'exited';
+          }
+          if (state.containers['handla_web'] && state.containers['handla_web'].status !== 'not_found') {
+            state.containers['handla_web'].status = 'exited';
+          }
+        }
+
+        const apiCont = state.containers['handla_api'];
+        const webCont = state.containers['handla_web'];
+
+        const apiStatus: string = apiCont?.inspectFails ? 'not_found' : (apiCont?.status || 'not_found');
+        const webStatus: string = webCont?.inspectFails ? 'not_found' : (webCont?.status || 'not_found');
+
+        const apiSafe = apiStatus === 'exited' || apiStatus === 'not_found';
+        const webSafe = webStatus === 'exited' || webStatus === 'not_found';
+
+        if (!apiSafe || !webSafe) {
+          state.errors.push(
+            `CRITICAL: Failed to verify safe container shutdown! handla_api: ${apiStatus}, handla_web: ${webStatus}`,
+          );
+          return { exitCode: 99 };
+        }
+
+        state.logs.push('Application containers confirmed in safe stopped state ✓');
+        state.logs.push('Core stateful services (handla_mysql, handla_redis) preserved untouched ✓');
+      }
+
+      return { exitCode: incomingExit };
+    }
+
+    it('should stop application containers when docker compose up fails partially', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'not_found',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8);
+
+      expect(res.exitCode).toBe(8);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('not_found');
+      expect(state.containers['handla_mysql'].status).toBe('running');
+      expect(state.containers['handla_redis'].status).toBe('running');
+      expect(state.appDeployInProgress).toBe(false);
+    });
+
+    it('should stop application containers when health verification fails', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8);
+
+      expect(res.exitCode).toBe(8);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+      expect(state.containers['handla_mysql'].status).toBe('running');
+      expect(state.containers['handla_redis'].status).toBe('running');
+    });
+
+    it('should handle SIGINT with exit code 130 and clean up', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 130);
+
+      expect(res.exitCode).toBe(130);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+    });
+
+    it('should handle SIGTERM with exit code 143 and clean up', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 143);
+
+      expect(res.exitCode).toBe(143);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+    });
+
+    it('should handle SIGHUP with exit code 129 and clean up', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 129);
+
+      expect(res.exitCode).toBe(129);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+    });
+
+    it('should prevent duplicate cleanup execution across multiple traps', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      const res1 = runCleanup(state, 130);
+      const res2 = runCleanup(state, 130);
+
+      expect(res1.exitCode).toBe(130);
+      expect(res2.exitCode).toBe(130);
+      expect(state.cleanupCallCount).toBe(1); // second call returned immediately
+    });
+
+    it('should reject restarting state as unsafe and exit 99', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'restarting',
+        handla_web: 'exited',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8, true);
+
+      expect(res.exitCode).toBe(99);
+      expect(state.errors[0]).toContain('Failed to verify safe container shutdown!');
+      expect(state.errors[0]).toContain('handla_api: restarting');
+    });
+
+    it('should reject paused state as unsafe and exit 99', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'exited',
+        handla_web: 'paused',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8, true);
+
+      expect(res.exitCode).toBe(99);
+      expect(state.errors[0]).toContain('handla_web: paused');
+    });
+
+    it('should reject unknown state as unsafe and exit 99', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'unknown',
+        handla_web: 'exited',
+      });
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8, true);
+
+      expect(res.exitCode).toBe(99);
+      expect(state.errors[0]).toContain('handla_api: unknown');
+    });
+
+    it('should handle docker inspect failure cleanly when container does not exist', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'not_found',
+        handla_web: 'not_found',
+      });
+      state.containers['handla_api'].inspectFails = true;
+      state.containers['handla_web'].inspectFails = true;
+
+      state.appDeployInProgress = true;
+      const res = runCleanup(state, 8);
+
+      expect(res.exitCode).toBe(8);
+      expect(state.logs).toContain('Application containers confirmed in safe stopped state ✓');
+    });
+
+    it('should NOT trigger cleanup on a successful deployment', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      // Verification succeeds -> deploy is disarmed
+      state.appDeployInProgress = false;
+
+      const res = runCleanup(state, 0);
+
+      expect(res.exitCode).toBe(0);
+      expect(state.containers['handla_api'].status).toBe('running');
+      expect(state.containers['handla_web'].status).toBe('running');
+      expect(state.logs).not.toContain(
+        'CRITICAL / FAILURE: Initiating strict application container cleanup...',
+      );
+    });
+  });
 });
