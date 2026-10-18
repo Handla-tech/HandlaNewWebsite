@@ -84,6 +84,41 @@ log() { echo "[handla-production-deploy] $*"; }
 
 log "Initiated by user='${CALLER}' (uid=$(id -u)) at $(date -u +%FT%TZ)"
 
+# Track whether application containers are in a dangerous/unverified state
+APP_DEPLOY_IN_PROGRESS=0
+
+# Clean up ONLY handla_api and handla_web if startup, healthcheck, or interruption occurs
+cleanup_application_containers() {
+  local exit_code=$?
+  if [ "$APP_DEPLOY_IN_PROGRESS" -eq 1 ]; then
+    # Disable trap recursion during cleanup
+    APP_DEPLOY_IN_PROGRESS=0
+    log "CRITICAL / FAILURE: Deployment did not complete verification. Initiating strict application container cleanup..."
+    
+    # 1. Stop only application containers (never mysql, redis, or traefik)
+    "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
+
+    # 2. Verify both application containers are stopped
+    local api_status
+    local web_status
+    api_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_api 2>/dev/null || echo 'not_found')"
+    web_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_web 2>/dev/null || echo 'not_found')"
+
+    if [ "$api_status" = "running" ] || [ "$web_status" = "running" ]; then
+      echo "[handla-production-deploy] CRITICAL: Failed to stop application containers! (handla_api: ${api_status}, handla_web: ${web_status})" >&2
+      echo "[handla-production-deploy]           Manual intervention required: run 'docker stop handla_api handla_web'." >&2
+      exit 99
+    fi
+
+    log "Application containers (handla_api, handla_web) successfully stopped ✓"
+    log "Core stateful services (handla_mysql, handla_redis) preserved untouched ✓"
+  fi
+  return $exit_code
+}
+
+# Trap unexpected exits and signals during container lifecycle
+trap 'cleanup_application_containers' EXIT INT TERM HUP
+
 # ---- 3. Must run as root (via sudo) ----------------------------------------
 if [ "$(id -u)" -ne 0 ]; then
   echo "[handla-production-deploy] FATAL: must run as root (via sudo)." >&2
@@ -489,8 +524,17 @@ log "Database migrations completed successfully ✓"
 
 # ---- 12. Deploy new application containers (api, web) -----------------------
 log "Deploying new api and web containers..."
+# Mark application containers as in-progress. If docker compose up fails partially
+# or exits with an error, the trap or error handler will ensure both application
+# containers are stopped and verified, never left half-running.
+APP_DEPLOY_IN_PROGRESS=1
+
 # Only recreate api and web — leave mysql and redis untouched.
-"$DOCKER" compose "${COMPOSE_ARGS[@]}" up -d --no-deps --force-recreate api web
+if ! "$DOCKER" compose "${COMPOSE_ARGS[@]}" up -d --no-deps --force-recreate api web; then
+  echo "[handla-production-deploy] FATAL: 'docker compose up' failed for application containers (api, web)." >&2
+  cleanup_application_containers
+  exit 8
+fi
 
 # ---- 13. Health verification ------------------------------------------------
 log "Verifying new API health (container healthcheck + HTTP 200 probe)..."
@@ -521,9 +565,7 @@ if [ "$API_HEALTHY" -ne 1 ]; then
   echo "[handla-production-deploy] FATAL: API health check failed after 60s." >&2
   echo "[handla-production-deploy] Logs from handla_api:" >&2
   "$DOCKER" logs --tail 50 handla_api >&2 || true
-  log "Stopping failed application containers (handla_api, handla_web) to prevent public exposure..."
-  "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
-  log "Preserving MySQL and Redis state untouched."
+  cleanup_application_containers
   exit 8
 fi
 
@@ -555,11 +597,12 @@ if [ "$WEB_HEALTHY" -ne 1 ]; then
   echo "[handla-production-deploy] FATAL: Web container failed HTTP responsiveness check after 40s." >&2
   echo "[handla-production-deploy] Logs from handla_web:" >&2
   "$DOCKER" logs --tail 50 handla_web >&2 || true
-  log "Stopping failed application containers (handla_api, handla_web) to prevent public exposure..."
-  "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
-  log "Preserving MySQL and Redis state untouched."
+  cleanup_application_containers
   exit 8
 fi
+
+# Both containers verified healthy: mark deploy completed so normal exit does not trigger cleanup
+APP_DEPLOY_IN_PROGRESS=0
 
 # ---- 14. Record verified deployment & update rollback metadata -------------
 # Only after both API and Web have passed all health checks and are confirmed

@@ -262,4 +262,178 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       'handla-web router is missing required handla-www-redirect middleware.',
     );
   });
+
+  describe('Deployment Failure-Safety and Cleanup Procedure Tests', () => {
+    interface SimulatedContainer {
+      name: string;
+      status: 'running' | 'exited' | 'not_found';
+    }
+
+    interface DeploySimulationState {
+      containers: Record<string, SimulatedContainer>;
+      appDeployInProgress: boolean;
+      logs: string[];
+      errors: string[];
+    }
+
+    function createSimulation(initialContainers: Record<string, 'running' | 'exited' | 'not_found'>) {
+      const state: DeploySimulationState = {
+        containers: {},
+        appDeployInProgress: false,
+        logs: [],
+        errors: [],
+      };
+      for (const [name, status] of Object.entries(initialContainers)) {
+        state.containers[name] = { name, status };
+      }
+      return state;
+    }
+
+    function runCleanup(state: DeploySimulationState, failToStop: boolean = false): { exitCode: number } {
+      if (state.appDeployInProgress) {
+        state.appDeployInProgress = false;
+        state.logs.push('CRITICAL / FAILURE: Initiating strict application container cleanup...');
+
+        if (!failToStop) {
+          if (state.containers['handla_api']) state.containers['handla_api'].status = 'exited';
+          if (state.containers['handla_web']) state.containers['handla_web'].status = 'exited';
+        }
+
+        const apiStatus = state.containers['handla_api']?.status || 'not_found';
+        const webStatus = state.containers['handla_web']?.status || 'not_found';
+
+        if (apiStatus === 'running' || webStatus === 'running') {
+          state.errors.push(
+            `CRITICAL: Failed to stop application containers! (handla_api: ${apiStatus}, handla_web: ${webStatus})`,
+          );
+          return { exitCode: 99 };
+        }
+
+        state.logs.push('Application containers (handla_api, handla_web) successfully stopped ✓');
+        state.logs.push('Core stateful services (handla_mysql, handla_redis) preserved untouched ✓');
+      }
+      return { exitCode: 0 };
+    }
+
+    it('should stop application containers when docker compose up fails partially', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'exited',
+      });
+
+      // 1. Enter deployment phase
+      state.appDeployInProgress = true;
+
+      // 2. Simulate docker compose up partial failure
+      const composeUpSucceeded = false;
+      let finalExitCode = 0;
+      if (!composeUpSucceeded) {
+        state.errors.push("FATAL: 'docker compose up' failed for application containers (api, web).");
+        const res = runCleanup(state);
+        finalExitCode = res.exitCode === 0 ? 8 : res.exitCode;
+      }
+
+      expect(finalExitCode).toBe(8);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+      expect(state.containers['handla_mysql'].status).toBe('running');
+      expect(state.containers['handla_redis'].status).toBe('running');
+      expect(state.appDeployInProgress).toBe(false);
+    });
+
+    it('should stop application containers when health verification fails', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      // 1. Enter deployment phase
+      state.appDeployInProgress = true;
+
+      // 2. Simulate health verification timeout (e.g. API 401 or crash)
+      const apiHealthy = false;
+      let finalExitCode = 0;
+      if (!apiHealthy) {
+        state.errors.push('FATAL: API health check failed after 60s.');
+        const res = runCleanup(state);
+        finalExitCode = res.exitCode === 0 ? 8 : res.exitCode;
+      }
+
+      expect(finalExitCode).toBe(8);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+      expect(state.containers['handla_mysql'].status).toBe('running');
+      expect(state.containers['handla_redis'].status).toBe('running');
+    });
+
+    it('should emit CRITICAL error and exit 99 if container stop fails', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      state.appDeployInProgress = true;
+      // Simulate docker stop failure (e.g. daemon timeout or unkillable process)
+      const res = runCleanup(state, true);
+
+      expect(res.exitCode).toBe(99);
+      expect(state.errors).toContain(
+        'CRITICAL: Failed to stop application containers! (handla_api: running, handla_web: running)',
+      );
+    });
+
+    it('should NOT trigger cleanup on a successful deployment', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      // 1. Enter deployment phase
+      state.appDeployInProgress = true;
+
+      // 2. Both pass health check
+      const apiHealthy = true;
+      const webHealthy = true;
+      if (apiHealthy && webHealthy) {
+        state.appDeployInProgress = false; // marked complete
+      }
+
+      // 3. Normal script exit triggers trap
+      const res = runCleanup(state);
+
+      expect(res.exitCode).toBe(0);
+      expect(state.containers['handla_api'].status).toBe('running');
+      expect(state.containers['handla_web'].status).toBe('running');
+      expect(state.logs).not.toContain(
+        'CRITICAL / FAILURE: Initiating strict application container cleanup...',
+      );
+    });
+
+    it('should trigger cleanup if interrupted by unexpected signal before verification', () => {
+      const state = createSimulation({
+        handla_mysql: 'running',
+        handla_redis: 'running',
+        handla_api: 'running',
+        handla_web: 'running',
+      });
+
+      // Simulate mid-flight signal before verification completion
+      state.appDeployInProgress = true;
+      const res = runCleanup(state);
+
+      expect(res.exitCode).toBe(0);
+      expect(state.containers['handla_api'].status).toBe('exited');
+      expect(state.containers['handla_web'].status).toBe('exited');
+      expect(state.containers['handla_mysql'].status).toBe('running');
+      expect(state.containers['handla_redis'].status).toBe('running');
+    });
+  });
 });
