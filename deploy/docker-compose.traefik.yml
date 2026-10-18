@@ -50,6 +50,9 @@ services:
       - "traefik.http.routers.handla-api.tls=true"
       - "traefik.http.routers.handla-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
       - "traefik.http.services.handla-api.loadbalancer.server.port=3001"
+      # Phase 1 Quarantine: block all external requests to api.handla.tech
+      - "traefik.http.routers.handla-api.middlewares=handla-quarantine"
+      - "traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange=127.0.0.1/32"
 
   # ── Frontend (Next.js) — routed by Traefik at handla.tech + www ─────────────
   web:
@@ -82,8 +85,8 @@ services:
       - "traefik.http.routers.handla-web.tls=true"
       - "traefik.http.routers.handla-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
       - "traefik.http.services.handla-web.loadbalancer.server.port=3000"
-      # Redirect www -> apex (Traefik middleware)
-      - "traefik.http.routers.handla-web.middlewares=handla-www-redirect"
+      # Redirect www -> apex (Traefik middleware) + Phase 1 Quarantine (127.0.0.1/32)
+      - "traefik.http.routers.handla-web.middlewares=handla-www-redirect,handla-quarantine"
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.regex=^https://www\\.handla\\.tech/(.*)"
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.replacement=https://handla.tech/$${1}"
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.permanent=true"
