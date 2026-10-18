@@ -86,38 +86,112 @@ log "Initiated by user='${CALLER}' (uid=$(id -u)) at $(date -u +%FT%TZ)"
 
 # Track whether application containers are in a dangerous/unverified state
 APP_DEPLOY_IN_PROGRESS=0
+APP_CLEANUP_EXECUTED=0
 
-# Clean up ONLY handla_api and handla_web if startup, healthcheck, or interruption occurs
+# Clean up ONLY handla_api and handla_web if startup, healthcheck, or interruption occurs.
+#
+# LIMITATIONS OF SHELL TRAPS:
+# Shell traps (INT, TERM, HUP, EXIT) cannot intercept SIGKILL (kill -9) or abrupt
+# hardware/hypervisor host power loss. In those uncatchable events, Docker daemon
+# state persists across host reboot and containers may need manual operator inspection.
 cleanup_application_containers() {
-  local exit_code=$?
+  local incoming_exit="${1:-$?}"
+
+  # Ensure cleanup runs at most once
+  if [ "$APP_CLEANUP_EXECUTED" -eq 1 ]; then
+    return "$incoming_exit"
+  fi
+
   if [ "$APP_DEPLOY_IN_PROGRESS" -eq 1 ]; then
-    # Disable trap recursion during cleanup
+    APP_CLEANUP_EXECUTED=1
     APP_DEPLOY_IN_PROGRESS=0
     log "CRITICAL / FAILURE: Deployment did not complete verification. Initiating strict application container cleanup..."
-    
+
     # 1. Stop only application containers (never mysql, redis, or traefik)
     "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
 
-    # 2. Verify both application containers are stopped
+    # 2. Strict verification: both application containers MUST be in an explicitly safe
+    # stopped state ("exited", or "not_found" if not yet created).
+    # Any other status ("running", "restarting", "paused", "created", "removing",
+    # "dead", "unknown", or inspection failure) is treated as unsafe/inconclusive.
+    local api_inspect_err=0
+    local web_inspect_err=0
     local api_status
     local web_status
-    api_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_api 2>/dev/null || echo 'not_found')"
-    web_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_web 2>/dev/null || echo 'not_found')"
 
-    if [ "$api_status" = "running" ] || [ "$web_status" = "running" ]; then
-      echo "[handla-production-deploy] CRITICAL: Failed to stop application containers! (handla_api: ${api_status}, handla_web: ${web_status})" >&2
-      echo "[handla-production-deploy]           Manual intervention required: run 'docker stop handla_api handla_web'." >&2
+    api_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_api 2>/dev/null)" || api_inspect_err=$?
+    web_status="$("$DOCKER" inspect --format='{{.State.Status}}' handla_web 2>/dev/null)" || web_inspect_err=$?
+
+    # If inspect command failed because container doesn't exist, classify as not_found
+    if [ "$api_inspect_err" -ne 0 ]; then
+      api_status="not_found"
+    fi
+    if [ "$web_inspect_err" -ne 0 ]; then
+      web_status="not_found"
+    fi
+
+    local api_safe=0
+    local web_safe=0
+
+    if [ "$api_status" = "exited" ] || [ "$api_status" = "not_found" ]; then
+      api_safe=1
+    fi
+    if [ "$web_status" = "exited" ] || [ "$web_status" = "not_found" ]; then
+      web_safe=1
+    fi
+
+    if [ "$api_safe" -ne 1 ] || [ "$web_safe" -ne 1 ]; then
+      echo "[handla-production-deploy] CRITICAL: Failed to verify safe container shutdown!" >&2
+      echo "[handla-production-deploy]           handla_api: status='${api_status}' (safe: ${api_safe})" >&2
+      echo "[handla-production-deploy]           handla_web: status='${web_status}' (safe: ${web_safe})" >&2
+      echo "[handla-production-deploy]           Containers are NOT in an explicitly safe state ('exited' or 'not_found')." >&2
+      echo "[handla-production-deploy]           Manual intervention required immediately: run 'docker stop -t 10 handla_api handla_web'." >&2
       exit 99
     fi
 
-    log "Application containers (handla_api, handla_web) successfully stopped ✓"
+    log "Application containers confirmed in safe stopped state (handla_api: ${api_status}, handla_web: ${web_status}) ✓"
     log "Core stateful services (handla_mysql, handla_redis) preserved untouched ✓"
   fi
-  return $exit_code
+
+  return "$incoming_exit"
 }
 
-# Trap unexpected exits and signals during container lifecycle
-trap 'cleanup_application_containers' EXIT INT TERM HUP
+# Signal handlers: perform cleanup and terminate with standard Unix 128 + signal code
+on_sigint() {
+  trap - INT EXIT
+  log "Interrupted by SIGINT. Terminating deployment..."
+  cleanup_application_containers 130
+  exit 130
+}
+
+on_sigterm() {
+  trap - TERM EXIT
+  log "Terminated by SIGTERM. Terminating deployment..."
+  cleanup_application_containers 143
+  exit 143
+}
+
+on_sighup() {
+  trap - HUP EXIT
+  log "Disconnected by SIGHUP. Terminating deployment..."
+  cleanup_application_containers 129
+  exit 129
+}
+
+on_exit() {
+  local code=$?
+  trap - EXIT
+  if [ "$code" -eq 0 ] && [ "$APP_DEPLOY_IN_PROGRESS" -eq 1 ]; then
+    code=8
+  fi
+  cleanup_application_containers "$code"
+  exit "$code"
+}
+
+trap on_sigint INT
+trap on_sigterm TERM
+trap on_sighup HUP
+trap on_exit EXIT
 
 # ---- 3. Must run as root (via sudo) ----------------------------------------
 if [ "$(id -u)" -ne 0 ]; then
