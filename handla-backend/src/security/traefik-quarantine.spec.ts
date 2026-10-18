@@ -37,6 +37,70 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
       .map((k) => k.replace('traefik.http.routers.', '').replace('.rule', ''));
   }
 
+  /**
+   * Mirrors the exact logic executed inside section 8b of handla-production-deploy
+   */
+  function runDeterministicValidator(cfg: any) {
+    if (!cfg || typeof cfg !== 'object') {
+      throw new Error('Empty Docker Compose configuration JSON received.');
+    }
+    const services = cfg.services || {};
+
+    const api = services.api;
+    const web = services.web;
+    if (!api || !web) {
+      throw new Error('Missing api or web service definition in rendered compose config.');
+    }
+
+    const apiLabels = api.labels || {};
+    const webLabels = web.labels || {};
+
+    const expectedAllow = '127.0.0.1/32';
+    const apiAllowed = apiLabels['traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange'];
+    const webAllowed = webLabels['traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange'];
+
+    if (apiAllowed !== expectedAllow) {
+      throw new Error(
+        `api service middleware handla-quarantine sourcerange mismatch: expected "${expectedAllow}", got "${apiAllowed}"`,
+      );
+    }
+
+    if (webAllowed !== expectedAllow) {
+      throw new Error(
+        `web service middleware handla-quarantine sourcerange mismatch: expected "${expectedAllow}", got "${webAllowed}"`,
+      );
+    }
+
+    for (const [svcName, labels] of [['api', apiLabels], ['web', webLabels]]) {
+      const routerNames = Object.keys(labels)
+        .filter((k) => k.startsWith('traefik.http.routers.') && k.endsWith('.rule'))
+        .map((k) => k.replace('traefik.http.routers.', '').replace('.rule', ''));
+
+      if (routerNames.length === 0) {
+        throw new Error(`No Traefik routers found on ${svcName} service.`);
+      }
+
+      for (const router of routerNames) {
+        const mwKey = `traefik.http.routers.${router}.middlewares`;
+        const mwValue = labels[mwKey] || '';
+        const mws = mwValue.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (!mws.includes('handla-quarantine')) {
+          throw new Error(
+            `Router "${router}" on service "${svcName}" lacks required "handla-quarantine" middleware.`,
+          );
+        }
+      }
+    }
+
+    const webMainMw = webLabels['traefik.http.routers.handla-web.middlewares'] || '';
+    const webMws = webMainMw.split(',').map((s: string) => s.trim());
+    if (!webMws.includes('handla-www-redirect')) {
+      throw new Error('handla-web router is missing required handla-www-redirect middleware.');
+    }
+
+    return true;
+  }
+
   it('should have handla-api router configured with valid quarantine middleware and 127.0.0.1/32 sourcerange', () => {
     const apiLabels = parsedDoc?.services?.api?.labels || [];
     const labelMap: Record<string, string> = {};
@@ -64,118 +128,138 @@ describe('Traefik Phase 1 Quarantine Configuration Tests', () => {
 
     const { hasQuarantine, middlewares } = validateQuarantine(labelMap, 'handla-web');
     expect(hasQuarantine).toBe(true);
-    // www redirect must be preserved in middleware chain
     expect(middlewares).toContain('handla-www-redirect');
     expect(middlewares.indexOf('handla-www-redirect')).toBeLessThan(
       middlewares.indexOf('handla-quarantine'),
     );
   });
 
-  it('should detect missing middleware when simulated', () => {
-    const fakeLabels: Record<string, string> = {
-      'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
-      // Missing middlewares key
-    };
-    const { hasQuarantine } = validateQuarantine(fakeLabels, 'handla-api');
-    expect(hasQuarantine).toBe(false);
-  });
-
-  it('should detect incorrect IP allowlist when simulated', () => {
-    const fakeLabels: Record<string, string> = {
-      'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
-      'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
-      'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '0.0.0.0/0',
-    };
-    const { sourcerange } = validateQuarantine(fakeLabels, 'handla-api');
-    expect(sourcerange).not.toBe('127.0.0.1/32');
-  });
-
-  it('should detect unprotected alternate routers when simulated', () => {
-    const fakeLabels: Record<string, string> = {
-      'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
-      'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
-      'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
-      // Unprotected alternate router
-      'traefik.http.routers.handla-api-bypass.rule': 'Host(`api.handla.tech`) && Path(`/api/health`)',
-    };
-
-    const routers = findRouters(fakeLabels);
-    expect(routers).toContain('handla-api-bypass');
-
-    const unprotected = routers.filter((r) => {
-      const mw = fakeLabels[`traefik.http.routers.${r}.middlewares`] || '';
-      return !mw.split(',').map((s) => s.trim()).includes('handla-quarantine');
-    });
-
-    expect(unprotected).toEqual(['handla-api-bypass']);
-  });
-
-  it('should verify that all routers currently in docker-compose.traefik.yml are protected', () => {
-    const services = ['api', 'web'];
-    for (const svc of services) {
-      const labels = parsedDoc?.services?.[svc]?.labels || [];
-      const labelMap: Record<string, string> = {};
-      for (const item of labels) {
+  it('should pass the deterministic validator on the actual repo compose configuration', () => {
+    const convertLabels = (list: string[]) => {
+      const map: Record<string, string> = {};
+      for (const item of list) {
         const idx = item.indexOf('=');
-        if (idx !== -1) {
-          labelMap[item.slice(0, idx)] = item.slice(idx + 1);
-        }
+        if (idx !== -1) map[item.slice(0, idx)] = item.slice(idx + 1);
       }
-
-      const routers = findRouters(labelMap);
-      expect(routers.length).toBeGreaterThan(0);
-
-      for (const router of routers) {
-        const mw = labelMap[`traefik.http.routers.${router}.middlewares`] || '';
-        const mws = mw.split(',').map((s) => s.trim());
-        expect(mws).toContain('handla-quarantine');
-      }
-    }
-  });
-
-  it('should verify that fail-closed behavior works if quarantine configuration is missing', () => {
-    const validateConfig = (cfg: any) => {
-      const apiMw = cfg.services?.api?.labels?.['traefik.http.routers.handla-api.middlewares'] || '';
-      const webMw = cfg.services?.web?.labels?.['traefik.http.routers.handla-web.middlewares'] || '';
-      const allowlist = cfg.services?.api?.labels?.['traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange'] || '';
-
-      const apiOk = apiMw.split(',').map((s: string) => s.trim()).includes('handla-quarantine');
-      const webOk = webMw.split(',').map((s: string) => s.trim()).includes('handla-quarantine');
-      const allowOk = allowlist === '127.0.0.1/32';
-
-      if (!apiOk || !webOk || !allowOk) {
-        throw new Error('FATAL: Traefik Phase 1 quarantine validation failed.');
-      }
-      return true;
+      return map;
     };
 
-    // Valid case
-    expect(() =>
-      validateConfig({
-        services: {
-          api: {
-            labels: {
-              'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
-              'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
-            },
-          },
-          web: {
-            labels: {
-              'traefik.http.routers.handla-web.middlewares': 'handla-www-redirect,handla-quarantine',
-            },
-          },
-        },
-      }),
-    ).not.toThrow();
+    const simulatedConfig = {
+      services: {
+        api: { labels: convertLabels(parsedDoc?.services?.api?.labels || []) },
+        web: { labels: convertLabels(parsedDoc?.services?.web?.labels || []) },
+      },
+    };
 
-    // Invalid / missing case
-    expect(() =>
-      validateConfig({
-        services: {
-          api: { labels: {} },
-          web: { labels: {} },
+    expect(() => runDeterministicValidator(simulatedConfig)).not.toThrow();
+  });
+
+  it('should fail closed when web middleware allowlist is missing', () => {
+    const configWithMissingWebAllowlist = {
+      services: {
+        api: {
+          labels: {
+            'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
+            'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
         },
-      }),
-    ).toThrow('FATAL: Traefik Phase 1 quarantine validation failed.');
+        web: {
+          labels: {
+            'traefik.http.routers.handla-web.rule': 'Host(`handla.tech`)',
+            'traefik.http.routers.handla-web.middlewares': 'handla-www-redirect,handla-quarantine',
+            // Missing allowlist on web
+          },
+        },
+      },
+    };
+
+    expect(() => runDeterministicValidator(configWithMissingWebAllowlist)).toThrow(
+      'web service middleware handla-quarantine sourcerange mismatch: expected "127.0.0.1/32", got "undefined"',
+    );
+  });
+
+  it('should fail closed when allowlists conflict or differ from approved 127.0.0.1/32', () => {
+    const configWithConflictingAllowlist = {
+      services: {
+        api: {
+          labels: {
+            'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
+            'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
+        },
+        web: {
+          labels: {
+            'traefik.http.routers.handla-web.rule': 'Host(`handla.tech`)',
+            'traefik.http.routers.handla-web.middlewares': 'handla-www-redirect,handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '10.0.0.1/32',
+          },
+        },
+      },
+    };
+
+    expect(() => runDeterministicValidator(configWithConflictingAllowlist)).toThrow(
+      'web service middleware handla-quarantine sourcerange mismatch: expected "127.0.0.1/32", got "10.0.0.1/32"',
+    );
+  });
+
+  it('should fail closed when an unprotected alternate router is declared', () => {
+    const configWithAlternateRouter = {
+      services: {
+        api: {
+          labels: {
+            'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
+            'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
+            'traefik.http.routers.handla-api-bypass.rule': 'Host(`api.handla.tech`) && Path(`/public`)',
+            // No middlewares attached to handla-api-bypass
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
+        },
+        web: {
+          labels: {
+            'traefik.http.routers.handla-web.rule': 'Host(`handla.tech`)',
+            'traefik.http.routers.handla-web.middlewares': 'handla-www-redirect,handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
+        },
+      },
+    };
+
+    expect(() => runDeterministicValidator(configWithAlternateRouter)).toThrow(
+      'Router "handla-api-bypass" on service "api" lacks required "handla-quarantine" middleware.',
+    );
+  });
+
+  it('should fail closed on invalid or malformed JSON input', () => {
+    expect(() => runDeterministicValidator(null)).toThrow('Empty Docker Compose configuration JSON received.');
+    expect(() => runDeterministicValidator({})).toThrow(
+      'Missing api or web service definition in rendered compose config.',
+    );
+  });
+
+  it('should fail closed if www redirect is omitted on web', () => {
+    const configWithoutRedirect = {
+      services: {
+        api: {
+          labels: {
+            'traefik.http.routers.handla-api.rule': 'Host(`api.handla.tech`)',
+            'traefik.http.routers.handla-api.middlewares': 'handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
+        },
+        web: {
+          labels: {
+            'traefik.http.routers.handla-web.rule': 'Host(`handla.tech`)',
+            'traefik.http.routers.handla-web.middlewares': 'handla-quarantine',
+            'traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange': '127.0.0.1/32',
+          },
+        },
+      },
+    };
+
+    expect(() => runDeterministicValidator(configWithoutRedirect)).toThrow(
+      'handla-web router is missing required handla-www-redirect middleware.',
+    );
   });
 });
