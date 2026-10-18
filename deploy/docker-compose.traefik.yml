@@ -90,6 +90,7 @@ services:
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.regex=^https://www\\.handla\\.tech/(.*)"
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.replacement=https://handla.tech/$${1}"
       - "traefik.http.middlewares.handla-www-redirect.redirectregex.permanent=true"
+      - "traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange=127.0.0.1/32"
 
   # ── Disable Handla's own nginx + certbot on a Traefik box ───────────────────
   # These would fight Traefik for 80/443. We neutralise them so an accidental
