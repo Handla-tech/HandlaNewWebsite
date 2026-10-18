@@ -199,6 +199,100 @@ fi
 
 COMPOSE_ARGS=( -p "$COMPOSE_PROJECT" "${COMPOSE_FILES[@]}" )
 
+# ---- 8b. Validate Traefik Phase 1 Quarantine on merged Compose config --------
+log "Validating effective Traefik Phase 1 quarantine configuration..."
+COMPOSE_CONFIG_JSON="$("$DOCKER" compose "${COMPOSE_ARGS[@]}" config --format json 2>/dev/null || true)"
+if [ -z "$COMPOSE_CONFIG_JSON" ]; then
+  echo "[handla-production-deploy] FATAL: Failed to render effective Docker Compose configuration." >&2
+  exit 5
+fi
+
+API_ROUTERS="$(echo "$COMPOSE_CONFIG_JSON" | "$NODE" -e '
+  const fs = require("fs");
+  const cfg = JSON.parse(fs.readFileSync(0, "utf-8"));
+  const labels = cfg.services?.api?.labels || {};
+  const routers = Object.keys(labels)
+    .filter(k => k.startsWith("traefik.http.routers.") && k.endsWith(".rule"))
+    .map(k => k.replace("traefik.http.routers.", "").replace(".rule", ""));
+  console.log(routers.join(" "));
+' 2>/dev/null || true)"
+
+WEB_ROUTERS="$(echo "$COMPOSE_CONFIG_JSON" | "$NODE" -e '
+  const fs = require("fs");
+  const cfg = JSON.parse(fs.readFileSync(0, "utf-8"));
+  const labels = cfg.services?.web?.labels || {};
+  const routers = Object.keys(labels)
+    .filter(k => k.startsWith("traefik.http.routers.") && k.endsWith(".rule"))
+    .map(k => k.replace("traefik.http.routers.", "").replace(".rule", ""));
+  console.log(routers.join(" "));
+' 2>/dev/null || true)"
+
+if [ -z "$API_ROUTERS" ] || [ -z "$WEB_ROUTERS" ]; then
+  echo "[handla-production-deploy] FATAL: Missing Traefik routers on api or web services." >&2
+  exit 5
+fi
+
+# Ensure both Handla services have the exact quarantine middleware configured
+QUARANTINE_VALID="$("$NODE" -e '
+  const fs = require("fs");
+  const cfg = JSON.parse(fs.readFileSync(0, "utf-8"));
+  const apiLabels = cfg.services?.api?.labels || {};
+  const webLabels = cfg.services?.web?.labels || {};
+
+  const apiMw = apiLabels["traefik.http.routers.handla-api.middlewares"] || "";
+  const webMw = webLabels["traefik.http.routers.handla-web.middlewares"] || "";
+
+  const apiAllowed = apiLabels["traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange"] || "";
+  const webAllowed = webLabels["traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange"] || "";
+  const allowlist = apiAllowed || webAllowed;
+
+  const apiHasQuarantine = apiMw.split(",").map(s => s.trim()).includes("handla-quarantine");
+  const webHasQuarantine = webMw.split(",").map(s => s.trim()).includes("handla-quarantine");
+
+  const expectedAllow = "127.0.0.1/32";
+  if (apiHasQuarantine && webHasQuarantine && allowlist === expectedAllow) {
+    process.stdout.write("valid");
+  } else {
+    process.stdout.write("invalid");
+  }
+' <<< "$COMPOSE_CONFIG_JSON" 2>/dev/null || echo "error")"
+
+if [ "$QUARANTINE_VALID" != "valid" ]; then
+  echo "[handla-production-deploy] FATAL: Traefik Phase 1 quarantine validation failed." >&2
+  echo "[handla-production-deploy]        Both handla-api and handla-web must attach 'handla-quarantine' with sourcerange '127.0.0.1/32'." >&2
+  exit 5
+fi
+
+# Ensure no unprotected alternate routers exist on api or web
+UNPROTECTED_ROUTERS="$("$NODE" -e '
+  const fs = require("fs");
+  const cfg = JSON.parse(fs.readFileSync(0, "utf-8"));
+  const unprotected = [];
+  for (const [svcName, svc] of Object.entries(cfg.services || {})) {
+    if (svcName !== "api" && svcName !== "web") continue;
+    const labels = svc.labels || {};
+    for (const key of Object.keys(labels)) {
+      if (key.startsWith("traefik.http.routers.") && key.endsWith(".rule")) {
+        const routerName = key.replace("traefik.http.routers.", "").replace(".rule", "");
+        const mw = labels[`traefik.http.routers.${routerName}.middlewares`] || "";
+        const mws = mw.split(",").map(s => s.trim());
+        if (!mws.includes("handla-quarantine")) {
+          unprotected.push(`${svcName}:${routerName}`);
+        }
+      }
+    }
+  }
+  process.stdout.write(unprotected.join(" "));
+' <<< "$COMPOSE_CONFIG_JSON" 2>/dev/null || true)"
+
+if [ -n "$UNPROTECTED_ROUTERS" ]; then
+  echo "[handla-production-deploy] FATAL: Unprotected alternate Traefik router(s) detected: $UNPROTECTED_ROUTERS" >&2
+  echo "[handla-production-deploy]        All routers defined for api/web must enforce handla-quarantine." >&2
+  exit 5
+fi
+
+log "Traefik Phase 1 quarantine verified on all Handla routers (127.0.0.1/32) ✓"
+
 # ---- 9. Ensure core stateful infrastructure (MySQL & Redis) is running ------
 log "Verifying status of core stateful services (mysql, redis)..."
 MYSQL_STATE="$("$DOCKER" inspect --format='{{json .State.Status}}' handla_mysql 2>/dev/null || echo '"not_found"')"
@@ -428,6 +522,9 @@ if [ "$API_HEALTHY" -ne 1 ]; then
   echo "[handla-production-deploy] FATAL: API health check failed after 60s." >&2
   echo "[handla-production-deploy] Logs from handla_api:" >&2
   "$DOCKER" logs --tail 50 handla_api >&2 || true
+  log "Stopping failed application containers (handla_api, handla_web) to prevent public exposure..."
+  "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
+  log "Preserving MySQL and Redis state untouched."
   exit 8
 fi
 
@@ -459,6 +556,9 @@ if [ "$WEB_HEALTHY" -ne 1 ]; then
   echo "[handla-production-deploy] FATAL: Web container failed HTTP responsiveness check after 40s." >&2
   echo "[handla-production-deploy] Logs from handla_web:" >&2
   "$DOCKER" logs --tail 50 handla_web >&2 || true
+  log "Stopping failed application containers (handla_api, handla_web) to prevent public exposure..."
+  "$DOCKER" stop handla_api handla_web >/dev/null 2>&1 || true
+  log "Preserving MySQL and Redis state untouched."
   exit 8
 fi
 
