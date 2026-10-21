@@ -634,3 +634,65 @@ Re-run and green on v11 (unchanged from their pre-migration behavior): rate-limi
 - **No production deployment changes.** The reverse-proxy topology (`Internet → Traefik/nginx → NestJS`, one trusted hop) and the numeric trust-proxy model are preserved byte-for-byte.
 
 Previous pentest/remediation history (Next.js 15 pass / PR #24, PT-01/PT-02/PT-04 / PR #25, Nodemailer 6→9 / PR #26) is retained above and remains accurate; this phase reopened none of it.
+
+---
+
+# Controlled Public Marketing Launch — Routing Posture & Fail-Closed Boundaries
+
+_Added: 2026-10-21_
+
+### 1. Dual Deployment Modes (`quarantine` vs `public_launch`)
+
+To prevent premature or accidental public exposure during production upgrades, the Handla platform implements an explicit deployment mode system:
+
+1. **`quarantine` (Default, Fail-Closed)**:
+   - Evaluated by default whenever no explicit authorization marker exists.
+   - Enforces `traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange=127.0.0.1/32` on all Handla Traefik routers (`handla-web` and `handla-api`).
+   - Rejects any external connection with HTTP 403 at the Traefik edge.
+   - Preserves `handla-www-redirect` on `handla-web`.
+
+2. **`public_launch` (Explicit Authorization Required)**:
+   - Requires a root-owned, immutable authorization marker file at `/opt/handla-production-secrets/public-launch.authorized` containing the exact string `mode=public_launch`.
+   - Lifts the `127.0.0.1/32` quarantine on `handla-web`, making marketing pages (`/`, `/[locale]`, `/products`, `/projects`, `/services`) publicly accessible over TLS.
+   - Preserves `handla-www-redirect` on `handla-web`.
+   - On `handla-api`, attaches the `handla-ratelimit` Traefik middleware (average 100 req/s, burst 50) and removes the IP quarantine allowlist.
+   - The deployment wrapper validator (`handla-production-deploy`, Step 8b) validates the effective Docker Compose configuration prior to container recreations. If any router contains an unauthorized or missing middleware, deployment immediately aborts with exit code 5.
+
+### 2. Application-Level Security Boundaries During Public Marketing Launch
+
+Public visibility of `handla.tech` does not weaken any internal or administrative boundary:
+
+- **Frontend Navigation Protection**: [middleware.ts](handla-frontend/src/middleware.ts) inspects the httpOnly `access_token` cookie and forces immediate redirect to `/auth` for protected routes (`/dashboard`, `/erp`, `/profile`, `/settings`).
+- **Backend Role & JWT Enforcements**: The backend operates under a global `JwtAuthGuard` and `RolesGuard`. Endpoints without explicit `@Public()` return 401 Unauthorized. Administrative routes (`/erp/*`, `/users/*`, `/website/projects/image-upload`) require `@Roles(UserRole.ADMIN)` and return 403 Forbidden.
+- **Minimum Required Public API Surface**:
+  - `GET /api/website/products` & `GET /api/website/products/:id` (Public product showcase catalog)
+  - `GET /api/website/projects` & `GET /api/website/projects/:id` (Public project portfolio showcase)
+  - `GET /api/testimonials` & `GET /api/testimonials/:id` (Public client testimonials)
+  - `POST /api/analytics/collect` & `GET /api/analytics/collect` (Self-hosted analytics event ingest)
+  - `GET /api/health` (Infrastructure health probe)
+- **Upload Protection**: File uploads (`POST /api/website/projects/image-upload`, avatars, chat attachments) remain strictly authenticated, role-gated, and constrained to server-side magic-byte inspection (JPEG, PNG, WebP, GIF) with private S3 storage.
+- **CORS Constraints**: Backend CORS allowlist strictly permits `https://handla.tech` and `https://www.handla.tech`.
+
+### 3. Direct-Origin IPv6 Exposure Risk & Recommended Mitigation
+
+#### Risk Assessment
+On Linux hosts utilizing Docker with standard dual-stack IPv4/IPv6 networking:
+- While Traefik and UFW manage incoming IPv4 traffic on ports 80 and 443, host IPv6 traffic might bypass IPv4 iptables/UFW chains if `ip6tables` or `ufw` IPv6 rules are not explicitly aligned with Docker's bridge interfaces.
+- If a DNS AAAA record exists for `handla.tech` or if the VPS provider assigns a public IPv6 address that routes directly to host-bound container ports (e.g. `127.0.0.1:3001` vs `[::1]:3001`), untrusted clients could attempt direct-origin access or bypass Traefik quarantine if Traefik is not listening or bound properly on IPv6.
+
+#### Verification & Production-Safe Mitigation
+1. **DNS Level**: Ensure no `AAAA` records are published for `handla.tech`, `www.handla.tech`, or `api.handla.tech` unless IPv6 routing through Traefik is end-to-end verified.
+2. **Container Binding**: Both `handla_api` and `handla_web` bind solely to `127.0.0.1` and join the internal Docker network `proxy`. They do not publish ports directly to `0.0.0.0` or `[::]`.
+3. **Traefik & Let's Encrypt TLS-ALPN-01 Compatibility**:
+   - Traefik terminates TLS for all domains (`handla.tech`, `tameerhome.tech`, `homyperfumes`) on ports 80/443.
+   - ACME HTTP-01 or TLS-ALPN-01 challenges rely on Traefik receiving incoming traffic on 80/443.
+   - **Recommended Host Firewall Rule (Production Safe)**:
+     ```bash
+     # When enabling IPv6 firewall rules on the VPS, ensure Traefik continues to receive 80/443
+     ip6tables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT
+     ip6tables -A INPUT -p tcp --dport 22 -j ACCEPT
+     ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+     # Do NOT block ports 80/443 on IPv6 if AAAA is used, as it breaks Let's Encrypt validation.
+     ```
+   - No production firewall rules are modified as part of this PR. All host-level IPv6 rule adjustments must be reviewed alongside the other tenant websites sharing Traefik.
+

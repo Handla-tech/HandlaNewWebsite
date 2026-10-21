@@ -278,3 +278,67 @@ docker compose logs -f api
 docker compose restart api
 docker compose ps
 ```
+
+---
+
+## 10. Controlled Public Marketing Launch & Rollback Procedures
+
+### 10.1 Background & Fail-Closed Guardrails
+By default, all deployments to the VPS run in **`quarantine` mode** (127.0.0.1/32 on both `handla-web` and `handla-api`). The root-owned deployment wrapper `/usr/local/sbin/handla-production-deploy` rejects any deployment attempting public exposure unless an immutable root-owned authorization marker is in place.
+
+### 10.2 Procedure to Authorize and Execute Public Launch
+
+When marketing launch approval is granted:
+
+1. **Step 1: Place Authorization Marker on VPS (Root Only)**
+   ```bash
+   # SSH into the VPS as root
+   echo "mode=public_launch" > /opt/handla-production-secrets/public-launch.authorized
+   chmod 600 /opt/handla-production-secrets/public-launch.authorized
+   chown root:root /opt/handla-production-secrets/public-launch.authorized
+   ```
+
+2. **Step 2: Trigger Production Deployment**
+   ```bash
+   # As handla-deploy (or root via sudo)
+   sudo /usr/local/sbin/handla-production-deploy
+   ```
+   The wrapper will:
+   - Detect `/opt/handla-production-secrets/public-launch.authorized` containing `mode=public_launch`.
+   - Export `DEPLOY_MODE=public_launch`, `TRAEFIK_API_MIDDLEWARES=handla-ratelimit`, and `TRAEFIK_WEB_MIDDLEWARES=handla-www-redirect`.
+   - Validate Compose config via the Step 8b Node.js validator (verifying rate limiting and www-redirect while ensuring no quarantine on web).
+   - Recreate `api` and `web` containers and verify HTTP 200 responses.
+
+3. **Step 3: Verification**
+   ```bash
+   # External check (from developer machine)
+   curl -I https://handla.tech
+   # Expected: HTTP 200 (or HTTP 307 to /en /ar)
+   curl -I https://www.handla.tech
+   # Expected: HTTP 301 Permanent Redirect to https://handla.tech/
+   curl -s https://api.handla.tech/api/website/products | jq .
+   # Expected: HTTP 200 with product list
+   ```
+
+### 10.3 Instant Fail-Safe Rollback to Quarantine (Emergency Re-Quarantine)
+
+If abnormal traffic or security incidents occur post-launch, immediate re-quarantine can be executed in seconds:
+
+1. **Immediate Quarantine Reversion:**
+   ```bash
+   # SSH into the VPS as root
+   # 1. Remove the authorization marker (or rename it)
+   rm -f /opt/handla-production-secrets/public-launch.authorized
+
+   # 2. Re-run deployment wrapper
+   sudo /usr/local/sbin/handla-production-deploy
+   ```
+   *Result*: The wrapper defaults back to `quarantine` mode, re-attaching `127.0.0.1/32` to both `handla-web` and `handla-api`. External traffic is immediately blocked with HTTP 403 at the Traefik proxy. Database migrations and other Docker services (`tameerhome`, `mysql`, `redis`) remain completely untouched.
+
+2. **Image-Level Emergency Rollback (if code defect identified):**
+   ```bash
+   # In /opt/handla-production:
+   docker compose -p handla -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f /opt/handla-production-rollback/docker-compose.rollback.yml up -d --no-deps api web
+   ```
+   *Result*: Restores exact previously-verified container images from `/opt/handla-production-rollback/docker-compose.rollback.yml` without modifying database state.
+
