@@ -23,7 +23,8 @@
     "seed:website-projects": "ts-node --transpile-only src/database/seeders/website-projects.seeder.ts",
     "seed:project-logos": "ts-node --transpile-only src/database/seeders/attach-project-logos.seeder.ts",
     "db:reset": "ts-node --transpile-only src/database/reset.ts",
-    "seed:ai-knowledge": "ts-node --transpile-only src/database/seeders/ai-knowledge.seeder.ts"
+    "seed:ai-knowledge": "ts-node --transpile-only src/database/seeders/ai-knowledge.seeder.ts",
+    "pretest": "mkdir -p .jest-cache && esbuild node_modules/file-type/source/index.js --bundle --platform=node --format=cjs --target=node22 --outfile=.jest-cache/file-type.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -46,13 +47,13 @@
     "class-validator": "^0.14.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
-    "file-type": "^16.5.4",
+    "file-type": "22.2.0",
     "google-auth-library": "^9.15.1",
     "handlebars": "^4.7.8",
     "helmet": "^7.1.0",
     "mysql2": "^3.22.4",
     "nest-winston": "^1.9.4",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "10.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
@@ -70,7 +71,10 @@
     "js-yaml": "^4.1.1",
     "ajv": "^8.18.0",
     "uuid": "^11.1.1",
-    "glob": "^10.5.0"
+    "glob": "^10.5.0",
+    "@nestjs/platform-express": {
+      "multer": "2.5.0"
+    }
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.24",
@@ -88,6 +92,7 @@
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "esbuild": "^0.28.2",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

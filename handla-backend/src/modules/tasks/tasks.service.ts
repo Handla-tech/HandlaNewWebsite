@@ -1,3 +1,4 @@
+import { detectFileType } from '../../common/utils/detect-file-type';
 import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, LessThan, Not, In } from 'typeorm';
@@ -21,8 +22,6 @@ import { EmailService } from '../email/email.service';
 import { AwsService } from '../aws/aws.service';
 import { FileUpload, FileUploadResourceType, FileUploadStatus } from '../uploads/entities/file-upload.entity';
 import { randomUUID } from 'crypto';
-import * as fileType from 'file-type';
-
 export interface PaginatedTasks {
   tasks: Task[];
   total: number;
@@ -370,8 +369,7 @@ export class TasksService {
       throw new AppException('File size exceeds the 10MB limit', HttpStatus.BAD_REQUEST);
     }
 
-    const fromBuffer = fileType.fromBuffer ?? (fileType as any).default?.fromBuffer;
-    const detected = await fromBuffer(file.buffer);
+    const detected = await detectFileType(file.buffer);
     if (!detected) {
       throw new AppException('Unsupported file type', HttpStatus.BAD_REQUEST);
     }
