@@ -2,10 +2,10 @@
 # Stage 1: Builder
 # Installs ALL dependencies (including devDependencies) and compiles TypeScript
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-bookworm-slim AS builder
 
 # Install build essentials needed by some native node modules
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all deps (devDeps needed for `nest build`)
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -25,10 +25,10 @@ RUN npm run build
 # Stage 2: Runtime
 # Copies only compiled output + production dependencies; keeps image lean
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 
 # Security: run as non-root user
-RUN addgroup -S handla && adduser -S handla -G handla
+RUN groupadd --system handla && useradd --system --gid handla --home-dir /app handla
 
 WORKDIR /app
 
@@ -36,7 +36,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install ONLY production dependencies
-RUN npm install --omit=dev --legacy-peer-deps && npm cache clean --force
+RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
 
 # Copy compiled application from builder stage
 COPY --from=builder /app/dist ./dist

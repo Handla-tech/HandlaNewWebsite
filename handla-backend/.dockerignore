@@ -51,3 +51,6 @@ npm-debug.log*
 !README.md
 .eslintrc*
 .prettierrc*
+
+# Generated Jest bundles
+.jest-cache/

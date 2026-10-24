@@ -16,6 +16,7 @@ module.exports = {
   modulePaths: [backendNM, rootNM],
   moduleDirectories: ['node_modules'],
   moduleNameMapper: {
+    '^file-type$': path.join(__dirname, '.jest-cache/file-type.cjs'),
     '^bcrypt$': path.join(__dirname, 'src/__mocks__/bcrypt.js'),
     '\\.node$': path.join(__dirname, 'src/__mocks__/native-module.js'),
   },

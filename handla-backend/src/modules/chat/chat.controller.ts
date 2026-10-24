@@ -1,3 +1,4 @@
+import { detectFileType } from '../../common/utils/detect-file-type';
 import {
   Controller,
   Get,
@@ -19,7 +20,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { randomUUID } from 'crypto';
-import * as fileType from 'file-type';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 
 import { ChatService } from './chat.service';
@@ -165,7 +165,7 @@ export class ChatController {
       throw new BadRequestException('File is missing or empty');
     }
 
-    const detected = await fileType.fromBuffer(file.buffer);
+    const detected = await detectFileType(file.buffer);
     if (!detected) {
       throw new BadRequestException('Unsupported file type');
     }

@@ -1,3 +1,4 @@
+import { detectFileType } from '../../common/utils/detect-file-type';
 import {
   Controller,
   Get,
@@ -97,9 +98,7 @@ export class ProfilesController {
       throw new BadRequestException('File is required and cannot be empty');
     }
 
-    const fileType = await import('file-type');
-    const fromBuffer = fileType.fromBuffer ?? (fileType.default as any)?.fromBuffer;
-    const detected = await fromBuffer(file.buffer);
+    const detected = await detectFileType(file.buffer);
 
     if (!detected || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(detected.mime)) {
       throw new BadRequestException('Invalid or unsupported image type. Only JPEG, PNG, WEBP, and GIF are allowed.');

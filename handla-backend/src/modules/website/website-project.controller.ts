@@ -1,3 +1,4 @@
+import { detectFileType } from '../../common/utils/detect-file-type';
 import {
   Controller,
   Get,
@@ -69,9 +70,7 @@ export class WebsiteProjectController {
     }
 
     // Inspect actual file bytes / magic numbers
-    const fileType = await import('file-type');
-    const fromBuffer = fileType.fromBuffer ?? (fileType.default as any)?.fromBuffer;
-    const detected = await fromBuffer(file.buffer);
+    const detected = await detectFileType(file.buffer);
 
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!detected || !allowedMimes.includes(detected.mime)) {
