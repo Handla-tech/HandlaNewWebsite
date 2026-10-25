@@ -112,6 +112,9 @@ jobs:
       - name: Check deploy wrapper bash syntax
         run: bash -n deploy/privilege/handla-production-deploy
 
+      - name: Run deployment lock regression tests
+        run: bash deploy/privilege/test-deployment-lock.sh
+
       - name: Check validator and test JS syntax
         run: |
           node -c deploy/validate-traefik-access.cjs

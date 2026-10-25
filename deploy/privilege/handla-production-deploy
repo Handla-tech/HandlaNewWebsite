@@ -217,6 +217,131 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+# ---- 3b. Deployment Concurrency Lock (fail-closed flock) -------------------
+# Guard against concurrent deploy execution from CI, manual runs, or race conditions.
+# Acquired before ANY checkout, fetch, build, migration, or container operations.
+readonly LOCK_PARENT_DIR="/run/lock"
+readonly LOCK_DIR="${LOCK_PARENT_DIR}/handla-production"
+readonly LOCK_FILE="${LOCK_DIR}/handla-production-deploy.lock"
+
+# 1. Validate parent lock directory: must be a root-owned real directory (not symlink)
+if [ -L "$LOCK_PARENT_DIR" ]; then
+  echo "[handla-production-deploy] FATAL: lock parent directory '$LOCK_PARENT_DIR' is a symlink (symlink attack rejected)." >&2
+  exit 3
+fi
+if [ ! -d "$LOCK_PARENT_DIR" ]; then
+  install -d -m 0755 -o root -g root "$LOCK_PARENT_DIR"
+fi
+lock_parent_owner="$(stat -c '%u' "$LOCK_PARENT_DIR" 2>/dev/null || stat -f '%u' "$LOCK_PARENT_DIR")"
+if [ "$lock_parent_owner" -ne 0 ]; then
+  echo "[handla-production-deploy] FATAL: lock parent directory '$LOCK_PARENT_DIR' is not owned by root (uid $lock_parent_owner)." >&2
+  exit 3
+fi
+
+# 2. Validate/ensure private lock directory: must be root:root mode 0700 (no symlink, no group/other access)
+if [ -L "$LOCK_DIR" ]; then
+  echo "[handla-production-deploy] FATAL: private lock directory '$LOCK_DIR' is a symlink (symlink attack rejected)." >&2
+  exit 3
+fi
+if [ ! -d "$LOCK_DIR" ]; then
+  install -d -m 0700 -o root -g root "$LOCK_DIR"
+fi
+lock_dir_owner="$(stat -c '%u' "$LOCK_DIR" 2>/dev/null || stat -f '%u' "$LOCK_DIR")"
+lock_dir_perm="$(stat -c '%a' "$LOCK_DIR" 2>/dev/null || stat -f '%Lp' "$LOCK_DIR")"
+if [ "$lock_dir_owner" -ne 0 ]; then
+  echo "[handla-production-deploy] FATAL: private lock directory '$LOCK_DIR' is not owned by root (uid $lock_dir_owner)." >&2
+  exit 3
+fi
+if [ "$lock_dir_perm" != "700" ]; then
+  echo "[handla-production-deploy] FATAL: private lock directory '$LOCK_DIR' has unsafe permissions ($lock_dir_perm, expected 0700)." >&2
+  exit 3
+fi
+
+# 3. Validate existing lock file before open (reject symlinks and non-root ownership)
+if [ -e "$LOCK_FILE" ] || [ -L "$LOCK_FILE" ]; then
+  if [ -L "$LOCK_FILE" ]; then
+    echo "[handla-production-deploy] FATAL: lock file '$LOCK_FILE' is a symlink (symlink attack rejected)." >&2
+    exit 3
+  fi
+  if [ ! -f "$LOCK_FILE" ]; then
+    echo "[handla-production-deploy] FATAL: lock file '$LOCK_FILE' exists but is not a regular file." >&2
+    exit 3
+  fi
+  lock_file_owner="$(stat -c '%u' "$LOCK_FILE" 2>/dev/null || stat -f '%u' "$LOCK_FILE")"
+  if [ "$lock_file_owner" -ne 0 ]; then
+    echo "[handla-production-deploy] FATAL: lock file '$LOCK_FILE' is not owned by root (uid $lock_file_owner)." >&2
+    exit 3
+  fi
+fi
+
+# 4. Open dedicated file descriptor 9 directly without eval (creates file if not present)
+exec 9>>"$LOCK_FILE"
+
+# Enforce strict 0600 mode on the lock file (fail closed on chmod failure)
+if ! chmod 0600 "$LOCK_FILE"; then
+  echo "[handla-production-deploy] FATAL: failed to set mode 0600 on lock file '$LOCK_FILE'." >&2
+  exit 3
+fi
+
+# Verify lock file permissions are strictly 0600
+lock_file_perm="$(stat -c '%a' "$LOCK_FILE" 2>/dev/null || stat -f '%Lp' "$LOCK_FILE")"
+if [ "$lock_file_perm" != "600" ]; then
+  echo "[handla-production-deploy] FATAL: lock file '$LOCK_FILE' has unsafe permissions ($lock_file_perm, expected 0600)." >&2
+  exit 3
+fi
+
+# Verify lock file is owned by root
+lock_file_owner="$(stat -c '%u' "$LOCK_FILE" 2>/dev/null || stat -f '%u' "$LOCK_FILE")"
+if [ "$lock_file_owner" -ne 0 ]; then
+  echo "[handla-production-deploy] FATAL: lock file '$LOCK_FILE' is not owned by root (uid $lock_file_owner)." >&2
+  exit 3
+fi
+
+# 5. Acquire exclusive, non-blocking lock
+if ! flock -n 9; then
+  echo "[handla-production-deploy] FATAL: Deployment already in progress (could not acquire exclusive lock on ${LOCK_FILE})." >&2
+  exit 2
+fi
+
+# 6. Post-open TOCTOU verification: verify opened FD matches the filesystem path
+# On supported Linux production hosts (/proc available), require strict device/inode and type matching.
+if [ -d "/proc/self/fd" ]; then
+  if [ ! -e "/proc/self/fd/9" ]; then
+    echo "[handla-production-deploy] FATAL: open file descriptor /proc/self/fd/9 does not exist." >&2
+    exit 3
+  fi
+
+  path_dev_ino="$(stat -c '%d:%i' "$LOCK_FILE" 2>/dev/null)" || {
+    echo "[handla-production-deploy] FATAL: failed to stat lock file path '$LOCK_FILE'." >&2
+    exit 3
+  }
+  fd_dev_ino="$(stat -L -c '%d:%i' "/proc/self/fd/9" 2>/dev/null)" || {
+    echo "[handla-production-deploy] FATAL: failed to stat open file descriptor /proc/self/fd/9." >&2
+    exit 3
+  }
+
+  if [ -z "$path_dev_ino" ] || [ -z "$fd_dev_ino" ]; then
+    echo "[handla-production-deploy] FATAL: could not establish device/inode for lock file." >&2
+    exit 3
+  fi
+
+  if [ "$path_dev_ino" != "$fd_dev_ino" ]; then
+    echo "[handla-production-deploy] FATAL: lock file replacement detected (fd 9 ${fd_dev_ino} != path ${path_dev_ino})." >&2
+    exit 3
+  fi
+
+  fd_type="$(stat -L -c '%F' "/proc/self/fd/9" 2>/dev/null)" || {
+    echo "[handla-production-deploy] FATAL: failed to inspect file type of /proc/self/fd/9." >&2
+    exit 3
+  }
+  if [ "$fd_type" != "regular file" ] && [ "$fd_type" != "regular empty file" ]; then
+    echo "[handla-production-deploy] FATAL: file descriptor 9 does not reference a regular file ($fd_type)." >&2
+    exit 3
+  fi
+fi
+
+log "Acquired exclusive deployment lock (${LOCK_FILE}) ✓"
+
 # ---- 4. Ensure/repair the root-owned trusted checkout ----------------------
 # The trusted checkout and its parent MUST be root-owned and not writable by
 # handla-deploy. We verify this every run and refuse to proceed otherwise.
