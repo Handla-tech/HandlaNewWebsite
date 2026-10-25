@@ -63,10 +63,25 @@ readonly BRANCH="main"
 readonly TRUSTED_DIR="/opt/handla-production"
 readonly SECRETS_ENV="/opt/handla-production-secrets/backend.env"   # root:root 600
 readonly BACKEND_ENV_REL="handla-backend/.env"
-readonly COMPOSE_FILES=( -f docker-compose.yml -f deploy/docker-compose.traefik.yml )
+readonly COMPOSE_FILES=(
+  -f docker-compose.yml
+  -f deploy/docker-compose.traefik.yml
+  -f deploy/docker-compose.full-access.yml
+)
 readonly GIT=/usr/bin/git
 readonly DOCKER=/usr/bin/docker
-readonly NODE=/usr/bin/node
+
+# Resolve host node binary (handles standard distribution /usr/bin/node or NodeSource /usr/local/bin/node)
+if [ -x "/usr/bin/node" ]; then
+  readonly NODE="/usr/bin/node"
+elif [ -x "/usr/local/bin/node" ]; then
+  readonly NODE="/usr/local/bin/node"
+else
+  echo "[handla-production-deploy] FATAL: Node.js binary not found at /usr/bin/node or /usr/local/bin/node." >&2
+  echo "[handla-production-deploy]        Node.js is a required host dependency for deploy validation." >&2
+  exit 1
+fi
+
 readonly TRAEFIK_NETWORK="proxy"
 # Pin the Compose PROJECT NAME explicitly. Compose otherwise derives it from the
 # working-directory basename; because the trusted checkout lives in
@@ -311,98 +326,23 @@ fi
 
 COMPOSE_ARGS=( -p "$COMPOSE_PROJECT" "${COMPOSE_FILES[@]}" )
 
-# ---- 8b. Validate Traefik Phase 1 Quarantine on merged Compose config --------
-log "Validating effective Traefik Phase 1 quarantine configuration..."
-COMPOSE_CONFIG_JSON="$("$DOCKER" compose "${COMPOSE_ARGS[@]}" config --format json 2>/dev/null || true)"
-if [ -z "$COMPOSE_CONFIG_JSON" ]; then
-  echo "[handla-production-deploy] FATAL: Failed to render effective Docker Compose configuration." >&2
+# ---- 8b. Validate explicit Full Access policy -------------------------------
+log "Validating effective Traefik Full Access configuration..."
+
+VALIDATOR="$TRUSTED_DIR/deploy/validate-traefik-access.cjs"
+
+if [ ! -f "$VALIDATOR" ]; then
+  echo "[handla-production-deploy] FATAL: Full Access validator missing." >&2
   exit 5
 fi
 
-# Run a deterministic, fail-closed validator in Node.js
-# - Parses JSON configuration safely
-# - Verifies both API and Web have active Traefik routers
-# - Verifies that both services independently define the exact approved allowlist (127.0.0.1/32)
-# - Verifies that EVERY router declared on api and web has 'handla-quarantine' attached
-# - Verifies that handla-web preserves 'handla-www-redirect'
-# - Exits 0 on success; exits non-zero with explicit error message on any discrepancy or parsing failure
-VALIDATOR_ERR="$("$NODE" -e '
-  const fs = require("fs");
-  try {
-    const raw = fs.readFileSync(0, "utf-8");
-    if (!raw || !raw.trim()) {
-      console.error("Empty Docker Compose configuration JSON received.");
-      process.exit(1);
-    }
-    const cfg = JSON.parse(raw);
-    const services = cfg.services || {};
-
-    const api = services.api;
-    const web = services.web;
-    if (!api || !web) {
-      console.error("Missing api or web service definition in rendered compose config.");
-      process.exit(1);
-    }
-
-    const apiLabels = api.labels || {};
-    const webLabels = web.labels || {};
-
-    const expectedAllow = "127.0.0.1/32";
-    const apiAllowed = apiLabels["traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange"];
-    const webAllowed = webLabels["traefik.http.middlewares.handla-quarantine.ipallowlist.sourcerange"];
-
-    if (apiAllowed !== expectedAllow) {
-      console.error(`api service middleware handla-quarantine sourcerange mismatch: expected "${expectedAllow}", got "${apiAllowed}"`);
-      process.exit(1);
-    }
-
-    if (webAllowed !== expectedAllow) {
-      console.error(`web service middleware handla-quarantine sourcerange mismatch: expected "${expectedAllow}", got "${webAllowed}"`);
-      process.exit(1);
-    }
-
-    // Check routers on both services
-    for (const [svcName, labels] of [["api", apiLabels], ["web", webLabels]]) {
-      const routerNames = Object.keys(labels)
-        .filter(k => k.startsWith("traefik.http.routers.") && k.endsWith(".rule"))
-        .map(k => k.replace("traefik.http.routers.", "").replace(".rule", ""));
-
-      if (routerNames.length === 0) {
-        console.error(`No Traefik routers found on ${svcName} service.`);
-        process.exit(1);
-      }
-
-      for (const router of routerNames) {
-        const mwKey = `traefik.http.routers.${router}.middlewares`;
-        const mwValue = labels[mwKey] || "";
-        const mws = mwValue.split(",").map(s => s.trim()).filter(Boolean);
-        if (!mws.includes("handla-quarantine")) {
-          console.error(`Router "${router}" on service "${svcName}" lacks required "handla-quarantine" middleware.`);
-          process.exit(1);
-        }
-      }
-    }
-
-    // Verify www-redirect preservation on web
-    const webMainMw = webLabels["traefik.http.routers.handla-web.middlewares"] || "";
-    const webMws = webMainMw.split(",").map(s => s.trim());
-    if (!webMws.includes("handla-www-redirect")) {
-      console.error("handla-web router is missing required handla-www-redirect middleware.");
-      process.exit(1);
-    }
-
-    process.exit(0);
-  } catch (err) {
-    console.error("Validator exception:", err.message);
-    process.exit(1);
-  }
-' <<< "$COMPOSE_CONFIG_JSON" 2>&1)" || {
-  echo "[handla-production-deploy] FATAL: Traefik Phase 1 quarantine validation failed." >&2
-  echo "[handla-production-deploy]        $VALIDATOR_ERR" >&2
+if ! "$DOCKER" compose "${COMPOSE_ARGS[@]}" config --format json |
+     "$NODE" "$VALIDATOR"; then
+  echo "[handla-production-deploy] FATAL: Full Access configuration validation failed." >&2
   exit 5
-}
+fi
 
-log "Traefik Phase 1 quarantine verified on all Handla routers (127.0.0.1/32) ✓"
+log "Traefik Full Access policy verified ✓"
 
 # ---- 9. Ensure core stateful infrastructure (MySQL & Redis) is running ------
 log "Verifying status of core stateful services (mysql, redis)..."
@@ -522,7 +462,7 @@ elif [ -n "$CANDIDATE_API_IMAGE" ] && [ -n "$CANDIDATE_WEB_IMAGE" ]; then
     # 1. Existing application containers must be stopped ('exited' or 'not_found').
     # 2. Historical images must genuinely be unavailable.
     # 3. No valid rollback baseline or metadata exists in /opt/handla-production-rollback.
-    # 4. Production Traefik quarantine must pass effective Compose validation (verified in Step 8b).
+    # 4. Production Traefik Full Access policy must pass effective Compose validation (verified in Step 8b).
     # 5. The required database backup must exist and pass integrity checks.
 
     log "Checking eligibility for first-deployment (no historical rollback baseline) mode..."

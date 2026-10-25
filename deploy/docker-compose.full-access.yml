@@ -1,0 +1,13 @@
+# Handla — explicit public access overlay.
+# Apply AFTER docker-compose.traefik.yml.
+# This file only affects Handla's API and Web routers.
+services:
+  api:
+    labels:
+      - "traefik.http.routers.handla-api.middlewares=handla-api-ratelimit"
+      - "traefik.http.middlewares.handla-api-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.handla-api-ratelimit.ratelimit.burst=50"
+
+  web:
+    labels:
+      - "traefik.http.routers.handla-web.middlewares=handla-www-redirect"

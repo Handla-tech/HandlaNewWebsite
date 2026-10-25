@@ -68,6 +68,5 @@ EXPOSE 3001
 # Use 127.0.0.1 (not localhost) to force IPv4 — in Alpine, localhost may resolve
 # to IPv6 ::1 first, where the server (bound to 0.0.0.0) is not listening.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:${PORT:-3001}/api/health || exit 1
-
+  CMD node -e 'const http=require("node:http");const port=process.env.PORT||3001;const req=http.get({host:"127.0.0.1",port,path:"/api/health",timeout:8000},res=>{res.resume();process.exit(res.statusCode===200?0:1)});req.on("error",()=>process.exit(1));req.on("timeout",()=>{req.destroy();process.exit(1)})'
 ENTRYPOINT ["./entrypoint.sh"]
