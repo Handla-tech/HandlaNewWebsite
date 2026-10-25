@@ -60,10 +60,91 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://handla.tech
         run: npm run build
 
-  # 3. Deploy to VPS (MANUAL ONLY: requires workflow_dispatch on main with confirm_deploy == 'deploy')
+  # 3. Deployment security policy validation
+  #    Runs the Traefik Full Access validator regression tests, Docker Compose
+  #    config syntax checks, deploy wrapper syntax check, and Dockerfile
+  #    healthcheck verification.
+  #    Does NOT deploy, SSH, contact production, or run docker compose up.
+  validate-deploy:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_USER: handla_runtime
+      DATABASE_PASSWORD: ci_test_only_not_real
+      DATABASE_ROOT_PASSWORD: ci_test_only_not_real
+      REDIS_PASSWORD: ci_test_only_not_real
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup synthetic CI env files for Compose validation
+        run: |
+          # Create synthetic non-sensitive handla-backend/.env required by Compose env_file
+          # if not already present. This ensures CI runs on ephemeral runners without real secrets.
+          if [ ! -f handla-backend/.env ]; then
+            echo "# Synthetic non-sensitive env for CI compose validation" > handla-backend/.env
+            echo "PORT=3001" >> handla-backend/.env
+            echo "DATABASE_NAME=handla_db" >> handla-backend/.env
+            chmod 600 handla-backend/.env
+            echo "Created synthetic handla-backend/.env for CI validation"
+          fi
+
+      - name: Validate docker-compose.yml syntax
+        run: |
+          docker compose \
+            --env-file /dev/null \
+            -f docker-compose.yml \
+            config --format json > /dev/null
+
+      - name: Validate merged Traefik Full Access Compose config
+        run: |
+          docker compose \
+            --env-file /dev/null \
+            -f docker-compose.yml \
+            -f deploy/docker-compose.traefik.yml \
+            -f deploy/docker-compose.full-access.yml \
+            config --format json > /dev/null
+
+      - name: Run Traefik Full Access validator regression tests
+        run: node deploy/validate-traefik-access.test.cjs
+
+      - name: Check deploy wrapper bash syntax
+        run: bash -n deploy/privilege/handla-production-deploy
+
+      - name: Check validator and test JS syntax
+        run: |
+          node -c deploy/validate-traefik-access.cjs
+          node -c deploy/validate-traefik-access.test.cjs
+
+      - name: Verify Dockerfile healthcheck uses node (not wget)
+        run: |
+          if grep -q 'CMD wget' handla-backend/Dockerfile; then
+            echo "FAIL: Dockerfile uses wget-based healthcheck (should use node)" >&2
+            exit 1
+          fi
+          if ! grep -q 'CMD node' handla-backend/Dockerfile; then
+            echo "FAIL: Dockerfile HEALTHCHECK does not use node" >&2
+            exit 1
+          fi
+          echo "PASS: Dockerfile healthcheck uses node"
+
+      - name: Verify docker-compose.yml healthcheck uses node (not wget)
+        run: |
+          if grep -q 'wget.*api/health' docker-compose.yml; then
+            echo "FAIL: docker-compose.yml uses wget-based API healthcheck (should use node)" >&2
+            exit 1
+          fi
+          if ! grep -q 'node:http.*api/health' docker-compose.yml; then
+            echo "FAIL: docker-compose.yml API healthcheck does not use node http" >&2
+            exit 1
+          fi
+          echo "PASS: docker-compose.yml healthcheck uses node"
+
+  # 4. Deploy to VPS (MANUAL ONLY: requires workflow_dispatch on main with confirm_deploy == 'deploy')
   deploy:
     environment: production
-    needs: [test-backend, build-frontend]
+    needs: [test-backend, build-frontend, validate-deploy]
     if: >-
       github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/main' &&

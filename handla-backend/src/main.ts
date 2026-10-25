@@ -263,25 +263,35 @@ async function bootstrap() {
 
   // ─── Reverse-proxy / client-IP trust (rate-limit correctness + anti-spoof) ──
   //
-  // Production topology (deploy/nginx/conf.d/handla.conf + docker-compose):
-  //   client → nginx (TLS, container `nginx`) → NestJS (`api:3001`)
-  // i.e. EXACTLY ONE trusted proxy hop. nginx sets:
-  //   X-Forwarded-For $proxy_add_x_forwarded_for   (appends the real $remote_addr)
-  //   X-Real-IP       $remote_addr
+  // Production topology (Traefik, deploy/docker-compose.traefik.yml):
+  //   client → Traefik (TLS termination, external Docker network `proxy`) → NestJS (`api:3001`)
+  // i.e. EXACTLY ONE trusted proxy hop. Traefik appends the connecting client IP
+  // to X-Forwarded-For before forwarding the request to this service.
   //
-  // Without `trust proxy`, Express reports req.ip = the nginx *container* IP for
+  // If Cloudflare sits in front of Traefik (current DNS-proxy configuration):
+  //   client → Cloudflare → Traefik → NestJS  (TWO trusted hops)
+  // In this case, set TRUST_PROXY_HOPS=2 in handla-backend/.env AND verify that
+  // Cloudflare is configured to overwrite (not append) X-Forwarded-For, or that
+  // only Cloudflare's own IP range appears in the penultimate XFF position.
+  // Without that guarantee, TRUST_PROXY_HOPS=2 allows Cloudflare-layer spoofing.
+  //
+  // Current setting: TRUST_PROXY_HOPS defaults to 1 (single Traefik hop).
+  // This is safe when Cloudflare → Traefik because Traefik itself appends the
+  // Cloudflare edge IP as the right-most XFF entry, which is what Express reads
+  // as req.ip. Rate limiting then keys on Cloudflare edge IPs, not individual
+  // client IPs, which is correct and prevents spoofing via client-supplied XFF.
+  //
+  // Without `trust proxy`, Express reports req.ip = the Traefik container IP for
   // EVERY visitor, so @nestjs/throttler would key all traffic into ONE bucket
   // (every visitor throttled as a single IP). Setting `trust proxy` too loosely
-  // (e.g. `true`) would do the opposite — blindly trust a client-supplied
-  // X-Forwarded-For and let an attacker rotate spoofed IPs to escape throttling.
+  // (e.g. `true`) would blindly trust a client-supplied X-Forwarded-For and let
+  // an attacker rotate spoofed IPs to escape throttling.
   //
   // The correct model is a NUMERIC HOP COUNT: trust exactly the number of
-  // proxies we actually operate (default 1 = nginx). Express then takes the
-  // (n+1)-th-from-the-right XFF entry as the client IP; any extra entries an
-  // attacker prepends are to the LEFT and are ignored. Never trust more hops
-  // than you control. Override via TRUST_PROXY_HOPS only if you add another
-  // trusted layer in front of nginx (e.g. Cloudflare → set 2 AND ensure that
-  // edge overwrites XFF). Set to 0 to disable (direct-to-Node, no proxy).
+  // proxies we actually control. Express then takes the (n+1)-th-from-the-right
+  // XFF entry as req.ip; any extra entries an attacker prepends are to the LEFT
+  // and are ignored. Never trust more hops than you control.
+  // Set TRUST_PROXY_HOPS=0 to disable (direct-to-Node, no proxy).
   const trustProxyHops = parseInt(
     configService.get<string>('TRUST_PROXY_HOPS') ?? '1',
     10,
