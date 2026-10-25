@@ -78,6 +78,18 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup synthetic CI env files for Compose validation
+        run: |
+          # Create synthetic non-sensitive handla-backend/.env required by Compose env_file
+          # if not already present. This ensures CI runs on ephemeral runners without real secrets.
+          if [ ! -f handla-backend/.env ]; then
+            echo "# Synthetic non-sensitive env for CI compose validation" > handla-backend/.env
+            echo "PORT=3001" >> handla-backend/.env
+            echo "DATABASE_NAME=handla_db" >> handla-backend/.env
+            chmod 600 handla-backend/.env
+            echo "Created synthetic handla-backend/.env for CI validation"
+          fi
+
       - name: Validate docker-compose.yml syntax
         run: |
           docker compose \

@@ -22,6 +22,7 @@
 
 const assert = require('node:assert/strict');
 const { spawnSync, execFileSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 
 // ─── Locate repo root relative to this file ──────────────────────────────────
@@ -31,6 +32,27 @@ const VALIDATOR = path.join(REPO_ROOT, 'deploy', 'validate-traefik-access.cjs');
 const COMPOSE_BASE = path.join(REPO_ROOT, 'docker-compose.yml');
 const COMPOSE_TRAEFIK = path.join(REPO_ROOT, 'deploy', 'docker-compose.traefik.yml');
 const COMPOSE_FULL_ACCESS = path.join(REPO_ROOT, 'deploy', 'docker-compose.full-access.yml');
+const BACKEND_ENV = path.join(REPO_ROOT, 'handla-backend', '.env');
+
+// If handla-backend/.env is missing (e.g. clean checkout in CI), create a temporary
+// synthetic file for Compose interpolation, and clean it up on process exit.
+let createdSyntheticBackendEnv = false;
+if (!fs.existsSync(BACKEND_ENV)) {
+  fs.writeFileSync(BACKEND_ENV, '# synthetic non-sensitive env for local/CI test validation\nPORT=3001\nDATABASE_NAME=handla_db\n', { encoding: 'utf8', mode: 0o600 });
+  createdSyntheticBackendEnv = true;
+}
+
+// Ensure cleanup of synthetic env file on exit if created by this process
+function cleanupSyntheticEnv() {
+  if (createdSyntheticBackendEnv && fs.existsSync(BACKEND_ENV)) {
+    try {
+      fs.unlinkSync(BACKEND_ENV);
+    } catch (_) {}
+  }
+}
+process.on('exit', cleanupSyntheticEnv);
+process.on('SIGINT', () => { cleanupSyntheticEnv(); process.exit(130); });
+process.on('SIGTERM', () => { cleanupSyntheticEnv(); process.exit(143); });
 
 // ─── Synthetic secrets — never real credentials ───────────────────────────────
 const SYNTHETIC_ENV = {
