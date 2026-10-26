@@ -119,6 +119,22 @@ jobs:
         run: |
           node -c deploy/validate-traefik-access.cjs
           node -c deploy/validate-traefik-access.test.cjs
+          node -c handla-backend/scripts/check-tcp.js
+          node -c deploy/test-check-tcp.cjs
+
+      - name: Check backend entrypoint shell syntax
+        run: sh -n handla-backend/entrypoint.sh
+
+      - name: Run entrypoint TCP check regression tests
+        run: node deploy/test-check-tcp.cjs
+
+      - name: Verify entrypoint has no nc/netcat dependency
+        run: |
+          if grep -Eq '\b(nc|netcat)\b' handla-backend/entrypoint.sh; then
+            echo "FAIL: handla-backend/entrypoint.sh contains nc/netcat dependency" >&2
+            exit 1
+          fi
+          echo "PASS: handla-backend/entrypoint.sh has no nc/netcat dependency"
 
       - name: Verify Dockerfile healthcheck uses node (not wget)
         run: |
@@ -143,6 +159,37 @@ jobs:
             exit 1
           fi
           echo "PASS: docker-compose.yml healthcheck uses node"
+
+      - name: Verify backend Docker image packages check-tcp helper and runs TCP checks
+        run: |
+          echo "Building backend runtime image to verify helper packaging..."
+          docker build -t handla-backend:ci-verify -f handla-backend/Dockerfile handla-backend
+
+          echo "Verifying check-tcp.js exists inside image..."
+          docker run --rm --entrypoint test handla-backend:ci-verify -f ./scripts/check-tcp.js
+
+          echo "Verifying nc is NOT present inside image..."
+          if docker run --rm --entrypoint sh handla-backend:ci-verify -c 'which nc netcat' 2>/dev/null; then
+            echo "FAIL: Image unexpectedly contains nc or netcat" >&2
+            exit 1
+          fi
+
+          echo "Verifying TCP check success and failure inside image..."
+          docker run --rm --entrypoint sh handla-backend:ci-verify -c '
+            set -e
+            node -e "const net = require(\"net\"); const s = net.createServer(c => c.end()); s.listen(45678, \"127.0.0.1\");" &
+            PID=$!
+            sleep 1
+            node ./scripts/check-tcp.js 127.0.0.1 45678 1000
+            if node ./scripts/check-tcp.js 127.0.0.1 45679 500; then
+              echo "FAIL: Expected closed port check to fail" >&2
+              kill $PID 2>/dev/null || true
+              exit 1
+            fi
+            kill $PID 2>/dev/null || true
+          '
+          docker rmi handla-backend:ci-verify >/dev/null 2>&1 || true
+          echo "PASS: Docker image verification completed successfully"
 
   # 4. Deploy to VPS (MANUAL ONLY: requires workflow_dispatch on main with confirm_deploy == 'deploy')
   deploy:
