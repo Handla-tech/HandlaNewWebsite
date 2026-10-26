@@ -16,6 +16,20 @@ log()  { echo "[entrypoint] $*"; }
 warn() { echo "[entrypoint] WARN: $*" >&2; }
 die()  { echo "[entrypoint] ERROR: $*" >&2; exit 1; }
 
+TCP_HELPER="./scripts/check-tcp.js"
+
+check_tcp() {
+  _host="$1"
+  _port="$2"
+  _timeout="${3:-2000}"
+
+  if [ ! -f "$TCP_HELPER" ] || [ ! -r "$TCP_HELPER" ]; then
+    die "Required TCP check helper '${TCP_HELPER}' is missing or unreadable — aborting immediately."
+  fi
+
+  node "$TCP_HELPER" "$_host" "$_port" "$_timeout" >/dev/null 2>&1
+}
+
 # ─── Wait for MySQL ───────────────────────────────────────────────────────────
 
 DB_HOST="${DATABASE_HOST:-mysql}"
@@ -25,7 +39,7 @@ DB_WAIT=2
 
 log "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
 for i in $(seq 1 $DB_RETRIES); do
-  if nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; then
+  if check_tcp "$DB_HOST" "$DB_PORT" 2000; then
     log "MySQL is ready ✓ (attempt ${i})"
     break
   fi
@@ -48,7 +62,7 @@ REDIS_WAIT=2
 
 log "Waiting for Redis at ${REDIS_HOST}:${REDIS_PORT}..."
 for i in $(seq 1 $REDIS_RETRIES); do
-  if nc -z "$REDIS_HOST" "$REDIS_PORT" 2>/dev/null; then
+  if check_tcp "$REDIS_HOST" "$REDIS_PORT" 2000; then
     log "Redis is ready ✓ (attempt ${i})"
     break
   fi
